@@ -190,7 +190,7 @@ interface LocalCompletion extends Completion {
   swatch?: string;
 }
 
-function localCompletions(list: LocalSuggestions): CompletionResult {
+export function localCompletions(list: LocalSuggestions): CompletionResult {
   return {
     from: list.at,
     filter: false,
@@ -200,8 +200,7 @@ function localCompletions(list: LocalSuggestions): CompletionResult {
       ...(option.swatch && { swatch: option.swatch }),
       apply: (view, _completion, from, to) =>
         view.dispatch({
-          changes: { from, to, insert: option.insert },
-          selection: { anchor: from + option.caret },
+          ...option.apply(view.state, { from, to }),
           userEvent: "input.complete",
         }),
     })),

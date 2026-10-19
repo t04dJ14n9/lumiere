@@ -22,7 +22,9 @@ there has not changed).
 
 A source may instead return a list it makes itself (`LocalSuggestions`, the
 highlight colours after `==`), shown without asking the host; Tab does not
-take its entries, as in Obsidian.
+take its entries, as in Obsidian. Each entry builds its acceptance transaction
+from the current editor state, so it can replace surrounding text as well as
+insert at the caret.
 
 Ranking is Obsidian 1.14's: the fuzzy score of `src/shared/fuzzy.ts` (checked
 against Obsidian's own on 2,463 query and text pairs). A note matches on its

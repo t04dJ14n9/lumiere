@@ -16,9 +16,10 @@ word or selection in that colour; on a highlight they recolour it, or remove
 it in its own colour; on part of one they split it, the part in the new
 colour and the rest in its own, spaces left outside; highlights a selection
 spans merge (`highlight-colour.ts`). Typing `==` that opens a highlight offers
-Default and the six colours; taking one adds its emoji and the closing `==`
-(`highlight-suggest.ts`); Tab takes nothing, as in Obsidian. Line
-commands edit each selected line, excluding a final column-zero line. Registered
+Default and the six colours; taking one wraps an immediately following word,
+reuses its closing `==` if present, or opens an empty pair, with the caret
+inside after the colour (`highlight-suggest.ts`); Tab takes nothing, as in
+Obsidian. Line commands edit each selected line, excluding a final column-zero line. Registered
 commands target the active projected editor (including table cells), and owned
 keymaps provide bold, italic, link and comment shortcuts. As in Obsidian,
 Insert Link leaves the caret in the empty URL after a selected label (else in

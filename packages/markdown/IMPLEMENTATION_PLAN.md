@@ -5899,3 +5899,29 @@ the sole mirror tab (no Live Preview sibling), it reopens Lumière via
 X/Esc alone may still leave the mirror until status-bar click or tab leave —
 documented and acceptable. Ctrl+K Edit and Ctrl+L must not regress. No Host GUI
 retest or push in this task; VSIX install prepares parent retest.
+
+## Host GUI S3: highlight suggestions wrap the following word — 2026-10-18
+
+Accepting Default or a colour after typed `==` now wraps the word starting at
+the caret, closing before surrounding formatting. Bold then `==` then Red
+produces `**==🔴hard==**` immediately. Existing closing `==` are reused; with
+no following word, the empty pair and caret placement stay the same. Local
+suggestions build an acceptance transaction from the current state and mapped
+completion range instead of fixed insert/caret fields. The existing Tab guard
+and colour-toggle commands are unchanged.
+
+Validation: focused formatting/highlight, nested Live Preview, inline reveal,
+rendering, formatting-key and suggestion units passed 71/71. The S3 regression
+accepts the actual local completion, moves to a heading, and checks hidden
+`**`/`==`/emoji plus bold and red-highlight decorations. Coverage includes
+Default and all six colours, existing closers, Unicode words, EOF, whitespace,
+punctuation and acceptance against the current document. The requested
+`test/unit/livePreview/inline*.test.ts` glob matches no files (0 tests).
+Changed-file Prettier checks, repository lint and Git whitespace checks pass.
+`pnpm check` stops on the baseline formatting of the unchanged
+`test/browser/math-vim-click.spec.ts`. Separately, `pnpm typecheck` passes all
+changed source projects, then fails on the unchanged optional-property type
+error at `test/unit/cursor-bridge/host.test.ts:210`; PDF typechecking is not
+reached. Browser/native suites and Host GUI retest were not run for this
+focused fix. No push; the R7 plan records the local commit, package/install
+verification and exact parent-computerUse retest steps.

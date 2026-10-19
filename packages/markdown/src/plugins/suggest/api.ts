@@ -1,4 +1,4 @@
-import type { EditorState } from "@codemirror/state";
+import type { EditorState, TransactionSpec } from "@codemirror/state";
 import type { Disposer } from "@workshop/core";
 import type { Query } from "./protocol";
 export interface SuggestionContext {
@@ -19,9 +19,11 @@ export interface SuggestionTrigger extends Query {
 /** One entry of a list the webview makes itself. */
 export interface LocalSuggestion {
   label: string;
-  /** Inserted at the caret, which then sits `caret` characters in. */
-  insert: string;
-  caret: number;
+  /** Build the acceptance edit from the current document and completion range. */
+  apply: (
+    state: EditorState,
+    range: { from: number; to: number },
+  ) => TransactionSpec;
   /** A swatch of this highlight colour (`default` too) before the label. */
   swatch?: string;
 }

@@ -1,29 +1,38 @@
 import { syntaxTree } from "@codemirror/language";
+import type { EditorState, TransactionSpec } from "@codemirror/state";
 import type { SyntaxNode } from "@lezer/common";
 import {
   HIGHLIGHT_COLOURS,
   type HighlightColour,
 } from "../../markdown/dialect/highlight";
-import type { LocalSuggestions, SuggestionContext } from "../suggest/api";
+import type {
+  LocalSuggestion,
+  LocalSuggestions,
+  SuggestionContext,
+} from "../suggest/api";
 
 const MATH = new Set(["InlineMath", "BlockMath", "MathBlock"]);
 
-const options = [
-  { label: "Default", insert: "==", caret: 0, swatch: "default" },
-  ...(Object.entries(HIGHLIGHT_COLOURS) as [HighlightColour, string][]).map(
-    ([colour, emoji]) => ({
-      label: colour[0]!.toUpperCase() + colour.slice(1),
-      insert: `${emoji}==`,
-      caret: emoji.length,
-      swatch: colour,
-    }),
-  ),
+const options: readonly LocalSuggestion[] = [
+  {
+    label: "Default",
+    apply: (state, range) => highlightColourEdit(state, range.to, ""),
+    swatch: "default",
+  },
+  ...(
+    Object.entries(HIGHLIGHT_COLOURS) as [HighlightColour, string][]
+  ).map<LocalSuggestion>(([colour, emoji]) => ({
+    label: colour[0]!.toUpperCase() + colour.slice(1),
+    apply: (state, range) => highlightColourEdit(state, range.to, emoji),
+    swatch: colour,
+  })),
 ];
 
 /**
  * The colours Obsidian 1.14 offers once `==` opening a highlight is typed
- * (measured): Default, then each colour; taking one adds its emoji and the
- * closing `==`, the caret before it. Not after a closing `==` or `===`, nor
+ * (measured): Default, then each colour. Accepting wraps an immediately
+ * following word, reuses its closing `==`, or opens an empty pair, with the
+ * caret after the opening and colour. Not after a closing `==` or `===`, nor
  * in math (code is left out for every suggestion).
  */
 export function highlightColourSuggestion({
@@ -46,4 +55,34 @@ export function highlightColourSuggestion({
     }
   }
   return { at: pos, options };
+}
+
+function highlightColourEdit(
+  state: EditorState,
+  pos: number,
+  emoji: string,
+): TransactionSpec {
+  const word = state.wordAt(pos);
+  if (word?.from !== pos) {
+    return {
+      changes: { from: pos, insert: `${emoji}==` },
+      selection: { anchor: pos + emoji.length },
+    };
+  }
+  if (state.sliceDoc(word.to, word.to + 2) === "==") {
+    return {
+      changes: { from: pos, insert: emoji },
+      selection: { anchor: pos + emoji.length },
+    };
+  }
+  // Close before the word's surrounding formatting, so accepting a colour
+  // after bolding produces **==🔴word==** in one edit.
+  return {
+    changes: {
+      from: pos - 2,
+      to: word.to,
+      insert: `==${emoji}${state.sliceDoc(word.from, word.to)}==`,
+    },
+    selection: { anchor: pos + emoji.length },
+  };
 }
