@@ -1,7 +1,7 @@
 # Handoff: testing Workshop in Cursor with computer use
 
 For Claude Desktop with computer use, testing on the owner's Mac. Written
-2026-10-18 on branch `claude/cordis-core-and-parity` (draft PR #83). The
+2026-10-18 on branch `claude/cordis-core-and-parity` (PR #83, since merged). The
 full scenario list is [packages/markdown/docs/MANUAL_TEST_PLAN.md](../packages/markdown/docs/MANUAL_TEST_PLAN.md);
 this page picks the checks that matter most and says how to run them here.
 
@@ -14,6 +14,12 @@ testing; to fix bugs, follow [AGENTS.md](../AGENTS.md) (each fix in its own
 commit with a unit test) and don't push without the owner.
 
 ### Working in parallel with Claude (from 2026-10-18, 08:00 PDT)
+
+**Since 2026-10-18, 20:09 PDT, PR #83 is squash-merged into `main`
+(`496301fb`, the tree of `58c7ab03`).** `claude/cordis-core-and-parity` is
+finished: don't push to it. Start each new piece of work on a branch off
+`origin/main` and open a PR for it; rebase on `origin/main` before you push.
+The rules below still hold, with `main` in place of the old branch.
 
 The owner has Grok Bot and a Claude session working at the same time.
 Grok Bot works in its own clone on its VM and pushes to
@@ -44,9 +50,8 @@ GitHub is where the two meet:
   and views become `lumiere.markdown.*` and `lumiere.pdf.*`; the extension ID
   becomes `t04dj14n9.lumiere` and the VSIX `lumiere-0.1.0.vsix`, so uninstall
   `t04dj14n9.vscode-workshop` wherever you install the new one.
-- PR #84 (the cancelled Cursor cloud agent's Copy Link redesign) duplicates
-  `afdf0e7a`; its Markdown formatter was taken into `cbd3054b`. It should be
-  closed, not merged.
+- PR #84 (the cancelled Cursor cloud agent's Copy Link redesign) is closed;
+  its Markdown formatter was taken into `cbd3054b`.
 
 ### Your task: Vim input bugs
 
@@ -80,6 +85,16 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
   `~/Code/vscode-workshop/vscode-markdown-workshop`, pushed to `origin`, now
   `t04dJ14n9/lumiere` (the owner renamed the GitHub repository; draft PR
   #83).
+- Grok Bot's Cursor Edit (Cmd+K) mirror cleanup and highlight-wrap fixes
+  (`666286f8` … `58c7ab03`) checked by Claude on the Mac, 2026-10-19: on
+  `58c7ab03`, `pnpm check` passes, both browser suites pass (Markdown 285,
+  PDF 173) and the real-editor suites pass in VS Code and in Cursor 3.23
+  (Markdown 23/23 and PDF 25 in each). One bug fixed on
+  `claude/edit-mirror-dismiss` (`de007cbf`): the dismissal reopened Live
+  Preview even after the reader had closed the mirror themself (Close All,
+  or closing the note's last tab during an Edit), and took focus from the
+  tab the reader had moved to. It now reopens only a mirror it closed, in
+  the background when the reader is elsewhere.
 - Full pass on the Mac (Claude, 2026-10-18): `pnpm check` on `fe4d5cb6`;
   both browser suites on `b138ee4a` (Markdown 284, PDF 173); real VS Code
   and real Cursor 3.23 on `fe4d5cb6`: Markdown 23/23 in Cursor, PDF 25 in
@@ -97,7 +112,9 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
   merged:
   `claude/web-extension` (`~/Code/vscode-workshop/vscode-markdown-workshop-web`,
   a browser build for a GitHub Pages demo; its session was stopped mid-turn)
-  and `claude/math-fixes` (`…-math`, blank list-item math and `\mathbb`).
+  and `claude/math-fixes` (`…-math`, blank list-item math and `\mathbb`;
+  merged as `bbcd6e18` and `7308506e`, so the branch is stale and can be
+  deleted).
 - Run test suites one at a time across all worktrees; several sessions
   colliding on ports and focus cost a run today.
 
@@ -105,7 +122,8 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 
 - Mac Cursor and the owner's CVM (`ssh cvm_dev_machine`, vault `~/WorkVault`
   through Remote-SSH) both run **`t04dj14n9.lumiere` 0.1.0 built from
-  `fe4d5cb6`** (2026-10-18, 12:18 PDT, with Grok Bot's Cursor Edit fixes);
+  `de007cbf`** (2026-10-19, 00:30 PDT: `main` with Grok Bot's Cmd+K mirror
+  cleanup and the dismissal fix);
   `t04dj14n9.vscode-workshop` is
   uninstalled on both. Each window needs **Developer: Reload Window**.
 - The owner's settings moved to the new keys, each file backed up beside
@@ -187,6 +205,18 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 - [ ] **Demo**: `t04dJ14n9/lumiere-demo` (Codespaces) works and stays
       private until the math fixes and a renamed VSIX are in it.
 - [ ] **Keyboard checks** 4 (keys), 6–12 and 14 in the plan below.
+- [ ] **Cmd+K in real Cursor** on the `de007cbf` build: Edit opens on the
+      selection; **Return to Lumière** shows on the left of the status bar
+      and brings Live Preview back; clicking another tab closes the mirror
+      without taking focus back; Close All leaves the note closed. Needs
+      typing, so Grok Bot or the owner.
+- [ ] **Decide on the Explorer probe** (`cursorBridge.editPromptProbe`, a
+      view named "·"). Cursor sets `editcontextbarcursor` in the window's
+      context while any Cmd+K prompt bar is open (`cmdKStateService`), so
+      the probe can fire, but only while the Explorer is showing, and it
+      shows an empty "·" section there during every Edit. The status-bar
+      item and the tab-leave backup work without it; remove it unless a
+      Cursor retest shows it closing mirrors that nothing else would.
 - [x] **Fix** the tables plugin's Vim entry reading `ctx.vim` after a
       restart ("Disposed: tables is stopped").
 - [x] **Fix** a display formula needing a second click after an inline
@@ -202,8 +232,7 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 - [x] **Fix** Copy Link for Agent missing from the PDF's right-click menu
       when the menu opened right after a selection (`7bf26369`). Checked in
       real Cursor's native menu: there with a selection, absent without.
-- [ ] **Close PR #84** (the cancelled cloud agent's duplicate redesign); the
-      owner's call.
+- [x] **Close PR #84** (closed).
 
 ## What was installed when this plan was written
 
