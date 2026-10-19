@@ -109,7 +109,6 @@ export function cursorEditAvailable(
   return commands?.has(CURSOR_COMMANDS.edit) !== false;
 }
 
-
 /**
  * Close a Cursor Edit prompt bar by id. Cursor keeps prompt bars keyed by note
  * URI; if one survives dismiss, the next `modal.generate` reuses it and returns
