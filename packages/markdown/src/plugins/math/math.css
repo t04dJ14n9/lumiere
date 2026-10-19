@@ -1,0 +1,64 @@
+/*
+ * MathJax output, inline and in display blocks. A list item's first line
+ * hangs with a negative text-indent, which an inline-block inherits: it would
+ * pull the formula left over the marker and shrink a narrow one to nothing.
+ */
+.math-placeholder {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  text-indent: 0;
+}
+/* A line of space above and below a display formula, as in Obsidian. */
+.math-display {
+  display: block;
+  padding: 1em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.math-placeholder.render-error {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: color-mix(
+    in srgb,
+    var(--vscode-errorForeground, #e05252) 12%,
+    transparent
+  );
+  font-family: var(--code-font);
+  font-size: 0.875em;
+}
+mjx-container {
+  display: inline-block;
+  direction: ltr;
+  line-height: 0;
+  text-indent: 0;
+}
+mjx-container svg {
+  max-width: 100%;
+  overflow: visible;
+}
+/*
+ * Revealed math source, inline or in a block, reads as code with its `$`
+ * delimiters in the accent colour, as in Obsidian. A block being edited keeps
+ * its rendered formula below the source.
+ */
+.md-math {
+  font-family: var(--code-font);
+  font-size: 0.875em;
+}
+.md-math-delimiter {
+  color: var(--accent);
+}
+/* TeX highlighting, in the colours of code: commands and `^` `_` as tags. */
+.md-math-command {
+  color: var(--vscode-gitDecoration-deletedResourceForeground, #e06c75);
+}
+.md-math-number {
+  color: var(--vscode-debugTokenExpression-number, #d19a66);
+}
+.md-math-variable {
+  color: var(--vscode-symbolIcon-variableForeground, #56b6c2);
+}
+.md-math-bracket {
+  color: var(--muted);
+}

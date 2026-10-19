@@ -1,0 +1,418 @@
+/**
+ * Agent bridge server: a local MCP server (Streamable HTTP on 127.0.0.1,
+ * random port, bearer token) that hands the live PDF / note selection to
+ * coding agents. It is announced to:
+ *
+ *   VS Code (Copilot Chat)  vscode.lm.registerMcpServerDefinitionProvider
+ *   Cursor                  vscode.cursor.mcp.registerServer (Cursor ignores the VS Code API)
+ *   Claude Code, Codex      a discovery file read by the stdio shim
+ *                           (`claude mcp add` / `codex mcp add` -- node <shim>)
+ *
+ * `controller.ts` decides when it runs.
+ *
+ * Invariants:
+ *
+ * - Everything `startAgentBridge` sets up (the HTTP server and its
+ *   connections, the discovery file, the editor registrations) is undone by
+ *   the returned `dispose()`, and by nothing else. `dispose()` resolves only
+ *   when that is done: the listener is closed (connections still open after
+ *   a grace period are cut), requests in progress have finished or been cut
+ *   off, and the discovery file is gone. A failing step is logged and does
+ *   not stop the others.
+ * - If starting fails part way, what it set up so far is undone (and
+ *   awaited) before the error propagates.
+ * - The token never reaches the log: request URLs are logged as a fixed
+ *   route label, and every logged line is scrubbed of the token.
+ */
+import { randomBytes } from "node:crypto";
+import { mkdir, rm, writeFile, copyFile } from "node:fs/promises";
+import * as http from "node:http";
+import type { AddressInfo } from "node:net";
+import * as path from "node:path";
+import * as vscode from "vscode";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { tokenScrubber } from "./scrub";
+import type { AgentHandoff } from "../handoff";
+import type { NoteSelections } from "../note-selections";
+import type { LastPdf } from "../last-pdf";
+import {
+  DISCOVERY_DIR,
+  PROVIDER_ID,
+  SERVER_NAME,
+  type BridgeInfo,
+} from "./constants";
+import { createBridgeServer } from "./tools";
+
+/** How long open connections get to finish when the bridge stops. */
+const SHUTDOWN_GRACE_MS = 2000;
+
+export interface RunningBridge {
+  info: BridgeInfo;
+  /** Undo everything; resolves when it is undone (see the invariants). */
+  dispose(): Promise<void>;
+}
+
+export interface BridgeLog {
+  info(message: string): void;
+  warn(message: string): void;
+  error(message: string): void;
+}
+
+export interface ServerOptions {
+  extensionUri: vscode.Uri;
+  /** Where the stable copy of the stdio shim goes. */
+  shim: string;
+  /** Plugin-owned tracker shared with the envelope command (do not dispose here). */
+  lastPdf: LastPdf;
+  handoff: AgentHandoff;
+  /** The Markdown editor's selections, when Lumière runs. */
+  notes?: NoteSelections;
+  log: BridgeLog;
+  /** Where to announce the bridge for the stdio shim; tests use a temp folder. */
+  discoveryDir?: string;
+  shutdownGraceMs?: number;
+}
+
+/** One step of undo; may be async, and is awaited. */
+type Undo = () => unknown;
+
+export async function startAgentBridge(
+  options: ServerOptions,
+): Promise<RunningBridge> {
+  // Undone in reverse if a later step fails; handed to the caller on success.
+  const undo: Undo[] = [];
+  const token = randomBytes(24).toString("hex");
+  // The whole startup boundary is scrubbed, rollback logs and the error the
+  // caller gets included: an adapter's error may quote the URL or header.
+  const scrub = tokenScrubber(token);
+  try {
+    return await listen(options, undo, token, scrub);
+  } catch (error) {
+    for (const failure of await undoAll(undo)) {
+      options.log.error(scrub(`Agent bridge rollback: ${describe(failure)}`));
+    }
+    // eslint-disable-next-line preserve-caught-error -- a cause may quote the token; only the scrubbed message leaves
+    throw new Error(scrub(describe(error)));
+  }
+}
+
+/** Run every step, last first, awaiting each; returns the errors. */
+async function undoAll(steps: Undo[]): Promise<unknown[]> {
+  const errors: unknown[] = [];
+  for (const step of steps.splice(0).reverse()) {
+    try {
+      await step();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  return errors;
+}
+
+/**
+ * The route a request asked for, as a fixed label: never the URL itself,
+ * which carries the token for Cursor (/mcp/<token>).
+ */
+export function routeLabel(url: string | undefined): string {
+  const first = (url ?? "").split(/[/?#]/u)[1];
+  if (first === "mcp") {
+    return "/mcp";
+  }
+  if (first === ".well-known") {
+    return "/.well-known";
+  }
+  return "another path";
+}
+
+async function listen(
+  options: ServerOptions,
+  undo: Undo[],
+  token: string,
+  scrub: (text: string) => string,
+): Promise<RunningBridge> {
+  const log: BridgeLog = {
+    info: (message) => options.log.info(scrub(message)),
+    warn: (message) => options.log.warn(scrub(message)),
+    error: (message) => options.log.error(scrub(message)),
+  };
+  // The scrubbing log, never options.log: request errors may quote the token.
+  const context: RequestContext = {
+    token,
+    log,
+    lastPdf: options.lastPdf,
+    handoff: options.handoff,
+    ...(options.notes ? { notes: options.notes } : {}),
+  };
+  const port = await startHttp(
+    context,
+    undo,
+    options.shutdownGraceMs ?? SHUTDOWN_GRACE_MS,
+  );
+  const info: BridgeInfo = {
+    url: `http://127.0.0.1:${port}/mcp`,
+    token,
+    pid: process.pid,
+    appName: vscode.env.appName,
+    workspaceFolders: (vscode.workspace.workspaceFolders ?? []).map(
+      (folder) => folder.uri.fsPath,
+    ),
+    startedAt: new Date().toISOString(),
+  };
+  log.info(
+    `Agent bridge listening on ${info.url} (AGENT_PDF_BRIDGE_PID ${info.pid} picks this window)`,
+  );
+  await announce(info, options.discoveryDir ?? DISCOVERY_DIR, port, undo);
+  await copyShim(options, log);
+  registerWithEditor(info, undo, log);
+  const steps = undo.splice(0);
+  let stopping: Promise<void> | undefined;
+  return {
+    info,
+    dispose: () =>
+      (stopping ??= (async () => {
+        for (const failure of await undoAll(steps)) {
+          log.error(`Agent bridge cleanup: ${describe(failure)}`);
+        }
+      })()),
+  };
+}
+
+/** What serving a request needs. */
+interface RequestContext {
+  token: string;
+  log: BridgeLog;
+  lastPdf: LastPdf;
+  handoff: AgentHandoff;
+  notes?: NoteSelections;
+}
+
+/** Listen on a random loopback port; returns it. Closing is added to `undo`. */
+async function startHttp(
+  context: RequestContext,
+  undo: Undo[],
+  graceMs: number,
+): Promise<number> {
+  const requests = new Set<Promise<void>>();
+  const httpServer = http.createServer((req, res) => {
+    const request = serve(req, res, context).catch((error) =>
+      context.log.error(`Agent bridge request failed: ${describe(error)}`),
+    );
+    requests.add(request);
+    void request.finally(() => requests.delete(request));
+  });
+  await new Promise<void>((resolve, reject) => {
+    httpServer.once("error", reject);
+    httpServer.listen(0, "127.0.0.1", () => resolve());
+  });
+  undo.push(() => closeServer(httpServer, requests, graceMs));
+  return (httpServer.address() as AddressInfo).port;
+}
+
+/** Serve one request: loopback only, token required, no browser origins (DNS rebinding). */
+async function serve(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  context: RequestContext,
+): Promise<void> {
+  const { token, log } = context;
+  const route = routeLabel(req.url);
+  if (req.headers.origin) {
+    log.warn(
+      `Agent bridge rejected ${req.method} ${route}: requests from a browser origin are not served`,
+    );
+    res.writeHead(403).end();
+    return;
+  }
+  // Token in the Authorization header, or in the path (/mcp/<token>): Cursor 3.24 drops the
+  // headers of servers registered through vscode.cursor.mcp.registerServer.
+  const pathToken = req.url?.split("?")[0] === `/mcp/${token}`;
+  if (req.headers.authorization !== `Bearer ${token}` && !pathToken) {
+    log.warn(`Agent bridge rejected ${req.method} ${route}: no valid token`);
+    // 404 for OAuth discovery probes (/.well-known/...), so clients don't start an OAuth flow.
+    res.writeHead(route === "/mcp" ? 401 : 404).end();
+    return;
+  }
+  if (route !== "/mcp") {
+    res.writeHead(404).end();
+    return;
+  }
+  try {
+    await serveMcp(req, res, context);
+  } catch (error) {
+    log.error(`Agent bridge request failed: ${describe(error)}`);
+    if (!res.headersSent) {
+      res.writeHead(500).end();
+    }
+  }
+}
+
+/** Answer an MCP request with a fresh, stateless server and transport. */
+async function serveMcp(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  { lastPdf, handoff, notes, log }: RequestContext,
+): Promise<void> {
+  const server = createBridgeServer(lastPdf, handoff, notes);
+  const transport = new StreamableHTTPServerTransport({
+    enableJsonResponse: true,
+  }); // no session id: stateless
+  res.on("close", () => {
+    transport
+      .close()
+      .catch((error) =>
+        log.warn(`Agent bridge transport close: ${describe(error)}`),
+      );
+    server
+      .close()
+      .catch((error) =>
+        log.warn(`Agent bridge server close: ${describe(error)}`),
+      );
+  });
+  // The SDK's own types disagree under exactOptionalPropertyTypes
+  // (its transport's optional callbacks); the object is the SDK's.
+  await server.connect(
+    transport as unknown as Parameters<typeof server.connect>[0],
+  );
+  await transport.handleRequest(req, res);
+}
+
+/** The discovery file for the stdio shim (Claude Code, Codex, any MCP client). */
+async function announce(
+  info: BridgeInfo,
+  discoveryDir: string,
+  port: number,
+  undo: Undo[],
+): Promise<void> {
+  const discoveryFile = path.join(discoveryDir, `${port}.json`);
+  await mkdir(discoveryDir, { recursive: true, mode: 0o700 });
+  undo.push(() => rm(discoveryFile, { force: true }));
+  await writeFile(discoveryFile, JSON.stringify(info, null, 2), {
+    mode: 0o600,
+  });
+}
+
+/** A stable copy of the shim, so `claude mcp add` survives extension updates. */
+async function copyShim(options: ServerOptions, log: BridgeLog): Promise<void> {
+  try {
+    await mkdir(path.dirname(options.shim), { recursive: true });
+    await copyFile(
+      vscode.Uri.joinPath(
+        options.extensionUri,
+        "dist",
+        "pdf",
+        "bridge-stdio.js",
+      ).fsPath,
+      options.shim,
+    );
+  } catch (error) {
+    log.warn(`Could not copy the stdio shim: ${describe(error)}`);
+  }
+}
+
+/**
+ * Register with the editor's own agent: Cursor through its API (it only
+ * warns on VS Code's), VS Code (1.101+) through the MCP server definition
+ * provider that Copilot Chat's agent mode reads.
+ */
+function registerWithEditor(
+  info: BridgeInfo,
+  undo: Undo[],
+  log: BridgeLog,
+): void {
+  const headers = { Authorization: `Bearer ${info.token}` };
+  const apis = vscode as unknown as McpApis;
+  const cursorMcp = apis.cursor?.mcp;
+  if (cursorMcp) {
+    cursorMcp.registerServer({
+      name: SERVER_NAME,
+      server: { url: `${info.url}/${info.token}`, headers },
+    });
+    undo.push(() => cursorMcp.unregisterServer(SERVER_NAME));
+    log.info("Registered with Cursor (vscode.cursor.mcp.registerServer)");
+    return;
+  }
+  const lm = apis.lm;
+  const HttpDefinition = apis.McpHttpServerDefinition;
+  if (lm?.registerMcpServerDefinitionProvider && HttpDefinition) {
+    const registration = lm.registerMcpServerDefinitionProvider(PROVIDER_ID, {
+      provideMcpServerDefinitions: () => [
+        new HttpDefinition(
+          "Lumière PDF",
+          vscode.Uri.parse(info.url),
+          headers,
+          "0.1.0",
+        ),
+      ],
+    });
+    undo.push(() => registration.dispose());
+    log.info(
+      "Registered with VS Code (vscode.lm.registerMcpServerDefinitionProvider)",
+    );
+  }
+}
+
+/**
+ * Stop listening and wait until the server has closed: idle connections go
+ * at once, busy ones get `graceMs` to finish and are then cut. Requests in
+ * progress are awaited too (bounded by the same grace period plus the cut).
+ */
+async function closeServer(
+  server: http.Server,
+  requests: Set<Promise<void>>,
+  graceMs: number,
+): Promise<void> {
+  const closed = new Promise<void>((resolve, reject) => {
+    server.close((error) => (error ? reject(error) : resolve()));
+  });
+  server.closeIdleConnections();
+  if (await within(Promise.all([closed, ...requests]), graceMs)) {
+    return;
+  }
+  server.closeAllConnections();
+  await closed;
+  await within(Promise.all([...requests]), graceMs);
+}
+
+/** Whether `promise` settled within `ms`; its rejection propagates. */
+async function within(promise: Promise<unknown>, ms: number): Promise<boolean> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise.then(() => true),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * MCP registration APIs missing from the @types/vscode this builds against:
+ * Cursor's own, and VS Code's server definition provider (1.101+).
+ */
+interface McpApis {
+  cursor?: {
+    mcp?: {
+      registerServer(config: unknown): void;
+      unregisterServer(name: string): void;
+    };
+  };
+  lm?: {
+    registerMcpServerDefinitionProvider?(
+      id: string,
+      provider: unknown,
+    ): vscode.Disposable;
+  };
+  McpHttpServerDefinition?: new (
+    label: string,
+    uri: vscode.Uri,
+    headers?: Record<string, string>,
+    version?: string,
+  ) => unknown;
+}

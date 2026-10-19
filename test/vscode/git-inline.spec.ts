@@ -30,14 +30,22 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
     const page = workbenchPage(browser);
     await openWorkbench(page, NOTE);
     await frameWith(page, ".mw-git-gutter .mw-git-bar");
-    await command(page, "Markdown Workshop: Toggle Inline Git Changes");
-    const frame = await frameWith(page, "del.mw-gi-removed");
-    await expect(frame.locator("del.mw-gi-removed").first()).toHaveText(
-      "shown",
-    );
-    await expect(frame.locator(".mw-gi-inserted").first()).toHaveText(
-      "expressed",
-    );
+    await command(page, "Lumière: Toggle Inline Git Changes");
+    // Palette text must not be mistaken for an insert mark (scope to note body).
+    await expect(page.locator(".quick-input-widget")).toBeHidden({
+      timeout: 15000,
+    });
+    const frame = await frameWith(page, ".cm-content del.mw-gi-removed");
+    await expect(
+      frame
+        .locator(".cm-content del.mw-gi-removed")
+        .filter({ hasText: /^shown$/ }),
+    ).toBeVisible();
+    await expect(
+      frame
+        .locator(".cm-content .mw-gi-inserted")
+        .filter({ hasText: /^expressed$/ }),
+    ).toBeVisible();
     // Frontmatter, the table and the code block get a ghost; the removed paragraph too.
     await expect(frame.locator(".mw-gi-ghost")).toHaveCount(4);
     await expect(frame.locator(".mw-gi-ghost.is-removed")).toContainText(
@@ -66,13 +74,13 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
     await expect(frame.locator(".mw-gi-ghost.is-removed")).toHaveCount(0);
 
     // Without the bars it waits; with them again it returns.
-    setUserSettings({ "markdownWorkshop.plugins.gitGutter.enabled": false });
+    setUserSettings({ "lumiere.markdown.plugins.gitGutter.enabled": false });
     await expect(frame.locator(".mw-gi-ghost")).toHaveCount(0, {
       timeout: 15000,
     });
     await expect(frame.locator("del.mw-gi-removed")).toHaveCount(0);
     setUserSettings({
-      "markdownWorkshop.plugins.gitGutter.enabled": undefined,
+      "lumiere.markdown.plugins.gitGutter.enabled": undefined,
     });
     await expect(frame.locator(".mw-gi-ghost")).toHaveCount(3, {
       timeout: 15000,
@@ -80,7 +88,7 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
 
     // Toggled off, every mark goes and the text stays.
     const before = readGitNote();
-    await command(page, "Markdown Workshop: Toggle Inline Git Changes");
+    await command(page, "Lumière: Toggle Inline Git Changes");
     await expect(
       frame.locator(".mw-gi-ghost, del.mw-gi-removed, .mw-gi-inserted"),
     ).toHaveCount(0, {
@@ -91,8 +99,8 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
   } finally {
     setUserSettings({
       "workbench.colorTheme": undefined,
-      "markdownWorkshop.plugins.gitGutter.enabled": undefined,
-      "markdownWorkshop.plugins.gitInline.enabled": undefined,
+      "lumiere.markdown.plugins.gitGutter.enabled": undefined,
+      "lumiere.markdown.plugins.gitInline.enabled": undefined,
     });
     await closeBrowser(browser);
   }

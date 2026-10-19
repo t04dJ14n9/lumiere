@@ -1,0 +1,61 @@
+{
+  "activation": "4 ms",
+  "bundles": {
+    "extensionJs": 73486,
+    "viewerJs": 3106921,
+    "pdfiumWasm": 4646932,
+    "viewerCss": 40071
+  },
+  "results": {
+    "small (12 pages), cold": {
+      "scriptStartMs": 754,
+      "bufferMs": 944,
+      "engineMs": 1271,
+      "openedMs": 1488,
+      "firstPageMs": 1720,
+      "heapMb": 47,
+      "resources": [
+        {
+          "name": "viewer.css",
+          "kb": 39,
+          "ms": 22
+        },
+        {
+          "name": "viewer.js",
+          "kb": 3034,
+          "ms": 78
+        },
+        {
+          "name": "pdfium.wasm",
+          "kb": 0,
+          "ms": 498
+        }
+      ]
+    },
+    "600 pages": {
+      "scriptStartMs": 501,
+      "bufferMs": 687,
+      "engineMs": 811,
+      "openedMs": 1080,
+      "firstPageMs": 1428,
+      "heapMb": 59,
+      "resources": [
+        {
+          "name": "viewer.css",
+          "kb": 39,
+          "ms": 6
+        },
+        {
+          "name": "viewer.js",
+          "kb": 3034,
+          "ms": 36
+        },
+        {
+          "name": "pdfium.wasm",
+          "kb": 0,
+          "ms": 295
+        }
+      ]
+    }
+  }
+}

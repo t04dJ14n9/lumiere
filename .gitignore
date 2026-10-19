@@ -6,6 +6,8 @@ test-results/
 playwright-report/
 *.vsix
 *.tsbuildinfo
+.DS_Store
 .vscode-test/
-
-.vscode-test
+**/test/fixtures/generated/
+packages/pdf/src/**/*.d.ts
+!packages/pdf/src/webview/assets.d.ts

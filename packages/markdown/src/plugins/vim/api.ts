@@ -1,0 +1,25 @@
+import type { Extension } from "@codemirror/state";
+import type { EditorView } from "@codemirror/view";
+export interface VimMode {
+  insertMode?: boolean;
+  visualMode?: boolean;
+  inputState?: {
+    operator?: string | null | undefined;
+    keyBuffer?: readonly string[];
+    prefixRepeat?: readonly string[];
+    motionRepeat?: readonly string[];
+  };
+}
+export interface VimService {
+  extension(): Extension;
+  mode(view: EditorView): VimMode | undefined;
+  watchMode?(view: EditorView, changed: () => void): () => void;
+  sync(from: EditorView, to: EditorView): void;
+  /** Route remaining mapped/replayed keys until the source adapter is destroyed. */
+  handoff(from: EditorView, to: EditorView): () => void;
+}
+declare module "@workshop/core" {
+  interface Services {
+    vim: VimService;
+  }
+}

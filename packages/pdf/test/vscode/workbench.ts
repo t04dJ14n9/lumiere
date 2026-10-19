@@ -1,0 +1,361 @@
+/**
+ * Helpers for driving the real VS Code window: the command palette, Quick
+ * Open, and the PDF viewer inside its webview.
+ */
+import {
+  chromium,
+  expect,
+  test as base,
+  type Browser,
+  type Frame,
+  type Page,
+} from "@playwright/test";
+import { readState } from "./state";
+import { command } from "../../../../test/vscode/palette";
+import { pageAtTop, pageFit, type Point } from "./pdf-geometry";
+import { chooseNativeItem, labels, nativeContextMenu } from "./native-menu";
+export {
+  pageAtTop,
+  pointAtTop,
+  pagePoint,
+  drag,
+  selectText,
+  PAGE_WIDTH,
+} from "./pdf-geometry";
+
+export { expect };
+const modifier = process.platform === "darwin" ? "Meta" : "Control";
+
+/** Whether the tests drive Cursor rather than VS Code. */
+export const inCursor = /cursor/iu.test(process.env.VSCODE_EXECUTABLE ?? "");
+/** `workbench`: VS Code's main window, with every editor closed first. */
+export const test = base.extend<{ workbench: Page }>({
+  // eslint-disable-next-line no-empty-pattern -- Playwright fixtures take their dependencies as an object pattern
+  workbench: async ({}, use) => {
+    const browser = await chromium.connectOverCDP(readState().webSocket);
+    const page = await findWorkbench(browser);
+    await closeSettingsEditor(page);
+    await closeSecondarySideBar(page);
+    await closeAllEditors(page);
+    await dismissCorruptInstallWarning(page);
+    await use(page);
+    await browser.close();
+  },
+});
+
+async function findWorkbench(browser: Browser): Promise<Page> {
+  let workbench: Page | undefined;
+  await expect
+    .poll(
+      async () => {
+        for (const page of browser
+          .contexts()
+          .flatMap((context) => context.pages())) {
+          if (await page.locator(".monaco-workbench .part.editor").count()) {
+            workbench = page;
+            return true;
+          }
+        }
+        return false;
+      },
+      { message: "The VS Code window did not open", timeout: 60_000 },
+    )
+    .toBe(true);
+  return workbench!;
+}
+
+async function quickInput(
+  page: Page,
+  shortcut: string,
+  text: string,
+): Promise<void> {
+  const widget = page.locator(".quick-input-widget");
+  if (await widget.isVisible()) {
+    await page.keyboard.press("Escape");
+  }
+  await page.locator(".monaco-workbench").click({ position: { x: 20, y: 20 } });
+  await page.keyboard.press(shortcut);
+  await expect(widget).toBeVisible();
+  await widget.locator("input:visible").fill(text);
+}
+
+/** Run a command from the command palette by its label. */
+export { command };
+
+/** Open a workspace file with Quick Open. */
+export async function openFile(
+  page: Page,
+  relativePath: string,
+  timing: { start?: number } = {},
+): Promise<void> {
+  await quickInput(page, `${modifier}+P`, relativePath);
+  const name = relativePath.split("/").at(-1)!;
+  const row = page
+    .locator(".quick-input-list .monaco-list-row")
+    .filter({ hasText: name })
+    .first();
+  timing.start = Date.now();
+  await row.click();
+  await expect(page.locator(".quick-input-widget")).toBeHidden();
+  await page.mouse.move(0, 0);
+}
+
+/**
+ * Click an editor title action: its button, or, where the editor keeps it in
+ * the More Actions menu, that menu item. Cursor keeps extension actions in
+ * that menu and draws it natively, out of the tests' reach, so there the
+ * action's command runs from the palette instead.
+ */
+export async function editorTitleAction(
+  page: Page,
+  label: string,
+): Promise<void> {
+  if (inCursor) {
+    await command(page, `PDF: ${label}`);
+    return;
+  }
+  const actions = page.locator(".editor-actions");
+  const button = actions.getByRole("button", { name: label });
+  // The button appears once the editor reports the state that enables it.
+  if (
+    await button.waitFor({ timeout: 5_000 }).then(
+      () => true,
+      () => false,
+    )
+  ) {
+    await button.click();
+    return;
+  }
+  // The overflow dropdown is a plain labelled link, without a button role.
+  await actions.locator('[aria-label^="More Actions"]').click();
+  // Menu items act on mouse up after the pointer has entered them.
+  const item = page
+    .locator(".monaco-menu")
+    .getByRole("menuitem", { name: label })
+    // Overflow can repeat the same command from toolbar and menu groups.
+    .first();
+  await item.hover();
+  await item.click();
+}
+
+/**
+ * What the agent chat's input holds, its text and attached files, with all
+ * whitespace removed: editors wrap long lines at spaces. VS Code's chat input,
+ * or Cursor's agent chat input, where attached files are pills in the text.
+ */
+export async function agentChatInput(page: Page): Promise<string> {
+  // Read without waiting: the poll that calls this retries until the chat opens.
+  if (inCursor) {
+    // The prompt input (3.2x) or the older editor. Cursor can open a second
+    // agent tab beside the one that got the text.
+    const inputs = page.locator(
+      ".ui-prompt-input:visible, .aislash-editor-input:visible",
+    );
+    return withoutSpaces((await inputs.allInnerTexts()).join(""));
+  }
+  const input = page.locator(".interactive-input-part:visible").last();
+  const [text = ""] = await input.locator(".monaco-editor").allInnerTexts();
+  const attachments = await input
+    .locator(".chat-attached-context-attachment")
+    .allInnerTexts();
+  return withoutSpaces([text, ...attachments].join(""));
+}
+
+export function withoutSpaces(text: string): string {
+  return text.replace(/\s+/gu, "");
+}
+
+/**
+ * Right-click at a point and choose an item of VS Code's context menu, or of
+ * the native menu Cursor draws instead.
+ */
+export async function contextMenu(
+  page: Page,
+  at: Point,
+  label: string,
+): Promise<void> {
+  const rightClick = () => page.mouse.click(...at.screen, { button: "right" });
+  if (inCursor) {
+    const items = labels(await nativeContextMenu(page, rightClick));
+    if (!items.includes(label)) {
+      throw new Error(`No "${label}" in the context menu: ${items.join(", ")}`);
+    }
+    await chooseNativeItem(page, label);
+    return;
+  }
+  await rightClick();
+  const item = page
+    .locator(".monaco-menu")
+    .getByRole("menuitem", { name: label });
+  await item.hover();
+  await item.click();
+}
+
+/** Right-click at a point and read the items of the menu, then close it. */
+export async function contextMenuLabels(
+  page: Page,
+  at: Point,
+): Promise<string[]> {
+  const rightClick = () => page.mouse.click(...at.screen, { button: "right" });
+  if (inCursor) {
+    return labels(await nativeContextMenu(page, rightClick));
+  }
+  await rightClick();
+  const items = page.locator(".monaco-menu").getByRole("menuitem");
+  await expect(items.first()).toBeVisible();
+  const names = await items.evaluateAll((elements) =>
+    elements.map(
+      (element) =>
+        element.querySelector(".action-label")?.textContent?.trim() ?? "",
+    ),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".monaco-menu")).toHaveCount(0);
+  return names;
+}
+
+/**
+ * Close the Settings editor, which newer builds open as a modal over the
+ * workbench: while it is open the palette and the editors cannot be reached.
+ */
+export async function closeSettingsEditor(page: Page): Promise<void> {
+  const settings = page.locator(".settings-editor");
+  if (await settings.count()) {
+    await settings.first().click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press("ControlOrMeta+w");
+    await expect(settings).toHaveCount(0);
+  }
+}
+
+/**
+ * Hide the secondary side bar, where specs that hand a selection to an
+ * agent leave the chat open: its input takes focus back from the palette.
+ */
+async function closeSecondarySideBar(page: Page): Promise<void> {
+  const bar = page.locator(".part.auxiliarybar");
+  if (await bar.isVisible()) {
+    await page.keyboard.press(`Alt+${modifier}+b`);
+    await expect(bar).toBeHidden();
+  }
+}
+
+/**
+ * Cursor warns in a toast when its installation was modified (as on a machine
+ * that patched it), some seconds after start-up. It can cover the views a
+ * spec clicks in, so dismiss it whenever it is in the way.
+ */
+async function dismissCorruptInstallWarning(page: Page): Promise<void> {
+  await page.addLocatorHandler(
+    page.locator(".notification-toast", { hasText: "appears to be corrupt" }),
+    async (toast) => {
+      await toast.hover();
+      await toast.locator('[aria-label^="Clear Notification"]').click();
+    },
+  );
+}
+
+export async function closeAllEditors(page: Page): Promise<void> {
+  if (await page.locator(".tabs-container .tab").count()) {
+    await command(page, "View: Close All Editor Groups");
+  }
+  await expect(page.locator(".tabs-container .tab")).toHaveCount(0);
+}
+
+/** The visible PDF viewer, inside VS Code's webview frames. */
+export async function pdfViewer(page: Page): Promise<Frame> {
+  let viewer: Frame | undefined;
+  await expect
+    .poll(
+      async () => {
+        for (const frame of page.frames()) {
+          try {
+            if (
+              (await frame.locator(".viewer .page").count()) &&
+              (await visibleFrameAncestors(frame))
+            ) {
+              viewer = frame;
+              return true;
+            }
+          } catch {
+            // The frame went away while a tab was changing.
+          }
+        }
+        return false;
+      },
+      { message: "The PDF viewer did not open", timeout: 30_000 },
+    )
+    .toBe(true);
+  return viewer!;
+}
+
+/** Retained custom editors can contain visible inner frames inside hidden webviews. */
+async function visibleFrameAncestors(frame: Frame): Promise<boolean> {
+  for (
+    let current: Frame | null = frame;
+    current?.parentFrame();
+    current = current.parentFrame()
+  ) {
+    if (!(await (await current.frameElement()).isVisible())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Fit whole pages in the viewer, so every point of a page is on screen. The
+ * default fit-to-width zoom can make the narrow fixture pages taller than the
+ * window. When the editor is narrow (Cursor's agent pane on a small screen),
+ * fit width already is fit page and the zoom does not change, so this waits
+ * for the fitted state itself rather than for a change.
+ */
+export async function fitPage(page: Page, viewer: Frame): Promise<void> {
+  await command(page, "PDF: Fit Page");
+  await expect
+    .poll(() => pageFit(viewer), { message: "The page did not fit the viewer" })
+    .toEqual({ fitsWidth: true, fitsHeight: true, fills: true });
+}
+
+/**
+ * The text field of the quick input showing `title`. Waiting for the title
+ * rather than any quick input skips a command palette that is still closing.
+ */
+export function quickInputTitled(page: Page, title: RegExp) {
+  return page
+    .locator(".quick-input-widget:visible")
+    .filter({ has: page.locator(".quick-input-title", { hasText: title }) })
+    .locator("input:visible");
+}
+
+/** A status bar entry of the PDF viewer, by its text. */
+export function statusBarEntry(page: Page, text: RegExp) {
+  return page
+    .locator(".part.statusbar .statusbar-item")
+    .filter({ hasText: text });
+}
+
+/** The status bar's "Page N / M" and zoom ("Fit Width (164%)", "140%") entries. */
+export const PAGE_STATUS = /^Page \d+ \/ \d+$/u;
+export const ZOOM_STATUS = /^(Fit (Width|Page) \()?\d+%\)?$/u;
+
+/**
+ * Show a page by clicking the status bar's page entry and typing it, and
+ * wait until it is at the top.
+ */
+export async function showPage(
+  page: Page,
+  viewer: Frame,
+  number: number,
+): Promise<void> {
+  await statusBarEntry(page, PAGE_STATUS).click();
+  const input = quickInputTitled(page, /^Go to Page/u);
+  // The box opens first and gets its value (the current page) after: typing
+  // before then would be overwritten.
+  await expect(input).toHaveValue(/^\d+$/u);
+  await input.fill(String(number));
+  await input.press("Enter");
+  await expect.poll(() => pageAtTop(viewer, number)).toBe(true);
+  await expect(
+    viewer.locator(`.page[data-page-index="${number - 1}"] img`),
+  ).toBeVisible();
+}

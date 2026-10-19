@@ -5,8 +5,9 @@
 !CHANGELOG.md
 !LICENSE
 !THIRD_PARTY_NOTICES.md
-!API.md
 !dist/**/*.js
 !dist/**/*.cjs
 !dist/**/*.css
-!dist/api/**/*.d.ts
+!dist/**/*.ttf
+!dist/**/*.wasm
+!dist/markdown/api/**/*.d.ts

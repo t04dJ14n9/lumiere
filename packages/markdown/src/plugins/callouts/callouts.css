@@ -1,0 +1,92 @@
+/* Callouts: a tinted box per type with an icon and an optional fold toggle. */
+.callout {
+  --callout-color: 68, 138, 255;
+  margin: 4px 0;
+  padding: 12px 12px 12px 24px;
+  border-radius: 4px;
+  background: rgba(var(--callout-color), 0.1);
+}
+.callout[data-callout="abstract"],
+.callout[data-callout="summary"],
+.callout[data-callout="tldr"],
+.callout[data-callout="tip"],
+.callout[data-callout="hint"],
+.callout[data-callout="important"] {
+  --callout-color: 0, 191, 188;
+}
+.callout[data-callout="todo"],
+.callout[data-callout="info"] {
+  --callout-color: 68, 138, 255;
+}
+.callout[data-callout="success"],
+.callout[data-callout="check"],
+.callout[data-callout="done"] {
+  --callout-color: 8, 185, 78;
+}
+.callout[data-callout="question"],
+.callout[data-callout="help"],
+.callout[data-callout="faq"],
+.callout[data-callout="warning"],
+.callout[data-callout="caution"],
+.callout[data-callout="attention"] {
+  --callout-color: 236, 117, 0;
+}
+.callout[data-callout="failure"],
+.callout[data-callout="fail"],
+.callout[data-callout="missing"],
+.callout[data-callout="danger"],
+.callout[data-callout="error"],
+.callout[data-callout="bug"] {
+  --callout-color: 233, 49, 71;
+}
+.callout[data-callout="example"] {
+  --callout-color: 120, 82, 238;
+}
+.callout[data-callout="quote"],
+.callout[data-callout="cite"] {
+  --callout-color: 158, 158, 158;
+}
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(var(--callout-color));
+  font-weight: 600;
+  line-height: 1.3;
+}
+.callout-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+details.callout > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details.callout > summary::-webkit-details-marker {
+  display: none;
+}
+details.callout > summary::after {
+  content: "›";
+  margin-left: 2px;
+  font-size: 1.2em;
+  line-height: 1;
+  transition: transform 100ms;
+}
+details.callout[open] > summary::after {
+  transform: rotate(90deg);
+}
+/* The body keeps a line's height of space above and below, as in Obsidian. */
+.callout-content > :first-child {
+  margin-top: 1em;
+}
+.callout-content > :last-child {
+  margin-bottom: 1em;
+}
+/* In Live Preview the block itself is the callout: no space around it. */
+.hybrid-callout .callout {
+  margin: 0;
+}
+.callout-content:empty {
+  display: none;
+}

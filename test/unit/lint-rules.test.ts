@@ -51,7 +51,12 @@ test("the readability limits apply to all source, unchanged", async () => {
   );
   assert.equal(blocks.length, 1, "one configuration block sets the limits");
   const [block] = blocks;
-  assert.deepEqual(block!.files, ["src/**/*.ts"]);
+  assert.deepEqual(block!.files, [
+    "src/**/*.{ts,tsx}",
+    "packages/*/src/**/*.{ts,tsx}",
+  ]);
+  // Only tests are exempt: all product code meets the limits.
+  assert.deepEqual((block as { ignores?: string[] }).ignores, ["**/*.test.ts"]);
   for (const [rule, setting] of Object.entries(readability)) {
     assert.deepEqual(
       (block!.rules as Record<string, unknown>)[rule],
@@ -64,23 +69,39 @@ test("the readability limits apply to all source, unchanged", async () => {
 // Each reviewed exception, by file and the rules it disables. Adding one
 // needs a reason in the comment and an entry here, in the same review.
 const allowed = [
-  "src/kernel/context.ts: @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging",
-  "src/kernel/context.ts: @typescript-eslint/no-unsafe-declaration-merging",
-  "src/kernel/types.ts: @typescript-eslint/no-empty-object-type",
-  "src/kernel/types.ts: @typescript-eslint/no-empty-object-type",
-  "src/markdown/html/index.ts: @typescript-eslint/triple-slash-reference",
-  "test/browser/fake-host.ts: @typescript-eslint/no-this-alias",
+  "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
+  "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
+  "packages/markdown/src/markdown/html/index.ts: @typescript-eslint/triple-slash-reference",
+  "packages/markdown/test/browser/fake-host.ts: @typescript-eslint/no-this-alias",
+  "packages/pdf/src/extension/plugins/agentBridge/mcp/server.ts: preserve-caught-error",
+  "packages/pdf/src/shared/look-up.ts: no-control-regex",
+  "packages/pdf/src/webview/engine.tsx: react-hooks/exhaustive-deps",
+  "packages/pdf/src/webview/reading-position.ts: react-hooks/exhaustive-deps",
+  "packages/pdf/test/unit/identity/contribution-parity.test.ts: @typescript-eslint/no-explicit-any",
+  "packages/pdf/test/vscode/workbench.ts: no-empty-pattern",
 ];
 
 test("inline lint exceptions are the reviewed ones, each with a reason", () => {
   const found: string[] = [];
-  for (const root of ["src", "test", "scripts"]) {
+  for (const root of [
+    "src",
+    "test",
+    "scripts",
+    "packages/core/src",
+    "packages/core/test",
+    "packages/markdown/src",
+    "packages/markdown/test",
+    "packages/markdown/scripts",
+    "packages/pdf/src",
+    "packages/pdf/test",
+    "packages/pdf/scripts",
+  ]) {
     for (const path of readdirSync(root, {
       recursive: true,
       encoding: "utf8",
     })) {
       if (
-        !/\.(ts|mts|mjs|js)$/.test(path) ||
+        !/\.(ts|tsx|mts|mjs|js)$/.test(path) ||
         path.endsWith("lint-rules.test.ts")
       ) {
         continue;

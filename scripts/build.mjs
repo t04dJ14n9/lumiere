@@ -1,75 +1,76 @@
-import { prismPlugin } from "./prism.mjs";
-// Adapted from PDF Workbench's esbuild pipeline; source repositories stay read-only.
+// Builds the extension into dist/:
+//   dist/extension.js   the extension host (src/extension.ts, both products)
+//   dist/markdown/      Lumière's webviews, workers and API types
+//   dist/pdf/           Lumière PDF's viewer, PDF engine and agent bridge
+// Each product builds its own assets (its scripts/build.mjs); this script
+// bundles the host and copies those assets into place.
+//
+// Usage: node scripts/build.mjs [--production]
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
 import * as esbuild from "esbuild";
-const require = createRequire(import.meta.url);
-const watch = process.argv.includes("--watch");
-const shared = {
-  bundle: true,
-  sourcemap: true,
-  minify: process.argv.includes("--production"),
-  logLevel: "info",
-  metafile: true,
-};
-await rm("dist", { recursive: true, force: true });
-execFileSync(
-  process.execPath,
-  [require.resolve("typescript/bin/tsc"), "-p", "tsconfig.api.json"],
-  { stdio: "inherit" },
-);
-const builds = [
-  {
-    ...shared,
-    entryPoints: ["src/host/extension.ts"],
-    outfile: "dist/extension.js",
-    platform: "node",
-    format: "cjs",
-    target: "node20",
-    external: ["vscode"],
-  },
-  {
-    ...shared,
-    entryPoints: {
-      editor: "src/webview/main.ts",
-      diff: "src/webview/diff/main.ts",
-      graph: "src/webview/graph/main.ts",
-      "graph-layout": "src/webview/graph/layout-worker.ts",
-    },
-    outdir: "dist/webview",
-    platform: "browser",
-    format: "esm",
-    splitting: true,
-    target: "chrome120",
-    plugins: [prismPlugin],
-  },
-  {
-    ...shared,
-    entryPoints: ["src/workers/vault.ts", "src/workers/search.ts"],
-    outdir: "dist/workers",
-    outExtension: { ".js": ".cjs" },
-    platform: "node",
-    format: "cjs",
-    target: "node20",
-  },
-];
-const inputs = new Set();
-for (const options of builds) {
-  if (watch) {
-    await (await esbuild.context(options)).watch();
-  } else {
-    const result = await esbuild.build(options);
-    for (const input of Object.keys(result.metafile.inputs)) {
-      inputs.add(input);
-    }
-  }
-}
-// Every bundled source file; scripts/third-party-notices.mjs reads it.
-if (!watch) {
-  await mkdir("artifacts", { recursive: true });
-  await writeFile(
-    "artifacts/bundle-inputs.json",
-    JSON.stringify([...inputs].sort(), null, 1),
+import { lazyBridgeServer } from "../packages/pdf/scripts/lazy-bridge-server.mjs";
+
+const production = process.argv.includes("--production");
+const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+const dist = path.join(root, "dist");
+const products = ["markdown", "pdf"];
+
+function buildProduct(name) {
+  execFileSync(
+    process.execPath,
+    ["scripts/build.mjs", ...(production ? ["--production"] : [])],
+    { cwd: path.join(root, "packages", name), stdio: "inherit" },
   );
 }
+
+await rm(dist, { recursive: true, force: true });
+for (const name of products) {
+  buildProduct(name);
+}
+const host = await esbuild.build({
+  entryPoints: [path.join(root, "src/extension.ts")],
+  outfile: path.join(dist, "extension.js"),
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node20",
+  external: ["vscode"],
+  sourcemap: !production,
+  minify: production,
+  metafile: true,
+  logLevel: "info",
+  plugins: [lazyBridgeServer("./pdf/agent-bridge-server.js")],
+});
+for (const name of products) {
+  await cp(path.join(root, "packages", name, "dist"), path.join(dist, name), {
+    recursive: true,
+  });
+}
+
+// Every bundled source file, for scripts/third-party-notices.mjs.
+const productInputs = [];
+for (const name of products) {
+  const file = path.join(
+    root,
+    "packages",
+    name,
+    "artifacts/bundle-inputs.json",
+  );
+  const inputs = JSON.parse(await readFile(file, "utf8"));
+  productInputs.push(
+    ...inputs.map((input) => path.join("packages", name, input)),
+  );
+}
+await mkdir(path.join(root, "artifacts"), { recursive: true });
+await writeFile(
+  path.join(root, "artifacts/bundle-inputs.json"),
+  JSON.stringify(
+    [
+      ...new Set([...Object.keys(host.metafile.inputs), ...productInputs]),
+    ].sort(),
+    null,
+    1,
+  ),
+);

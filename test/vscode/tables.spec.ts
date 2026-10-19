@@ -8,9 +8,10 @@ import {
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { readState, paths } from "./state";
-import { geometry } from "../support/gutter-geometry";
+import { geometry } from "../../packages/markdown/test/support/gutter-geometry";
 import {
   closeBrowser,
+  docScreenshot,
   openWorkbench,
   readNote,
   workbenchPage,
@@ -163,18 +164,17 @@ test("tables in the real editor: the add-row strip below and the add-column stri
     expect(await opacity(rowButton)).toBe("0");
     expect(await opacity(columnButton)).toBe("0");
 
-    const shots = path.resolve("docs/screenshots");
     await page.mouse.move(below.x, below.y);
     await expect.poll(() => opacity(rowButton)).toBe("1");
     expect(await opacity(columnButton)).toBe("0");
     await page.screenshot({
-      path: path.join(shots, "tables-add-row-vscode.png"),
+      path: docScreenshot("tables-add-row-vscode.png"),
     });
     await page.mouse.move(beside.x, beside.y);
     await expect.poll(() => opacity(columnButton)).toBe("1");
     await expect.poll(() => opacity(rowButton)).toBe("0");
     await page.screenshot({
-      path: path.join(shots, "tables-add-column-vscode.png"),
+      path: docScreenshot("tables-add-column-vscode.png"),
     });
 
     // Row insertion changes the strip geometry. Locator clicks wait for its
@@ -220,7 +220,7 @@ test("line numbers in the real editor: a table gets one number level with its he
     expect(Math.abs(seven.top - g.table.bottom)).toBeLessThanOrEqual(2);
     expect(Math.abs(three.textCentre - g.headerCentre)).toBeLessThanOrEqual(3);
     await page.screenshot({
-      path: path.resolve("docs/screenshots/tables-line-numbers-vscode.png"),
+      path: docScreenshot("tables-line-numbers-vscode.png"),
     });
   } finally {
     await closeBrowser(browser);

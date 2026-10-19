@@ -1,0 +1,94 @@
+/*
+ * Heading lines are taller than body text and padded above (one body-text
+ * size). Give their line numbers the heading's padding and line height so each
+ * number sits level with the heading text, as in Obsidian. Source mode has no
+ * heading sizes.
+ */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h1-gutter {
+  padding-top: var(--text-size);
+  line-height: calc(var(--h1-line-height) * var(--h1-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h2-gutter {
+  padding-top: var(--text-size);
+  line-height: calc(var(--h2-line-height) * var(--h2-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h3-gutter {
+  padding-top: var(--text-size);
+  line-height: calc(var(--h3-line-height) * var(--h3-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h4-gutter {
+  padding-top: var(--text-size);
+  line-height: calc(var(--h4-line-height) * var(--h4-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h5-gutter {
+  padding-top: var(--text-size);
+  line-height: calc(var(--h5-line-height) * var(--h5-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h6-gutter {
+  padding-top: var(--text-size);
+  line-height: calc(var(--h6-line-height) * var(--h6-scale) * var(--text-size));
+}
+/* A heading on line 1 has no padding above it (markdown.css); nor its number. */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.is-first-line {
+  padding-top: 0;
+}
+/* List item lines are padded a little (markdown.css); so are their numbers. */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-list-gutter {
+  padding-top: calc(0.075 * var(--text-size));
+}
+/* Code lines are a size smaller (base.css); so is their line box. */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-code-gutter {
+  line-height: calc(
+    var(--line-height, 1.5) * var(--code-scale) * var(--text-size)
+  );
+}
+/*
+ * Line numbers set like VS Code's gutter: the editor font and size, right
+ * aligned in a column at least five digits wide (the spacer marker), in the
+ * theme's line-number colours, and centred on each text line.
+ */
+#app .cm-lineNumbers .cm-gutterElement {
+  min-width: 0;
+  padding: 0 2px 0 0;
+  font-family: var(--code-font);
+  /* fixed: Obsidian sets the gutter to its 12px UI size at every note text size (font-size-results-*.json) */
+  font-size: 12px;
+  font-weight: var(--text-weight, normal);
+  font-feature-settings: var(--text-features, normal);
+  line-height: calc(var(--line-height, 1.5) * var(--text-size));
+  text-align: right;
+  white-space: nowrap;
+}
+#app .mw-editor.is-source-mode .cm-lineNumbers .cm-gutterElement {
+  line-height: var(--line-height, 1.5);
+}
+/* Without the folding area, keep VS Code's gap before the text. */
+#app .cm-gutter.cm-lineNumbers:last-child .cm-gutterElement {
+  padding-right: 26px;
+}
+#app .cm-lineNumbers .cm-activeLineGutter {
+  color: var(--vscode-editorLineNumber-activeForeground, var(--muted));
+}
+/*
+ * CodeMirror's base theme paints the active line's cells in every gutter
+ * with a light #e2f2ff (#222227 when its own dark flag is set, which we never
+ * set): a solid box beside the text on dark themes. VS Code paints nothing.
+ */
+#app .cm-gutters .cm-activeLineGutter {
+  background: transparent;
+}
+#app .cm-lineNumbers .cm-gutterElement {
+  cursor: default;
+}
+/*
+ * A rendered table starts below its 16px grip padding (tables.css) and its
+ * header row is 1.3 lines of text plus 8px of padding and a 1px border; lower
+ * the number (one line box) to centre it on that row (pinned by
+ * test/browser/tables-line-numbers.spec.ts and font-size.spec.ts).
+ */
+#app .cm-lineNumbers .cm-gutterElement.mw-table-line-number {
+  padding-top: calc(
+    16px + (1.3 * var(--text-size) + 9px) / 2 - var(--line-height, 1.5) *
+      var(--text-size) / 2
+  );
+}

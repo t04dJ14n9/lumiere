@@ -1,0 +1,1052 @@
+{
+  "customEditors": [
+    {
+      "viewType": "lumiere.pdf.viewer",
+      "displayName": "Lumière PDF",
+      "selector": [
+        {
+          "filenamePattern": "*.pdf"
+        }
+      ],
+      "priority": "default"
+    }
+  ],
+  "views": {
+    "explorer": [
+      {
+        "id": "lumiere.pdf.outline",
+        "name": "PDF Outline",
+        "when": "lumiere.pdf.pdfActive"
+      }
+    ]
+  },
+  "viewsWelcome": [
+    {
+      "view": "lumiere.pdf.outline",
+      "contents": "Reading the outline\u2026",
+      "when": "lumiere.pdf.outlineLoading"
+    },
+    {
+      "view": "lumiere.pdf.outline",
+      "contents": "This PDF has no outline.",
+      "when": "!lumiere.pdf.outlineLoading"
+    }
+  ],
+  "commands": [
+    {
+      "command": "lumiere.pdf.lookUp",
+      "title": "Look Up",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.openSettings",
+      "title": "Open Settings",
+      "category": "PDF",
+      "icon": "$(settings-gear)"
+    },
+    {
+      "command": "lumiere.pdf.changeSetting",
+      "title": "Change Setting\u2026",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.toggleSmoothScrolling",
+      "title": "Toggle Smooth Scrolling",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.toggleKeyboardShortcuts",
+      "title": "Toggle Keyboard Shortcuts",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.setDefaultZoom",
+      "title": "Set Default Zoom\u2026",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.setDefaultPageLayout",
+      "title": "Set Default Page Layout\u2026",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.setDefaultScrollMode",
+      "title": "Set Default Scrolling\u2026",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.enterZen",
+      "title": "Enter Zen Mode",
+      "category": "PDF",
+      "icon": "$(screen-full)"
+    },
+    {
+      "command": "lumiere.pdf.exitZen",
+      "title": "Exit Zen Mode",
+      "category": "PDF",
+      "icon": "$(screen-normal)"
+    },
+    {
+      "command": "lumiere.pdf.previousPageKeepingPlace",
+      "title": "Previous Page, Keeping Place",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.nextPageKeepingPlace",
+      "title": "Next Page, Keeping Place",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.copyLinkForAgent",
+      "title": "Copy Link for Agent",
+      "category": "PDF",
+      "icon": "$(comment-discussion)",
+      "enablement": "lumiere.pdf.hasSelection"
+    },
+    {
+      "command": "vscodeEmbedPdf.bridge.envelope",
+      "title": "Selection Envelope",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.openLocation",
+      "title": "Open Location\u2026",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.openNativeLink",
+      "title": "Open PDF Link",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.goToOutlineItem",
+      "title": "Go to Outline Item",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.expandOutline",
+      "title": "Expand All",
+      "category": "PDF",
+      "icon": "$(expand-all)"
+    },
+    {
+      "command": "lumiere.pdf.enableOutlineFollowCursor",
+      "title": "Follow Cursor",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.disableOutlineFollowCursor",
+      "title": "Follow Cursor",
+      "category": "PDF",
+      "icon": "$(check)"
+    },
+    {
+      "command": "lumiere.pdf.copyMcpSetup",
+      "title": "Copy MCP Setup for Claude Code / Codex\u2026",
+      "category": "PDF"
+    },
+    {
+      "command": "lumiere.pdf.previousPage",
+      "title": "Previous Page",
+      "category": "PDF",
+      "icon": "$(chevron-up)",
+      "enablement": "lumiere.pdf.pdfActive && lumiere.pdf.canGoBack"
+    },
+    {
+      "command": "lumiere.pdf.nextPage",
+      "title": "Next Page",
+      "category": "PDF",
+      "icon": "$(chevron-down)",
+      "enablement": "lumiere.pdf.pdfActive && lumiere.pdf.canGoForward"
+    },
+    {
+      "command": "lumiere.pdf.goToPage",
+      "title": "Go to Page\u2026",
+      "category": "PDF",
+      "icon": "$(list-ordered)"
+    },
+    {
+      "command": "lumiere.pdf.zoomOut",
+      "title": "Zoom Out",
+      "category": "PDF",
+      "icon": "$(zoom-out)"
+    },
+    {
+      "command": "lumiere.pdf.zoomIn",
+      "title": "Zoom In",
+      "category": "PDF",
+      "icon": "$(zoom-in)"
+    },
+    {
+      "command": "lumiere.pdf.selectZoom",
+      "title": "Zoom\u2026",
+      "category": "PDF",
+      "icon": "$(search-fuzzy)"
+    },
+    {
+      "command": "lumiere.pdf.fitWidth",
+      "title": "Fit Width",
+      "category": "PDF",
+      "icon": "$(arrow-both)"
+    },
+    {
+      "command": "lumiere.pdf.fitPage",
+      "title": "Fit Page",
+      "category": "PDF",
+      "icon": "$(screen-full)"
+    },
+    {
+      "command": "lumiere.pdf.find",
+      "title": "Find in PDF",
+      "category": "PDF",
+      "icon": "$(search)"
+    },
+    {
+      "command": "lumiere.pdf.toggleOutline",
+      "title": "Toggle Outline",
+      "category": "PDF",
+      "icon": "$(list-tree)"
+    },
+    {
+      "command": "lumiere.pdf.selectTextTool",
+      "title": "Select Text Tool",
+      "category": "PDF",
+      "icon": "$(whole-word)"
+    },
+    {
+      "command": "lumiere.pdf.selectRegionTool",
+      "title": "Select Region Tool",
+      "category": "PDF",
+      "icon": "$(inspect)"
+    },
+    {
+      "command": "lumiere.pdf.selectToolbarMode",
+      "title": "Choose Toolbar Location\u2026",
+      "category": "PDF",
+      "icon": "$(layout)"
+    },
+    {
+      "command": "lumiere.pdf.actualSize",
+      "title": "Actual Size (100%)",
+      "category": "PDF",
+      "icon": "$(symbol-numeric)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.selectView",
+      "title": "View\u2026",
+      "category": "PDF",
+      "icon": "$(layout)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.singlePage",
+      "title": "Single Page",
+      "category": "PDF",
+      "icon": "$(file)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.pageLayout == 'single'"
+    },
+    {
+      "command": "lumiere.pdf.twoPageSpread",
+      "title": "Two Pages (1\u20132, 3\u20134)",
+      "category": "PDF",
+      "icon": "$(book)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.pageLayout == 'spread'"
+    },
+    {
+      "command": "lumiere.pdf.twoPageCover",
+      "title": "Two Pages with Cover (1, 2\u20133)",
+      "category": "PDF",
+      "icon": "$(book)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.pageLayout == 'spreadCover'"
+    },
+    {
+      "command": "lumiere.pdf.continuousScroll",
+      "title": "Continuous Scrolling",
+      "category": "PDF",
+      "icon": "$(list-ordered)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.scrollMode == 'continuous'"
+    },
+    {
+      "command": "lumiere.pdf.pageByPage",
+      "title": "Page-by-page Scrolling",
+      "category": "PDF",
+      "icon": "$(file)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.scrollMode == 'paged'"
+    },
+    {
+      "command": "lumiere.pdf.verticalScroll",
+      "title": "Vertical Scrolling",
+      "category": "PDF",
+      "icon": "$(arrow-down)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.scrollDirection == 'vertical'"
+    },
+    {
+      "command": "lumiere.pdf.horizontalScroll",
+      "title": "Horizontal Scrolling",
+      "category": "PDF",
+      "icon": "$(arrow-right)",
+      "enablement": "lumiere.pdf.pdfActive",
+      "toggled": "lumiere.pdf.scrollDirection == 'horizontal'"
+    },
+    {
+      "command": "lumiere.pdf.historyBack",
+      "title": "Back to Previous Location",
+      "category": "PDF",
+      "icon": "$(arrow-left)",
+      "enablement": "lumiere.pdf.historyBack"
+    },
+    {
+      "command": "lumiere.pdf.historyForward",
+      "title": "Forward to Next Location",
+      "category": "PDF",
+      "icon": "$(arrow-right)",
+      "enablement": "lumiere.pdf.historyForward"
+    },
+    {
+      "command": "lumiere.pdf.ideContext.copy",
+      "title": "Copy IDE Context",
+      "category": "Lumière PDF"
+    },
+    {
+      "command": "lumiere.pdf.ideContext.send",
+      "title": "Send IDE Context to Agent\u2026",
+      "category": "Lumière PDF"
+    }
+  ],
+  "menus": {
+    "view/title": [
+      {
+        "command": "lumiere.pdf.expandOutline",
+        "when": "view == lumiere.pdf.outline",
+        "group": "navigation@1"
+      },
+      {
+        "command": "lumiere.pdf.enableOutlineFollowCursor",
+        "when": "view == lumiere.pdf.outline && !lumiere.pdf.outlineFollowCursor",
+        "group": "1_outline@1"
+      },
+      {
+        "command": "lumiere.pdf.disableOutlineFollowCursor",
+        "when": "view == lumiere.pdf.outline && lumiere.pdf.outlineFollowCursor",
+        "group": "1_outline@1"
+      }
+    ],
+    "editor/title": [
+      {
+        "command": "lumiere.pdf.historyBack",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
+        "group": "navigation@8"
+      },
+      {
+        "command": "lumiere.pdf.historyForward",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
+        "group": "navigation@9"
+      },
+      {
+        "command": "lumiere.pdf.find",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+        "group": "navigation@10"
+      },
+      {
+        "command": "lumiere.pdf.zoomOut",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+        "group": "navigation@11"
+      },
+      {
+        "command": "lumiere.pdf.zoomIn",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+        "group": "navigation@12"
+      },
+      {
+        "command": "lumiere.pdf.fitPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit == 'width'",
+        "group": "navigation@13"
+      },
+      {
+        "command": "lumiere.pdf.fitWidth",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit != 'width'",
+        "group": "navigation@13"
+      },
+      {
+        "command": "lumiere.pdf.selectRegionTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool != 'region'",
+        "group": "navigation@14"
+      },
+      {
+        "command": "lumiere.pdf.selectTextTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool == 'region'",
+        "group": "navigation@14"
+      },
+      {
+        "command": "lumiere.pdf.find",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "0_pdfFind@1"
+      },
+      {
+        "command": "lumiere.pdf.previousPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfPage@1"
+      },
+      {
+        "command": "lumiere.pdf.nextPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfPage@2"
+      },
+      {
+        "command": "lumiere.pdf.goToPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfPage@3"
+      },
+      {
+        "command": "lumiere.pdf.zoomIn",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "2_pdfZoom@1"
+      },
+      {
+        "command": "lumiere.pdf.zoomOut",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "2_pdfZoom@2"
+      },
+      {
+        "command": "lumiere.pdf.selectZoom",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "2_pdfZoom@3"
+      },
+      {
+        "command": "lumiere.pdf.fitWidth",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "2_pdfZoom@4"
+      },
+      {
+        "command": "lumiere.pdf.fitPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "2_pdfZoom@5"
+      },
+      {
+        "command": "lumiere.pdf.selectTextTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfTool@1"
+      },
+      {
+        "command": "lumiere.pdf.selectRegionTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfTool@2"
+      },
+      {
+        "command": "lumiere.pdf.toggleOutline",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@1"
+      },
+      {
+        "command": "lumiere.pdf.selectToolbarMode",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@2"
+      },
+      {
+        "command": "lumiere.pdf.actualSize",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@3"
+      },
+      {
+        "command": "lumiere.pdf.selectView",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@4"
+      },
+      {
+        "command": "lumiere.pdf.singlePage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@5"
+      },
+      {
+        "command": "lumiere.pdf.twoPageSpread",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@6"
+      },
+      {
+        "command": "lumiere.pdf.twoPageCover",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@7"
+      },
+      {
+        "command": "lumiere.pdf.continuousScroll",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@8"
+      },
+      {
+        "command": "lumiere.pdf.pageByPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@9"
+      },
+      {
+        "command": "lumiere.pdf.verticalScroll",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@10"
+      },
+      {
+        "command": "lumiere.pdf.horizontalScroll",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@11"
+      },
+      {
+        "command": "lumiere.pdf.selectView",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+        "group": "navigation@15"
+      }
+    ],
+    "commandPalette": [
+      {
+        "command": "vscodeEmbedPdf.bridge.envelope",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.expandOutline",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.enableOutlineFollowCursor",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.disableOutlineFollowCursor",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.lookUp",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.copyLinkForAgent",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.goToOutlineItem",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.openNativeLink",
+        "when": "false"
+      },
+      {
+        "command": "lumiere.pdf.previousPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.enterZen",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inZenMode"
+      },
+      {
+        "command": "lumiere.pdf.exitZen",
+        "when": "inZenMode"
+      },
+      {
+        "command": "lumiere.pdf.previousPageKeepingPlace",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.nextPageKeepingPlace",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.nextPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.goToPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.zoomOut",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.zoomIn",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.selectZoom",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.fitWidth",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.fitPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.find",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.toggleOutline",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.selectTextTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.selectRegionTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.selectToolbarMode"
+      },
+      {
+        "command": "lumiere.pdf.actualSize",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.selectView",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.singlePage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.twoPageSpread",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.twoPageCover",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.continuousScroll",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.pageByPage",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.verticalScroll",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.horizontalScroll",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.historyBack",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.historyForward",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.ideContext.copy"
+      },
+      {
+        "command": "lumiere.pdf.ideContext.send"
+      }
+    ],
+    "webview/context": [
+      {
+        "command": "lumiere.pdf.lookUp",
+        "when": "webviewId == 'lumiere.pdf.viewer' && isMac && config.lumiere.pdf.lookUp.enabled",
+        "group": "0_agent@2"
+      },
+      {
+        "command": "lumiere.pdf.copyLinkForAgent",
+        "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.hasSelection",
+        "group": "0_agent@1"
+      },
+      {
+        "command": "lumiere.pdf.goToPage",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfView@1"
+      },
+      {
+        "command": "lumiere.pdf.fitWidth",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfView@2"
+      },
+      {
+        "command": "lumiere.pdf.fitPage",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfView@3"
+      },
+      {
+        "command": "lumiere.pdf.selectRegionTool",
+        "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.tool != 'region'",
+        "group": "2_pdfTool@1"
+      },
+      {
+        "command": "lumiere.pdf.selectTextTool",
+        "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.tool == 'region'",
+        "group": "2_pdfTool@1"
+      },
+      {
+        "command": "lumiere.pdf.enterZen",
+        "when": "webviewId == 'lumiere.pdf.viewer' && !inZenMode",
+        "group": "4_pdfZen@1"
+      },
+      {
+        "command": "lumiere.pdf.openSettings",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "5_pdfSettings@1"
+      },
+      {
+        "command": "lumiere.pdf.exitZen",
+        "when": "webviewId == 'lumiere.pdf.viewer' && inZenMode",
+        "group": "4_pdfZen@1"
+      },
+      {
+        "command": "lumiere.pdf.actualSize",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@1"
+      },
+      {
+        "command": "lumiere.pdf.selectView",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@2"
+      },
+      {
+        "command": "lumiere.pdf.singlePage",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@3"
+      },
+      {
+        "command": "lumiere.pdf.twoPageSpread",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@4"
+      },
+      {
+        "command": "lumiere.pdf.twoPageCover",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@5"
+      },
+      {
+        "command": "lumiere.pdf.continuousScroll",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@6"
+      },
+      {
+        "command": "lumiere.pdf.pageByPage",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@7"
+      },
+      {
+        "command": "lumiere.pdf.verticalScroll",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@8"
+      },
+      {
+        "command": "lumiere.pdf.horizontalScroll",
+        "when": "webviewId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfView@9"
+      }
+    ]
+  },
+  "configuration": {
+    "title": "Lumière PDF",
+    "properties": {
+      "lumiere.pdf.outline.followCursor": {
+        "type": "boolean",
+        "default": false,
+        "description": "Reveal and select the bookmark containing the current PDF page and reading position in PDF Outline, without moving focus. Toggle Follow Cursor in the outline's More Actions menu."
+      },
+      "lumiere.pdf.copyLinkForAgent.target": {
+        "type": "string",
+        "default": "auto",
+        "enum": [
+          "auto",
+          "cursor",
+          "chat",
+          "claudeCode",
+          "codex",
+          "clipboard"
+        ],
+        "enumDescriptions": [
+          "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+          "Cursor's chat.",
+          "VS Code's chat.",
+          "Claude Code: a new conversation with the selection typed in.",
+          "Codex: the selection (and a region's snapshot) attached to the thread.",
+          "Only copy the selection."
+        ],
+        "markdownDescription": "Which agent chat, if any, **Copy Link for Agent** opens with a PDF selection. The link and selection are always copied. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the selection to it."
+      },
+      "lumiere.pdf.regionImageCache.maxSizeMB": {
+        "type": "number",
+        "default": 100,
+        "minimum": 1,
+        "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. This is a hard limit: when a new snapshot takes them past it, the least recently used ones are deleted, and a single snapshot larger than the limit is not saved (Copy Link for Agent then copies the link without the image). Values below 1 count as 1."
+      },
+      "lumiere.pdf.toolbar.mode": {
+        "type": "string",
+        "default": "chrome",
+        "enum": [
+          "chrome",
+          "slim",
+          "floating",
+          "none"
+        ],
+        "enumDescriptions": [
+          "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
+          "A slim bar along the top of the viewer.",
+          "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
+          "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+        ],
+        "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+      },
+      "lumiere.pdf.toolbar.statusBarButtons": {
+        "type": "string",
+        "default": "auto",
+        "enum": [
+          "auto",
+          "always",
+          "never"
+        ],
+        "enumDescriptions": [
+          "In Cursor, which keeps extension buttons in the editor title bar's \"\u2026\" menu: yes. In VS Code: no.",
+          "Always show the buttons.",
+          "Only the page, zoom and View."
+        ],
+        "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+      },
+      "lumiere.pdf.agentBridge.enabled": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex\u2026** gives the command that connects those agents."
+      },
+      "lumiere.pdf.view.defaultZoom": {
+        "type": [
+          "string",
+          "number"
+        ],
+        "default": "fitWidth",
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "fitWidth",
+              "fitPage",
+              "actual"
+            ]
+          },
+          {
+            "type": "number",
+            "minimum": 25,
+            "maximum": 400
+          }
+        ],
+        "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25\u2013400)."
+      },
+      "lumiere.pdf.view.pageLayout": {
+        "type": "string",
+        "default": "single",
+        "enum": [
+          "single",
+          "spread",
+          "spreadCover"
+        ],
+        "enumDescriptions": [
+          "One page per row.",
+          "Pair pages 1\u20132, 3\u20134, and so on.",
+          "Cover page alone, then pair pages 2\u20133, 4\u20135, and so on."
+        ],
+        "markdownDescription": "Page layout for PDFs without a saved view."
+      },
+      "lumiere.pdf.view.scrollMode": {
+        "type": "string",
+        "default": "continuous",
+        "enum": [
+          "continuous",
+          "paged"
+        ],
+        "enumDescriptions": [
+          "Scroll through the document.",
+          "Show one page or spread at a time; use next/previous to change it."
+        ],
+        "markdownDescription": "Scrolling mode for PDFs without a saved view."
+      },
+      "lumiere.pdf.view.scrollDirection": {
+        "type": "string",
+        "default": "vertical",
+        "enum": [
+          "vertical",
+          "horizontal"
+        ],
+        "markdownDescription": "Reading direction for PDFs without a saved view."
+      },
+      "lumiere.pdf.lookUp.enabled": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "macOS only: look up the word under the pointer in the Dictionary app with a force click (hard press on the trackpad), or with **Look Up** in the right-click menu of a PDF. Has no effect on other systems."
+      },
+      "lumiere.pdf.keyboardShortcuts": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/\u2318+G (Go to Line elsewhere), Ctrl/\u2318+0 (focus the side bar), Ctrl/\u2318+= and Ctrl/\u2318+- (zoom the window) and Ctrl/\u2318+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+      },
+      "lumiere.pdf.view.restoreOnReopen": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "Reopen each PDF at its last page, scroll position, zoom and view choices (layout, scrolling, direction). When off, every PDF opens with the defaults above."
+      },
+      "lumiere.pdf.view.smoothScrolling": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "default": null,
+        "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
+      }
+    }
+  },
+  "keybindings": [
+    {
+      "command": "lumiere.pdf.previousPageKeepingPlace",
+      "key": "ctrl+alt+left",
+      "mac": "alt+left",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.previousPageKeepingPlace",
+      "key": "ctrl+alt+up",
+      "mac": "alt+up",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.nextPageKeepingPlace",
+      "key": "ctrl+alt+right",
+      "mac": "alt+right",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.nextPageKeepingPlace",
+      "key": "ctrl+alt+down",
+      "mac": "alt+down",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.enterZen",
+      "key": "ctrl+alt+z",
+      "mac": "ctrl+cmd+z",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts && !inZenMode"
+    },
+    {
+      "command": "lumiere.pdf.exitZen",
+      "key": "ctrl+alt+z",
+      "mac": "ctrl+cmd+z",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts && inZenMode"
+    },
+    {
+      "command": "lumiere.pdf.exitZen",
+      "key": "escape escape",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts && inZenMode"
+    },
+    {
+      "command": "lumiere.pdf.previousPage",
+      "key": "alt+pageup",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.nextPage",
+      "key": "alt+pagedown",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.goToPage",
+      "key": "ctrl+g",
+      "mac": "ctrl+g",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.zoomIn",
+      "key": "ctrl+=",
+      "mac": "cmd+=",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.zoomIn",
+      "key": "ctrl+numpad_add",
+      "mac": "cmd+numpad_add",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.zoomOut",
+      "key": "ctrl+-",
+      "mac": "cmd+-",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.zoomOut",
+      "key": "ctrl+numpad_subtract",
+      "mac": "cmd+numpad_subtract",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.fitWidth",
+      "key": "ctrl+0",
+      "mac": "cmd+0",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.fitPage",
+      "key": "ctrl+alt+0",
+      "mac": "cmd+alt+0",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.find",
+      "key": "ctrl+f",
+      "mac": "cmd+f",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.outline.focus",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && focusedView != 'lumiere.pdf.outline' && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "workbench.action.closeSidebar",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "focusedView == 'lumiere.pdf.outline' && sideBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "workbench.action.closeAuxiliaryBar",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "focusedView == 'lumiere.pdf.outline' && auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "workbench.action.closePanel",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "focusedView == 'lumiere.pdf.outline' && panelFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.selectTextTool",
+      "key": "ctrl+alt+t",
+      "mac": "ctrl+cmd+t",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.selectRegionTool",
+      "key": "ctrl+alt+r",
+      "mac": "ctrl+cmd+r",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    }
+  ],
+  "mcpServerDefinitionProviders": [
+    {
+      "id": "lumiere.pdf.agentBridge",
+      "label": "Lumière PDF"
+    }
+  ]
+}

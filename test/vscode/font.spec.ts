@@ -47,7 +47,7 @@ async function textEditorFont(page: Page): Promise<Font> {
   });
 }
 
-/** The note's body line and its code line in Markdown Workshop. */
+/** The note's body line and its code line in Lumière. */
 async function workbenchFont(frame: Frame): Promise<Font & { code: string }> {
   return frame.evaluate(() => {
     const lines = [...document.querySelectorAll<HTMLElement>(".cm-line")];
@@ -76,7 +76,7 @@ async function editorFrame(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workshop frame");
+  throw new Error("No Lumière frame");
 }
 
 // The built-in text editor honours [markdown] font overrides; the note follows
@@ -92,8 +92,8 @@ test("note text uses the same font settings as the built-in text editor for Mark
     JSON.stringify({
       ...(JSON.parse(original) as object),
       "editor.fontSize": 13,
-      "markdownWorkshop.editor.fontSize": 18,
-      "markdownWorkshop.editor.lineHeight": 1.8,
+      "lumiere.markdown.editor.fontSize": 18,
+      "lumiere.markdown.editor.lineHeight": 1.8,
       "[markdown]": {
         "editor.fontFamily": "DejaVu Sans Mono",
         // The built-in editor uses this; the note ignores it.
@@ -131,8 +131,10 @@ test("note text uses the same font settings as the built-in text editor for Mark
     expect(workbench.lineHeight).toBeCloseTo(18 * 1.8, 1);
     expect(workbench.letterSpacing).toBe(builtIn.letterSpacing);
     expect(workbench.features).toBe(builtIn.features);
-    // Code uses the same face and size as the text.
-    expect(workbench.code).toBe(`${workbench.family} ${workbench.size}`);
+    // Code uses the same face, a size smaller, as in Obsidian.
+    expect(workbench.code).toBe(
+      `${workbench.family} ${parseFloat(workbench.size) * 0.875}px`,
+    );
   } finally {
     writeFileSync(settingsFile, original);
     writeFileSync(note, text);
@@ -173,7 +175,7 @@ async function workbenchLines(frame: Frame) {
   });
 }
 
-// The note's line height is markdownWorkshop.editor.lineHeight times its own
+// The note's line height is lumiere.markdown.editor.lineHeight times its own
 // font size (Obsidian's 1.5 by default), whatever editor.lineHeight says.
 test("the note's lines are the line height setting times the size (1.5 by default), and line numbers stay level", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
@@ -200,9 +202,9 @@ test("the note's lines are the line height setting times the size (1.5 by defaul
           ...(JSON.parse(original) as object),
           // Ignored: the note has its own line height.
           "editor.lineHeight": 40,
-          "markdownWorkshop.editor.fontSize": size,
+          "lumiere.markdown.editor.fontSize": size,
           ...(multiple
-            ? { "markdownWorkshop.editor.lineHeight": multiple }
+            ? { "lumiere.markdown.editor.lineHeight": multiple }
             : {}),
         }),
       );
@@ -213,7 +215,8 @@ test("the note's lines are the line height setting times the size (1.5 by defaul
         .toBeCloseTo(expected, 1);
       const lines = await workbenchLines(frame);
       expect(lines.size, label).toBe(`${size}px`);
-      expect(lines.code, `${label} code`).toBeCloseTo(expected, 1);
+      // Code lines are a size smaller, as in Obsidian.
+      expect(lines.code, `${label} code`).toBeCloseTo(expected * 0.875, 1);
       // The line number is level with its line and as tall.
       expect(lines.number, `${label} number`).toBeCloseTo(expected, 1);
       expect(lines.numberTop, `${label} number top`).toBeCloseTo(0, 1);

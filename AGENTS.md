@@ -1,37 +1,57 @@
 # Agent instructions
 
-A VS Code extension that edits Markdown like Obsidian's Live Preview, built so
-that everything is a plugin. Read [DESIGN.md](DESIGN.md) and
-[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) before changing code.
+One VS Code and Cursor extension, "Lumière: Markdown Editor and PDF Reader", in a pnpm
+workspace. Everything is a plugin:
 
-If the task is a user / third-party custom plugin, read root
-[AGENT.md](AGENT.md) and implement it as a **separate VS Code extension** —
-do **not** add it under `src/plugins/`.
+| Path | What it is | Read first |
+| --- | --- | --- |
+| `packages/core` | The plugin core on Cordis | its README.md |
+| `packages/agents` | What both products hand to agents | its README.md |
+| `packages/markdown` | Lumière: Obsidian-like Live Preview | its DESIGN.md, IMPLEMENTATION_PLAN.md |
+| `packages/pdf` | Lumière PDF: EmbedPDF viewer with agent links | its README.md, AGENTS.md |
+| `src/extension.ts` | The composition root: one plugin tree for both | |
+
+If the task is a user / third-party custom plugin, read
+[packages/markdown/AGENT.md](packages/markdown/AGENT.md) and implement it as a
+**separate VS Code extension**, not under `src/plugins/`.
 
 ## Rules
 
-- `src/kernel`, `src/shared` and `src/markdown` must run anywhere: no DOM,
-  VS Code or Node APIs. The tsconfig projects enforce this.
-- Every capability is a plugin under `src/plugins/<id>/`. Reach other
-  capabilities through injected services and typed events, never by importing
-  another plugin's internals. Register side effects through the plugin's
-  context so they are undone when it stops.
+- Pure code runs anywhere, with no DOM, VS Code or Node APIs:
+  `packages/core/src`, `packages/agents/src`, and `src/shared` and
+  `src/markdown` in each product.
+  The tsconfig projects and the `architecture/boundaries` lint rule enforce
+  this.
+- Every capability is a plugin (`packages/markdown/src/plugins/<id>/`,
+  `packages/pdf/src/extension/plugins/<id>/`). A plugin declares what it reads
+  (`inject`) and what it publishes (`provides`); the core refuses anything
+  else, and the dependency graph is built from those declarations. Reach
+  other capabilities through injected services and typed events, never by
+  importing another plugin's internals. Register side effects through the
+  plugin's context so they are undone when it stops.
+- Markdown plugins reach VS Code only through the host services in
+  `packages/markdown/src/shared/host` (`hostDocuments`, `hostCommands`,
+  `dialogs`, `settings`, `workspace`, …); their VS Code adapters live in
+  `src/host/services`. Inject the narrowest service that does the job, and
+  fake it in tests with `fakeHost(overrides)`.
 - The `TextDocument` owns text, saving and undo. Webviews only synchronize.
-- The webview is untrusted. Every message has a schema and is validated in
+- Webviews are untrusted. Every message has a schema and is validated in
   both directions; the host re-checks paths and containment.
-- Track editors per panel, never by file path: one note can be open twice.
+- Track editors per panel, never by file path: one file can be open twice.
+- Each product owns its settings prefix (`lumiere.markdown.`, `lumiere.pdf.`)
+  and its commands; one product's settings commands never show or write the
+  other's.
 - Keep the Copy Link for Agent reference wording compatible with LLM Wiki
-  (`@path#start-end`).
+  (`@path#start-end`). What both products hand to agents (the handoff text,
+  the IDE context packet) is defined once, in `packages/agents`.
 - Obsidian is a behaviour reference only. Never copy its code, CSS or assets.
   Compare in a disposable vault, never the owner's.
 - Read the source from `~/Code/human-learning` at commit `ff3a902e`; never
   modify that repository or its worktrees.
 - New automated coverage is unit tests unless the owner explicitly approves
   a browser/native regression. Keep the existing browser and native suites
-  passing, including later owner-approved additions. Do not port the source's
-  browser or native suites; record them as retired in `docs/TEST_LEDGER.md`
-  and cover their behaviour in `docs/MANUAL_TEST_PLAN.md`, which the owner
-  runs with computer use. See "Testing policy" in IMPLEMENTATION_PLAN.md.
+  passing, including later owner-approved additions. See "Testing policy" in
+  packages/markdown/IMPLEMENTATION_PLAN.md.
 
 ## Code norms
 
@@ -47,8 +67,11 @@ code. `pnpm check` enforces the mechanical part:
   object instead); files at most 400 lines; no class spread across files
   through `this:` functions attached as fields.
 
-All source meets these limits, and they have no exceptions. When porting a
-long source function, rewrite it rather than copying it. Another rule may have
+All source meets these limits except the PDF code still being split to them
+(the viewer's React hooks and the agent integration). That exemption is listed
+in `eslint.config.mjs`, pinned in `test/unit/lint-rules.test.ts`, and only
+shrinks. When porting a long source function, rewrite it rather than copying
+it. Another rule may have
 a genuine exception (a type-only declaration merge, an untyped dependency): an
 inline `// eslint-disable-next-line <rule> -- <reason>`, added to the reviewed
 list in `test/unit/lint-rules.test.ts`. That test fails if the old backlog file
@@ -91,12 +114,12 @@ Run before committing, in this order:
 
 ```sh
 pnpm check
-pnpm test:browser  # existing Chromium suite
-pnpm test:vscode   # existing native suite; opens an isolated VS Code window
+pnpm test:browser  # each product's Chromium suite
+pnpm test:vscode   # both products in a real, isolated VS Code window
 ```
 
 `pnpm check:full` runs all three in that order. The real-VS Code specs
-(`test/vscode`, `pnpm test:vscode`) do **not** run in GitHub Actions: they were
+(`test/vscode`, `packages/pdf/test/vscode`) do **not** run in GitHub Actions: they were
 flaky under load. They are a required local pre-push check, so run the full
 `pnpm check:full` before every push, on a headless Linux box as
 `xvfb-run -a pnpm check:full`.
@@ -105,6 +128,9 @@ Run suites sequentially, including across shared worktrees. Use a private
 display and the test harness's isolated profile, never the owner's or a demo
 profile. If a test port is occupied, identify its owner before proceeding;
 do not kill unrelated processes or reuse another checkout's server.
+
+Run Prettier from the repository root: `.prettierignore` there keeps the
+test fixtures (whose hashes are pinned) as they are.
 
 Commit at the end of each phase with its record in IMPLEMENTATION_PLAN.md.
 Do not push or publish to the Marketplace without the owner's approval.

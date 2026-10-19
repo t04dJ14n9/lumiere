@@ -1,0 +1,39 @@
+{
+  "name": "tickets",
+  "displayName": "Lumière Sample: Tickets",
+  "description": "A sample external plugin for Lumière: TODO badges, ticket: links and tickets code blocks.",
+  "version": "0.0.1",
+  "publisher": "mwsample",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.128.0"
+  },
+  "main": "./dist/extension.js",
+  "extensionDependencies": [
+    "t04dj14n9.vscode-markdown-workshop"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onCustomEditor:lumiere.markdown.editor"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mwsample.tickets.refresh",
+        "title": "Refresh TODO Badges",
+        "category": "Sample Tickets"
+      }
+    ],
+    "configuration": {
+      "title": "Sample Tickets",
+      "properties": {
+        "mwsampleTickets.baseUrl": {
+          "type": "string",
+          "default": "https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/",
+          "description": "Where `ticket:NUMBER` links open: this URL followed by the number."
+        }
+      }
+    }
+  }
+}

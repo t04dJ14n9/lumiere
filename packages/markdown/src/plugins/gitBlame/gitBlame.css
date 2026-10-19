@@ -1,0 +1,69 @@
+/*
+ * The caret line's authorship sits in a layer above the text (blameWidget.ts),
+ * so it takes no room in the line: lines of any height keep their size and
+ * wrapping, and clicks go through to the text beneath.
+ */
+.mw-gb-layer {
+  pointer-events: none;
+}
+.mw-gb-ghost {
+  /* Placed at the middle of the line's last row. */
+  transform: translateY(-50%);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* The same quiet type on every line, whatever the line's own style. */
+  font-family: var(--ui-font);
+  font-size: calc(0.8 * var(--text-size));
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: normal;
+  line-height: 1.4;
+  /* VS Code git.blame.editorDecorationForeground (+ quiet fallbacks). */
+  color: var(
+    --vscode-git-blame-editorDecorationForeground,
+    var(--vscode-descriptionForeground, var(--muted))
+  );
+  user-select: none;
+}
+.is-source-mode .mw-gb-ghost {
+  display: none;
+}
+.mw-gb-tooltip {
+  position: fixed;
+  z-index: 50;
+  width: max-content;
+  max-width: min(480px, calc(100vw - 16px));
+  max-height: 40vh;
+  padding: 8px 12px;
+  overflow: auto;
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--line));
+  border-radius: 6px;
+  color: var(--vscode-editorHoverWidget-foreground, inherit);
+  background: var(--vscode-editorHoverWidget-background, var(--surface));
+  box-shadow: 0 4px 16px #0003;
+  font-size: 0.85em;
+  font-weight: normal;
+  line-height: 1.45;
+  text-align: start;
+  white-space: pre-wrap;
+  opacity: 1;
+}
+.mw-gb-tooltip::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 1em;
+}
+.mw-gb-tooltip.is-above::before {
+  top: 100%;
+  bottom: auto;
+}
+@media (forced-colors: active) {
+  .mw-gb-ghost {
+    /* Theme color may be forced; keep ghost readable. */
+    forced-color-adjust: none;
+  }
+}

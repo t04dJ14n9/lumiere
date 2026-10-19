@@ -3,73 +3,9 @@ import type { Browser, Page, Frame, Locator } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths } from "./state";
-/**
- * The visible text box of the quick input. Cursor's widget holds a second,
- * hidden input, so the plain selector would match two elements; the
- * select-all checkbox is an input too.
- */
-export const QUICK_INPUT =
-  ".quick-input-widget input:not([type='checkbox']):visible";
-/** CDP can drive a background window whose native focus-dependent UI is hidden. */
-export async function focusWorkbench(page: Page) {
-  await page.bringToFront();
-  // Closing the last editor can leave focus on Electron's window chrome.
-  // Activating the window alone does not return focus to its document.
-  if (!(await page.evaluate(() => document.hasFocus()))) {
-    await page.locator(".part.statusbar").click({ position: { x: 5, y: 5 } });
-  }
-  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
-}
-/**
- * Opens the command palette. A webview that is still taking focus (a new
- * split, in Cursor) can swallow the shortcut, so press it until it opens.
- */
-export async function openPalette(page: Page) {
-  const input = page.locator(QUICK_INPUT);
-  let attempt = 0;
-  await expect(async () => {
-    if (!(await input.isVisible())) {
-      await focusWorkbench(page);
-      // Leave a webview's input context before opening the host's palette.
-      await page.locator(".part.statusbar").click({ position: { x: 5, y: 5 } });
-      // F1 opens the palette too, when the shortcut is swallowed.
-      await page.keyboard.press(
-        attempt++ % 2 === 0 ? "ControlOrMeta+Shift+p" : "F1",
-      );
-    }
-    await expect(input).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
-}
-export async function command(page: Page, title: string) {
-  const input = page.locator(QUICK_INPUT);
-  const item = page
-    .locator(".quick-input-list .monaco-list-row")
-    .filter({ hasText: title })
-    .first();
-  // Right after the previous spec restored the settings, the palette can open
-  // without the command listed yet: close it and ask again.
-  await expect(async () => {
-    await openPalette(page);
-    await input.fill(">" + title, { timeout: 3000 });
-    try {
-      await expect(item).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      await page.keyboard.press("Escape");
-      throw error;
-    }
-  }).toPass({ timeout: 30000 });
-  // The virtualized list can move between mouse-down and mouse-up after a
-  // settings update. Accept the focused command once, avoiding a lost click
-  // without retrying commands that toggle settings or edit the document.
-  await expect
-    .poll(async () => {
-      const active = await input.getAttribute("aria-activedescendant");
-      return active !== null && active === (await item.getAttribute("id"));
-    })
-    .toBe(true);
-  await input.press("Enter");
-  await expect(input).not.toBeVisible();
-}
+export { QUICK_INPUT, command, focusWorkbench, openPalette } from "./palette";
+import { QUICK_INPUT, command, focusWorkbench, openPalette } from "./palette";
+
 /** Finish native closing, including a delayed synthetic-buffer discard prompt. */
 export async function closeEditorGroups(page: Page) {
   const dialog = page.locator(".monaco-dialog-box");
@@ -91,7 +27,7 @@ export async function closeEditorGroups(page: Page) {
   }).toPass({ timeout: 10000 });
 }
 /**
- * Opens a note (Note.md by default) in Markdown Workshop and returns its
+ * Opens a note (Note.md by default) in Lumière and returns its
  * editable content. `timing` receives the clock at the choice of the editor
  * and when its content is on screen, for load-time measurements.
  */
@@ -149,11 +85,11 @@ export async function openWorkbench(
   await page
     .locator(".quick-input-widget")
     .locator(".monaco-list-row")
-    .filter({ hasText: "Markdown Workshop" })
+    .filter({ hasText: "Lumière" })
     .first()
     .click();
   timing.start = Date.now();
-  console.log("Native: waiting for Markdown Workshop webview");
+  console.log("Native: waiting for Lumière webview");
   let frame: Frame | undefined;
   await expect
     .poll(() => {
@@ -251,4 +187,15 @@ export const ORIGINAL_NOTE = "# Native Markdown\n\nOriginal line";
 /** Puts Note.md back, so a spec does not depend on the ones that ran before. */
 export function resetNote() {
   writeFileSync(path.join(paths.workspace, "Note.md"), ORIGINAL_NOTE);
+}
+
+/**
+ * Where a screenshot the docs cite goes: the test output by default, and
+ * `docs/screenshots` only when UPDATE_DOC_SCREENSHOTS=1, so a test run does
+ * not rewrite tracked files.
+ */
+export function docScreenshot(name: string): string {
+  return process.env.UPDATE_DOC_SCREENSHOTS === "1"
+    ? path.resolve("docs/screenshots", name)
+    : path.resolve("test-results/screenshots", name);
 }

@@ -42,7 +42,7 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
     const page = workbenchPage(browser);
     await openWorkbench(page, NOTE);
     await frameWith(page, ".mw-git-gutter .mw-git-bar");
-    await command(page, "Markdown Workshop: Open Rendered Git Diff");
+    await command(page, "Lumière: Open Rendered Git Diff");
     const frame = await frameWith(page, ROWS);
     await expect(frame.locator(".mw-diff-label").first()).toContainText("HEAD");
     await expect(frame.locator(".mw-diff-label").nth(1)).toHaveText(
@@ -73,15 +73,22 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
 
     // With diffEditor: rendered, Source Control's text diff is replaced.
     setUserSettings({
-      "markdownWorkshop.gitDiffEditor.diffEditor": "rendered",
+      "lumiere.markdown.gitDiffEditor.diffEditor": "rendered",
     });
     await page.waitForTimeout(500);
     await openWorkbench(page, NOTE);
-    await page.keyboard.press("Control+Shift+G");
-    await page
+    // Show Source Control from the palette (Ctrl+Shift+G goes wherever focus
+    // is), again until git has found the change, and click the file once the
+    // list holds still: it redraws while git settles.
+    const changed = page
       .locator(".scm-view .monaco-list-row", { hasText: "Gross margin.md" })
-      .first()
-      .click();
+      .first();
+    await expect(async () => {
+      if (!(await changed.isVisible())) {
+        await command(page, "Source Control: Focus on Changes View");
+      }
+      await changed.click({ timeout: 2000 });
+    }).toPass({ timeout: 45000 });
     await expect.poll(() => panelFrames(page), { timeout: 20000 }).toBe(1);
     await expect(
       page.locator(".tab .monaco-icon-label", { hasText: "→" }),
@@ -89,15 +96,15 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
 
     // Turned off, the panel closes and nothing takes over the text diff.
     setUserSettings({
-      "markdownWorkshop.plugins.gitDiffEditor.enabled": false,
+      "lumiere.markdown.plugins.gitDiffEditor.enabled": false,
     });
     await expect.poll(() => panelFrames(page), { timeout: 15000 }).toBe(0);
     await closeEditorGroups(page);
   } finally {
     setUserSettings({
       "workbench.colorTheme": undefined,
-      "markdownWorkshop.gitDiffEditor.diffEditor": undefined,
-      "markdownWorkshop.plugins.gitDiffEditor.enabled": undefined,
+      "lumiere.markdown.gitDiffEditor.diffEditor": undefined,
+      "lumiere.markdown.plugins.gitDiffEditor.enabled": undefined,
     });
     await closeBrowser(browser);
   }

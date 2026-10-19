@@ -1,31 +1,58 @@
 {
-  "name": "vscode-markdown-workshop",
-  "displayName": "Markdown Workshop",
-  "description": "Plugin-based Markdown Live Preview for VS Code.",
+  "name": "lumiere",
+  "displayName": "Lumière: Markdown Editor and PDF Reader",
+  "description": "Obsidian-style Live Preview for Markdown and a PDF reader, in VS Code and Cursor, with links your AI agent can follow.",
   "version": "0.1.0",
   "publisher": "t04dj14n9",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"
+    "url": "https://github.com/t04dJ14n9/lumiere"
   },
   "private": true,
   "engines": {
     "vscode": "^1.128.0"
   },
+  "packageManager": "pnpm@10.28.2",
   "main": "./dist/extension.js",
-  "types": "./dist/api/types.d.ts",
+  "types": "./dist/markdown/api/types.d.ts",
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "markdown",
+    "pdf",
+    "obsidian",
+    "live preview",
+    "notes",
+    "wikilinks",
+    "markdown editor",
+    "pdf viewer",
+    "pdf reader",
+    "vscode",
+    "cursor",
+    "ai",
+    "agent"
+  ],
   "activationEvents": [
+    "onCommand:vscodeEmbedPdf.bridge.envelope",
     "onLanguage:markdown"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Markdown: remote content and external code processors are disabled. PDF: the viewer renders PDFs in a sandboxed webview, so it works in Restricted Mode; the agent bridge (a local MCP server) and the Copy Link for Agent target are not read from workspace settings until the folder is trusted.",
+      "restrictedConfigurations": [
+        "lumiere.pdf.agentBridge.enabled",
+        "lumiere.pdf.copyLinkForAgent.target"
+      ]
+    }
+  },
   "contributes": {
     "customEditors": [
       {
-        "viewType": "markdownWorkshop.editor",
-        "displayName": "Markdown Workshop",
+        "viewType": "lumiere.markdown.editor",
+        "displayName": "Lumière",
         "selector": [
           {
             "filenamePattern": "*.md"
@@ -35,1931 +62,3157 @@
           }
         ],
         "priority": "option"
+      },
+      {
+        "viewType": "lumiere.pdf.viewer",
+        "displayName": "Lumière PDF",
+        "selector": [
+          {
+            "filenamePattern": "*.pdf"
+          }
+        ],
+        "priority": "default"
       }
     ],
     "commands": [
       {
-        "command": "markdownWorkshop.copyLinkForAgent",
+        "command": "lumiere.markdown.copyLinkForAgent",
         "title": "Copy Link for Agent",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(comment-discussion)"
       },
       {
-        "command": "markdownWorkshop.assets.import",
+        "command": "lumiere.markdown.assets.import",
         "title": "Import Asset",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.bridge.copyEnvelope",
+        "command": "lumiere.markdown.bridge.copyEnvelope",
         "title": "Copy Bridge Envelope",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.bridge.envelope",
+        "command": "lumiere.markdown.bridge.envelope",
         "title": "Bridge Envelope",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertCallout",
+        "command": "lumiere.markdown.insertCallout",
         "title": "Insert Callout",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.save",
+        "command": "lumiere.markdown.save",
         "title": "Save",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.undo",
+        "command": "lumiere.markdown.undo",
         "title": "Undo",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.redo",
+        "command": "lumiere.markdown.redo",
         "title": "Redo",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.close",
+        "command": "lumiere.markdown.close",
         "title": "Close",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.saveClose",
+        "command": "lumiere.markdown.saveClose",
         "title": "Save and Close",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.openAsText",
+        "command": "lumiere.markdown.openAsText",
         "title": "Open as Text",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(go-to-file)"
       },
       {
-        "command": "markdownWorkshop.cursorBridge.chat",
+        "command": "lumiere.markdown.cursorBridge.chat",
         "title": "Cursor Chat with Selection",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.cursorBridge.edit",
+        "command": "lumiere.markdown.cursorBridge.edit",
         "title": "Cursor Edit Selection",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.jumpBack",
+        "command": "lumiere.markdown.cursorBridge.dismissEditMirror",
+        "title": "Return to Lumière",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.jumpBack",
         "title": "Go Back in Note",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(arrow-left)"
       },
       {
-        "command": "markdownWorkshop.jumpForward",
+        "command": "lumiere.markdown.jumpForward",
         "title": "Go Forward in Note",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(arrow-right)"
       },
       {
-        "command": "markdownWorkshop.titleActions",
+        "command": "lumiere.markdown.titleActions",
         "title": "Note Actions",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(zap)"
       },
       {
-        "command": "markdownWorkshop.selectionActions",
+        "command": "lumiere.markdown.selectionActions",
         "title": "Selection Actions",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.useForMarkdownInWorkspace",
-        "title": "Use Markdown Workshop for Markdown in This Workspace",
-        "category": "Markdown Workshop"
+        "command": "lumiere.markdown.useForMarkdownInWorkspace",
+        "title": "Use Lumière for Markdown in This Workspace",
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertEmbed",
+        "command": "lumiere.markdown.insertEmbed",
         "title": "Insert Embed",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.foldAll",
+        "command": "lumiere.markdown.foldAll",
         "title": "Fold All",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.unfoldAll",
+        "command": "lumiere.markdown.unfoldAll",
         "title": "Unfold All",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleFold",
+        "command": "lumiere.markdown.toggleFold",
         "title": "Toggle Fold",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertFootnote",
+        "command": "lumiere.markdown.foldMore",
+        "title": "Fold More",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.foldLess",
+        "title": "Fold Less",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.insertFootnote",
         "title": "Insert Footnote",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleBold",
+        "command": "lumiere.markdown.toggleBold",
         "title": "Toggle Bold",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleItalics",
+        "command": "lumiere.markdown.toggleItalics",
         "title": "Toggle Italics",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleStrikethrough",
+        "command": "lumiere.markdown.toggleStrikethrough",
         "title": "Toggle Strikethrough",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleHighlight",
+        "command": "lumiere.markdown.toggleHighlight",
         "title": "Toggle Highlight",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleCode",
+        "command": "lumiere.markdown.toggleHighlightRed",
+        "title": "Toggle Red Highlight",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleHighlightOrange",
+        "title": "Toggle Orange Highlight",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleHighlightYellow",
+        "title": "Toggle Yellow Highlight",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleHighlightGreen",
+        "title": "Toggle Green Highlight",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleHighlightBlue",
+        "title": "Toggle Blue Highlight",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleHighlightPurple",
+        "title": "Toggle Purple Highlight",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleCode",
         "title": "Toggle Inline Code",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleComment",
+        "command": "lumiere.markdown.toggleComment",
         "title": "Toggle Comment",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertLink",
+        "command": "lumiere.markdown.insertLink",
         "title": "Insert Link",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertHorizontalRule",
+        "command": "lumiere.markdown.insertHorizontalRule",
         "title": "Insert Horizontal Rule",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleBulletList",
+        "command": "lumiere.markdown.insertCodeBlock",
+        "title": "Insert Code Block",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.insertTag",
+        "title": "Insert Tag",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.clearFormatting",
+        "title": "Clear Formatting",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.deleteParagraph",
+        "title": "Delete Paragraph",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.addCursorAbove",
+        "title": "Add Cursor Above",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.addCursorBelow",
+        "title": "Add Cursor Below",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleBulletList",
         "title": "Toggle Bullet List",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleNumberedList",
+        "command": "lumiere.markdown.toggleNumberedList",
         "title": "Toggle Numbered List",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleBlockquote",
+        "command": "lumiere.markdown.toggleBlockquote",
         "title": "Toggle Blockquote",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.swapLineUp",
+        "command": "lumiere.markdown.swapLineUp",
         "title": "Swap Line Up",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.swapLineDown",
+        "command": "lumiere.markdown.swapLineDown",
         "title": "Swap Line Down",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading0",
+        "command": "lumiere.markdown.setHeading0",
         "title": "Set Heading 0",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading1",
+        "command": "lumiere.markdown.setHeading1",
         "title": "Set Heading 1",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading2",
+        "command": "lumiere.markdown.setHeading2",
         "title": "Set Heading 2",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading3",
+        "command": "lumiere.markdown.setHeading3",
         "title": "Set Heading 3",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading4",
+        "command": "lumiere.markdown.setHeading4",
         "title": "Set Heading 4",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading5",
+        "command": "lumiere.markdown.setHeading5",
         "title": "Set Heading 5",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setHeading6",
+        "command": "lumiere.markdown.setHeading6",
         "title": "Set Heading 6",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.gitDiffEditor.open",
+        "command": "lumiere.markdown.gitDiffEditor.open",
         "title": "Open Rendered Git Diff",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(diff)"
       },
       {
-        "command": "markdownWorkshop.gitGutter.nextChange",
+        "command": "lumiere.markdown.gitGutter.nextChange",
         "title": "Go to Next Git Change",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.gitGutter.previousChange",
+        "command": "lumiere.markdown.gitGutter.previousChange",
         "title": "Go to Previous Git Change",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.gitGutter.showChange",
+        "command": "lumiere.markdown.gitGutter.showChange",
         "title": "Show Git Change",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.graph.open",
+        "command": "lumiere.markdown.graph.open",
         "title": "Open Vault Graph",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.graph.chooseBundle",
+        "command": "lumiere.markdown.graph.chooseBundle",
         "title": "Choose Vault Graph Bundle",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.ideContext.copy",
+        "command": "lumiere.markdown.ideContext.copy",
         "title": "Copy IDE Context",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(clippy)"
       },
       {
-        "command": "markdownWorkshop.ideContext.send",
+        "command": "lumiere.markdown.ideContext.send",
         "title": "Send IDE Context to Agent…",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(comment-discussion)"
       },
       {
-        "command": "markdownWorkshop.insertWikilink",
+        "command": "lumiere.markdown.renameHeading",
+        "title": "Rename Heading…",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.insertWikilink",
         "title": "Insert Wikilink",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.followLink",
+        "command": "lumiere.markdown.followLink",
         "title": "Follow Link",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.openLinkToSide",
+        "command": "lumiere.markdown.openLinkInNewTab",
+        "title": "Open Link in New Tab",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.openLinkToSide",
         "title": "Open Link to Side",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleSourceMode",
+        "command": "lumiere.markdown.toggleSourceMode",
         "title": "Toggle Live Preview/Source Mode",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.marp.preview",
+        "command": "lumiere.markdown.marp.preview",
         "title": "Open Marp Preview to the Side",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.marp.export",
+        "command": "lumiere.markdown.marp.export",
         "title": "Export Marp Slide Deck",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.marp.toggle",
+        "command": "lumiere.markdown.marp.toggle",
         "title": "Toggle Marp",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.marp.moveOutside",
+        "command": "lumiere.markdown.marp.moveOutside",
         "title": "Move Marp Deck Outside Bundle",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.marp.keepInWorkshop",
+        "command": "lumiere.markdown.marp.keepInWorkshop",
         "title": "Keep Marp Deck in Workshop",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleInlineMath",
+        "command": "lumiere.markdown.toggleInlineMath",
         "title": "Toggle Inline Math",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertMathBlock",
+        "command": "lumiere.markdown.insertMathBlock",
         "title": "Insert Math Block",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.outline.expandAll",
+        "command": "lumiere.markdown.outline.expandAll",
         "title": "Expand All",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(expand-all)"
       },
       {
-        "command": "markdownWorkshop.outline.enableFollowCursor",
+        "command": "lumiere.markdown.outline.enableFollowCursor",
         "title": "Follow Cursor",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.outline.disableFollowCursor",
+        "command": "lumiere.markdown.outline.disableFollowCursor",
         "title": "✓ Follow Cursor",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.outline.toggle",
+        "command": "lumiere.markdown.outline.toggle",
         "title": "Toggle Markdown Outline",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(list-tree)"
       },
       {
-        "command": "markdownWorkshop.outline.goToHeading",
+        "command": "lumiere.markdown.outline.goToHeading",
         "title": "Go to Heading…",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.addProperty",
+        "command": "lumiere.markdown.addProperty",
         "title": "Add File Property",
-        "category": "Markdown Workshop",
+        "category": "Lumière",
         "icon": "$(symbol-property)"
       },
       {
-        "command": "markdownWorkshop.managePlugins",
+        "command": "lumiere.markdown.addAlias",
+        "title": "Add Alias",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.clearProperties",
+        "title": "Clear File Properties",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleFoldProperties",
+        "title": "Toggle Fold Properties",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.managePlugins",
         "title": "Manage Plugins",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.openCopiedAgentReference",
+        "command": "lumiere.markdown.openCopiedAgentReference",
         "title": "Open Copied Agent Reference",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.showPluginStatus",
+        "command": "lumiere.markdown.showPluginStatus",
         "title": "Show Plugin Status",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.quickSwitcher",
+        "command": "lumiere.markdown.quickSwitcher",
         "title": "Quick Switcher",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.scratch.new",
+        "command": "lumiere.markdown.scratch.new",
         "title": "New Scratch Note",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.scratch.promote",
+        "command": "lumiere.markdown.scratch.promote",
         "title": "Promote Scratch Note",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.openSettings",
+        "command": "lumiere.markdown.openSettings",
         "title": "Open Settings",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.changeSetting",
+        "command": "lumiere.markdown.changeSetting",
         "title": "Change Setting…",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.setNoteFontSize",
+        "command": "lumiere.markdown.setNoteFontSize",
         "title": "Set Note Font Size",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleLineNumbers",
+        "command": "lumiere.markdown.increaseFontSize",
+        "title": "Increase Font Size",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.decreaseFontSize",
+        "title": "Decrease Font Size",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.toggleLineNumbers",
         "title": "Toggle Line Numbers",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleReadableLineWidth",
+        "command": "lumiere.markdown.toggleReadableLineWidth",
         "title": "Toggle Readable Line Width",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleMermaid",
+        "command": "lumiere.markdown.toggleMermaid",
         "title": "Toggle Mermaid Diagrams",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleInlineTitle",
+        "command": "lumiere.markdown.toggleInlineTitle",
         "title": "Toggle Inline Title",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleInlineGitChanges",
+        "command": "lumiere.markdown.toggleInlineGitChanges",
         "title": "Toggle Inline Git Changes",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleVim",
+        "command": "lumiere.markdown.toggleVim",
         "title": "Toggle Vim Mode",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.insertTable",
+        "command": "lumiere.markdown.toggleSpellcheck",
+        "title": "Toggle Spellcheck",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.insertTable",
         "title": "Insert Table",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableInsertRowAbove",
+        "command": "lumiere.markdown.tableInsertRowAbove",
         "title": "Table: Insert Row Above",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableInsertRowBelow",
+        "command": "lumiere.markdown.tableInsertRowBelow",
         "title": "Table: Insert Row Below",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableInsertColumnLeft",
+        "command": "lumiere.markdown.tableInsertColumnLeft",
         "title": "Table: Insert Column Left",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableInsertColumnRight",
+        "command": "lumiere.markdown.tableInsertColumnRight",
         "title": "Table: Insert Column Right",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableDeleteRow",
+        "command": "lumiere.markdown.tableDeleteRow",
         "title": "Table: Delete Row",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableDeleteColumn",
+        "command": "lumiere.markdown.tableDeleteColumn",
         "title": "Table: Delete Column",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableMoveRowUp",
+        "command": "lumiere.markdown.tableDuplicateRow",
+        "title": "Table: Duplicate Row",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.tableDuplicateColumn",
+        "title": "Table: Duplicate Column",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.tableMoveRowUp",
         "title": "Table: Move Row Up",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableMoveRowDown",
+        "command": "lumiere.markdown.tableMoveRowDown",
         "title": "Table: Move Row Down",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableMoveColumnLeft",
+        "command": "lumiere.markdown.tableMoveColumnLeft",
         "title": "Table: Move Column Left",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableMoveColumnRight",
+        "command": "lumiere.markdown.tableMoveColumnRight",
         "title": "Table: Move Column Right",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableAlignLeft",
+        "command": "lumiere.markdown.tableAlignLeft",
         "title": "Table: Align Left",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableAlignCenter",
+        "command": "lumiere.markdown.tableAlignCenter",
         "title": "Table: Align Center",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableAlignRight",
+        "command": "lumiere.markdown.tableAlignRight",
         "title": "Table: Align Right",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableSortAscending",
+        "command": "lumiere.markdown.tableSortAscending",
         "title": "Table: Sort Ascending",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.tableSortDescending",
+        "command": "lumiere.markdown.tableSortDescending",
         "title": "Table: Sort Descending",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.toggleChecklist",
+        "command": "lumiere.markdown.toggleChecklist",
         "title": "Toggle Checklist Status",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.cycleListChecklist",
+        "command": "lumiere.markdown.cycleListChecklist",
         "title": "Cycle List Checklist",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "title": "Consume Vim Host Shortcut",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.wiki.copyForAgent",
+        "command": "lumiere.markdown.wiki.copyForAgent",
         "title": "Copy Wiki Reference for Agent",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.wiki.copyEnvelope",
+        "command": "lumiere.markdown.wiki.copyEnvelope",
         "title": "Copy Wiki Bridge Envelope",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.wiki.showLayout",
+        "command": "lumiere.markdown.wiki.showLayout",
         "title": "Show Wiki Layout",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
       },
       {
-        "command": "markdownWorkshop.wiki.refresh",
+        "command": "lumiere.markdown.wiki.refresh",
         "title": "Refresh Wiki Diagnostics",
-        "category": "Markdown Workshop"
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.pdf.lookUp",
+        "title": "Look Up",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.openSettings",
+        "title": "Open Settings",
+        "category": "PDF",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "lumiere.pdf.changeSetting",
+        "title": "Change Setting…",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.toggleSmoothScrolling",
+        "title": "Toggle Smooth Scrolling",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.toggleKeyboardShortcuts",
+        "title": "Toggle Keyboard Shortcuts",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.setDefaultZoom",
+        "title": "Set Default Zoom…",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.setDefaultPageLayout",
+        "title": "Set Default Page Layout…",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.setDefaultScrollMode",
+        "title": "Set Default Scrolling…",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.enterZen",
+        "title": "Enter Zen Mode",
+        "category": "PDF",
+        "icon": "$(screen-full)"
+      },
+      {
+        "command": "lumiere.pdf.exitZen",
+        "title": "Exit Zen Mode",
+        "category": "PDF",
+        "icon": "$(screen-normal)"
+      },
+      {
+        "command": "lumiere.pdf.previousPageKeepingPlace",
+        "title": "Previous Page, Keeping Place",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.nextPageKeepingPlace",
+        "title": "Next Page, Keeping Place",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.copyLinkForAgent",
+        "title": "Copy Link for Agent",
+        "category": "PDF",
+        "icon": "$(comment-discussion)",
+        "enablement": "lumiere.pdf.hasSelection"
+      },
+      {
+        "command": "vscodeEmbedPdf.bridge.envelope",
+        "title": "Selection Envelope",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.openLocation",
+        "title": "Open Location…",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.openNativeLink",
+        "title": "Open PDF Link",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.goToOutlineItem",
+        "title": "Go to Outline Item",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.expandOutline",
+        "title": "Expand All",
+        "category": "PDF",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "lumiere.pdf.enableOutlineFollowCursor",
+        "title": "Follow Cursor",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.disableOutlineFollowCursor",
+        "title": "Follow Cursor",
+        "category": "PDF",
+        "icon": "$(check)"
+      },
+      {
+        "command": "lumiere.pdf.copyMcpSetup",
+        "title": "Copy MCP Setup for Claude Code / Codex…",
+        "category": "PDF"
+      },
+      {
+        "command": "lumiere.pdf.previousPage",
+        "title": "Previous Page",
+        "category": "PDF",
+        "icon": "$(chevron-up)",
+        "enablement": "lumiere.pdf.pdfActive && lumiere.pdf.canGoBack"
+      },
+      {
+        "command": "lumiere.pdf.nextPage",
+        "title": "Next Page",
+        "category": "PDF",
+        "icon": "$(chevron-down)",
+        "enablement": "lumiere.pdf.pdfActive && lumiere.pdf.canGoForward"
+      },
+      {
+        "command": "lumiere.pdf.goToPage",
+        "title": "Go to Page…",
+        "category": "PDF",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "lumiere.pdf.zoomOut",
+        "title": "Zoom Out",
+        "category": "PDF",
+        "icon": "$(zoom-out)"
+      },
+      {
+        "command": "lumiere.pdf.zoomIn",
+        "title": "Zoom In",
+        "category": "PDF",
+        "icon": "$(zoom-in)"
+      },
+      {
+        "command": "lumiere.pdf.selectZoom",
+        "title": "Zoom…",
+        "category": "PDF",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "lumiere.pdf.fitWidth",
+        "title": "Fit Width",
+        "category": "PDF",
+        "icon": "$(arrow-both)"
+      },
+      {
+        "command": "lumiere.pdf.fitPage",
+        "title": "Fit Page",
+        "category": "PDF",
+        "icon": "$(screen-full)"
+      },
+      {
+        "command": "lumiere.pdf.find",
+        "title": "Find in PDF",
+        "category": "PDF",
+        "icon": "$(search)"
+      },
+      {
+        "command": "lumiere.pdf.toggleOutline",
+        "title": "Toggle Outline",
+        "category": "PDF",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "lumiere.pdf.selectTextTool",
+        "title": "Select Text Tool",
+        "category": "PDF",
+        "icon": "$(whole-word)"
+      },
+      {
+        "command": "lumiere.pdf.selectRegionTool",
+        "title": "Select Region Tool",
+        "category": "PDF",
+        "icon": "$(inspect)"
+      },
+      {
+        "command": "lumiere.pdf.selectToolbarMode",
+        "title": "Choose Toolbar Location…",
+        "category": "PDF",
+        "icon": "$(layout)"
+      },
+      {
+        "command": "lumiere.pdf.actualSize",
+        "title": "Actual Size (100%)",
+        "category": "PDF",
+        "icon": "$(symbol-numeric)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.selectView",
+        "title": "View…",
+        "category": "PDF",
+        "icon": "$(layout)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.singlePage",
+        "title": "Single Page",
+        "category": "PDF",
+        "icon": "$(file)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.pageLayout == 'single'"
+      },
+      {
+        "command": "lumiere.pdf.twoPageSpread",
+        "title": "Two Pages (1–2, 3–4)",
+        "category": "PDF",
+        "icon": "$(book)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.pageLayout == 'spread'"
+      },
+      {
+        "command": "lumiere.pdf.twoPageCover",
+        "title": "Two Pages with Cover (1, 2–3)",
+        "category": "PDF",
+        "icon": "$(book)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.pageLayout == 'spreadCover'"
+      },
+      {
+        "command": "lumiere.pdf.continuousScroll",
+        "title": "Continuous Scrolling",
+        "category": "PDF",
+        "icon": "$(list-ordered)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.scrollMode == 'continuous'"
+      },
+      {
+        "command": "lumiere.pdf.pageByPage",
+        "title": "Page-by-page Scrolling",
+        "category": "PDF",
+        "icon": "$(file)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.scrollMode == 'paged'"
+      },
+      {
+        "command": "lumiere.pdf.verticalScroll",
+        "title": "Vertical Scrolling",
+        "category": "PDF",
+        "icon": "$(arrow-down)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.scrollDirection == 'vertical'"
+      },
+      {
+        "command": "lumiere.pdf.horizontalScroll",
+        "title": "Horizontal Scrolling",
+        "category": "PDF",
+        "icon": "$(arrow-right)",
+        "enablement": "lumiere.pdf.pdfActive",
+        "toggled": "lumiere.pdf.scrollDirection == 'horizontal'"
+      },
+      {
+        "command": "lumiere.pdf.historyBack",
+        "title": "Back to Previous Location",
+        "category": "PDF",
+        "icon": "$(arrow-left)",
+        "enablement": "lumiere.pdf.historyBack"
+      },
+      {
+        "command": "lumiere.pdf.historyForward",
+        "title": "Forward to Next Location",
+        "category": "PDF",
+        "icon": "$(arrow-right)",
+        "enablement": "lumiere.pdf.historyForward"
+      },
+      {
+        "command": "lumiere.pdf.ideContext.copy",
+        "title": "Copy IDE Context",
+        "category": "Lumière PDF"
+      },
+      {
+        "command": "lumiere.pdf.ideContext.send",
+        "title": "Send IDE Context to Agent…",
+        "category": "Lumière PDF"
       }
     ],
     "keybindings": [
       {
-        "command": "markdownWorkshop.cursorBridge.chat",
+        "command": "lumiere.markdown.cursorBridge.chat",
         "key": "ctrl+l",
         "mac": "cmd+l",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.cursorBridge.edit",
+        "command": "lumiere.markdown.cursorBridge.edit",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.toggleBold",
+        "command": "lumiere.markdown.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.toggleItalics",
+        "command": "lumiere.markdown.toggleItalics",
         "key": "ctrl+i",
         "mac": "cmd+i",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.insertLink",
+        "command": "lumiere.markdown.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge) && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && !lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.gitGutter.nextChange",
+        "command": "lumiere.markdown.gitGutter.nextChange",
         "key": "alt+f5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.gitGutter && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.gitGutter.previousChange",
+        "command": "lumiere.markdown.gitGutter.previousChange",
         "key": "shift+alt+f5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.gitGutter && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.gitGutter.showChange",
+        "command": "lumiere.markdown.gitGutter.showChange",
         "key": "alt+f3",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.gitGutter && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.outline.goToHeading",
+        "command": "lumiere.markdown.outline.goToHeading",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.outline.toggle",
+        "command": "lumiere.markdown.outline.toggle",
         "key": "ctrl+alt+o",
         "mac": "ctrl+cmd+o",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.addProperty",
+        "command": "lumiere.markdown.addProperty",
         "key": "ctrl+;",
         "mac": "cmd+;",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.properties && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+o",
         "mac": "ctrl+o",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+b",
         "mac": "ctrl+b",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+i",
         "mac": "ctrl+i",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+shift+x",
         "mac": "ctrl+shift+x",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+k",
         "mac": "ctrl+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+0",
         "mac": "ctrl+alt+0",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+1",
         "mac": "ctrl+alt+1",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+2",
         "mac": "ctrl+alt+2",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+3",
         "mac": "ctrl+alt+3",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+4",
         "mac": "ctrl+alt+4",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+5",
         "mac": "ctrl+alt+5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+alt+6",
         "mac": "ctrl+alt+6",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+shift+t",
         "mac": "ctrl+shift+t",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
-        "command": "markdownWorkshop.consumeVimHostShortcut",
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+shift+h",
         "mac": "ctrl+shift+h",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.pdf.previousPageKeepingPlace",
+        "key": "ctrl+alt+left",
+        "mac": "alt+left",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.previousPageKeepingPlace",
+        "key": "ctrl+alt+up",
+        "mac": "alt+up",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.nextPageKeepingPlace",
+        "key": "ctrl+alt+right",
+        "mac": "alt+right",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.nextPageKeepingPlace",
+        "key": "ctrl+alt+down",
+        "mac": "alt+down",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.enterZen",
+        "key": "ctrl+alt+z",
+        "mac": "ctrl+cmd+z",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts && !inZenMode"
+      },
+      {
+        "command": "lumiere.pdf.exitZen",
+        "key": "ctrl+alt+z",
+        "mac": "ctrl+cmd+z",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts && inZenMode"
+      },
+      {
+        "command": "lumiere.pdf.exitZen",
+        "key": "escape escape",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts && inZenMode"
+      },
+      {
+        "command": "lumiere.pdf.previousPage",
+        "key": "alt+pageup",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.nextPage",
+        "key": "alt+pagedown",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.goToPage",
+        "key": "ctrl+g",
+        "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.zoomIn",
+        "key": "ctrl+=",
+        "mac": "cmd+=",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.zoomIn",
+        "key": "ctrl+numpad_add",
+        "mac": "cmd+numpad_add",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.zoomOut",
+        "key": "ctrl+-",
+        "mac": "cmd+-",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.zoomOut",
+        "key": "ctrl+numpad_subtract",
+        "mac": "cmd+numpad_subtract",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.fitWidth",
+        "key": "ctrl+0",
+        "mac": "cmd+0",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.fitPage",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.find",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.outline.focus",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && focusedView != 'lumiere.pdf.outline' && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "workbench.action.closeSidebar",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "focusedView == 'lumiere.pdf.outline' && sideBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "workbench.action.closeAuxiliaryBar",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "focusedView == 'lumiere.pdf.outline' && auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "workbench.action.closePanel",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "focusedView == 'lumiere.pdf.outline' && panelFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.selectTextTool",
+        "key": "ctrl+alt+t",
+        "mac": "ctrl+cmd+t",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.selectRegionTool",
+        "key": "ctrl+alt+r",
+        "mac": "ctrl+cmd+r",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
       }
     ],
     "views": {
       "explorer": [
         {
-          "id": "markdownWorkshop.backlinks",
+          "id": "lumiere.markdown.backlinks",
           "name": "Backlinks",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.backlinks.enabled"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled"
         },
         {
-          "id": "markdownWorkshop.outgoingLinks",
+          "id": "lumiere.markdown.cursorBridge.editPromptProbe",
+          "name": "·",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.cursorBridge.enabled && (editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed"
+        },
+        {
+          "id": "lumiere.markdown.outgoingLinks",
           "name": "Outgoing Links",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outgoingLinks.enabled"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled"
         },
         {
-          "id": "markdownWorkshop.outline",
+          "id": "lumiere.markdown.outline",
           "name": "Markdown Outline",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && activeCustomEditorId == 'markdownWorkshop.editor'"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && activeCustomEditorId == 'lumiere.markdown.editor'"
         },
         {
-          "id": "markdownWorkshop.tags",
+          "id": "lumiere.markdown.tags",
           "name": "Tags",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.tags.enabled && activeCustomEditorId == 'markdownWorkshop.editor'"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && activeCustomEditorId == 'lumiere.markdown.editor'"
+        },
+        {
+          "id": "lumiere.pdf.outline",
+          "name": "PDF Outline",
+          "when": "lumiere.pdf.pdfActive"
         }
       ]
     },
     "menus": {
       "commandPalette": [
         {
-          "command": "markdownWorkshop.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.agentBridge"
+          "command": "lumiere.markdown.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge"
         },
         {
-          "command": "markdownWorkshop.assets.import",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.assets.enabled"
+          "command": "lumiere.markdown.assets.import",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.assets.enabled"
         },
         {
-          "command": "markdownWorkshop.bridge.copyEnvelope",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.bridge.enabled"
+          "command": "lumiere.markdown.bridge.copyEnvelope",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.bridge.enabled"
         },
         {
-          "command": "markdownWorkshop.bridge.envelope",
+          "command": "lumiere.markdown.bridge.envelope",
           "when": "false"
         },
         {
-          "command": "markdownWorkshop.insertCallout",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.callouts"
+          "command": "lumiere.markdown.insertCallout",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.callouts"
         },
         {
-          "command": "markdownWorkshop.save",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands"
+          "command": "lumiere.markdown.save",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands"
         },
         {
-          "command": "markdownWorkshop.undo",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands"
+          "command": "lumiere.markdown.undo",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands"
         },
         {
-          "command": "markdownWorkshop.redo",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands"
+          "command": "lumiere.markdown.redo",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands"
         },
         {
-          "command": "markdownWorkshop.close",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands"
+          "command": "lumiere.markdown.close",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands"
         },
         {
-          "command": "markdownWorkshop.saveClose",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands"
+          "command": "lumiere.markdown.saveClose",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands"
         },
         {
-          "command": "markdownWorkshop.openAsText",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands"
+          "command": "lumiere.markdown.openAsText",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands"
         },
         {
-          "command": "markdownWorkshop.cursorBridge.chat",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
+          "command": "lumiere.markdown.cursorBridge.chat",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost"
         },
         {
-          "command": "markdownWorkshop.cursorBridge.edit",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
+          "command": "lumiere.markdown.cursorBridge.edit",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost"
         },
         {
-          "command": "markdownWorkshop.jumpBack",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor"
-        },
-        {
-          "command": "markdownWorkshop.jumpForward",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor"
-        },
-        {
-          "command": "markdownWorkshop.titleActions",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor"
-        },
-        {
-          "command": "markdownWorkshop.selectionActions",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor"
-        },
-        {
-          "command": "markdownWorkshop.useForMarkdownInWorkspace"
-        },
-        {
-          "command": "markdownWorkshop.insertEmbed",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.embeds"
-        },
-        {
-          "command": "markdownWorkshop.foldAll",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.folding"
-        },
-        {
-          "command": "markdownWorkshop.unfoldAll",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.folding"
-        },
-        {
-          "command": "markdownWorkshop.toggleFold",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.folding"
-        },
-        {
-          "command": "markdownWorkshop.insertFootnote",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.footnotes"
-        },
-        {
-          "command": "markdownWorkshop.toggleBold",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleItalics",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleStrikethrough",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleHighlight",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleCode",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleComment",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.insertLink",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)"
-        },
-        {
-          "command": "markdownWorkshop.insertHorizontalRule",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleBulletList",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleNumberedList",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.toggleBlockquote",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.swapLineUp",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.swapLineDown",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading0",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading1",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading2",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading3",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading4",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading5",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.setHeading6",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
-        },
-        {
-          "command": "markdownWorkshop.gitDiffEditor.open",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.gitDiffEditor.enabled"
-        },
-        {
-          "command": "markdownWorkshop.gitGutter.nextChange",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
-        },
-        {
-          "command": "markdownWorkshop.gitGutter.previousChange",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
-        },
-        {
-          "command": "markdownWorkshop.gitGutter.showChange",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
-        },
-        {
-          "command": "markdownWorkshop.graph.open",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.graph.enabled"
-        },
-        {
-          "command": "markdownWorkshop.graph.chooseBundle",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.graph.enabled"
-        },
-        {
-          "command": "markdownWorkshop.ideContext.copy",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.ideContext"
-        },
-        {
-          "command": "markdownWorkshop.ideContext.send",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.ideContext"
-        },
-        {
-          "command": "markdownWorkshop.insertWikilink",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.links"
-        },
-        {
-          "command": "markdownWorkshop.followLink",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.links"
-        },
-        {
-          "command": "markdownWorkshop.openLinkToSide",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.links"
-        },
-        {
-          "command": "markdownWorkshop.toggleSourceMode",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.livePreview"
-        },
-        {
-          "command": "markdownWorkshop.marp.preview",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
-        },
-        {
-          "command": "markdownWorkshop.marp.export",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
-        },
-        {
-          "command": "markdownWorkshop.marp.toggle",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
-        },
-        {
-          "command": "markdownWorkshop.marp.moveOutside",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
-        },
-        {
-          "command": "markdownWorkshop.marp.keepInWorkshop",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
-        },
-        {
-          "command": "markdownWorkshop.toggleInlineMath",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.math"
-        },
-        {
-          "command": "markdownWorkshop.insertMathBlock",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.math"
-        },
-        {
-          "command": "markdownWorkshop.outline.expandAll",
+          "command": "lumiere.markdown.cursorBridge.dismissEditMirror",
           "when": "false"
         },
         {
-          "command": "markdownWorkshop.outline.enableFollowCursor",
+          "command": "lumiere.markdown.jumpBack",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
+        },
+        {
+          "command": "lumiere.markdown.jumpForward",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
+        },
+        {
+          "command": "lumiere.markdown.titleActions",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
+        },
+        {
+          "command": "lumiere.markdown.selectionActions",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
+        },
+        {
+          "command": "lumiere.markdown.useForMarkdownInWorkspace"
+        },
+        {
+          "command": "lumiere.markdown.insertEmbed",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.embeds"
+        },
+        {
+          "command": "lumiere.markdown.foldAll",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.folding"
+        },
+        {
+          "command": "lumiere.markdown.unfoldAll",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.folding"
+        },
+        {
+          "command": "lumiere.markdown.toggleFold",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.folding"
+        },
+        {
+          "command": "lumiere.markdown.foldMore",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.folding"
+        },
+        {
+          "command": "lumiere.markdown.foldLess",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.folding"
+        },
+        {
+          "command": "lumiere.markdown.insertFootnote",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.footnotes"
+        },
+        {
+          "command": "lumiere.markdown.toggleBold",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleItalics",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleStrikethrough",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlight",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightRed",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightOrange",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightYellow",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightGreen",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightBlue",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightPurple",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleCode",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleComment",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.insertLink",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.insertHorizontalRule",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.insertCodeBlock",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.insertTag",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.clearFormatting",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.deleteParagraph",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.addCursorAbove",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.addCursorBelow",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleBulletList",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleNumberedList",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.toggleBlockquote",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.swapLineUp",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.swapLineDown",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading0",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading1",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading2",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading3",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading4",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading5",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.setHeading6",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting"
+        },
+        {
+          "command": "lumiere.markdown.gitDiffEditor.open",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.gitDiffEditor.enabled"
+        },
+        {
+          "command": "lumiere.markdown.gitGutter.nextChange",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.gitGutter"
+        },
+        {
+          "command": "lumiere.markdown.gitGutter.previousChange",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.gitGutter"
+        },
+        {
+          "command": "lumiere.markdown.gitGutter.showChange",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.gitGutter"
+        },
+        {
+          "command": "lumiere.markdown.graph.open",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.graph.enabled"
+        },
+        {
+          "command": "lumiere.markdown.graph.chooseBundle",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.graph.enabled"
+        },
+        {
+          "command": "lumiere.markdown.ideContext.copy",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.ideContext"
+        },
+        {
+          "command": "lumiere.markdown.ideContext.send",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.ideContext"
+        },
+        {
+          "command": "lumiere.markdown.renameHeading",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.linkUpdates.enabled"
+        },
+        {
+          "command": "lumiere.markdown.insertWikilink",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.links"
+        },
+        {
+          "command": "lumiere.markdown.followLink",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.links"
+        },
+        {
+          "command": "lumiere.markdown.openLinkInNewTab",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.links"
+        },
+        {
+          "command": "lumiere.markdown.openLinkToSide",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.links"
+        },
+        {
+          "command": "lumiere.markdown.toggleSourceMode",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.livePreview"
+        },
+        {
+          "command": "lumiere.markdown.marp.preview",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.marp.enabled"
+        },
+        {
+          "command": "lumiere.markdown.marp.export",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.marp.enabled"
+        },
+        {
+          "command": "lumiere.markdown.marp.toggle",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.marp.enabled"
+        },
+        {
+          "command": "lumiere.markdown.marp.moveOutside",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.marp.enabled"
+        },
+        {
+          "command": "lumiere.markdown.marp.keepInWorkshop",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.marp.enabled"
+        },
+        {
+          "command": "lumiere.markdown.toggleInlineMath",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.math"
+        },
+        {
+          "command": "lumiere.markdown.insertMathBlock",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.math"
+        },
+        {
+          "command": "lumiere.markdown.outline.expandAll",
           "when": "false"
         },
         {
-          "command": "markdownWorkshop.outline.disableFollowCursor",
+          "command": "lumiere.markdown.outline.enableFollowCursor",
           "when": "false"
         },
         {
-          "command": "markdownWorkshop.outline.toggle",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled"
-        },
-        {
-          "command": "markdownWorkshop.outline.goToHeading",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline"
-        },
-        {
-          "command": "markdownWorkshop.addProperty",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
-        },
-        {
-          "command": "markdownWorkshop.managePlugins"
-        },
-        {
-          "command": "markdownWorkshop.openCopiedAgentReference"
-        },
-        {
-          "command": "markdownWorkshop.showPluginStatus"
-        },
-        {
-          "command": "markdownWorkshop.quickSwitcher",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.quickSwitcher.enabled"
-        },
-        {
-          "command": "markdownWorkshop.scratch.new",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.scratch.enabled"
-        },
-        {
-          "command": "markdownWorkshop.scratch.promote",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.scratch.enabled"
-        },
-        {
-          "command": "markdownWorkshop.openSettings"
-        },
-        {
-          "command": "markdownWorkshop.changeSetting"
-        },
-        {
-          "command": "markdownWorkshop.setNoteFontSize"
-        },
-        {
-          "command": "markdownWorkshop.toggleLineNumbers"
-        },
-        {
-          "command": "markdownWorkshop.toggleReadableLineWidth"
-        },
-        {
-          "command": "markdownWorkshop.toggleMermaid"
-        },
-        {
-          "command": "markdownWorkshop.toggleInlineTitle"
-        },
-        {
-          "command": "markdownWorkshop.toggleInlineGitChanges"
-        },
-        {
-          "command": "markdownWorkshop.toggleVim"
-        },
-        {
-          "command": "markdownWorkshop.insertTable",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableInsertRowAbove",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableInsertRowBelow",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableInsertColumnLeft",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableInsertColumnRight",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableDeleteRow",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableDeleteColumn",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableMoveRowUp",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableMoveRowDown",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableMoveColumnLeft",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableMoveColumnRight",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableAlignLeft",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableAlignCenter",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableAlignRight",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableSortAscending",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.tableSortDescending",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
-        },
-        {
-          "command": "markdownWorkshop.toggleChecklist",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tasks"
-        },
-        {
-          "command": "markdownWorkshop.cycleListChecklist",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tasks"
-        },
-        {
-          "command": "markdownWorkshop.consumeVimHostShortcut",
+          "command": "lumiere.markdown.outline.disableFollowCursor",
           "when": "false"
         },
         {
-          "command": "markdownWorkshop.wiki.copyForAgent",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.wiki.enabled"
+          "command": "lumiere.markdown.outline.toggle",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled"
         },
         {
-          "command": "markdownWorkshop.wiki.copyEnvelope",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.wiki.enabled"
+          "command": "lumiere.markdown.outline.goToHeading",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline"
         },
         {
-          "command": "markdownWorkshop.wiki.showLayout",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.wiki.enabled"
+          "command": "lumiere.markdown.addProperty",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.properties"
         },
         {
-          "command": "markdownWorkshop.wiki.refresh",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.wiki.enabled"
+          "command": "lumiere.markdown.addAlias",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.properties"
+        },
+        {
+          "command": "lumiere.markdown.clearProperties",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.properties"
+        },
+        {
+          "command": "lumiere.markdown.toggleFoldProperties",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.properties"
+        },
+        {
+          "command": "lumiere.markdown.managePlugins"
+        },
+        {
+          "command": "lumiere.markdown.openCopiedAgentReference"
+        },
+        {
+          "command": "lumiere.markdown.showPluginStatus"
+        },
+        {
+          "command": "lumiere.markdown.quickSwitcher",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.quickSwitcher.enabled"
+        },
+        {
+          "command": "lumiere.markdown.scratch.new",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.scratch.enabled"
+        },
+        {
+          "command": "lumiere.markdown.scratch.promote",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.scratch.enabled"
+        },
+        {
+          "command": "lumiere.markdown.openSettings"
+        },
+        {
+          "command": "lumiere.markdown.changeSetting"
+        },
+        {
+          "command": "lumiere.markdown.setNoteFontSize"
+        },
+        {
+          "command": "lumiere.markdown.increaseFontSize"
+        },
+        {
+          "command": "lumiere.markdown.decreaseFontSize"
+        },
+        {
+          "command": "lumiere.markdown.toggleLineNumbers"
+        },
+        {
+          "command": "lumiere.markdown.toggleReadableLineWidth"
+        },
+        {
+          "command": "lumiere.markdown.toggleMermaid"
+        },
+        {
+          "command": "lumiere.markdown.toggleInlineTitle"
+        },
+        {
+          "command": "lumiere.markdown.toggleInlineGitChanges"
+        },
+        {
+          "command": "lumiere.markdown.toggleVim"
+        },
+        {
+          "command": "lumiere.markdown.toggleSpellcheck"
+        },
+        {
+          "command": "lumiere.markdown.insertTable",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableInsertRowAbove",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableInsertRowBelow",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableInsertColumnLeft",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableInsertColumnRight",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableDeleteRow",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableDeleteColumn",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableDuplicateRow",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableDuplicateColumn",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableMoveRowUp",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableMoveRowDown",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableMoveColumnLeft",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableMoveColumnRight",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableAlignLeft",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableAlignCenter",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableAlignRight",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableSortAscending",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.tableSortDescending",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
+        },
+        {
+          "command": "lumiere.markdown.toggleChecklist",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tasks"
+        },
+        {
+          "command": "lumiere.markdown.cycleListChecklist",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tasks"
+        },
+        {
+          "command": "lumiere.markdown.consumeVimHostShortcut",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.wiki.copyForAgent",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.wiki.enabled"
+        },
+        {
+          "command": "lumiere.markdown.wiki.copyEnvelope",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.wiki.enabled"
+        },
+        {
+          "command": "lumiere.markdown.wiki.showLayout",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.wiki.enabled"
+        },
+        {
+          "command": "lumiere.markdown.wiki.refresh",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.wiki.enabled"
+        },
+        {
+          "command": "vscodeEmbedPdf.bridge.envelope",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.expandOutline",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.enableOutlineFollowCursor",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.disableOutlineFollowCursor",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.lookUp",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.copyLinkForAgent",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.goToOutlineItem",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.openNativeLink",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.pdf.previousPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.enterZen",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inZenMode"
+        },
+        {
+          "command": "lumiere.pdf.exitZen",
+          "when": "inZenMode"
+        },
+        {
+          "command": "lumiere.pdf.previousPageKeepingPlace",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.nextPageKeepingPlace",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.nextPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.goToPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.zoomOut",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.zoomIn",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.selectZoom",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.fitWidth",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.fitPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.find",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.toggleOutline",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.selectTextTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.selectToolbarMode"
+        },
+        {
+          "command": "lumiere.pdf.actualSize",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.selectView",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.singlePage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.twoPageSpread",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.twoPageCover",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.continuousScroll",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.pageByPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.verticalScroll",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.horizontalScroll",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.historyBack",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.historyForward",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.ideContext.copy"
+        },
+        {
+          "command": "lumiere.pdf.ideContext.send"
         }
       ],
       "webview/context": [
         {
-          "command": "markdownWorkshop.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.agentBridge && webviewSection == 'markdownContent' && markdownWorkshop.hasSelection",
+          "command": "lumiere.markdown.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
           "group": "agent"
         },
         {
-          "command": "markdownWorkshop.selectionActions",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && webviewSection == 'markdownContent' && markdownWorkshop.hasSelection && markdownWorkshop.hasSelectionActions",
+          "command": "lumiere.markdown.selectionActions",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection && lumiere.markdown.hasSelectionActions",
           "group": "agent"
         },
         {
-          "command": "markdownWorkshop.toggleBold",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && webviewSection == 'markdownContent'",
+          "command": "lumiere.markdown.toggleBold",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
         },
         {
-          "command": "markdownWorkshop.toggleItalics",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && webviewSection == 'markdownContent'",
+          "command": "lumiere.markdown.toggleItalics",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
         },
         {
-          "command": "markdownWorkshop.toggleStrikethrough",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && webviewSection == 'markdownContent'",
+          "command": "lumiere.markdown.toggleStrikethrough",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
         },
         {
-          "command": "markdownWorkshop.toggleHighlight",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && webviewSection == 'markdownContent'",
+          "command": "lumiere.markdown.toggleHighlight",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
         },
         {
-          "command": "markdownWorkshop.toggleCode",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && webviewSection == 'markdownContent'",
+          "command": "lumiere.markdown.toggleCode",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
         },
         {
-          "command": "markdownWorkshop.insertLink",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && webviewSection == 'markdownContent'",
+          "command": "lumiere.markdown.insertLink",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
+        },
+        {
+          "command": "lumiere.pdf.lookUp",
+          "when": "webviewId == 'lumiere.pdf.viewer' && isMac && config.lumiere.pdf.lookUp.enabled",
+          "group": "0_agent@2"
+        },
+        {
+          "command": "lumiere.pdf.copyLinkForAgent",
+          "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.hasSelection",
+          "group": "0_agent@1"
+        },
+        {
+          "command": "lumiere.pdf.goToPage",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfView@1"
+        },
+        {
+          "command": "lumiere.pdf.fitWidth",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfView@2"
+        },
+        {
+          "command": "lumiere.pdf.fitPage",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfView@3"
+        },
+        {
+          "command": "lumiere.pdf.selectRegionTool",
+          "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.tool != 'region'",
+          "group": "2_pdfTool@1"
+        },
+        {
+          "command": "lumiere.pdf.selectTextTool",
+          "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.tool == 'region'",
+          "group": "2_pdfTool@1"
+        },
+        {
+          "command": "lumiere.pdf.enterZen",
+          "when": "webviewId == 'lumiere.pdf.viewer' && !inZenMode",
+          "group": "4_pdfZen@1"
+        },
+        {
+          "command": "lumiere.pdf.openSettings",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "5_pdfSettings@1"
+        },
+        {
+          "command": "lumiere.pdf.exitZen",
+          "when": "webviewId == 'lumiere.pdf.viewer' && inZenMode",
+          "group": "4_pdfZen@1"
+        },
+        {
+          "command": "lumiere.pdf.actualSize",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@1"
+        },
+        {
+          "command": "lumiere.pdf.selectView",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@2"
+        },
+        {
+          "command": "lumiere.pdf.singlePage",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@3"
+        },
+        {
+          "command": "lumiere.pdf.twoPageSpread",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@4"
+        },
+        {
+          "command": "lumiere.pdf.twoPageCover",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@5"
+        },
+        {
+          "command": "lumiere.pdf.continuousScroll",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@6"
+        },
+        {
+          "command": "lumiere.pdf.pageByPage",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@7"
+        },
+        {
+          "command": "lumiere.pdf.verticalScroll",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@8"
+        },
+        {
+          "command": "lumiere.pdf.horizontalScroll",
+          "when": "webviewId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfView@9"
         }
       ],
       "view/title": [
         {
-          "command": "markdownWorkshop.outline.expandAll",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkshop.outline",
+          "command": "lumiere.markdown.outline.expandAll",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && view == lumiere.markdown.outline",
           "group": "navigation@1"
         },
         {
-          "command": "markdownWorkshop.outline.enableFollowCursor",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkshop.outline && !markdownWorkshop.outline.followCursor",
+          "command": "lumiere.markdown.outline.enableFollowCursor",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && view == lumiere.markdown.outline && !lumiere.markdown.outline.followCursor",
           "group": "outline@1"
         },
         {
-          "command": "markdownWorkshop.outline.disableFollowCursor",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkshop.outline && markdownWorkshop.outline.followCursor",
+          "command": "lumiere.markdown.outline.disableFollowCursor",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && view == lumiere.markdown.outline && lumiere.markdown.outline.followCursor",
           "group": "outline@1"
+        },
+        {
+          "command": "lumiere.pdf.expandOutline",
+          "when": "view == lumiere.pdf.outline",
+          "group": "navigation@1"
+        },
+        {
+          "command": "lumiere.pdf.enableOutlineFollowCursor",
+          "when": "view == lumiere.pdf.outline && !lumiere.pdf.outlineFollowCursor",
+          "group": "1_outline@1"
+        },
+        {
+          "command": "lumiere.pdf.disableOutlineFollowCursor",
+          "when": "view == lumiere.pdf.outline && lumiere.pdf.outlineFollowCursor",
+          "group": "1_outline@1"
         }
       ],
       "editor/title": [
         {
-          "command": "markdownWorkshop.jumpBack",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkshop.canJumpBack",
+          "command": "lumiere.markdown.jumpBack",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.canJumpBack",
           "group": "navigation@1"
         },
         {
-          "command": "markdownWorkshop.jumpForward",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkshop.canJumpForward",
+          "command": "lumiere.markdown.jumpForward",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.canJumpForward",
           "group": "navigation@2"
         },
         {
-          "command": "markdownWorkshop.titleActions",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkshop.hasTitleActions",
+          "command": "lumiere.markdown.titleActions",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.hasTitleActions",
           "group": "navigation"
         },
         {
-          "command": "markdownWorkshop.addProperty",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties",
+          "command": "lumiere.markdown.addProperty",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.properties",
           "group": "navigation"
         },
         {
-          "command": "markdownWorkshop.openAsText",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.commands",
+          "command": "lumiere.markdown.openAsText",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.commands",
           "group": "navigation"
+        },
+        {
+          "command": "lumiere.pdf.historyBack",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
+          "group": "navigation@8"
+        },
+        {
+          "command": "lumiere.pdf.historyForward",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
+          "group": "navigation@9"
+        },
+        {
+          "command": "lumiere.pdf.find",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+          "group": "navigation@10"
+        },
+        {
+          "command": "lumiere.pdf.zoomOut",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+          "group": "navigation@11"
+        },
+        {
+          "command": "lumiere.pdf.zoomIn",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+          "group": "navigation@12"
+        },
+        {
+          "command": "lumiere.pdf.fitPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit == 'width'",
+          "group": "navigation@13"
+        },
+        {
+          "command": "lumiere.pdf.fitWidth",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit != 'width'",
+          "group": "navigation@13"
+        },
+        {
+          "command": "lumiere.pdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool != 'region'",
+          "group": "navigation@14"
+        },
+        {
+          "command": "lumiere.pdf.selectTextTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool == 'region'",
+          "group": "navigation@14"
+        },
+        {
+          "command": "lumiere.pdf.find",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "0_pdfFind@1"
+        },
+        {
+          "command": "lumiere.pdf.previousPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@1"
+        },
+        {
+          "command": "lumiere.pdf.nextPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@2"
+        },
+        {
+          "command": "lumiere.pdf.goToPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@3"
+        },
+        {
+          "command": "lumiere.pdf.zoomIn",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "2_pdfZoom@1"
+        },
+        {
+          "command": "lumiere.pdf.zoomOut",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "2_pdfZoom@2"
+        },
+        {
+          "command": "lumiere.pdf.selectZoom",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "2_pdfZoom@3"
+        },
+        {
+          "command": "lumiere.pdf.fitWidth",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "2_pdfZoom@4"
+        },
+        {
+          "command": "lumiere.pdf.fitPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "2_pdfZoom@5"
+        },
+        {
+          "command": "lumiere.pdf.selectTextTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfTool@1"
+        },
+        {
+          "command": "lumiere.pdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfTool@2"
+        },
+        {
+          "command": "lumiere.pdf.toggleOutline",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@1"
+        },
+        {
+          "command": "lumiere.pdf.selectToolbarMode",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@2"
+        },
+        {
+          "command": "lumiere.pdf.actualSize",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@3"
+        },
+        {
+          "command": "lumiere.pdf.selectView",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@4"
+        },
+        {
+          "command": "lumiere.pdf.singlePage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@5"
+        },
+        {
+          "command": "lumiere.pdf.twoPageSpread",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@6"
+        },
+        {
+          "command": "lumiere.pdf.twoPageCover",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@7"
+        },
+        {
+          "command": "lumiere.pdf.continuousScroll",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@8"
+        },
+        {
+          "command": "lumiere.pdf.pageByPage",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@9"
+        },
+        {
+          "command": "lumiere.pdf.verticalScroll",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@10"
+        },
+        {
+          "command": "lumiere.pdf.horizontalScroll",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@11"
+        },
+        {
+          "command": "lumiere.pdf.selectView",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
+          "group": "navigation@15"
         }
       ]
     },
-    "configuration": {
-      "title": "Markdown Workshop",
-      "properties": {
-        "markdownWorkshop.plugins.agentBridge.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Copy selected text with a link to its saved source lines, for an agent."
-        },
-        "markdownWorkshop.plugins.assets.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Import a file into the project's assets folder and insert a portable Markdown link."
-        },
-        "markdownWorkshop.plugins.autoPair.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Auto pair in the Markdown editor."
-        },
-        "markdownWorkshop.plugins.backlinks.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Backlinks view and status bar count for the active note, with unlinked mentions."
-        },
-        "markdownWorkshop.plugins.bridge.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Build a versioned selection envelope for an agent. Agent PDF Viewer is used when it is installed. This does not open a chat."
-        },
-        "markdownWorkshop.plugins.callouts.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Render callouts and remember their disclosure state per panel."
-        },
-        "markdownWorkshop.plugins.codeBlocks.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Highlight rendered and editable code fences; copy code."
-        },
-        "markdownWorkshop.plugins.cursorBridge.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "In Cursor, Cmd/Ctrl+L opens Chat and Cmd/Ctrl+K opens Edit on the Live Preview selection."
-        },
-        "markdownWorkshop.plugins.diagrams.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Render Mermaid diagrams in strict mode."
-        },
-        "markdownWorkshop.plugins.embeds.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Transclude notes, images and media; open attachment cards."
-        },
-        "markdownWorkshop.plugins.folding.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Folding in the Markdown editor."
-        },
-        "markdownWorkshop.plugins.footnotes.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Footnote references, definitions, previews and navigation."
-        },
-        "markdownWorkshop.plugins.formatting.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Markdown editing commands."
-        },
-        "markdownWorkshop.plugins.gitBlame.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Shows who last committed the caret line at the end of the line in Live Preview."
-        },
-        "markdownWorkshop.plugins.gitDiffEditor.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "A side-by-side diff of two versions of a note, both rendered, blocks aligned and changed words marked. Opens from Source Control when diffEditor is rendered."
-        },
-        "markdownWorkshop.plugins.gitGutter.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Added, modified and deleted bars beside the line numbers, like VS Code's quick diff, with a raw unified peek to revert a hunk."
-        },
-        "markdownWorkshop.plugins.gitInline.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Track changes in the rendered note: removed words struck through, added words tinted, removed blocks shown with Restore. Needs Git change bars."
-        },
-        "markdownWorkshop.plugins.graph.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Draw an OKF bundle as a directed graph of notes, in a panel of its own."
-        },
-        "markdownWorkshop.plugins.ideContext.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Copy or send a deeper IDE-context packet for Claude Code and Codex (clipboard-first; never silent-guess)."
-        },
-        "markdownWorkshop.plugins.indentGuides.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Indentation guides in the Markdown editor."
-        },
-        "markdownWorkshop.plugins.inlineTitle.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Show and rename the note title above its Markdown content."
-        },
-        "markdownWorkshop.plugins.lineNumbers.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Line numbers in the Markdown editor, laid out like VS Code's text editor and following editor.lineNumbers."
-        },
-        "markdownWorkshop.plugins.linkUpdates.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Update links in other notes when a note or attachment is renamed or moved in VS Code."
-        },
-        "markdownWorkshop.plugins.links.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Follow Markdown links and wikilinks."
-        },
-        "markdownWorkshop.plugins.marp.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Detect Marp decks and open Marp's preview or export. Decks inside a wiki bundle are not wrapped into pages."
-        },
-        "markdownWorkshop.plugins.math.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Render TeX formulas with MathJax."
-        },
-        "markdownWorkshop.plugins.obsidianCompat.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Use Obsidian property types and vault settings in Markdown Workshop."
-        },
-        "markdownWorkshop.plugins.okfCore.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Shared Open Knowledge Format bundles, link resolution and resource checks."
-        },
-        "markdownWorkshop.plugins.onlineVideos.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Show YouTube and Bilibili links embedded as images as video cards, with titles and covers in trusted workspaces."
-        },
-        "markdownWorkshop.plugins.outgoingLinks.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Outgoing links view: the notes and files the active note links to, and links not created yet."
-        },
-        "markdownWorkshop.plugins.outline.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Markdown Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings."
-        },
-        "markdownWorkshop.plugins.pagePreview.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Preview internal links with a modifier hover or keyboard."
-        },
-        "markdownWorkshop.plugins.pasteHtml.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Convert rich clipboard HTML into Markdown in notes and table cells."
-        },
-        "markdownWorkshop.plugins.properties.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Edit YAML properties as typed fields, lists and ordered rows."
-        },
-        "markdownWorkshop.plugins.quickSwitcher.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Find a note by name, alias or path, or create it, like Obsidian's quick switcher."
-        },
-        "markdownWorkshop.plugins.scratch.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Temporary notes outside the wiki bundle. Promote one into the wiki only when you ask."
-        },
-        "markdownWorkshop.plugins.search.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Render query blocks as live vault search results."
-        },
-        "markdownWorkshop.plugins.smartLists.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Smart lists in the Markdown editor."
-        },
-        "markdownWorkshop.plugins.sourcesProperty.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Show OKF sources with open links; values edit as YAML beside other Properties."
-        },
-        "markdownWorkshop.plugins.spellcheck.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Spellcheck in the Markdown editor."
-        },
-        "markdownWorkshop.plugins.stickyScroll.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Pin ancestor Markdown headings at the top while scrolling in Live Preview and Source mode. Click a pinned heading to return to it."
-        },
-        "markdownWorkshop.plugins.suggest.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Complete links, headings, blocks and tags from the vault index."
-        },
-        "markdownWorkshop.plugins.tables.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Edit Markdown tables as grids with projected cell editing."
-        },
-        "markdownWorkshop.plugins.tags.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Render tags, find notes with matching hierarchical tags, and list the vault's tags in the Tags view."
-        },
-        "markdownWorkshop.plugins.tasks.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Interactive checkboxes and checklist commands."
-        },
-        "markdownWorkshop.plugins.vim.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "Vim in the Markdown editor."
-        },
-        "markdownWorkshop.plugins.wiki.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Read a project's .wiki layout and copy a reference for an agent. This does not run an agent or create folders."
-        },
-        "markdownWorkshop.plugins.wordCount.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Word and character count of the active note, or of the selection, in the status bar."
-        },
-        "markdownWorkshop.assets.path": {
-          "type": "string",
-          "default": "",
-          "description": "Project-relative assets folder used when the folder has no .wiki/layout.json. Empty uses assets. The folder is created on import, not on open.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.autoPair.brackets": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource"
-        },
-        "markdownWorkshop.autoPair.markdown": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.defaultMode": {
-          "enum": [
-            "livePreview",
-            "source"
-          ],
-          "default": "livePreview",
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.readableLineLength": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.reclaimTextEditor": {
-          "enum": [
-            "auto",
-            "on",
-            "off"
-          ],
-          "default": "auto",
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.warmTextDocument": {
-          "enum": [
-            "auto",
-            "on",
-            "off"
-          ],
-          "default": "auto",
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.strictLineBreaks": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.rightToLeft": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.dragScrollSpeed": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 10,
-          "default": 4,
-          "description": "Speed multiplier for text-selection auto-scroll near the editor edges (1–10). Default: 4; 1 restores CodeMirror's original speed. Applies immediately in Live Preview and Source mode.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.useTabs": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.tabSize": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 16,
-          "default": 4,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.fontSize": {
-          "type": "number",
-          "minimum": 8,
-          "maximum": 48,
-          "description": "Font size of the note text in pixels (Obsidian's default is 16). Headings, code, tables, line numbers, properties and footnotes scale with it. It replaces editor.fontSize for notes; the font family still follows editor.fontFamily.",
-          "default": 16,
-          "scope": "resource"
-        },
-        "markdownWorkshop.editor.lineHeight": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 3,
-          "description": "Line height of the note text as a multiple of its font size (Obsidian's default is 1.5). It replaces editor.lineHeight for notes.",
-          "default": 1.5,
-          "scope": "resource"
-        },
-        "markdownWorkshop.folding.heading": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource"
-        },
-        "markdownWorkshop.folding.indent": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource"
-        },
-        "markdownWorkshop.gitDiffEditor.diffEditor": {
-          "enum": [
-            "native",
-            "rendered"
-          ],
-          "default": "native",
-          "description": "How a Markdown diff opened from Source Control or the Timeline is shown: VS Code's text diff (native), or both versions rendered side by side (rendered).",
-          "scope": "resource"
-        },
-        "markdownWorkshop.gitGutter.compareTo": {
-          "enum": [
-            "HEAD",
-            "index"
-          ],
-          "default": "HEAD",
-          "description": "What the change bars compare the note with: the last commit (HEAD) or the staged version (index).",
-          "scope": "resource"
-        },
-        "markdownWorkshop.graph.maxNodes": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 2000,
-          "default": 2000,
-          "description": "Hard cap on notes drawn in the vault graph.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.graph.maxEdges": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 20000,
-          "default": 20000,
-          "description": "Hard cap on aggregated links drawn in the vault graph.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.graph.defaultMode": {
-          "enum": [
-            "global",
-            "local"
-          ],
-          "default": "global",
-          "description": "Open the vault graph in global or local mode.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.graph.localDepth": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 3,
-          "default": 2,
-          "description": "How many hops the local graph includes.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.graph.colorBy": {
-          "enum": [
-            "type",
-            "folder",
-            "tag"
-          ],
-          "default": "type",
-          "description": "Color graph notes by type, folder or first tag.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.linkUpdates.mode": {
-          "enum": [
-            "prompt",
-            "always",
-            "never"
-          ],
-          "default": "prompt",
-          "description": "Obsidian's Automatically update internal links: `prompt` asks before rewriting links in other notes when a file is renamed or moved.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.links.newLinkFormat": {
-          "enum": [
-            "shortest",
-            "relative",
-            "absolute"
-          ],
-          "default": "shortest",
-          "scope": "resource"
-        },
-        "markdownWorkshop.links.useWikilinks": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource"
-        },
-        "markdownWorkshop.links.folderNote": {
-          "type": "string",
-          "default": "",
-          "scope": "resource"
-        },
-        "markdownWorkshop.files.newNoteFolder": {
-          "type": "string",
-          "default": "",
-          "description": "New notes: empty for vault root, . for current folder, or a vault-relative path.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.files.attachmentFolder": {
-          "type": "string",
-          "default": "",
-          "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.marp.open": {
-          "enum": [
-            "workbench",
-            "textEditor"
-          ],
-          "default": "workbench",
-          "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workshop remembers a deck.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.obsidianCompat.configFolder": {
-          "type": "string",
-          "default": ".obsidian",
-          "description": "Obsidian configuration folder relative to the vault root, such as .obsidian-awesome. Root markers discover the vault; they do not select this folder.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.okfCore.bundles": {
-          "type": "array",
-          "items": {
+    "configuration": [
+      {
+        "title": "Lumière",
+        "properties": {
+          "lumiere.markdown.plugins.agentBridge.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Copy selected text with a link to its saved source lines, for an agent."
+          },
+          "lumiere.markdown.plugins.assets.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Import a file into the project's assets folder and insert a portable Markdown link."
+          },
+          "lumiere.markdown.plugins.autoPair.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Auto pair in the Markdown editor."
+          },
+          "lumiere.markdown.plugins.backlinks.enabled": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource",
+            "description": "Backlinks view and status bar count for the active note, with unlinked mentions."
+          },
+          "lumiere.markdown.plugins.bridge.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Build a versioned selection envelope for an agent, from the note's selection or else the PDF's. This does not open a chat."
+          },
+          "lumiere.markdown.plugins.callouts.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Render callouts and remember their disclosure state per panel."
+          },
+          "lumiere.markdown.plugins.codeBlocks.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Highlight rendered and editable code fences; copy code."
+          },
+          "lumiere.markdown.plugins.cursorBridge.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "In Cursor, Cmd/Ctrl+L opens Chat and Cmd/Ctrl+K opens Edit on the Live Preview selection."
+          },
+          "lumiere.markdown.plugins.diagrams.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Render Mermaid diagrams in strict mode."
+          },
+          "lumiere.markdown.plugins.embeds.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Transclude notes, images and media; open attachment cards."
+          },
+          "lumiere.markdown.plugins.folding.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Folding in the Markdown editor."
+          },
+          "lumiere.markdown.plugins.footnotes.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Footnote references, definitions, previews and navigation."
+          },
+          "lumiere.markdown.plugins.formatting.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Markdown editing commands."
+          },
+          "lumiere.markdown.plugins.gitBlame.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Shows who last committed the caret line at the end of the line in Live Preview."
+          },
+          "lumiere.markdown.plugins.gitDiffEditor.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "A side-by-side diff of two versions of a note, both rendered, blocks aligned and changed words marked. Opens from Source Control when diffEditor is rendered."
+          },
+          "lumiere.markdown.plugins.gitGutter.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Added, modified and deleted bars beside the line numbers, like VS Code's quick diff, with a raw unified peek to revert a hunk."
+          },
+          "lumiere.markdown.plugins.gitInline.enabled": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource",
+            "description": "Track changes in the rendered note: removed words struck through, added words tinted, removed blocks shown with Restore. Needs Git change bars."
+          },
+          "lumiere.markdown.plugins.graph.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Draw an OKF bundle as a directed graph of notes, in a panel of its own."
+          },
+          "lumiere.markdown.plugins.ideContext.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Copy or send a deeper IDE-context packet for Claude Code and Codex (clipboard-first; never silent-guess)."
+          },
+          "lumiere.markdown.plugins.indentGuides.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Indentation guides in the Markdown editor."
+          },
+          "lumiere.markdown.plugins.inlineTitle.enabled": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource",
+            "description": "Show and rename the note title above its Markdown content."
+          },
+          "lumiere.markdown.plugins.lineNumbers.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Line numbers in the Markdown editor, laid out like VS Code's text editor and following editor.lineNumbers."
+          },
+          "lumiere.markdown.plugins.linkUpdates.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Update links in other notes when a note or attachment is renamed or moved in VS Code."
+          },
+          "lumiere.markdown.plugins.links.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Follow Markdown links and wikilinks."
+          },
+          "lumiere.markdown.plugins.marp.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Detect Marp decks and open Marp's preview or export. Decks inside a wiki bundle are not wrapped into pages."
+          },
+          "lumiere.markdown.plugins.math.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Render TeX formulas with MathJax."
+          },
+          "lumiere.markdown.plugins.obsidianCompat.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Use Obsidian property types and vault settings in Lumière."
+          },
+          "lumiere.markdown.plugins.okfCore.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Shared Open Knowledge Format bundles, link resolution and resource checks."
+          },
+          "lumiere.markdown.plugins.onlineVideos.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Show YouTube and Bilibili links embedded as images as video cards, with titles and covers in trusted workspaces."
+          },
+          "lumiere.markdown.plugins.outgoingLinks.enabled": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource",
+            "description": "Outgoing links view: the notes and files the active note links to, and links not created yet."
+          },
+          "lumiere.markdown.plugins.outline.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Markdown Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings."
+          },
+          "lumiere.markdown.plugins.pagePreview.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Preview internal links with a modifier hover or keyboard."
+          },
+          "lumiere.markdown.plugins.pasteHtml.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Convert rich clipboard HTML into Markdown in notes and table cells."
+          },
+          "lumiere.markdown.plugins.properties.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Edit YAML properties as typed fields, lists and ordered rows."
+          },
+          "lumiere.markdown.plugins.quickSwitcher.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Find a note by name, alias or path, or create it, like Obsidian's quick switcher."
+          },
+          "lumiere.markdown.plugins.scratch.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Temporary notes outside the wiki bundle. Promote one into the wiki only when you ask."
+          },
+          "lumiere.markdown.plugins.search.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Render query blocks as live vault search results."
+          },
+          "lumiere.markdown.plugins.smartLists.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Smart lists in the Markdown editor."
+          },
+          "lumiere.markdown.plugins.sourcesProperty.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Show OKF sources with open links; values edit as YAML beside other Properties."
+          },
+          "lumiere.markdown.plugins.spellcheck.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Spellcheck in the Markdown editor."
+          },
+          "lumiere.markdown.plugins.stickyScroll.enabled": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource",
+            "description": "Pin ancestor Markdown headings at the top while scrolling in Live Preview and Source mode. Click a pinned heading to return to it."
+          },
+          "lumiere.markdown.plugins.suggest.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Complete links, headings, blocks and tags from the vault index."
+          },
+          "lumiere.markdown.plugins.tables.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Edit Markdown tables as grids with projected cell editing."
+          },
+          "lumiere.markdown.plugins.tags.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Render tags, find notes with matching hierarchical tags, and list the vault's tags in the Tags view."
+          },
+          "lumiere.markdown.plugins.tasks.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Interactive checkboxes and checklist commands."
+          },
+          "lumiere.markdown.plugins.vim.enabled": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource",
+            "description": "Vim in the Markdown editor."
+          },
+          "lumiere.markdown.plugins.wiki.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Read a project's .wiki layout and copy a reference for an agent. This does not run an agent or create folders."
+          },
+          "lumiere.markdown.plugins.wordCount.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Word and character count of the active note, or of the selection, in the status bar."
+          },
+          "lumiere.markdown.assets.path": {
             "type": "string",
-            "maxLength": 1024
+            "default": "",
+            "description": "Project-relative assets folder used when the folder has no .wiki/layout.json. Empty uses assets. The folder is created on import, not on open.",
+            "scope": "resource"
           },
-          "maxItems": 200,
-          "default": [],
-          "description": "Extra OKF bundle roots, relative to the vault. A folder is also a bundle when it contains index.md and a typed concept.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.onlineVideos.bilibiliPlayer": {
-          "type": "boolean",
-          "default": false,
-          "description": "Offer **Play here** on Bilibili cards in trusted workspaces. Off by default: Bilibili's player does not play inside VS Code's webview.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.outline.followCursor": {
-          "type": "boolean",
-          "default": true,
-          "description": "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.properties.display": {
-          "enum": [
-            "visible",
-            "hidden",
-            "source"
-          ],
-          "default": "visible",
-          "scope": "resource"
-        },
-        "markdownWorkshop.scratch.folder": {
-          "type": "string",
-          "default": "scratch",
-          "description": "Project-relative folder for scratch notes when the folder has no .wiki/layout.json. A loaded layout uses its scratch path. The folder is created when you create a note.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.stickyScroll.maxLines": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 6,
-          "default": 5,
-          "description": "Maximum pinned heading rows. Keeps the nearest ancestors when the limit is exceeded; fractional values round down. Small editor panes may show fewer rows.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.tags.viewSort": {
-          "enum": [
-            "name",
-            "frequency"
-          ],
-          "default": "name",
-          "description": "Order of the Tags view: `name` (A to Z) or `frequency` (most notes first).",
-          "scope": "resource"
-        },
-        "markdownWorkshop.tags.viewNested": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show nested tags (`#a/b`) under their parent in the Tags view, rather than as a flat list.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.vault.rootMarkers": {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "lumiere.markdown.autoPair.brackets": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource"
           },
-          "default": [
-            ".obsidian"
-          ],
-          "description": "A folder containing one of these entries is a vault root; without one, the workspace folder is the vault.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.vault.excludedFiles": {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "lumiere.markdown.autoPair.markdown": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource"
           },
-          "default": [],
-          "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
-          "scope": "resource"
-        },
-        "markdownWorkshop.copyLinkForAgent.target": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "cursor",
-            "chat",
-            "claudeCode",
-            "codex",
-            "clipboard"
-          ],
-          "enumDescriptions": [
-            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
-            "Cursor's agent chat, with the passage on the clipboard to paste.",
-            "VS Code's chat, with the passage typed in.",
-            "Claude Code: a new conversation with the passage typed in.",
-            "Codex: the passage attached to the thread as a file.",
-            "Only copy the passage."
-          ],
-          "default": "auto",
-          "scope": "window",
-          "markdownDescription": "Which chat **Copy Link for Agent** opens after copying the link and passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when the editor's own chat is the only agent; pick one here to send the passage to it."
-        },
-        "markdownWorkshop.debug.logging": {
-          "type": "boolean",
-          "default": false,
-          "scope": "window",
-          "description": "Log plugin load/stop timings and debug messages in the Markdown Workshop output channel."
-        },
-        "markdownWorkshop.plugins.external": {
-          "type": "object",
-          "default": {},
-          "additionalProperties": {
-            "type": "boolean"
+          "lumiere.markdown.editor.defaultMode": {
+            "enum": [
+              "livePreview",
+              "source"
+            ],
+            "default": "livePreview",
+            "scope": "resource"
           },
-          "scope": "resource",
-          "description": "External host plugin enablement by registered plugin ID."
-        },
-        "markdownWorkshop.preset": {
-          "type": "string",
-          "enum": [
-            "obsidian",
-            "minimal"
-          ],
-          "default": "obsidian",
-          "scope": "resource",
-          "description": "Editor plugin preset."
+          "lumiere.markdown.editor.readableLineLength": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.reclaimTextEditor": {
+            "enum": [
+              "auto",
+              "on",
+              "off"
+            ],
+            "default": "auto",
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.warmTextDocument": {
+            "enum": [
+              "auto",
+              "on",
+              "off"
+            ],
+            "default": "auto",
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.strictLineBreaks": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.rightToLeft": {
+            "type": "boolean",
+            "default": false,
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.dragScrollSpeed": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 4,
+            "description": "Speed multiplier for text-selection auto-scroll near the editor edges (1–10). Default: 4; 1 restores CodeMirror's original speed. Applies immediately in Live Preview and Source mode.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.useTabs": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.tabSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16,
+            "default": 4,
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.fontSize": {
+            "type": "number",
+            "minimum": 8,
+            "maximum": 48,
+            "description": "Font size of the note text in pixels (Obsidian's default is 16). Headings, code, tables, line numbers, properties and footnotes scale with it. It replaces editor.fontSize for notes; the font family still follows editor.fontFamily.",
+            "default": 16,
+            "scope": "resource"
+          },
+          "lumiere.markdown.editor.lineHeight": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Line height of the note text as a multiple of its font size (Obsidian's default is 1.5). It replaces editor.lineHeight for notes.",
+            "default": 1.5,
+            "scope": "resource"
+          },
+          "lumiere.markdown.folding.heading": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource"
+          },
+          "lumiere.markdown.folding.indent": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource"
+          },
+          "lumiere.markdown.gitDiffEditor.diffEditor": {
+            "enum": [
+              "native",
+              "rendered"
+            ],
+            "default": "native",
+            "description": "How a Markdown diff opened from Source Control or the Timeline is shown: VS Code's text diff (native), or both versions rendered side by side (rendered).",
+            "scope": "resource"
+          },
+          "lumiere.markdown.gitGutter.compareTo": {
+            "enum": [
+              "HEAD",
+              "index"
+            ],
+            "default": "HEAD",
+            "description": "What the change bars compare the note with: the last commit (HEAD) or the staged version (index).",
+            "scope": "resource"
+          },
+          "lumiere.markdown.graph.maxNodes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 2000,
+            "default": 2000,
+            "description": "Hard cap on notes drawn in the vault graph.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.graph.maxEdges": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 20000,
+            "default": 20000,
+            "description": "Hard cap on aggregated links drawn in the vault graph.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.graph.defaultMode": {
+            "enum": [
+              "global",
+              "local"
+            ],
+            "default": "global",
+            "description": "Open the vault graph in global or local mode.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.graph.localDepth": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 3,
+            "default": 2,
+            "description": "How many hops the local graph includes.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.graph.colorBy": {
+            "enum": [
+              "type",
+              "folder",
+              "tag"
+            ],
+            "default": "type",
+            "description": "Color graph notes by type, folder or first tag.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.linkUpdates.mode": {
+            "enum": [
+              "prompt",
+              "always",
+              "never"
+            ],
+            "default": "prompt",
+            "description": "Obsidian's Automatically update internal links: `prompt` asks before rewriting links in other notes when a file is renamed or moved.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.links.newLinkFormat": {
+            "enum": [
+              "shortest",
+              "relative",
+              "absolute"
+            ],
+            "default": "shortest",
+            "scope": "resource"
+          },
+          "lumiere.markdown.links.useWikilinks": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource"
+          },
+          "lumiere.markdown.links.folderNote": {
+            "type": "string",
+            "default": "",
+            "scope": "resource"
+          },
+          "lumiere.markdown.files.newNoteFolder": {
+            "type": "string",
+            "default": "",
+            "description": "New notes: empty for vault root, . for current folder, or a vault-relative path.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.files.attachmentFolder": {
+            "type": "string",
+            "default": "",
+            "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.marp.open": {
+            "enum": [
+              "workbench",
+              "textEditor"
+            ],
+            "default": "workbench",
+            "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workshop remembers a deck.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.obsidianCompat.configFolder": {
+            "type": "string",
+            "default": ".obsidian",
+            "description": "Obsidian configuration folder relative to the vault root, such as .obsidian-awesome. Root markers discover the vault; they do not select this folder.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.okfCore.bundles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "maxItems": 200,
+            "default": [],
+            "description": "Extra OKF bundle roots, relative to the vault. A folder is also a bundle when it contains index.md and a typed concept.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.onlineVideos.bilibiliPlayer": {
+            "type": "boolean",
+            "default": false,
+            "description": "Offer **Play here** on Bilibili cards in trusted workspaces. Off by default: Bilibili's player does not play inside VS Code's webview.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.outline.followCursor": {
+            "type": "boolean",
+            "default": true,
+            "description": "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.properties.display": {
+            "enum": [
+              "visible",
+              "hidden",
+              "source"
+            ],
+            "default": "visible",
+            "scope": "resource"
+          },
+          "lumiere.markdown.scratch.folder": {
+            "type": "string",
+            "default": "scratch",
+            "description": "Project-relative folder for scratch notes when the folder has no .wiki/layout.json. A loaded layout uses its scratch path. The folder is created when you create a note.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.stickyScroll.maxLines": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 6,
+            "default": 5,
+            "description": "Maximum pinned heading rows. Keeps the nearest ancestors when the limit is exceeded; fractional values round down. Small editor panes may show fewer rows.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.tags.viewSort": {
+            "enum": [
+              "name",
+              "frequency"
+            ],
+            "default": "frequency",
+            "description": "Order of the Tags view: `frequency` (most used first, as in Obsidian) or `name` (A to Z).",
+            "scope": "resource"
+          },
+          "lumiere.markdown.tags.viewNested": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show nested tags (`#a/b`) under their parent in the Tags view, rather than as a flat list.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.vault.rootMarkers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              ".obsidian"
+            ],
+            "description": "A folder containing one of these entries is a vault root; without one, the workspace folder is the vault.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.vault.excludedFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.copyLinkForAgent.target": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "cursor",
+              "chat",
+              "claudeCode",
+              "codex",
+              "clipboard"
+            ],
+            "enumDescriptions": [
+              "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+              "Cursor's agent chat, with the passage on the clipboard to paste.",
+              "VS Code's chat, with the passage typed in.",
+              "Claude Code: a new conversation with the passage typed in.",
+              "Codex: the passage attached to the thread as a file.",
+              "Only copy the passage."
+            ],
+            "default": "auto",
+            "scope": "window",
+            "markdownDescription": "Which chat **Copy Link for Agent** opens after copying the link and passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when the editor's own chat is the only agent; pick one here to send the passage to it."
+          },
+          "lumiere.markdown.debug.logging": {
+            "type": "boolean",
+            "default": false,
+            "scope": "window",
+            "description": "Log plugin load/stop timings and debug messages in the Lumière output channel."
+          },
+          "lumiere.markdown.plugins.external": {
+            "type": "object",
+            "default": {},
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "scope": "resource",
+            "description": "External host plugin enablement by registered plugin ID."
+          },
+          "lumiere.markdown.preset": {
+            "type": "string",
+            "enum": [
+              "obsidian",
+              "minimal"
+            ],
+            "default": "obsidian",
+            "scope": "resource",
+            "description": "Editor plugin preset."
+          }
+        }
+      },
+      {
+        "title": "Lumière PDF",
+        "properties": {
+          "lumiere.pdf.outline.followCursor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Reveal and select the bookmark containing the current PDF page and reading position in PDF Outline, without moving focus. Toggle Follow Cursor in the outline's More Actions menu."
+          },
+          "lumiere.pdf.copyLinkForAgent.target": {
+            "type": "string",
+            "default": "auto",
+            "enum": [
+              "auto",
+              "cursor",
+              "chat",
+              "claudeCode",
+              "codex",
+              "clipboard"
+            ],
+            "enumDescriptions": [
+              "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+              "Cursor's chat.",
+              "VS Code's chat.",
+              "Claude Code: a new conversation with the selection typed in.",
+              "Codex: the selection (and a region's snapshot) attached to the thread.",
+              "Only copy the selection."
+            ],
+            "markdownDescription": "Which agent chat, if any, **Copy Link for Agent** opens with a PDF selection. The link and selection are always copied. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the selection to it."
+          },
+          "lumiere.pdf.regionImageCache.maxSizeMB": {
+            "type": "number",
+            "default": 100,
+            "minimum": 1,
+            "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. This is a hard limit: when a new snapshot takes them past it, the least recently used ones are deleted, and a single snapshot larger than the limit is not saved (Copy Link for Agent then copies the link without the image). Values below 1 count as 1."
+          },
+          "lumiere.pdf.toolbar.mode": {
+            "type": "string",
+            "default": "chrome",
+            "enum": [
+              "chrome",
+              "slim",
+              "floating",
+              "none"
+            ],
+            "enumDescriptions": [
+              "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
+              "A slim bar along the top of the viewer.",
+              "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
+              "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+            ],
+            "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+          },
+          "lumiere.pdf.toolbar.statusBarButtons": {
+            "type": "string",
+            "default": "auto",
+            "enum": [
+              "auto",
+              "always",
+              "never"
+            ],
+            "enumDescriptions": [
+              "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
+              "Always show the buttons.",
+              "Only the page, zoom and View."
+            ],
+            "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+          },
+          "lumiere.pdf.agentBridge.enabled": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
+          },
+          "lumiere.pdf.view.defaultZoom": {
+            "type": [
+              "string",
+              "number"
+            ],
+            "default": "fitWidth",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "fitWidth",
+                  "fitPage",
+                  "actual"
+                ]
+              },
+              {
+                "type": "number",
+                "minimum": 25,
+                "maximum": 400
+              }
+            ],
+            "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25–400)."
+          },
+          "lumiere.pdf.view.pageLayout": {
+            "type": "string",
+            "default": "single",
+            "enum": [
+              "single",
+              "spread",
+              "spreadCover"
+            ],
+            "enumDescriptions": [
+              "One page per row.",
+              "Pair pages 1–2, 3–4, and so on.",
+              "Cover page alone, then pair pages 2–3, 4–5, and so on."
+            ],
+            "markdownDescription": "Page layout for PDFs without a saved view."
+          },
+          "lumiere.pdf.view.scrollMode": {
+            "type": "string",
+            "default": "continuous",
+            "enum": [
+              "continuous",
+              "paged"
+            ],
+            "enumDescriptions": [
+              "Scroll through the document.",
+              "Show one page or spread at a time; use next/previous to change it."
+            ],
+            "markdownDescription": "Scrolling mode for PDFs without a saved view."
+          },
+          "lumiere.pdf.view.scrollDirection": {
+            "type": "string",
+            "default": "vertical",
+            "enum": [
+              "vertical",
+              "horizontal"
+            ],
+            "markdownDescription": "Reading direction for PDFs without a saved view."
+          },
+          "lumiere.pdf.lookUp.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "macOS only: look up the word under the pointer in the Dictionary app with a force click (hard press on the trackpad), or with **Look Up** in the right-click menu of a PDF. Has no effect on other systems."
+          },
+          "lumiere.pdf.keyboardShortcuts": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/⌘+G (Go to Line elsewhere), Ctrl/⌘+0 (focus the side bar), Ctrl/⌘+= and Ctrl/⌘+- (zoom the window) and Ctrl/⌘+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+          },
+          "lumiere.pdf.view.restoreOnReopen": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Reopen each PDF at its last page, scroll position, zoom and view choices (layout, scrolling, direction). When off, every PDF opens with the defaults above."
+          },
+          "lumiere.pdf.view.smoothScrolling": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": null,
+            "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
+          }
         }
       }
-    }
+    ],
+    "viewsWelcome": [
+      {
+        "view": "lumiere.pdf.outline",
+        "contents": "Reading the outline…",
+        "when": "lumiere.pdf.outlineLoading"
+      },
+      {
+        "view": "lumiere.pdf.outline",
+        "contents": "This PDF has no outline.",
+        "when": "!lumiere.pdf.outlineLoading"
+      }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "lumiere.pdf.agentBridge",
+        "label": "Lumière PDF"
+      }
+    ]
   },
-  "capabilities": {
-    "untrustedWorkspaces": {
-      "supported": "limited",
-      "description": "Remote content and external code processors are disabled."
-    }
-  },
-  "packageManager": "pnpm@10.28.2",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/host && tsc -p src/webview && tsc -p src/plugins/tsconfig.host.json && tsc -p src/plugins/tsconfig.webview.json && tsc -p src/workers && tsc -p test",
+    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
     "lint": "eslint . --max-warnings=0",
-    "test": "node scripts/test.mjs",
-    "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
-    "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
-    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "contributions": "tsx scripts/generate-contributions.ts",
-    "package": "pnpm build && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links",
-    "sample": "node scripts/build-sample.mjs",
-    "ledger": "node scripts/test-ledger.mjs",
-    "measure:vault": "pnpm build && tsx scripts/measure-vault.ts",
-    "notices": "node scripts/third-party-notices.mjs"
+    "test": "node scripts/test.mjs",
+    "test:browser": "pnpm --filter @workshop/markdown test:browser && pnpm --filter @workshop/pdf test:browser",
+    "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts && playwright test -c packages/pdf/test/vscode/playwright.config.ts",
+    "contributions": "tsx scripts/contributions.ts",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
+    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
+    "notices": "node scripts/third-party-notices.mjs",
+    "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links"
   },
   "dependencies": {
-    "@codemirror/autocomplete": "6.20.3",
-    "@codemirror/collab": "6.1.1",
-    "@codemirror/commands": "6.11.1",
-    "@codemirror/lang-markdown": "6.5.2",
-    "@codemirror/language": "6.13.1",
-    "@codemirror/search": "6.7.2",
-    "@codemirror/state": "6.7.6",
-    "@codemirror/view": "6.43.14",
-    "@lezer/common": "1.5.3",
-    "@lezer/highlight": "1.2.5",
-    "@lezer/markdown": "1.8.0",
-    "@mathjax/src": "4.1.3",
-    "@replit/codemirror-vim": "6.4.0",
-    "dompurify": "3.4.16",
-    "graphology": "0.26.0",
-    "lucide": "1.55.0",
-    "markdown-it": "15.0.2",
-    "markdown-it-footnote": "4.0.0",
-    "markdown-it-mark": "4.0.0",
-    "mermaid": "12.1.0",
-    "prismjs": "1.30.0",
-    "sigma": "3.0.2",
-    "turndown": "^7.2.4",
-    "yaml": "2.9.1"
+    "@workshop/agents": "workspace:*",
+    "@workshop/core": "workspace:*",
+    "@workshop/markdown": "workspace:*",
+    "@workshop/pdf": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.64.0",
-    "@types/markdown-it-footnote": "3.0.4",
     "@types/node": "^24.19.2",
-    "@types/prismjs": "1.26.6",
-    "@types/turndown": "^5.0.6",
     "@types/vscode": "1.125.0",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "7.1.1",
     "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",

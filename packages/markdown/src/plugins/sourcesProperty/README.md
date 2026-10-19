@@ -1,0 +1,41 @@
+# Sources
+
+Shows an OKF `sources` property as stacked rows with open links for navigable
+resources, and edits the same property as YAML in the Properties sheet like any
+other nested frontmatter value.
+
+## How it works
+
+The properties sheet asks `propertyRenderers` for `sources` on the first paint
+and again when a renderer is registered or removed. The custom rows sit above an
+editable YAML draft for the whole `sources` value. Changing that draft writes
+back into the note frontmatter through the normal Properties edit path. A path
+or `http`/`https` resource in the rows is clickable; scope text is not. A click
+sends the resource string to the host. The host re-reads the owning document,
+refuses a resource that is no longer there, strips a `#fragment` before the file
+lookup, and allows only `http`/`https` or a path that stays inside the vault. Id
+text is plain selectable text; there is no Copy id control.
+
+## Files
+
+- `manifest.ts`: feature identity. There are no commands or settings.
+- `markup.ts`: stacked row HTML, including malformed values.
+- `bind.ts`: disclosure and open clicks.
+- `open.ts`: stale-row and navigation plan.
+- `protocol.ts`: open RPC.
+- `webview.ts`: registers the `sources` renderer.
+- `host.ts`: authorizes the owning document, contains the target, and opens it.
+- `markup.test.ts`: disclosure, refused URLs and a stale row.
+
+## Services, events and settings
+
+Injects `propertyRenderers` and `rpc` in the webview, and the host service `hostCommands`, `rpc`,
+`okf`, `resources` and `vaults` on the host. Provides nothing. Listens to no
+events. No settings. The property name is `sources`.
+
+## Limits and differences from Obsidian
+
+Nested `sources` entries edit as YAML text rather than per-field forms. Open
+links remain for navigable resources. The panel does not fetch previews, titles
+or remote contents. `id` is shown only when the entry has one. Positional labels
+are not citation keys. Scope text that is not a link stays plain text.

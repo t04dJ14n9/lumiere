@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 import path from "node:path";
 // Same baseline as PDF Workbench, with architecture boundaries for this project.
@@ -20,7 +21,9 @@ const boundaries = {
       const target = source.startsWith(".")
         ? path.resolve(path.dirname(file), source).replaceAll("\\", "/")
         : source;
-      const pure = /\/src\/(kernel|shared|markdown)\//.test(file);
+      const pure =
+        /\/src\/(kernel|shared|markdown)\//.test(file) ||
+        /\/packages\/(core|agents)\/src\//.test(file);
       let invalid =
         pure &&
         (source === "vscode" ||
@@ -90,24 +93,27 @@ export default tseslint.config(
     ignores: [
       // Build output, including the sample plugin's.
       // Throw-away measurement scripts (not part of the product).
-      "docs/obsidian-measurements/**",
+      "packages/markdown/docs/obsidian-measurements/**",
       "**/dist/**",
       ".cache/**",
       "test-results/**",
       "playwright-report/**",
-      "artifacts/**",
+      "**/artifacts/**",
       // The VS Code build that `pnpm test:vscode` downloads when none is installed.
       ".vscode-test/**",
-      // Probe scripts for real Obsidian: they run page code via the DevTools protocol.
-      "docs/obsidian-measurements/**",
       // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
-      "docs/vim-caret-measurements/**",
+      "packages/markdown/docs/vim-caret-measurements/**",
+      // PDFs generated for the PDF tests.
+      "packages/pdf/test/fixtures/generated/**",
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["**/*.ts"],
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
+    },
     plugins: { architecture: { rules: { boundaries } } },
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
@@ -119,8 +125,21 @@ export default tseslint.config(
       eqeqeq: ["error", "always"],
     },
   },
-  { files: ["**/*.ts", "**/*.mjs"], rules: style },
-  { files: ["src/**/*.ts"], ignores: ["**/*.test.ts"], rules: size },
+  { files: ["**/*.{ts,tsx}", "**/*.mjs"], rules: style },
+  {
+    files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.ts"],
+    rules: size,
+  },
+  {
+    // The PDF viewer's React UI.
+    files: ["packages/pdf/src/webview/**/*.{ts,tsx}"],
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error",
+    },
+  },
   {
     // Floating promises are lint errors: a promise is awaited, returned, or
     // explicitly discarded with `void`. `void` only records the decision; it
@@ -130,17 +149,24 @@ export default tseslint.config(
     //   a function documented as never rejecting (it catches inside).
     // - Lifecycle work (stop, cleanup, dispose) is returned or awaited by its
     //   owner, or tracked by something that awaits it; never `void`ed.
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
     ignores: ["**/*.test.ts"],
     languageOptions: {
       parserOptions: {
         project: [
           "./tsconfig.json",
-          "./src/host/tsconfig.json",
-          "./src/webview/tsconfig.json",
-          "./src/plugins/tsconfig.host.json",
-          "./src/plugins/tsconfig.webview.json",
-          "./src/workers/tsconfig.json",
+          "./packages/core/tsconfig.json",
+          "./packages/agents/tsconfig.json",
+          "./packages/markdown/tsconfig.json",
+          "./packages/markdown/src/host/tsconfig.json",
+          "./packages/markdown/src/webview/tsconfig.json",
+          "./packages/markdown/src/plugins/tsconfig.host.json",
+          "./packages/markdown/src/plugins/tsconfig.webview.json",
+          "./packages/markdown/src/workers/tsconfig.json",
+          "./packages/pdf/tsconfig.json",
+          "./packages/pdf/src/extension/tsconfig.json",
+          "./packages/pdf/src/webview/tsconfig.json",
+          "./packages/pdf/src/bridge-stdio/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },

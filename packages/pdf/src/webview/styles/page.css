@@ -1,0 +1,73 @@
+/* A page and the layers drawn over it. */
+.page {
+  position: relative;
+  background: #fff;
+  box-shadow: 0 1px 6px #0006;
+}
+
+.page-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.page-link {
+  position: absolute;
+  z-index: 2;
+  cursor: pointer;
+}
+
+/* VS Code outlines focused links; show that for the keyboard only. */
+.page-link:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.page-link:hover {
+  background: color-mix(
+    in srgb,
+    var(--vscode-textLink-foreground, #3794ff) 15%,
+    transparent
+  );
+}
+
+/* A location opened from a link flashes, then fades. */
+.location-highlight {
+  position: absolute;
+  z-index: 3;
+  border: 2px solid var(--paper-accent);
+  border-radius: 2px;
+  background: var(--paper-accent-soft);
+  pointer-events: none;
+  animation: fade-highlight 2.5s ease-out forwards;
+}
+
+@keyframes fade-highlight {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.region-selection,
+.region-marquee {
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  border: 1px solid var(--selection-edge);
+  background: var(--selection-soft);
+  pointer-events: none;
+}
+
+/* A page with its own /Rotate: the layers (unrotated) are turned inside the box. */
+.page-rotor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}

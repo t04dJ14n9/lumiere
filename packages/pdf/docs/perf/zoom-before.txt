@@ -1,0 +1,5 @@
+Zoom smoothness BEFORE (browser spec test/browser/zoom-smoothness.spec.ts, headless Chromium, 40 ctrl+wheel events of deltaY -2.5, one per frame, synthetic):
+PINCH out 100%: biggestStep(per-frame scale ratio)=1.10 final scale x1.10 (expected x2.7 for total delta 100), drift 0px
+PINCH in from 200%: biggestStep=1.143, focus-point drift 85.5px
+NOTCH (2 x ctrl+wheel 100): biggestStep=1.23, drift 0.4px, blankFrames 1, settledBlank 16ms
+reduced motion pinch: drift 15px

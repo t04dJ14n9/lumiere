@@ -27,13 +27,21 @@ test("built-in Cmd-click preserves heading fragments and native source caret on 
   try {
     const page = workbenchPage(browser);
     await closeEditorGroups(page);
-    await page.keyboard.press("ControlOrMeta+p");
-    await page.locator(QUICK_INPUT).fill("NativeLinks.md");
-    await page
+    // Quick Open lists a file just written only once the file watcher has
+    // reported it, which takes longer while the editor is busy.
+    const row = page
       .locator(".quick-input-list .monaco-list-row")
       .filter({ hasText: "NativeLinks.md" })
-      .first()
-      .click();
+      .first();
+    await expect(async () => {
+      if (await page.locator(QUICK_INPUT).isVisible()) {
+        await page.keyboard.press("Escape");
+      }
+      await page.keyboard.press("ControlOrMeta+p");
+      await page.locator(QUICK_INPUT).fill("NativeLinks.md");
+      await expect(row).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
+    await row.click();
     const status = page.locator('[id="status.editor.selection"]');
     const returnedCarets = new Map<string, string>();
     for (const heading of ["middle-target", "last-target", "middle-target"]) {

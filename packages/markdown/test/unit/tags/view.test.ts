@@ -1,0 +1,136 @@
+import { provideHostServices } from "../../../src/shared/host";
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createRoot } from "@workshop/core";
+import tagsManifest from "../../../src/plugins/tags/manifest";
+import { SEARCH_COMMAND, VIEW_ID } from "../../../src/plugins/tags/tree";
+import { tagsViewHost } from "../../../src/plugins/tags/view";
+import { workbenchFeatures } from "../../../src/host/workshop-features";
+import {
+  fakeViews,
+  memoryVaults,
+  render,
+  uriOf,
+  wait,
+  hostWith,
+} from "../views/fakes";
+
+async function start(
+  notes: Record<string, string>,
+  settings: Record<string, unknown> = {},
+  excluded: string[] = [],
+) {
+  const fake = fakeViews(settings);
+  const { vaults, index, opened } = memoryVaults(notes);
+  for (const path of excluded) {
+    index.upsertFile({ ...index.file(path)!, excluded: true });
+  }
+  const root = createRoot();
+  provideHostServices(root, hostWith(fake));
+  root.provide("vaults", vaults);
+  root.plugin(tagsViewHost);
+  await root.settled();
+  await wait();
+  return {
+    root,
+    fake,
+    opened,
+    view: fake.trees.get(VIEW_ID)!,
+  };
+}
+
+test("the Tags view lists the vault's tags and a click picks a note to open", async () => {
+  const { root, fake, opened, view } = await start({
+    "A.md": "#project/alpha and #Ideas",
+    "B.md": "---\ntags: [project]\n---\nbody",
+  });
+  // Most used first, as Obsidian's Tags pane sorts by default.
+  assert.deepEqual(await render(view.source), [
+    ["project (2)", ["alpha (1)"]],
+    "Ideas (1)",
+  ]);
+  const [project] = await view.source.roots();
+  assert.deepEqual(project!.command, {
+    id: SEARCH_COMMAND,
+    args: ["memory:///vault", "project"],
+  });
+
+  const picks: string[][] = [];
+  fake.dialogs.pick = async (options) => {
+    const items = options.items("");
+    picks.push(items.map((item) => item.label));
+    const item = items[0];
+    return { ...(item && { item }), query: "" };
+  };
+  await fake.commands.get(SEARCH_COMMAND)!("memory:///vault", "project");
+  assert.deepEqual(picks, [["A.md", "B.md"]]);
+  assert.deepEqual(opened, [{ uri: uriOf("A.md") }]);
+  await root.dispose();
+  assert.equal(view.disposed, true);
+});
+
+test("every use counts, case variants merge, and excluded files are left out", async () => {
+  const notes = {
+    "A.md": "#Project/one #project/two #project",
+    "B.md": "#PROJECT/one",
+    "C.md": "#other",
+    "Hidden.md": "#project #secret",
+  };
+  const nested = await start(notes, {}, ["Hidden.md"]);
+  assert.deepEqual(await render(nested.view.source), [
+    ["project (4)", ["one (2)", "two (1)"]],
+    "other (1)",
+  ]);
+  await nested.root.dispose();
+
+  const flat = await start(
+    notes,
+    { "tags.viewNested": false, "tags.viewSort": "frequency" },
+    ["Hidden.md"],
+  );
+  assert.deepEqual(await render(flat.view.source), [
+    "project (4)",
+    "Project/one (2)",
+    "other (1)",
+    "project/two (1)",
+  ]);
+  await flat.root.dispose();
+});
+
+test("an empty vault says so", async () => {
+  const { root, view } = await start({ "A.md": "no tags" });
+  assert.deepEqual(await render(view.source), []);
+  assert.equal(view.message, "No tags in this vault yet.");
+  await root.dispose();
+});
+
+test("the Tags view follows the tags plugin's enabled setting", async () => {
+  const fake = fakeViews({ "plugins.tags.enabled": false });
+  const { vaults } = memoryVaults({ "A.md": "#tag" });
+  const root = createRoot();
+  const host = hostWith(fake);
+  const listeners = new Set<() => void>();
+  host.settings.onChange = (listener) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+  const reconfigure = () => listeners.forEach((listener) => listener());
+  provideHostServices(root, host);
+  root.provide("vaults", vaults);
+  workbenchFeatures(root, host.settings, [
+    { manifest: tagsManifest, plugin: tagsViewHost },
+  ]);
+  await wait();
+  assert.equal(fake.trees.has(VIEW_ID), false);
+  fake.settings["plugins.tags.enabled"] = true;
+  reconfigure();
+  await wait();
+  assert.equal(fake.trees.get(VIEW_ID)?.disposed, false);
+  fake.settings["plugins.tags.enabled"] = false;
+  reconfigure();
+  await wait();
+  assert.equal(fake.trees.get(VIEW_ID)?.disposed, true);
+  await root.dispose();
+});

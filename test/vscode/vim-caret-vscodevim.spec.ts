@@ -105,12 +105,12 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
     ...(JSON.parse(original) as object),
     "editor.fontFamily": "DejaVu Sans Mono",
     "editor.fontSize": 16,
-    "markdownWorkshop.editor.fontSize": 16,
+    "lumiere.markdown.editor.fontSize": 16,
     "editor.lineHeight": 24,
-    "markdownWorkshop.editor.lineHeight": 1.5,
+    "lumiere.markdown.editor.lineHeight": 1.5,
     "editor.cursorBlinking": "solid",
     "editor.cursorSmoothCaretAnimation": "off",
-    "markdownWorkshop.plugins.vim.enabled": true,
+    "lumiere.markdown.plugins.vim.enabled": true,
   };
   const style = (cursorStyle: string) =>
     writeFileSync(
@@ -161,7 +161,7 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
       }
     }
 
-    await reopenWith(page, "Markdown Workshop");
+    await reopenWith(page, "Lumière");
     const frame = await workbenchFrame(page);
     const editor = frame.locator(".mw-editor");
     await frame.getByRole("textbox", { name: "Markdown content" }).click();

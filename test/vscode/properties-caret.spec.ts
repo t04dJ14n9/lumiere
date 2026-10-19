@@ -4,6 +4,7 @@ import path from "node:path";
 import { paths, readState } from "./state";
 import {
   closeBrowser,
+  docScreenshot,
   openWorkbench,
   readNote,
   workbenchPage,
@@ -60,7 +61,7 @@ test("the caret never enters the Properties block in the real editor (as in Obsi
     await page.keyboard.press("ArrowUp");
     await expect.poll(() => focused(frame)).toBe("add");
     await page.screenshot({
-      path: path.resolve("docs/screenshots/properties-arrowup-vscode.png"),
+      path: docScreenshot("properties-arrowup-vscode.png"),
     });
     await page.keyboard.press("ArrowUp");
     await expect.poll(() => focused(frame)).toBe("row:tags");

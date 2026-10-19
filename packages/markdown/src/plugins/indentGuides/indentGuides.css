@@ -1,0 +1,29 @@
+/* Source indentation is still useful outside rendered lists and in Source mode. */
+.mw-indent-guide {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(var(--indent-step) - 1px),
+    var(--vscode-editorIndentGuide-background1, #7774)
+      calc(var(--indent-step) - 1px),
+    var(--vscode-editorIndentGuide-background1, #7774) var(--indent-step)
+  );
+  background-repeat: no-repeat;
+  background-size: var(--indent-width) 100%;
+}
+
+/* Use the same depth and step as list chrome, including on wrapped rows.
+ * Painting here keeps guides owned by this plugin instead of the spacer widget.
+ * Each guide runs under its level's marker, which sits 0.75em into the level
+ * (markdown.css): bullets, numbers and checkboxes centre near 0.95em. */
+.mw-indent-guides .cm-line.md-list-line {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0 0.95em,
+    var(--list-guide) 0.95em calc(0.95em + 1px),
+    transparent calc(0.95em + 1px) var(--list-indent)
+  );
+  background-position: 2px 0;
+  background-repeat: no-repeat;
+  background-size: calc(var(--list-depth, 0) * var(--list-indent)) 100%;
+}
