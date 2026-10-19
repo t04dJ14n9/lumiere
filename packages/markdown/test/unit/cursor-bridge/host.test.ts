@@ -38,6 +38,11 @@ async function fixture(options: FixtureOptions = {}) {
   const errors: string[] = [];
   const informs: string[] = [];
   const dismissed: string[] = [];
+  const dismissOptions: {
+    uri: string;
+    restore?: boolean;
+    promptId?: string;
+  }[] = [];
   const contexts: unknown[][] = [];
   const statusShows: {
     text: string;
@@ -123,10 +128,12 @@ async function fixture(options: FixtureOptions = {}) {
       }
       return editor;
     },
-    async dismiss(uri) {
+    async dismiss(uri, options) {
       events.push("dismiss");
       dismissed.push(uri);
+      dismissOptions.push({ uri, ...options });
     },
+    async clearStaleEditPrompt() {},
     watchEditEnd(uri, onEnd, prompt) {
       assert.equal(prompt.onVisibilityChanged, probe.onVisibilityChanged);
       const watcher = { uri, onEnd, isDisposed: false };
@@ -297,6 +304,7 @@ async function fixture(options: FixtureOptions = {}) {
     errors,
     informs,
     dismissed,
+    dismissOptions,
     editWatchers,
     statusShows,
     statusEvents,
@@ -591,6 +599,12 @@ for (const path of ["override-only", "focused editor"] as const) {
     assert.deepEqual(f.contexts.at(-1), [EDIT_PROMPT_ARMED, false]);
     assert.equal(f.lease.has(f.note), false, "release precedes dismissal");
     assert.deepEqual(f.dismissed, [f.note]);
+    assert.equal(
+      f.dismissOptions[0]?.promptId,
+      "prompt",
+      "dismiss closes Cursor's prompt bar so the next Ctrl+K can open Edit",
+    );
+    assert.equal(f.dismissOptions[0]?.restore, true);
     assert.equal(watcher.isDisposed, true);
     watcher.onEnd({ restore: true });
     assert.deepEqual(f.dismissed, [f.note], "late callbacks are harmless");
@@ -761,6 +775,33 @@ test("Edit success shows the left status-bar dismiss control", async (t) => {
   assert.ok(f.statusShows[0]?.tooltip?.includes("Edit mirror"));
 });
 
+
+test("second Edit after dismiss passes the prior prompt id so Cursor can open again", async (t) => {
+  const f = await fixture({
+    editResults: ["prompt-1", "prompt-2"],
+  });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  f.editWatchers[0]?.onEnd({ restore: true });
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(f.dismissOptions, [
+    { uri: f.note, restore: true, promptId: "prompt-1" },
+  ]);
+  assert.equal(f.lease.has(f.note), false);
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(f.editWatchers.length, 2);
+  assert.equal(f.lease.has(f.note), true);
+  assert.deepEqual(f.informs, [], "second Edit must not fall back to Chat");
+  assert.deepEqual(f.errors, []);
+  f.editWatchers[1]?.onEnd({ restore: false });
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(f.dismissOptions[1], {
+    uri: f.note,
+    restore: false,
+    promptId: "prompt-2",
+  });
+});
+
 test("status-bar click abandons the armed mirror and hides the control", async (t) => {
   const f = await fixture();
   t.after(() => f.root.dispose());
@@ -769,6 +810,9 @@ test("status-bar click abandons the armed mirror and hides the control", async (
   await f.handlers.get(contributionId("cursorBridge.dismissEditMirror"))!();
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, [f.note]);
+  assert.deepEqual(f.dismissOptions, [
+    { uri: f.note, restore: true, promptId: "prompt-bar-id" },
+  ]);
   assert.deepEqual(f.statusEvents, ["show", "hide"]);
   assert.equal(f.editWatchers[0]?.isDisposed, true);
   // A second click with nothing armed is a no-op.

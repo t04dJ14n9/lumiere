@@ -3,6 +3,8 @@ export const CURSOR_COMMANDS = {
   chat: "aichat.newchataction",
   chatFallback: "composer.newAgentChat",
   edit: "aipopup.action.modal.generate",
+  /** Ends an open Edit prompt bar; required so the next Ctrl+K is not a no-op. */
+  closePromptBar: "aipopup.action.closePromptBar",
 } as const;
 
 export type CursorChatTarget =
@@ -105,6 +107,23 @@ export function cursorEditAvailable(
   commands: ReadonlySet<string> | undefined,
 ): boolean {
   return commands?.has(CURSOR_COMMANDS.edit) !== false;
+}
+
+
+/**
+ * Close a Cursor Edit prompt bar by id. Cursor keeps prompt bars keyed by note
+ * URI; if one survives dismiss, the next `modal.generate` reuses it and returns
+ * undefined — which we surface as "Cursor Edit is unavailable".
+ */
+export async function closeCursorEditPrompt(
+  execute: Execute,
+  promptId: string,
+): Promise<void> {
+  try {
+    await execute(CURSOR_COMMANDS.closePromptBar, promptId);
+  } catch {
+    // Best-effort: a missing command must not block mirror cleanup.
+  }
 }
 
 function editArgs(target: CursorEditInvocation): {

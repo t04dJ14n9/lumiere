@@ -106,4 +106,9 @@ All) is not reopened: the Edit-end watcher reports `restore: false` when the
 mirror tab is in the closed-tab event (or disappears during the leave settle),
 and dismiss closes any leftover text tab without `openWith`. Dismiss always
 closes the mirror by tab identity so a focused custom editor is not mistaken
-for the mirror when `activeTextEditor` still points at it. Obsidian has no equivalent native Cursor handoff.
+for the mirror when `activeTextEditor` still points at it. Verified Edit
+stores Cursor's prompt-bar id and dismiss runs `aipopup.action.closePromptBar`
+before closing the mirror; leftover bars make the next `modal.generate` reuse
+them and return undefined (Host GUI: "Cursor Edit is unavailable"). When the
+reader already closed the mirror, the id is cleared on the next Ctrl+K instead
+of flashing the note open. Obsidian has no equivalent native Cursor handoff.

@@ -56,8 +56,18 @@ export interface HandoffSurface {
    * Workshop custom editor when Edit fails or its session ends.
    * Pass `{ restore: false }` when the reader already closed the mirror
    * (Ctrl+W / Close All) so Live Preview is not brought back.
+   * Pass `promptId` from a successful Edit so Cursor's prompt bar is closed
+   * before the mirror goes away — leftover bars make the next Ctrl+K no-op.
    */
-  dismiss(uri: string, options?: { restore?: boolean }): Promise<void>;
+  dismiss(
+    uri: string,
+    options?: { restore?: boolean; promptId?: string },
+  ): Promise<void>;
+  /**
+   * Close a prompt bar stashed when dismiss could not (mirror already gone).
+   * Call before the next Edit so `modal.generate` does not reuse a dead bar.
+   */
+  clearStaleEditPrompt?(uri: string): void | Promise<void>;
 }
 
 export interface SelectionSnapshot {
@@ -99,6 +109,12 @@ export async function prepareNativeMirror(
   const lease = surface.acquireLease(uri);
   let isHandedOff = false;
   try {
+    // Sync no-op when nothing is stashed so warm still starts before the
+    // first await (handoff-host tests assert that timing).
+    const clearing = surface.clearStaleEditPrompt?.(uri);
+    if (clearing) {
+      await clearing;
+    }
     await surface.warm(uri);
     const document = await surface.open(uri);
     const validated = validateDocument(document, uri, selection);

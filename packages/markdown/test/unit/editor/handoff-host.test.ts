@@ -870,6 +870,71 @@ test("dismiss with restore:false closes a remaining mirror without reopening", a
   assert.deepEqual(commands, [], "reader-closed dismiss must not openWith");
 });
 
+
+test("dismiss with promptId closes Cursor's prompt bar before the mirror", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  group.activeTab = mirror;
+  vscode.window.activeTextEditor = {
+    document: {
+      uri: Uri.parse(note),
+      isDirty: false,
+      version: 1,
+      getText: () => "",
+      positionAt: (offset) => new Position(0, offset),
+    },
+    selection: new Range(new Position(0, 0), new Position(0, 0)),
+  };
+  await surface.dismiss(note, { restore: true, promptId: "prompt-abc" });
+  assert.deepEqual(commands[0], [
+    "aipopup.action.closePromptBar",
+    "prompt-abc",
+  ]);
+  assert.equal(
+    group.tabs.some((tab) => tab.input instanceof TabInputText),
+    false,
+  );
+  assert.equal(commands.some((entry) => entry[0] === "vscode.openWith"), true);
+});
+
+test("dismiss with promptId preserves reader focus after closing the prompt", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  const other = cursorTab("file:///vault/Other.md");
+  other.input = new TabInputCustom(
+    Uri.parse("file:///vault/Other.md"),
+    viewType,
+  );
+  group.activeTab = other;
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note, { restore: true, promptId: "prompt-bg" });
+  assert.deepEqual(commands[0], [
+    "aipopup.action.closePromptBar",
+    "prompt-bg",
+  ]);
+  assert.deepEqual(commands.at(-1), [
+    "vscode.openWith",
+    note,
+    viewType,
+    { viewColumn: 1, preview: false, preserveFocus: true, background: true },
+  ]);
+});
+
+test("dismiss with restore:false stashes promptId when the mirror is already gone", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note, { restore: false, promptId: "prompt-stale" });
+  assert.deepEqual(commands, [], "must not flash the note open to close the bar");
+  await surface.clearStaleEditPrompt?.(note);
+  assert.deepEqual(commands, [
+    ["aipopup.action.closePromptBar", "prompt-stale"],
+  ]);
+});
+
 test("dismiss closes the mirror tab by identity while another tab is active", async () => {
   const surface = host.cursorHandoff.createCursorHandoffSurface();
   const mirror = cursorTab();
