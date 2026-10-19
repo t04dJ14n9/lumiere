@@ -30,39 +30,15 @@ export function watchCursorEditEnd(
   const armedAt = Date.now();
   let hasSeenPrompt = prompt.visible;
   let isDisposed = false;
-  let leaveTimer: ReturnType<typeof setTimeout> | undefined;
-  const clearLeaveTimer = () => {
-    if (leaveTimer !== undefined) {
-      clearTimeout(leaveTimer);
-      leaveTimer = undefined;
-    }
-  };
+  const leave = settleLeave(target, finish);
   const sample = () => {
     if (isDisposed || Date.now() - armedAt < ARM_GRACE_MS) {
       return;
     }
     if (!hasMirrorTab(target)) {
-      clearLeaveTimer();
       finish({ restore: false });
-      return;
-    }
-    if (hasLeftMirror(target)) {
-      // Debounce: reader close often activates another tab first, then removes
-      // the mirror. Tab switch leaves the mirror in place.
-      if (leaveTimer !== undefined) {
-        return;
-      }
-      leaveTimer = setTimeout(() => {
-        leaveTimer = undefined;
-        if (isDisposed) {
-          return;
-        }
-        if (!hasMirrorTab(target)) {
-          finish({ restore: false });
-        } else if (hasLeftMirror(target)) {
-          finish({ restore: true });
-        }
-      }, LEAVE_SETTLE_MS);
+    } else if (hasLeftMirror(target)) {
+      leave.start();
     }
   };
   const observePrompt = (visible: boolean) => {
@@ -70,17 +46,15 @@ export function watchCursorEditEnd(
       hasSeenPrompt = true;
     } else if (hasSeenPrompt) {
       // A real open→hidden transition needs no opening grace or focus cycle.
-      clearLeaveTimer();
       finish({ restore: true });
     }
   };
   const onTabs = (event: vscode.TabChangeEvent) => {
     if (event.closed.some((tab) => isMirrorTab(tab, target))) {
-      clearLeaveTimer();
       finish({ restore: false });
-      return;
+    } else {
+      sample();
     }
-    sample();
   };
   function finish(end: EditEnd) {
     if (!isDisposed) {
@@ -99,13 +73,37 @@ export function watchCursorEditEnd(
       return;
     }
     isDisposed = true;
-    clearLeaveTimer();
+    leave.clear();
     clearInterval(interval);
     for (const subscription of subscriptions) {
       subscription.dispose();
     }
   }
   return { dispose };
+}
+
+/**
+ * A reader's close often activates another tab first, then removes the
+ * mirror; a tab switch leaves the mirror in place. Decide once that settles.
+ */
+function settleLeave(target: string, finish: (end: EditEnd) => void) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return {
+    start() {
+      timer ??= setTimeout(() => {
+        timer = undefined;
+        if (!hasMirrorTab(target)) {
+          finish({ restore: false });
+        } else if (hasLeftMirror(target)) {
+          finish({ restore: true });
+        }
+      }, LEAVE_SETTLE_MS);
+    },
+    clear() {
+      clearTimeout(timer);
+      timer = undefined;
+    },
+  };
 }
 
 function isMirrorTab(tab: vscode.Tab, uri: string): boolean {
