@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import type { OutlineItem } from "../../../shared/messages";
-import { findActiveOutlineItem } from "../../../shared/outline";
+import {
+  findActiveOutlineItem,
+  flattenOutlineForPicker,
+} from "../../../shared/outline";
 import type { PdfSettings } from "../../settings";
 import type { PdfPanel } from "../pdf/panel";
 import type { PdfPanels } from "../pdf/panels";
@@ -207,16 +210,50 @@ function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
     ),
     vscode.commands.registerCommand(
       OUTLINE_COMMAND_IDS.goToOutlineItem,
-      (page: unknown, top?: unknown) => {
-        if (typeof page === "number") {
-          panels.active?.goTo(
-            { page },
-            typeof top === "number" ? top : undefined,
-          );
-        }
-      },
+      (page: unknown, top?: unknown) => goToOutlineItem(panels, page, top),
     ),
   ];
+}
+
+/**
+ * Navigate to an outline destination: with a page (tree click), go there; with
+ * no page (palette / Ctrl/Cmd+Shift+O), offer a searchable Quick Pick of
+ * bookmarks — the PDF counterpart of Go to Symbol / Markdown Go to Heading.
+ */
+async function goToOutlineItem(
+  panels: PdfPanels,
+  page: unknown,
+  top?: unknown,
+): Promise<void> {
+  if (typeof page === "number") {
+    panels.active?.goTo({ page }, typeof top === "number" ? top : undefined);
+    return;
+  }
+  const panel = panels.active;
+  if (!panel) {
+    return;
+  }
+  type Pick = vscode.QuickPickItem & { page: number; top?: number };
+  const entries = flattenOutlineForPicker(panel.outline ?? []);
+  const items: Pick[] = entries.map((entry) => ({
+    label: entry.title,
+    description: entry.description,
+    ...(entry.detail ? { detail: entry.detail } : {}),
+    page: entry.page,
+    ...(entry.top !== undefined ? { top: entry.top } : {}),
+  }));
+  const choice = await vscode.window.showQuickPick(items, {
+    title: "Go to Outline Item",
+    placeHolder: items.length
+      ? "Go to outline item…"
+      : "No outline in this PDF.",
+    matchOnDescription: true,
+    matchOnDetail: true,
+  });
+  // The editor may have closed or switched while the picker was open.
+  if (choice && panels.active === panel) {
+    panel.goTo({ page: choice.page }, choice.top);
+  }
 }
 
 /**

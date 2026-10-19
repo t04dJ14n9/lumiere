@@ -105,6 +105,7 @@ editor has focus (not in a text field, the side bar or the panel):
 | Fit width              | Ctrl+0                    | ⌘0                  |
 | Fit page               | Ctrl+Alt+0                | ⌥⌘0                 |
 | Find in PDF            | Ctrl+F                    | ⌘F                  |
+| Go to outline item…    | Ctrl+Shift+O              | ⌘⇧O                 |
 | Toggle the PDF Outline | Ctrl+Alt+O                | ⌃⌘O                 |
 | Select Text tool       | Ctrl+Alt+T                | ⌃⌘T                 |
 | Select Region tool     | Ctrl+Alt+R                | ⌃⌘R                 |

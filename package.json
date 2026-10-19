@@ -828,7 +828,7 @@
       },
       {
         "command": "lumiere.pdf.goToOutlineItem",
-        "title": "Go to Outline Item",
+        "title": "Go to Outline Item…",
         "category": "PDF"
       },
       {
@@ -1231,6 +1231,12 @@
         "command": "lumiere.pdf.goToPage",
         "key": "ctrl+g",
         "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.goToOutlineItem",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
       },
       {
@@ -1882,7 +1888,7 @@
         },
         {
           "command": "lumiere.pdf.goToOutlineItem",
-          "when": "false"
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
         },
         {
           "command": "lumiere.pdf.openNativeLink",

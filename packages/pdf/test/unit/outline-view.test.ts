@@ -4,7 +4,10 @@ import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import type { OutlineItem } from "../../src/shared/messages";
-import { findActiveOutlineItem } from "../../src/shared/outline";
+import {
+  findActiveOutlineItem,
+  flattenOutlineForPicker,
+} from "../../src/shared/outline";
 import { OUTLINE_COMMAND_IDS } from "../../src/extension/plugins/pdf/registered-commands";
 import {
   Disposable,
@@ -61,6 +64,8 @@ function harness(enabled = false, visible = true) {
   const executed: string[] = [];
   const navigations: { panel: Panel; page: number; top: number | undefined }[] =
     [];
+  const picks: unknown[] = [];
+  let pickResult: unknown = undefined;
   const view = {
     visible,
     onDidChangeVisibility: visibilityChanged.event,
@@ -89,6 +94,13 @@ function harness(enabled = false, visible = true) {
         collapseAll = options.showCollapseAll;
         return view;
       },
+      showQuickPick: async (
+        items: unknown[],
+        options?: { placeHolder?: string },
+      ) => {
+        picks.push({ items, options });
+        return pickResult;
+      },
     },
     workspace: {
       getConfiguration: () => ({ get: () => saved }),
@@ -115,7 +127,10 @@ function harness(enabled = false, visible = true) {
   };
   const modules: Record<string, unknown> = {
     vscode: api,
-    "../../../shared/outline": { findActiveOutlineItem },
+    "../../../shared/outline": {
+      findActiveOutlineItem,
+      flattenOutlineForPicker,
+    },
     "../pdf/registered-commands": { OUTLINE_COMMAND_IDS },
     "./focus": {
       createOutlineFocus: () => ({
@@ -184,6 +199,10 @@ function harness(enabled = false, visible = true) {
     warnings,
     writes,
     navigations,
+    picks,
+    setPick(value: unknown) {
+      pickResult = value;
+    },
     get provider() {
       return provider;
     },
@@ -487,6 +506,47 @@ test("clicking an outline item still navigates to its page and offset", (t) => {
   const command = h.provider.getTreeItem(item).command!;
   h.command(command.command.replace("lumiere.pdf.", ""), ...command.arguments);
   assert.deepEqual(h.navigations, [{ panel, page: 3, top: 120 }]);
+});
+
+test("Go to Outline Item without a page opens a Quick Pick and navigates to the choice", async (t) => {
+  const h = harness();
+  t.after(h.dispose);
+  const child = heading("Child", 2, [], 50);
+  const panel = h.panel([heading("Chapter", 1, [child])]);
+  h.activate(panel);
+  h.start();
+  h.setPick({ label: "Child", page: 2, top: 50 });
+  await h.command("goToOutlineItem");
+  assert.equal(h.picks.length, 1);
+  const shown = h.picks[0] as {
+    items: { label: string; description: string; detail?: string }[];
+    options: { placeHolder?: string };
+  };
+  assert.deepEqual(
+    shown.items.map((item) => [item.label, item.description, item.detail]),
+    [
+      ["Chapter", "p.1", undefined],
+      ["Child", "p.2", "Chapter"],
+    ],
+  );
+  assert.equal(shown.options.placeHolder, "Go to outline item…");
+  assert.deepEqual(h.navigations, [{ panel, page: 2, top: 50 }]);
+});
+
+test("Go to Outline Item with an empty outline shows a placeholder and does not navigate", async (t) => {
+  const h = harness();
+  t.after(h.dispose);
+  const panel = h.panel([]);
+  h.activate(panel);
+  h.start();
+  await h.command("goToOutlineItem");
+  const shown = h.picks[0] as {
+    items: unknown[];
+    options: { placeHolder?: string };
+  };
+  assert.deepEqual(shown.items, []);
+  assert.equal(shown.options.placeHolder, "No outline in this PDF.");
+  assert.equal(h.navigations.length, 0);
 });
 
 test("disposal stops event reactions and a reveal in flight cannot follow another node", async () => {
