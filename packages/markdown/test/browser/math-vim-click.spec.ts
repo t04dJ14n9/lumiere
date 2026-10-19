@@ -6,15 +6,9 @@
 import { expect, test } from "@playwright/test";
 import { open } from "./harness";
 
-const source = [
-  "Inline $x$ here.",
-  "",
-  "$$",
-  "y^2",
-  "$$",
-  "",
-  "after",
-].join("\n");
+const source = ["Inline $x$ here.", "", "$$", "y^2", "$$", "", "after"].join(
+  "\n",
+);
 
 test("with Vim on, a display formula reveals on the first click after an inline formula was selected", async ({
   page,
