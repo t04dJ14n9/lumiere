@@ -48,22 +48,41 @@ export function createCursorHandoffSurface(): HandoffSurface {
 async function dismissMirror(uri: string): Promise<void> {
   const target = vscode.Uri.parse(uri);
   const targetKey = target.toString();
-  await closeMirrorEditor(targetKey);
-  // When Live Preview was not beside the mirror (sole text tab), reopen it.
-  if (!hasLumiereTab(targetKey)) {
+  const closed = await closeMirrorEditor(targetKey);
+  // Closing the note's only view puts Live Preview back in its place, behind
+  // any tab the reader moved on to. A mirror the reader closed stays closed.
+  if (closed && !hasLumiereTab(targetKey)) {
     await vscode.commands.executeCommand(
       "vscode.openWith",
       target,
       MARKDOWN_EDITOR.viewType,
+      {
+        viewColumn: closed.viewColumn,
+        preview: false,
+        preserveFocus: !closed.focused,
+        background: !closed.shown,
+      },
     );
   }
 }
 
-async function closeMirrorEditor(targetKey: string): Promise<void> {
+interface ClosedMirror {
+  readonly viewColumn: vscode.ViewColumn;
+  /** The mirror was its group's active tab. */
+  readonly shown: boolean;
+  /** …and that group was the active one. */
+  readonly focused: boolean;
+}
+
+/** Close the mirror's tab and say where it was; undefined when none is open. */
+async function closeMirrorEditor(
+  targetKey: string,
+): Promise<ClosedMirror | undefined> {
   const active = vscode.window.activeTextEditor;
   if (active?.document.uri.toString() === targetKey) {
+    const { viewColumn } = vscode.window.tabGroups.activeTabGroup;
     await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-    return;
+    return { viewColumn, shown: true, focused: true };
   }
   for (const group of vscode.window.tabGroups.all) {
     for (const tab of group.tabs) {
@@ -71,11 +90,15 @@ async function closeMirrorEditor(targetKey: string): Promise<void> {
         tab.input instanceof vscode.TabInputText &&
         tab.input.uri.toString() === targetKey
       ) {
+        const shown = group.activeTab === tab;
+        const focused =
+          shown && group === vscode.window.tabGroups.activeTabGroup;
         await vscode.window.tabGroups.close(tab);
-        return;
+        return { viewColumn: group.viewColumn, shown, focused };
       }
     }
   }
+  return undefined;
 }
 
 /**

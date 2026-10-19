@@ -814,7 +814,46 @@ test("dismiss reopens Lumière when only the mirror tab remains", async () => {
     group.tabs.some((tab) => tab.input instanceof TabInputText),
     false,
   );
-  assert.deepEqual(commands, [["vscode.openWith", note, viewType]]);
+  assert.deepEqual(commands, [
+    [
+      "vscode.openWith",
+      note,
+      viewType,
+      {
+        viewColumn: 1,
+        preview: false,
+        preserveFocus: false,
+        background: false,
+      },
+    ],
+  ]);
+});
+
+test("dismiss puts Live Preview back behind the tab the reader moved on to", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  const other = cursorTab("file:///vault/Other.md");
+  other.input = new TabInputText(Uri.parse("file:///vault/Other.md"));
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note);
+  assert.deepEqual(group.tabs, [other]);
+  assert.deepEqual(commands, [
+    [
+      "vscode.openWith",
+      note,
+      viewType,
+      { viewColumn: 1, preview: false, preserveFocus: true, background: true },
+    ],
+  ]);
+});
+
+test("dismiss leaves a note closed when the reader closed its mirror", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note);
+  assert.deepEqual(commands, [], "Close All must not bring the note back");
 });
 
 test("dismiss does not reopen Lumière when a Live Preview sibling remains", async () => {

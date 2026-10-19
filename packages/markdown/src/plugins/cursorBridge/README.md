@@ -100,4 +100,6 @@ window's armed probe context until their last owner releases it; the status
 bar tracks the most recently armed URI. Focus-return and visible-range capacity
 heuristics are no longer used. Closing the mirror reveals a Live Preview
 sibling when one is open; if only the mirror tab remained, dismiss reopens
-Lumière via `vscode.openWith`. Obsidian has no equivalent native Cursor handoff.
+Lumière via `vscode.openWith` in the mirror's group, in the background when
+the reader had moved to another tab. A mirror the reader closed (Cmd+W, Close
+All) is not reopened. Obsidian has no equivalent native Cursor handoff.
