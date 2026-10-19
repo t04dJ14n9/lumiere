@@ -190,6 +190,46 @@ test("Ctrl+Alt+O focuses PDF Outline with titles, and closes the chrome that hos
   );
 });
 
+test("Ctrl/Cmd+Shift+O opens Go to Outline Item… on the PDF viewer without colliding with Markdown or outline focus", () => {
+  const goTo = contributes.commands.find(
+    (entry) => entry.command === "lumiere.pdf.goToOutlineItem",
+  );
+  assert.equal(goTo?.title, "Go to Outline Item…");
+  const bindings = (contributes.keybindings ?? []) as {
+    key: string;
+    mac?: string;
+    command: string;
+    when?: string;
+  }[];
+  const shiftO = bindings.filter(
+    (entry) => entry.key === "ctrl+shift+o" || entry.mac === "cmd+shift+o",
+  );
+  assert.deepEqual(
+    shiftO.map((entry) => [entry.command, entry.key, entry.mac, entry.when]),
+    [
+      [
+        "lumiere.pdf.goToOutlineItem",
+        "ctrl+shift+o",
+        "cmd+shift+o",
+        "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts",
+      ],
+    ],
+  );
+  // Outline focus stays on Ctrl+Alt+O / Ctrl+Cmd+O, not Shift+O.
+  assert.equal(
+    bindings.some(
+      (entry) =>
+        entry.command === "lumiere.pdf.outline.focus" &&
+        (entry.key === "ctrl+shift+o" || entry.mac === "cmd+shift+o"),
+    ),
+    false,
+  );
+  const palette = (
+    contributes.menus.commandPalette as { command: string; when?: string }[]
+  ).find((entry) => entry.command === "lumiere.pdf.goToOutlineItem");
+  assert.equal(palette?.when, "activeCustomEditorId == 'lumiere.pdf.viewer'");
+});
+
 test("Look Up is a setting, hidden from the palette and offered on macOS when enabled, with the clicked word resolved by its command", () => {
   const setting = contributes.configuration.properties[
     "lumiere.pdf.lookUp.enabled"

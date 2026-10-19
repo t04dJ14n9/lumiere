@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { OutlineItem } from "../../src/shared/messages";
-import { findActiveOutlineItem } from "../../src/shared/outline";
+import {
+  findActiveOutlineItem,
+  flattenOutlineForPicker,
+} from "../../src/shared/outline";
 
 const heading = (
   title: string,
@@ -97,4 +100,24 @@ test("unsorted destinations follow page and offset order without changing the bo
   assert.equal(findActiveOutlineItem(items, { page: 2, top: 500 }), high);
   assert.equal(findActiveOutlineItem(items, { page: 8 }), later);
   assert.deepEqual(items, [later, high, low]);
+});
+
+test("flattenOutlineForPicker lists navigable bookmarks with page labels and ancestor detail", () => {
+  const child = heading("Child", 2, 40);
+  const group: OutlineItem = {
+    title: "Group",
+    children: [child, { title: "External", children: [] }],
+  };
+  const root = heading("Root", 1, undefined, [group]);
+  assert.deepEqual(flattenOutlineForPicker([root]), [
+    { title: "Root", page: 1, description: "p.1" },
+    {
+      title: "Child",
+      page: 2,
+      top: 40,
+      description: "p.2",
+      detail: "Root › Group",
+    },
+  ]);
+  assert.deepEqual(flattenOutlineForPicker([]), []);
 });

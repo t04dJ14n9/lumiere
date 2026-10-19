@@ -58,3 +58,41 @@ function laterThan(candidate: Candidate, active: Candidate): boolean {
   }
   return candidate.depth >= active.depth;
 }
+
+/** One navigable outline entry flattened for the Go to Outline Item Quick Pick. */
+export interface OutlinePickerEntry {
+  title: string;
+  page: number;
+  top?: number;
+  /** Page label shown beside the title, e.g. `p.3`. */
+  description: string;
+  /** Ancestor titles joined with › when the entry is nested. */
+  detail?: string;
+}
+
+/**
+ * Depth-first list of outline bookmarks that have a local page destination.
+ * Group-only or external entries are skipped as picks but still appear in
+ * children's ancestor detail.
+ */
+export function flattenOutlineForPicker(
+  items: readonly OutlineItem[],
+  ancestors: readonly string[] = [],
+): OutlinePickerEntry[] {
+  const result: OutlinePickerEntry[] = [];
+  for (const item of items) {
+    if (item.page !== undefined) {
+      result.push({
+        title: item.title,
+        page: item.page,
+        ...(item.top !== undefined ? { top: item.top } : {}),
+        description: `p.${item.page}`,
+        ...(ancestors.length ? { detail: ancestors.join(" › ") } : {}),
+      });
+    }
+    result.push(
+      ...flattenOutlineForPicker(item.children, [...ancestors, item.title]),
+    );
+  }
+  return result;
+}
