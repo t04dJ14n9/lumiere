@@ -197,7 +197,7 @@ interface OutlineParts {
 }
 
 function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
-  const { panels, view, follower, settings } = parts;
+  const { view, follower, settings } = parts;
   return [
     vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.expandOutline, () =>
       expandAll(parts),
@@ -236,6 +236,72 @@ function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
  * (see PdfPanel.load); only a real `[]` means the PDF has no outline. The
  * picker stays open and refreshes when the outline arrives or is replaced.
  */
+type OutlinePick = vscode.QuickPickItem & {
+  page: number;
+  top?: number;
+  /** Outline array identity that produced this row; must still be current. */
+  outline: OutlineItem[];
+};
+
+function refreshOutlinePicker(
+  picker: vscode.QuickPick<OutlinePick>,
+  panel: PdfPanel,
+  panels: PdfPanels,
+  isDisposed: () => boolean,
+): void {
+  if (isDisposed() || panels.active !== panel) {
+    picker.hide();
+    return;
+  }
+  const outline = panel.outline;
+  if (outline === undefined) {
+    picker.busy = true;
+    picker.placeholder = "Loading outline…";
+    picker.items = [];
+    return;
+  }
+  picker.busy = false;
+  const entries = flattenOutlineForPicker(outline);
+  picker.items = entries.map((entry) => ({
+    label: entry.title,
+    description: entry.description,
+    ...(entry.detail ? { detail: entry.detail } : {}),
+    page: entry.page,
+    ...(entry.top !== undefined ? { top: entry.top } : {}),
+    outline,
+  }));
+  picker.placeholder = entries.length
+    ? "Go to outline item…"
+    : "No outline in this PDF.";
+}
+
+async function pickOutlineDestination(
+  panel: PdfPanel,
+  panels: PdfPanels,
+  isDisposed: () => boolean,
+): Promise<OutlinePick | undefined> {
+  const picker = vscode.window.createQuickPick<OutlinePick>();
+  picker.title = "Go to Outline Item";
+  picker.matchOnDescription = true;
+  picker.matchOnDetail = true;
+  const applyOutline = (): void => {
+    refreshOutlinePicker(picker, panel, panels, isDisposed);
+  };
+  applyOutline();
+  const subscription = panels.onDidChange(applyOutline);
+  const choice = await new Promise<OutlinePick | undefined>((resolve) => {
+    picker.onDidAccept(() => {
+      resolve(picker.selectedItems[0]);
+      picker.hide();
+    });
+    picker.onDidHide(() => resolve(undefined));
+    picker.show();
+  });
+  subscription.dispose();
+  picker.dispose();
+  return choice;
+}
+
 async function goToOutlineItem(
   { panels, isDisposed }: OutlineParts,
   page: unknown,
@@ -249,57 +315,7 @@ async function goToOutlineItem(
   if (!panel || isDisposed()) {
     return;
   }
-  type Pick = vscode.QuickPickItem & {
-    page: number;
-    top?: number;
-    /** Outline array identity that produced this row; must still be current. */
-    outline: OutlineItem[];
-  };
-  const picker = vscode.window.createQuickPick<Pick>();
-  picker.title = "Go to Outline Item";
-  picker.matchOnDescription = true;
-  picker.matchOnDetail = true;
-
-  const applyOutline = (): void => {
-    if (isDisposed() || panels.active !== panel) {
-      picker.hide();
-      return;
-    }
-    const outline = panel.outline;
-    if (outline === undefined) {
-      picker.busy = true;
-      picker.placeholder = "Loading outline…";
-      picker.items = [];
-      return;
-    }
-    picker.busy = false;
-    const entries = flattenOutlineForPicker(outline);
-    picker.items = entries.map((entry) => ({
-      label: entry.title,
-      description: entry.description,
-      ...(entry.detail ? { detail: entry.detail } : {}),
-      page: entry.page,
-      ...(entry.top !== undefined ? { top: entry.top } : {}),
-      outline,
-    }));
-    picker.placeholder = entries.length
-      ? "Go to outline item…"
-      : "No outline in this PDF.";
-  };
-
-  applyOutline();
-  const subscription = panels.onDidChange(applyOutline);
-  const choice = await new Promise<Pick | undefined>((resolve) => {
-    picker.onDidAccept(() => {
-      resolve(picker.selectedItems[0]);
-      picker.hide();
-    });
-    picker.onDidHide(() => resolve(undefined));
-    picker.show();
-  });
-  subscription.dispose();
-  picker.dispose();
-
+  const choice = await pickOutlineDestination(panel, panels, isDisposed);
   // Reject after dispose, editor switch/close, or outline reload (stale page/top).
   if (
     isDisposed() ||

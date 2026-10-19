@@ -378,7 +378,7 @@ function createEditMirrorCleanup(
     async abandon(end?: { restore?: boolean }) {
       if (stopWatching()) {
         await abandonEditHandoff(session.surface, uri, lease, {
-          restore: end?.restore,
+          ...(end?.restore !== undefined ? { restore: end.restore } : {}),
           ...(promptId ? { promptId } : {}),
         });
       }
