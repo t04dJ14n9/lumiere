@@ -901,8 +901,11 @@ Off by default.
 
 In **Cursor** only: select text in Live Preview, press Cmd/Ctrl+L (Chat) and
 Cmd/Ctrl+K (Edit). Edit should open Cursor’s native bar; Accept updates the note
-in Lumière without a custom apply-back. With no selection, both
-commands no-op with a short notice. Disable `lumiere.markdown.plugins.cursorBridge.enabled`
+in Lumière without a custom apply-back. After a verified Edit, a left status-bar
+item (`Return to Lumière`) appears; click it (or run
+`lumiere.markdown.cursorBridge.dismissEditMirror`) to abandon the mirror and
+return to Live Preview. With no selection, both Chat and Edit no-op with a short
+notice. Disable `lumiere.markdown.plugins.cursorBridge.enabled`
 and confirm Cmd/Ctrl+K is Insert Link again. On plain VS Code, Insert Link keeps
 Cmd/Ctrl+K. Leave `agentBridge` behaviour unchanged.
 
@@ -1101,6 +1104,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
 | `lumiere.markdown.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
+| `lumiere.markdown.cursorBridge.dismissEditMirror` — Return to Lumière | unbound (status bar) | After verified Edit, click the left status-bar item (or run the command) to abandon the mirror and reopen Lumière when needed. |
 | `lumiere.markdown.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.ideContext.copy` — Copy IDE Context | unbound | On a disposable fixture, run Copy IDE Context; confirm clipboard markdown includes active/tabs/diagnostics and no agent opens. Repeat after disable/re-enable. |
 | `lumiere.markdown.ideContext.send` — Send IDE Context to Agent… | unbound | On a disposable fixture, run Send IDE Context to Agent…; confirm clipboard always updates and agent open follows forced/sole-agent/picker rules (never silent-guess). |
