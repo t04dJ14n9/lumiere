@@ -171,7 +171,7 @@ test("closeCursorEditPrompt runs closePromptBar and swallows failures", async ()
   assert.deepEqual(h.args, [["prompt-1"]]);
 
   const ran: string[] = [];
-  await closeCursorEditPrompt(async (id, ...args) => {
+  await closeCursorEditPrompt(async (id) => {
     ran.push(id);
     throw new Error(`command '${id}' failed`);
   }, "prompt-2");

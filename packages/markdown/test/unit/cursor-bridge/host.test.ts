@@ -775,7 +775,6 @@ test("Edit success shows the left status-bar dismiss control", async (t) => {
   assert.ok(f.statusShows[0]?.tooltip?.includes("Edit mirror"));
 });
 
-
 test("second Edit after dismiss passes the prior prompt id so Cursor can open again", async (t) => {
   const f = await fixture({
     editResults: ["prompt-1", "prompt-2"],

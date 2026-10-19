@@ -144,9 +144,9 @@ function harness(enabled = false, visible = true) {
               items: picker.items,
               options: { placeHolder: picker.placeholder },
             });
-            const complete = (forced?: T) => {
+            const complete = (forced?: unknown) => {
               if (forced) {
-                picker.selectedItems = [forced];
+                picker.selectedItems = [forced as T];
                 finish(true);
                 return;
               }
@@ -706,7 +706,7 @@ test("Go to Outline Item ignores a choice after the outline reloads", async (t) 
   );
 });
 
-test("Go to Outline Item ignores a choice after the outline view is disposed", async (t) => {
+test("Go to Outline Item ignores a choice after the outline view is disposed", async () => {
   const h = harness();
   const panel = h.panel([heading("Chapter", 1)]);
   h.activate(panel);

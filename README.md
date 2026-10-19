@@ -67,8 +67,9 @@ through a versioned API.
 
 ## Get started
 
-1. Install Lumière. It is not on the Marketplace yet: build the `.vsix` (see
-   [Develop](#develop)) and choose **Extensions › … › Install from VSIX…**.
+1. Install [Lumière](https://marketplace.visualstudio.com/items?itemName=t04dJ14n9.lumiere)
+   (`t04dJ14n9.lumiere`) from the VS Code Marketplace, or search for **Lumière**
+   in the Extensions view.
 2. Open a folder of notes. An existing Obsidian vault works as it is.
 3. Run **Use Lumière for Markdown in This Workspace** from the Command Palette, so
    `*.md` files in that folder open in Lumière. It is an option rather than
