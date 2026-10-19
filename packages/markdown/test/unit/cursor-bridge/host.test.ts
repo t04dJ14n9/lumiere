@@ -39,8 +39,11 @@ async function fixture(options: FixtureOptions = {}) {
   const informs: string[] = [];
   const dismissed: string[] = [];
   const contexts: unknown[][] = [];
-  const statusShows: { text: string; tooltip?: string; command?: string }[] =
-    [];
+  const statusShows: {
+    text: string;
+    tooltip?: string | undefined;
+    command?: string | undefined;
+  }[] = [];
   const statusEvents: string[] = [];
   let probeDisposed = false;
   let statusDisposed = false;
