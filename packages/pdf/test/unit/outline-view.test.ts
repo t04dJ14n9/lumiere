@@ -66,6 +66,15 @@ function harness(enabled = false, visible = true) {
     [];
   const picks: unknown[] = [];
   let pickResult: unknown = undefined;
+  let holdPick = false;
+  let releasePick: ((forced?: unknown) => void) | undefined;
+  let livePicker:
+    | {
+        placeholder: string;
+        busy: boolean;
+        items: { label: string }[];
+      }
+    | undefined;
   const view = {
     visible,
     onDidChangeVisibility: visibilityChanged.event,
@@ -94,12 +103,77 @@ function harness(enabled = false, visible = true) {
         collapseAll = options.showCollapseAll;
         return view;
       },
-      showQuickPick: async (
-        items: unknown[],
-        options?: { placeHolder?: string },
-      ) => {
-        picks.push({ items, options });
-        return pickResult;
+      createQuickPick: <T extends { label: string }>() => {
+        const accept: Array<() => void> = [];
+        const hide: Array<() => void> = [];
+        let finished = false;
+        const finish = (accepted: boolean) => {
+          if (finished) {
+            return;
+          }
+          finished = true;
+          if (accepted) {
+            for (const listener of accept) {
+              listener();
+            }
+          } else {
+            for (const listener of hide) {
+              listener();
+            }
+          }
+        };
+        const picker = {
+          title: "",
+          placeholder: "",
+          busy: false,
+          items: [] as T[],
+          matchOnDescription: false,
+          matchOnDetail: false,
+          selectedItems: [] as T[],
+          onDidAccept: (listener: () => void) => {
+            accept.push(listener);
+            return new Disposable(() => {});
+          },
+          onDidHide: (listener: () => void) => {
+            hide.push(listener);
+            return new Disposable(() => {});
+          },
+          show: () => {
+            livePicker = picker;
+            picks.push({
+              items: picker.items,
+              options: { placeHolder: picker.placeholder },
+            });
+            const complete = (forced?: T) => {
+              if (forced) {
+                picker.selectedItems = [forced];
+                finish(true);
+                return;
+              }
+              if (pickResult === undefined) {
+                finish(false);
+                return;
+              }
+              const wanted = pickResult as { label?: string };
+              const match =
+                typeof wanted?.label === "string"
+                  ? picker.items.find((item) => item.label === wanted.label)
+                  : undefined;
+              picker.selectedItems = match ? [match] : [];
+              finish(Boolean(match));
+            };
+            if (holdPick) {
+              releasePick = complete;
+            } else {
+              queueMicrotask(() => complete());
+            }
+          },
+          hide: () => finish(false),
+          dispose: () => {
+            livePicker = undefined;
+          },
+        };
+        return picker;
       },
     },
     workspace: {
@@ -200,8 +274,20 @@ function harness(enabled = false, visible = true) {
     writes,
     navigations,
     picks,
+    get livePicker() {
+      return livePicker;
+    },
     setPick(value: unknown) {
       pickResult = value;
+    },
+    holdPick(value = true) {
+      holdPick = value;
+    },
+    releasePick(forced?: unknown) {
+      const release = releasePick;
+      releasePick = undefined;
+      holdPick = false;
+      release?.(forced);
     },
     get provider() {
       return provider;
@@ -515,7 +601,7 @@ test("Go to Outline Item without a page opens a Quick Pick and navigates to the 
   const panel = h.panel([heading("Chapter", 1, [child])]);
   h.activate(panel);
   h.start();
-  h.setPick({ label: "Child", page: 2, top: 50 });
+  h.setPick({ label: "Child" });
   await h.command("goToOutlineItem");
   assert.equal(h.picks.length, 1);
   const shown = h.picks[0] as {
@@ -546,6 +632,92 @@ test("Go to Outline Item with an empty outline shows a placeholder and does not 
   };
   assert.deepEqual(shown.items, []);
   assert.equal(shown.options.placeHolder, "No outline in this PDF.");
+  assert.equal(h.navigations.length, 0);
+});
+
+test("Go to Outline Item while outline is loading does not look like empty", async (t) => {
+  const h = harness();
+  t.after(h.dispose);
+  const panel = h.panel([]);
+  panel.outline = undefined;
+  h.activate(panel);
+  h.start();
+  h.holdPick();
+  const pending = h.command("goToOutlineItem");
+  await tick();
+  const shown = h.picks[0] as {
+    items: unknown[];
+    options: { placeHolder?: string };
+  };
+  assert.equal(shown.items.length, 0);
+  assert.equal(shown.options.placeHolder, "Loading outline…");
+  assert.equal(h.livePicker?.busy, true);
+  assert.notEqual(
+    shown.options.placeHolder,
+    "No outline in this PDF.",
+    "undefined (loading) must not use the empty-outline placeholder",
+  );
+
+  const outline = [heading("Chapter", 1)];
+  panel.outline = outline;
+  h.changed();
+  await tick();
+  assert.equal(h.livePicker?.busy, false);
+  assert.equal(h.livePicker?.placeholder, "Go to outline item…");
+  assert.deepEqual(
+    h.livePicker?.items.map((item) => item.label),
+    ["Chapter"],
+  );
+
+  h.setPick({ label: "Chapter" });
+  h.releasePick();
+  await pending;
+  assert.deepEqual(h.navigations, [{ panel, page: 1, top: 0 }]);
+});
+
+test("Go to Outline Item ignores a choice after the outline reloads", async (t) => {
+  const h = harness();
+  t.after(h.dispose);
+  const first = [heading("Old chapter", 1)];
+  const panel = h.panel(first);
+  h.activate(panel);
+  h.start();
+  h.holdPick();
+  const pending = h.command("goToOutlineItem");
+  await tick();
+  const staleChoice = (
+    h.picks[0] as { items: { label: string; page: number; outline: unknown }[] }
+  ).items[0]!;
+  assert.equal(staleChoice.label, "Old chapter");
+  // Reload clears then replaces the outline while the picker is open.
+  panel.outline = undefined;
+  h.changed();
+  await tick();
+  panel.outline = [heading("New chapter", 2)];
+  h.changed();
+  await tick();
+  // Accept the pre-reload row even though the picker now lists the new outline.
+  h.releasePick(staleChoice);
+  await pending;
+  assert.equal(
+    h.navigations.length,
+    0,
+    "a pick built from the previous outline must not navigate the reloaded PDF",
+  );
+});
+
+test("Go to Outline Item ignores a choice after the outline view is disposed", async (t) => {
+  const h = harness();
+  const panel = h.panel([heading("Chapter", 1)]);
+  h.activate(panel);
+  h.start();
+  h.holdPick();
+  const pending = h.command("goToOutlineItem");
+  await tick();
+  h.setPick({ label: "Chapter" });
+  h.dispose();
+  h.releasePick();
+  await pending;
   assert.equal(h.navigations.length, 0);
 });
 

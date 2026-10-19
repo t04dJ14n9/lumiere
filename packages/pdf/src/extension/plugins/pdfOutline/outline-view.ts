@@ -22,6 +22,7 @@ export function registerOutlineView(
   settings: PdfSettings,
   log: Pick<vscode.LogOutputChannel, "warn">,
 ): vscode.Disposable {
+  let disposed = false;
   const provider = new OutlineProvider(panels);
   const view = vscode.window.createTreeView("lumiere.pdf.outline", {
     treeDataProvider: provider,
@@ -55,11 +56,21 @@ export function registerOutlineView(
         follower.applySetting();
       }
     }),
-    ...outlineCommands({ panels, view, provider, follower, settings }),
+    ...outlineCommands({
+      panels,
+      view,
+      provider,
+      follower,
+      settings,
+      isDisposed: () => disposed,
+    }),
   );
   follower.applySetting();
   outlineFocus.sync(Boolean(panels.active));
-  return registration;
+  return new vscode.Disposable(() => {
+    disposed = true;
+    registration.dispose();
+  });
 }
 
 /** With "follow cursor" on, keeps the bookmark of the reading position selected. */
@@ -182,6 +193,7 @@ interface OutlineParts {
   provider: OutlineProvider;
   follower: OutlineFollower;
   settings: PdfSettings;
+  isDisposed: () => boolean;
 }
 
 function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
@@ -210,7 +222,7 @@ function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
     ),
     vscode.commands.registerCommand(
       OUTLINE_COMMAND_IDS.goToOutlineItem,
-      (page: unknown, top?: unknown) => goToOutlineItem(panels, page, top),
+      (page: unknown, top?: unknown) => goToOutlineItem(parts, page, top),
     ),
   ];
 }
@@ -219,9 +231,13 @@ function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
  * Navigate to an outline destination: with a page (tree click), go there; with
  * no page (palette / Ctrl/Cmd+Shift+O), offer a searchable Quick Pick of
  * bookmarks — the PDF counterpart of Go to Symbol / Markdown Go to Heading.
+ *
+ * `panel.outline` is `undefined` while the viewer is still reading bookmarks
+ * (see PdfPanel.load); only a real `[]` means the PDF has no outline. The
+ * picker stays open and refreshes when the outline arrives or is replaced.
  */
 async function goToOutlineItem(
-  panels: PdfPanels,
+  { panels, isDisposed }: OutlineParts,
   page: unknown,
   top?: unknown,
 ): Promise<void> {
@@ -230,30 +246,70 @@ async function goToOutlineItem(
     return;
   }
   const panel = panels.active;
-  if (!panel) {
+  if (!panel || isDisposed()) {
     return;
   }
-  type Pick = vscode.QuickPickItem & { page: number; top?: number };
-  const entries = flattenOutlineForPicker(panel.outline ?? []);
-  const items: Pick[] = entries.map((entry) => ({
-    label: entry.title,
-    description: entry.description,
-    ...(entry.detail ? { detail: entry.detail } : {}),
-    page: entry.page,
-    ...(entry.top !== undefined ? { top: entry.top } : {}),
-  }));
-  const choice = await vscode.window.showQuickPick(items, {
-    title: "Go to Outline Item",
-    placeHolder: items.length
+  type Pick = vscode.QuickPickItem & {
+    page: number;
+    top?: number;
+    /** Outline array identity that produced this row; must still be current. */
+    outline: OutlineItem[];
+  };
+  const picker = vscode.window.createQuickPick<Pick>();
+  picker.title = "Go to Outline Item";
+  picker.matchOnDescription = true;
+  picker.matchOnDetail = true;
+
+  const applyOutline = (): void => {
+    if (isDisposed() || panels.active !== panel) {
+      picker.hide();
+      return;
+    }
+    const outline = panel.outline;
+    if (outline === undefined) {
+      picker.busy = true;
+      picker.placeholder = "Loading outline…";
+      picker.items = [];
+      return;
+    }
+    picker.busy = false;
+    const entries = flattenOutlineForPicker(outline);
+    picker.items = entries.map((entry) => ({
+      label: entry.title,
+      description: entry.description,
+      ...(entry.detail ? { detail: entry.detail } : {}),
+      page: entry.page,
+      ...(entry.top !== undefined ? { top: entry.top } : {}),
+      outline,
+    }));
+    picker.placeholder = entries.length
       ? "Go to outline item…"
-      : "No outline in this PDF.",
-    matchOnDescription: true,
-    matchOnDetail: true,
+      : "No outline in this PDF.";
+  };
+
+  applyOutline();
+  const subscription = panels.onDidChange(applyOutline);
+  const choice = await new Promise<Pick | undefined>((resolve) => {
+    picker.onDidAccept(() => {
+      resolve(picker.selectedItems[0]);
+      picker.hide();
+    });
+    picker.onDidHide(() => resolve(undefined));
+    picker.show();
   });
-  // The editor may have closed or switched while the picker was open.
-  if (choice && panels.active === panel) {
-    panel.goTo({ page: choice.page }, choice.top);
+  subscription.dispose();
+  picker.dispose();
+
+  // Reject after dispose, editor switch/close, or outline reload (stale page/top).
+  if (
+    isDisposed() ||
+    !choice ||
+    panels.active !== panel ||
+    panel.outline !== choice.outline
+  ) {
+    return;
   }
+  panel.goTo({ page: choice.page }, choice.top);
 }
 
 /**
