@@ -10,7 +10,9 @@
  *
  * Mermaid fences are special: a short source can render a tall SVG (hundreds
  * of px). Plain line×24 under-reserves; use a taller per-line factor and a
- * floor so remounts keep scroll/PageDown valid until measure.
+ * floor so remounts keep scroll/PageDown valid until measure. MarkdownBlock
+ * also applies this reserve as minHeight so a remount that still sits in the
+ * draw margin cannot measure the pre-SVG shell (~182) before Mermaid finishes.
  *
  * Display math (`$$…$$`) is the same shape: a one-line matrix or stacked
  * fraction typesets far taller than its source. Count `\\` rows inside the

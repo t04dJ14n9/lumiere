@@ -67,3 +67,20 @@ test("HTML blocks with media height attrs reserve painted height, not line count
   assert.ok(plain < 80, `plain div got ${plain}`);
   assert.ok(img > plain * 10, `img=${img} plain=${plain}`);
 });
+
+test("short-tall flowchart fixture clears remount 0.7× measured guard", () => {
+  // Browser mermaid-remount-height: measured ~638, needs afterRebuild ≥ ~447.
+  const source = [
+    "```mermaid",
+    "flowchart TB",
+    "  A[Start] --> B[Step one with a long label]",
+    "  B --> C[Step two with a long label]",
+    "  C --> D[Step three]",
+    "  D --> E[Step four]",
+    "  E --> F[Step five]",
+    "  F --> G[End]",
+    "```",
+  ].join("\n");
+  const height = markdownBlockEstimatedHeight(source);
+  assert.ok(height >= 447, `got ${height}`);
+});
