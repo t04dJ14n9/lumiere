@@ -42,6 +42,8 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
+/** Deezer oEmbed covers (`cdn-images.dzcdn.net`). */
+const DEEZER_THUMB_HOSTS = new Set(["cdn-images.dzcdn.net"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -151,6 +153,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "deezer") {
+      return this.deezerDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -162,6 +167,34 @@ export class VideoDetailsSource {
       const image = await this.image(cover + COVER_SIZE, signal).catch(
         () => undefined,
       );
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
+  /** Deezer oEmbed, plus a dzcdn cover when the thumbnail is allowed. */
+  private async deezerDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const colon = id.indexOf(":");
+    const kind = id.slice(0, colon);
+    const resource = id.slice(colon + 1);
+    const page = `https://www.deezer.com/${kind}/${resource}`;
+    const body = await this.json(
+      `https://api.deezer.com/oembed?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    // Deezer answers HTTP 200 with `{ error: … }` for missing entities.
+    if (isRecord(body) && body.error !== undefined) {
+      throw new Error("Deezer oEmbed error");
+    }
+    const details = parseOEmbed(body);
+    const thumb = deezerThumbnail(body);
+    if (thumb) {
+      const image = await this.image(thumb, signal).catch(() => undefined);
       if (image !== undefined) {
         details.cover = image;
       }
@@ -205,6 +238,42 @@ export class VideoDetailsSource {
     }
     return response;
   }
+}
+
+/** Deezer oEmbed thumbnail when it is the dzcdn cover CDN (scaled to 480²). */
+export function deezerThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.thumbnail_url);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !DEEZER_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  // `/images/{kind}/{32-hex}/{W}x{H}.jpg` — rewrite size for card covers.
+  const match =
+    /^\/images\/(cover|playlist|artist|talk|misc)\/([a-f0-9]{32})\/\d+x\d+\.(jpe?g|png|webp)$/i.exec(
+      url.pathname,
+    );
+  if (!match) {
+    return undefined;
+  }
+  const kind = match[1]!;
+  const hash = match[2]!;
+  const ext = match[3]!.toLowerCase();
+  return `https://${url.hostname}/images/${kind}/${hash}/480x480.${ext === "jpeg" ? "jpg" : ext}`;
 }
 
 export function parseOEmbed(body: unknown): VideoDetails {

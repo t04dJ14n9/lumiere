@@ -85,3 +85,8 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Deezer refuses an in-webview player", () => {
+  assert.throws(() => playerUrl(video("https://www.deezer.com/track/3135556")));
+  assert.equal(providers.deezer.embeddable, false);
+});

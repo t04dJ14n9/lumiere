@@ -5,6 +5,7 @@ import {
   USER_AGENT,
   VideoDetailsSource,
   coverUrl,
+  deezerThumbnail,
   imageDataUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
@@ -329,5 +330,64 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("deezerThumbnail accepts cdn-images.dzcdn.net cover paths only", () => {
+  assert.equal(
+    deezerThumbnail({
+      thumbnail_url:
+        "https://cdn-images.dzcdn.net/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/1000x1000.jpg",
+    }),
+    "https://cdn-images.dzcdn.net/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/480x480.jpg",
+  );
+  assert.equal(
+    deezerThumbnail({
+      thumbnail_url:
+        "https://cdn-images.dzcdn.net/images/playlist/4fd375a41c7779ed7deab64fb1194099/1000x1000.jpg",
+    }),
+    "https://cdn-images.dzcdn.net/images/playlist/4fd375a41c7779ed7deab64fb1194099/480x480.jpg",
+  );
+  for (const value of [
+    "https://evil.test/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/1000x1000.jpg",
+    "https://cdn-images.dzcdn.net/other/a.jpg",
+    "https://cdn-images.dzcdn.net/images/cover/short/1000x1000.jpg",
+    "https://cdn-images.dzcdn.net/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/1000x1000.svg",
+    "https://cdn-images.dzcdn.net/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/1000x1000.jpg?x=1",
+  ]) {
+    assert.equal(deezerThumbnail({ thumbnail_url: value }), undefined, value);
+  }
+});
+
+test("a Deezer lookup uses api.deezer.com oEmbed and may fetch a cover", async () => {
+  const thumb =
+    "https://cdn-images.dzcdn.net/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/1000x1000.jpg";
+  const scaled =
+    "https://cdn-images.dzcdn.net/images/cover/5718f7c81c27e0b2417e2a4c45224f8a/480x480.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://api.deezer.com/oembed": () =>
+      response({
+        title: "Harder, Better, Faster, Stronger",
+        author_name: "Daft Punk",
+        thumbnail_url: thumb,
+      }),
+    "https://cdn-images.dzcdn.net/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "deezer",
+    "track:3135556",
+  );
+  assert.equal(details.title, "Harder, Better, Faster, Stronger");
+  assert.equal(details.author, "Daft Punk");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://api.deezer.com/oembed?url=${encodeURIComponent("https://www.deezer.com/track/3135556")}`,
+  );
+  assert.equal(calls[1]?.url, scaled);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

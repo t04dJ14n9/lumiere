@@ -14,8 +14,13 @@ export const protocol = defineProtocol("onlineVideos", {
   requests: {
     details: {
       params: Schema.object({
-        provider: Schema.union(["youtube", "bilibili", "huggingface"]),
-        /** Hugging Face model ids are at most 200 chars. */
+        provider: Schema.union([
+          "youtube",
+          "bilibili",
+          "huggingface",
+          "deezer",
+        ]),
+        /** Hugging Face model ids are at most 200 chars; Deezer ids are shorter. */
         id: Schema.string().max(200),
       }),
       result: videoDetails,

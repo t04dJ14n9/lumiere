@@ -105,6 +105,36 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Deezer track, album and playlist links (optional locale)", () => {
+  assert.deepEqual(parseVideoUrl("https://www.deezer.com/track/3135556"), {
+    provider: "deezer",
+    id: "track:3135556",
+    page: "https://www.deezer.com/track/3135556",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.deezer.com/en/album/302127?utm=x"),
+    {
+      provider: "deezer",
+      id: "album:302127",
+      page: "https://www.deezer.com/album/302127",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://m.deezer.com/fr/playlist/908622995/"),
+    {
+      provider: "deezer",
+      id: "playlist:908622995",
+      page: "https://www.deezer.com/playlist/908622995",
+    },
+  );
+  assert.equal(parseVideoUrl("https://www.deezer.com/artist/27"), undefined);
+  assert.equal(parseVideoUrl("https://www.deezer.com/track/0"), undefined);
+  assert.equal(
+    parseVideoUrl("https://www.deezer.com/track/3135556/extra"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +159,8 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://www.deezer.com/artist/27",
+    "https://link.deezer.com/track/3135556",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
