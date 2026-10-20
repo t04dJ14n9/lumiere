@@ -116,7 +116,9 @@ test("Find under tall Sources selects a body token, not empty space", async ({
     expect(
       Math.min(
         Math.abs(afterNext.head - afterNext.second),
-        Math.abs(afterNext.head - (afterNext.second + "UniqueFindToken".length)),
+        Math.abs(
+          afterNext.head - (afterNext.second + "UniqueFindToken".length),
+        ),
       ),
     ).toBeLessThan(40);
   }
