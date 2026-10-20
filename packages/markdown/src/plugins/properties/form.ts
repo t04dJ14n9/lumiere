@@ -42,8 +42,12 @@ export function bindPropertyForm(
  * Measured in Obsidian 1.14.4: Up and Shift+Tab go to the last row (the
  * heading when there are none); Down, Tab and Escape return to the text.
  */
-function addButtonDirection(
-  event: KeyboardEvent,
+/**
+ * Obsidian add-button motion (1.14.4): ArrowUp / k / Shift+Tab → last row;
+ * ArrowDown / j / Tab / Escape → body. `j`/`k` are always live, not vim-gated.
+ */
+export function addButtonDirection(
+  event: Pick<KeyboardEvent, "key" | "shiftKey" | "altKey" | "ctrlKey" | "metaKey" | "isComposing">,
 ): "forward" | "backward" | undefined {
   if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) {
     return undefined;
@@ -51,10 +55,12 @@ function addButtonDirection(
   if (event.key === "Tab") {
     return event.shiftKey ? "backward" : "forward";
   }
-  if (event.key === "ArrowUp") {
+  if (event.key === "ArrowUp" || event.key === "k") {
     return "backward";
   }
-  return ["ArrowDown", "Escape"].includes(event.key) ? "forward" : undefined;
+  return ["ArrowDown", "Escape", "j"].includes(event.key)
+    ? "forward"
+    : undefined;
 }
 
 function navigateAddButton(
@@ -190,6 +196,11 @@ function bindHeadingNavigation(
   });
 }
 
+/** Obsidian heading Down / `j` alias (measured 1.14.4). */
+export function headingMotionKey(key: string): string {
+  return key === "j" ? "ArrowDown" : key;
+}
+
 function navigateHeading(
   event: KeyboardEvent,
   options: {
@@ -199,9 +210,12 @@ function navigateHeading(
   },
 ): boolean {
   const { panel, editor, collapse } = options;
-  const key = event.key === "Tab" ? tabHeadingKey(event.shiftKey) : event.key;
-  // Obsidian's Properties heading toggles on click / ArrowLeft|Right only —
-  // Enter does not collapse (G16).
+  // Obsidian maps heading `j` like ArrowDown (always; not vim-gated).
+  // Enter does not collapse (G16 / #148).
+  const key =
+    event.key === "Tab"
+      ? tabHeadingKey(event.shiftKey)
+      : headingMotionKey(event.key);
   const actions: Readonly<Record<string, () => void>> = {
     ArrowDown: () => focusFirstProperty(panel, editor, event.altKey),
     ArrowUp: () => editor?.focusTitle?.(),
