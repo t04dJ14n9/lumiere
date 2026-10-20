@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { VaultIndexer } from "../../../src/plugins/vault/indexer";
+import {
+  OVERLAY_DELAY_MS,
+  VaultIndexer,
+} from "../../../src/plugins/vault/indexer";
 import { Snapshot } from "../../../src/plugins/vault/snapshot";
 import {
   MemoryFileSystem,
@@ -241,4 +244,29 @@ test("saves run one at a time, so two never write the same snapshot file at once
   const snapshot = new Snapshot();
   await snapshot.load(store);
   assert.deepEqual(Object.keys(snapshot.files).sort(), ["A.md", "B.md"]);
+});
+
+test("open-note overlay debounce is near-instant for unresolved link chrome", () => {
+  // Gap: index lag after typing a link — was 300 ms; Obsidian is instant-ish.
+  assert.equal(OVERLAY_DELAY_MS, 50);
+  assert.ok(OVERLAY_DELAY_MS <= 50);
+});
+
+test("an overlay at the default delay re-indexes unresolved links after the pause", async () => {
+  const fs = new MemoryFileSystem({ "A.md": "[[B]]", "B.md": "" });
+  const indexer = new VaultIndexer(
+    indexerOptions(fs, { delays: { save: 1, overlay: OVERLAY_DELAY_MS } }),
+  );
+  await indexer.settled();
+  indexer.setOverlay("A.md", "[[MissingNote]]");
+  // Before the debounce fires, disk text still drives the index.
+  assert.deepEqual(counts(indexer.index.resolvedLinks("A.md")), { "B.md": 1 });
+  assert.deepEqual(counts(indexer.index.unresolvedLinks("A.md")), {});
+  await wait(OVERLAY_DELAY_MS + 30);
+  await indexer.settled();
+  assert.deepEqual(counts(indexer.index.resolvedLinks("A.md")), {});
+  assert.deepEqual(counts(indexer.index.unresolvedLinks("A.md")), {
+    MissingNote: 1,
+  });
+  await indexer.dispose();
 });

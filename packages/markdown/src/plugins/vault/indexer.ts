@@ -18,8 +18,12 @@ import type {
 export const FILE_LIMIT = 50_000;
 /** At most one snapshot write per interval (DESIGN §12.2). */
 const SAVE_DELAY_MS = 2_000;
-/** Typing in an open note re-indexes it after this pause. */
-const OVERLAY_DELAY_MS = 300;
+/**
+ * Typing in an open note re-indexes it after this pause. Obsidian updates
+ * unresolved link chrome near-instantly; 300 ms left new `[[Missing]]`
+ * looking resolved. 50 ms still coalesces keystrokes without the lag.
+ */
+export const OVERLAY_DELAY_MS = 50;
 /** Long start-up work runs in slices of about this long, between other events. */
 const SLICE_MS = 8;
 

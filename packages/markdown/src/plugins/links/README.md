@@ -75,7 +75,7 @@ External application schemes ask first; script, data, command and file schemes
 are refused. Unresolved wikilinks can create notes. Unresolved styling applies to
 wikilinks in Live Preview while they are rendered; Markdown links, links in
 source mode and links inside embedded notes are not styled. A link typed just
-now looks resolved until the vault re-indexes the note (300 ms debounce). Host claim handlers may override default opening.
+now looks resolved until the vault re-indexes the note (50 ms overlay debounce). Host claim handlers may override default opening.
 
 File-location fields are validated by this plugin's schema and exposed as
 `files.newNoteFolder` and `files.attachmentFolder`. The native note-creation
