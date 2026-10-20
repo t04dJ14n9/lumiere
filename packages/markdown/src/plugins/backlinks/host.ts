@@ -151,12 +151,10 @@ function wireExtraContext(
     schedule();
   };
   ctx.effect(() => ctx.settings.onChange(syncContext));
-  ctx.effect(() => async () => {
-    await ctx.hostCommands.execute(
-      "setContext",
-      EXTRA_CONTEXT_CONTEXT,
-      undefined,
-    );
+  ctx.effect(() => () => {
+    void ctx.hostCommands
+      .execute("setContext", EXTRA_CONTEXT_CONTEXT, undefined)
+      .catch(() => undefined);
   });
   void ctx.hostCommands
     .execute(
