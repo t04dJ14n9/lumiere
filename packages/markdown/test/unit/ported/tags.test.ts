@@ -97,10 +97,10 @@ test("tags in footnote definitions remain searchable", () => {
 
 test("tags inside inline footnotes are indexed like Obsidian", () => {
   assert.deepEqual(noteTags("See ^[#project and more] here."), ["project"]);
-  assert.deepEqual(
-    noteTags("Mix ^[plain #alpha/nested] and #beta."),
-    ["alpha/nested", "beta"],
-  );
+  assert.deepEqual(noteTags("Mix ^[plain #alpha/nested] and #beta."), [
+    "alpha/nested",
+    "beta",
+  ]);
 });
 
 test("tag characters match Obsidian over every BMP code point", () => {
