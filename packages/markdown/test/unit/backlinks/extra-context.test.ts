@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mentionNodes, OPEN_COMMAND } from "../../../src/plugins/backlinks/tree";
+import {
+  mentionNodes,
+  OPEN_COMMAND,
+} from "../../../src/plugins/backlinks/tree";
 
 test("mentionNodes adds adjacent context rows only when present", () => {
   const match = {
