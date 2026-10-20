@@ -1,3 +1,4 @@
+import { peekEstimatedHeight } from "./estimated-height";
 import type { EditorView } from "@codemirror/view";
 import { WidgetType } from "@codemirror/view";
 import { unifiedRows } from "../../shared/git-diff";
@@ -123,6 +124,10 @@ export class PeekWidget extends WidgetType {
   }
   override ignoreEvent(): boolean {
     return true;
+  }
+  /** Header + unified rows; default (-1) under-reserves multi-line peeks. */
+  override get estimatedHeight(): number {
+    return peekEstimatedHeight(this.lineKey.split("\n").length);
   }
 }
 

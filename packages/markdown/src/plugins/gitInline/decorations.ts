@@ -20,6 +20,7 @@ import type { PassLifetime, PassOwner } from "../../shared/render-lifetime";
 import type { DocHunk, GitDiff, HunkSet } from "../gitGutter/api";
 import type { RenderService } from "../render/api";
 import { currentHunk, lineMarks } from "./open";
+import { ghostEstimatedHeight } from "./estimated-height";
 
 export interface InlineActions {
   readonly diff: GitDiff;
@@ -176,6 +177,13 @@ class GhostBlock extends WidgetType {
   }
   override ignoreEvent(): boolean {
     return true;
+  }
+  /**
+   * Reserve ghost body height before measure. Default (-1) is one line; a
+   * multi-paragraph removal then collapses the map after an off-viewport rebuild.
+   */
+  override get estimatedHeight(): number {
+    return ghostEstimatedHeight(this.model.markdown);
   }
 }
 
