@@ -26,7 +26,7 @@ Notation: `|` is the caret, `‹…›` a selection.
 | Tab | `1. a`, `2. b\|`, `3. c` | `1. a`, `\t1. b\|`, `2. c` (lists renumber) |
 | typing | `1. a`, `1. b\|`, `1. c` | `1. a`, `2. bz\|`, `3. c`: an edit inside a list renumbers it (opening a note does not) |
 | Shift+Tab | `1. a`, `\t1. b\|`, `2. c` | `1. a`, `2. b\|`, `3. c` |
-| Home, Cmd+Left | `- [ ] abc\|`, `- **bold**\|` | text start after markup first (past LP-hidden `**`/`[[`/`[`/`<kbd>`), then line start |
+| Home, Cmd+Left | `- [ ] abc\|`, `- **bold**\|`, `- ==🔵hi==\|` | text start after markup first (past LP-hidden `**`/`[[`/`[`/`<kbd>`/`==🔵`), then line start |
 | Shift+Home | `- abc\|` | `- ‹abc›` |
 | End, Cmd+Right (1.14) | `\|a **bold**` | `a **bold**\|`, past the hidden markers |
 

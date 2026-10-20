@@ -1,14 +1,21 @@
 import { EditorSelection, type EditorState } from "@codemirror/state";
 import type { EditorView, KeyBinding } from "@codemirror/view";
 import { textStart } from "../../markdown/list-markup";
+import { HIGHLIGHT_COLOURS } from "../../markdown/dialect/highlight";
+
+const HIGHLIGHT_COLOUR_EMOJI = Object.values(HIGHLIGHT_COLOURS).join("|");
 
 /**
  * Live Preview–hidden openers that can sit after list/quote markup on the
- * first visual line (`**`, `[[`, `[`, `<kbd>`, …). When CodeMirror's visual
- * line start skips them, Home must still stop at the item's text start first
- * (Obsidian 1.14), the same class of skip End applies to trailing closers.
+ * first visual line (`**`, `[[`, `[`, `<kbd>`, coloured `==🔵`, …). When
+ * CodeMirror's visual line start skips them, Home must still stop at the
+ * item's text start first (Obsidian 1.14), the same class of skip End
+ * applies to trailing closers. Colour emoji only count right after `==`.
  */
-const LEADING_OPENERS = /^(?:[*_~=`$%]+|!?\[\[|\[|%%|<[^>\n]+>)+$/u;
+const LEADING_OPENERS = new RegExp(
+  `^(?:[*_~=\`$%]+|!?\\[\\[|\\[|%%|<[^>\\n]+>|(?<===)(?:${HIGHLIGHT_COLOUR_EMOJI}))+$`,
+  "u",
+);
 
 /**
  * Where Home (Cmd+Left on macOS) goes first, as in Obsidian: from inside a
