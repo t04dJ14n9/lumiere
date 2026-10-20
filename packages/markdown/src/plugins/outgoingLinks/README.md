@@ -27,6 +27,8 @@ outside any link (same matcher as Backlinks), only when that section expands.
 
 - Clicking a link not created yet does nothing; follow it in the note to
   create it.
+- File lists use Obsidian's default alphabetical sort (basename, then path);
+  other sort modes are not offered.
 - Unlinked mentions read the active note once per expand; very large vaults
   still walk every candidate basename (same cost class as Backlinks unlinked,
   but only one file body is read).
