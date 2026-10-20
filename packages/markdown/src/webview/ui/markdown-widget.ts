@@ -86,8 +86,9 @@ export class MarkdownBlock extends WidgetType {
     // inside CodeMirror's draw margin measure that short shell and collapse
     // the height map (~182 vs ~638) even when estimatedHeight is honest.
     // minHeight keeps the reserve until measure sees the finished paint.
+    // Unit tests may stub createElement without a CSSStyleDeclaration.
     const reserve = this.estimatedHeight;
-    if (reserve > 0) {
+    if (reserve > 0 && shell.style) {
       shell.style.minHeight = `${reserve}px`;
     }
     const edit = document.createElement("button");
