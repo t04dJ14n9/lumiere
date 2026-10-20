@@ -23,15 +23,15 @@ interface Range {
   to: number;
 }
 
-const selectImage = StateEffect.define<Range | null>();
-const editImage = StateEffect.define<Range>();
+export const selectImage = StateEffect.define<Range | null>();
+export const editImage = StateEffect.define<Range | null>();
 
 /**
  * The image whose source is shown for editing (Enter or Tab on a selected
  * image), until the caret leaves it. Otherwise images stay rendered, as
  * Obsidian 1.13 keeps them whatever the caret does.
  */
-const editingImage = StateField.define<Range | null>({
+export const editingImage = StateField.define<Range | null>({
   create: () => null,
   update(value, transaction) {
     for (const effect of transaction.effects) {
@@ -64,7 +64,7 @@ export function editingImageAt(
  * The image embed a click selected, as Obsidian 1.13 selects images: its
  * source. Any other edit or move of the caret lets it go.
  */
-const selectedImage = StateField.define<Range | null>({
+export const selectedImage = StateField.define<Range | null>({
   create: () => null,
   update(value, transaction) {
     for (const effect of transaction.effects) {
@@ -282,7 +282,20 @@ function inspectSelected(view: EditorView): boolean {
   return true;
 }
 
-function deselect(view: EditorView): boolean {
+/**
+ * Escape: leave source edit and re-select (Obsidian exitImageEdit), or clear
+ * a selected outline. Enter/Tab clear selectedImage when they move the caret
+ * into the source, so Escape must check editingImage first.
+ */
+export function escapeImage(view: EditorView): boolean {
+  const editing = view.state.field(editingImage);
+  if (editing) {
+    view.dispatch({
+      selection: { anchor: editing.from },
+      effects: [editImage.of(null), selectImage.of(editing)],
+    });
+    return true;
+  }
   if (!view.state.field(selectedImage)) {
     return false;
   }
@@ -343,9 +356,10 @@ const selectedClass = ViewPlugin.define((view) => {
  * image; then `+`/`=` and `-` resize it in steps of 25 pixels, `0` resets
  * its size, Space opens the inspector (Obsidian lightbox), Enter selects
  * its file name, Tab selects its alias / size segment (Obsidian
- * `editSelectedImageAlias`), Backspace or Delete removes it and Escape lets
- * it go. Selection also paints Obsidian's `.image-resize-corner` chevron
- * chrome (CSS); drag-to-resize is still `+`/`-` only.
+ * `editSelectedImageAlias`), Backspace or Delete removes it, and Escape
+ * leaves source edit (re-selecting) or clears the outline. Selection also
+ * paints Obsidian's `.image-resize-corner` chevron chrome (CSS);
+ * drag-to-resize is still `+`/`-` only.
  */
 export function imageSelection(): Extension {
   return [
@@ -364,7 +378,7 @@ export function imageSelection(): Extension {
         { key: "Tab", run: (view) => editSource(view, "alias") },
         { key: "Backspace", run: remove },
         { key: "Delete", run: remove },
-        { key: "Escape", run: deselect },
+        { key: "Escape", run: escapeImage },
         { key: "ArrowRight", run: (view) => arrow(view, true) },
         { key: "ArrowLeft", run: (view) => arrow(view, false) },
       ]),

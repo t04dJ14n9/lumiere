@@ -21,8 +21,9 @@ text, `![100](a.png)`); `0` removes the size; Space opens the image
 inspector (Obsidian lightbox); Enter shows its source with the file name
 selected, and Tab with the alias / size segment selected (as Obsidian's
 `editSelectedImageAlias`), until the caret leaves it; Backspace or Delete
-removes the embed; Escape, a click elsewhere or any edit lets it go
-(`image-selection.ts`, `image-size.ts`).
+removes the embed; Escape leaves source edit and re-selects the image
+(Obsidian), or clears the outline; a click elsewhere or any edit also lets
+it go (`image-selection.ts`, `image-size.ts`).
 
 ## Files
 

@@ -1,7 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EditorState } from "@codemirror/state";
+import type { TransactionSpec } from "@codemirror/state";
+import type { EditorView } from "@codemirror/view";
 import { IMAGE_EMBED } from "./embed-actions";
-import { inspectButtonBesideImage } from "./image-selection";
+import {
+  editImage,
+  editingImage,
+  escapeImage,
+  inspectButtonBesideImage,
+  selectedImage,
+  selectImage,
+} from "./image-selection";
 
 type Stub = {
   classList: { contains(n: string): boolean };
@@ -72,4 +82,56 @@ test("an image without an inspect control returns null", () => {
     inspectButtonBesideImage(image as unknown as HTMLImageElement),
     null,
   );
+});
+
+test("Escape while editing image source clears edit and re-selects the embed", () => {
+  const doc = "before ![[pic.png]] after";
+  const range = { from: 7, to: 19 };
+  let state = EditorState.create({
+    doc,
+    selection: { anchor: range.from + 3 },
+    extensions: [selectedImage, editingImage],
+  });
+  state = state.update({
+    effects: [editImage.of(range), selectImage.of(null)],
+  }).state;
+  assert.deepEqual(state.field(editingImage), range);
+  assert.equal(state.field(selectedImage), null);
+
+  const view = {
+    get state() {
+      return state;
+    },
+    dispatch(spec: TransactionSpec) {
+      state = state.update(spec).state;
+    },
+  } as unknown as EditorView;
+
+  assert.equal(escapeImage(view), true);
+  assert.equal(state.field(editingImage), null);
+  assert.deepEqual(state.field(selectedImage), range);
+  assert.equal(state.selection.main.head, range.from);
+});
+
+test("Escape on a selected image clears the outline", () => {
+  const doc = "![[pic.png]]";
+  const range = { from: 0, to: 12 };
+  let state = EditorState.create({
+    doc,
+    selection: { anchor: 0 },
+    extensions: [selectedImage, editingImage],
+  });
+  state = state.update({ effects: selectImage.of(range) }).state;
+
+  const view = {
+    get state() {
+      return state;
+    },
+    dispatch(spec: TransactionSpec) {
+      state = state.update(spec).state;
+    },
+  } as unknown as EditorView;
+
+  assert.equal(escapeImage(view), true);
+  assert.equal(state.field(selectedImage), null);
 });
