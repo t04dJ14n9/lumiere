@@ -21,11 +21,99 @@ import {
 /** Refreshes wait for a burst of file events to end. */
 const REFRESH_DELAY_MS = 300;
 
+type BacklinksCtx = Parameters<NonNullable<Plugin["apply"]>>[0];
+
+function wireRefresh(
+  ctx: BacklinksCtx,
+  source: BacklinksTree,
+  tree: ReturnType<BacklinksCtx["views"]["tree"]>,
+  status: ReturnType<BacklinksCtx["views"]["status"]>,
+) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const refresh = async () => {
+    await source.setNote(ctx.activeEditor.note());
+    tree.setMessage(
+      source.hasNote ? undefined : "Open a note to see its backlinks.",
+    );
+    tree.refresh();
+    const count = source.linkedCount();
+    if (source.hasNote) {
+      status.show(
+        `${count} backlink${count === 1 ? "" : "s"}`,
+        "Notes that link to this note",
+        "lumiere.markdown.backlinks.focus",
+      );
+    } else {
+      status.hide();
+    }
+  };
+  const schedule = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void refresh(), REFRESH_DELAY_MS);
+  };
+  ctx.effect(() => () => clearTimeout(timer));
+  ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
+  ctx.effect(() => ctx.settings.onChange(schedule));
+  ctx.on("vault/resolved", schedule);
+  ctx.effect(() =>
+    ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
+      ctx.vaults.open(String(uri), { offset: Number(offset) }),
+    ),
+  );
+  return { refresh, schedule };
+}
+
+function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
+  const setSort = async (order: BacklinkSortOrder) => {
+    await ctx.settings.access.update(SORT_SETTING, order);
+    await syncBacklinksSortContext(ctx);
+    schedule();
+  };
+  // Checked sort label cycles to the next Obsidian sort order.
+  ctx.effect(() =>
+    ctx.hostCommands.register(SORT_BY_ALPHABETICAL, () =>
+      setSort(NEXT_SORT.alphabetical),
+    ),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(SORT_BY_ALPHABETICAL_REVERSE, () =>
+      setSort(NEXT_SORT.alphabeticalReverse),
+    ),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(SORT_BY_MODIFIED, () =>
+      setSort(NEXT_SORT.byModifiedTime),
+    ),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(SORT_BY_MODIFIED_REVERSE, () =>
+      setSort(NEXT_SORT.byModifiedTimeReverse),
+    ),
+  );
+  const syncContext = () => {
+    void syncBacklinksSortContext(ctx).catch((error) =>
+      ctx.logger.warn("Backlinks sort context failed", error),
+    );
+  };
+  ctx.effect(() => ctx.settings.onChange(syncContext));
+  ctx.effect(() => async () => {
+    for (const key of [
+      SORT_ALPHABETICAL_CONTEXT,
+      SORT_ALPHABETICAL_REVERSE_CONTEXT,
+      SORT_MODIFIED_CONTEXT,
+      SORT_MODIFIED_REVERSE_CONTEXT,
+    ]) {
+      await ctx.hostCommands.execute("setContext", key, undefined);
+    }
+  });
+  syncContext();
+}
+
 /** The Backlinks view and status bar count, following the active note. */
 export const backlinksHost: Plugin = {
   name: "backlinks",
   inject: {
-    required: ["settings", "vaults", "hostCommands", "views", "activeEditor"],
+    required: ["vaults", "hostCommands", "views", "activeEditor", "settings"],
   },
   apply(ctx) {
     const sortOrder = (): BacklinkSortOrder =>
@@ -35,82 +123,8 @@ export const backlinksHost: Plugin = {
     const status = ctx.views.status("lumiere.markdown.backlinks", 100);
     ctx.effect(() => () => tree.dispose());
     ctx.effect(() => () => status.dispose());
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const refresh = async () => {
-      await source.setNote(ctx.activeEditor.note());
-      tree.setMessage(
-        source.hasNote ? undefined : "Open a note to see its backlinks.",
-      );
-      tree.refresh();
-      const count = source.linkedCount();
-      if (source.hasNote) {
-        status.show(
-          `${count} backlink${count === 1 ? "" : "s"}`,
-          "Notes that link to this note",
-          "lumiere.markdown.backlinks.focus",
-        );
-      } else {
-        status.hide();
-      }
-    };
-    const schedule = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => void refresh(), REFRESH_DELAY_MS);
-    };
-    ctx.effect(() => () => clearTimeout(timer));
-    ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
-    ctx.effect(() => ctx.settings.onChange(schedule));
-    ctx.on("vault/resolved", schedule);
-    ctx.effect(() =>
-      ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
-        ctx.vaults.open(String(uri), { offset: Number(offset) }),
-      ),
-    );
-
-    const setSort = async (order: BacklinkSortOrder) => {
-      await ctx.settings.access.update(SORT_SETTING, order);
-      await syncBacklinksSortContext(ctx);
-      schedule();
-    };
-    // Checked sort label cycles to the next Obsidian sort order.
-    ctx.effect(() =>
-      ctx.hostCommands.register(SORT_BY_ALPHABETICAL, () =>
-        setSort(NEXT_SORT.alphabetical),
-      ),
-    );
-    ctx.effect(() =>
-      ctx.hostCommands.register(SORT_BY_ALPHABETICAL_REVERSE, () =>
-        setSort(NEXT_SORT.alphabeticalReverse),
-      ),
-    );
-    ctx.effect(() =>
-      ctx.hostCommands.register(SORT_BY_MODIFIED, () =>
-        setSort(NEXT_SORT.byModifiedTime),
-      ),
-    );
-    ctx.effect(() =>
-      ctx.hostCommands.register(SORT_BY_MODIFIED_REVERSE, () =>
-        setSort(NEXT_SORT.byModifiedTimeReverse),
-      ),
-    );
-    const syncContext = () => {
-      void syncBacklinksSortContext(ctx).catch((error) =>
-        ctx.logger.warn("Backlinks sort context failed", error),
-      );
-    };
-    ctx.effect(() => ctx.settings.onChange(syncContext));
-    ctx.effect(() => async () => {
-      for (const key of [
-        SORT_ALPHABETICAL_CONTEXT,
-        SORT_ALPHABETICAL_REVERSE_CONTEXT,
-        SORT_MODIFIED_CONTEXT,
-        SORT_MODIFIED_REVERSE_CONTEXT,
-      ]) {
-        await ctx.hostCommands.execute("setContext", key, undefined);
-      }
-    });
-    syncContext();
+    const { refresh, schedule } = wireRefresh(ctx, source, tree, status);
+    wireSortMenus(ctx, schedule);
     void refresh();
   },
 };
