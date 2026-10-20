@@ -96,7 +96,7 @@ test("a WorkVault-scale Sources list still reserves far more than one line", () 
     )
     .join("\n")}\ndecision_confirmation: yes\n---\n`;
   const height = estimate(source, {
-    renderValue: (key, value, values) => {
+    renderValue: (key, value, _values) => {
       if (key !== "sources") {
         return undefined;
       }
