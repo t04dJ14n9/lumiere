@@ -85,3 +85,10 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Mixcloud refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(video("https://www.mixcloud.com/spartacus/party-time")),
+  );
+  assert.equal(providers.mixcloud.embeddable, false);
+});

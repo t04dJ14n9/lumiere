@@ -133,3 +133,32 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Mixcloud cloudcast and playlist links", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://www.mixcloud.com/spartacus/party-time"),
+    {
+      provider: "mixcloud",
+      id: "spartacus/party-time",
+      page: "https://www.mixcloud.com/spartacus/party-time/",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://m.mixcloud.com/spartacus/playlists/long-player/?utm=x",
+    ),
+    {
+      provider: "mixcloud",
+      id: "spartacus/playlists/long-player",
+      page: "https://www.mixcloud.com/spartacus/playlists/long-player/",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://www.mixcloud.com/discover/trending"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.mixcloud.com/spartacus/party-time/comments"),
+    undefined,
+  );
+});

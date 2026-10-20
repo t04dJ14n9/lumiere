@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  mixcloudThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +330,58 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("mixcloudThumbnail accepts thumbnailer.mixcloud.com unsafe paths only", () => {
+  const thumb =
+    "https://thumbnailer.mixcloud.com/unsafe/600x600/extaudio/6/1/a/1/279f-e3c0-4871-aa8e-c4cf5466edb8.png";
+  assert.equal(mixcloudThumbnail({ thumbnail_url: thumb }), thumb);
+  assert.equal(
+    mixcloudThumbnail({
+      thumbnail_url:
+        "https://thumbnailer.mixcloud.com/unsafe/300x300/images/abc.jpg",
+    }),
+    "https://thumbnailer.mixcloud.com/unsafe/300x300/images/abc.jpg",
+  );
+  for (const value of [
+    "https://evil.test/unsafe/600x600/extaudio/a.png",
+    "https://thumbnailer.mixcloud.com/other/a.png",
+    "https://thumbnailer.mixcloud.com/unsafe/600x600/extaudio/a.svg",
+    "https://thumbnailer.mixcloud.com/unsafe/600x600/extaudio/a.png?x=1",
+    "https://thumbnailer.mixcloud.com:8080/unsafe/600x600/extaudio/a.png",
+  ]) {
+    assert.equal(mixcloudThumbnail({ thumbnail_url: value }), undefined, value);
+  }
+});
+
+test("a Mixcloud lookup uses app.mixcloud.com oEmbed and may fetch a cover", async () => {
+  const thumb =
+    "https://thumbnailer.mixcloud.com/unsafe/600x600/extaudio/6/1/a/1/279f-e3c0-4871-aa8e-c4cf5466edb8.png";
+  const { fetch, calls } = fakeFetch({
+    "https://app.mixcloud.com/oembed/": () =>
+      response({
+        title: "Party Time",
+        author_name: "Spartacus",
+        thumbnail_url: thumb,
+      }),
+    "https://thumbnailer.mixcloud.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "mixcloud",
+    "spartacus/party-time",
+  );
+  assert.equal(details.title, "Party Time");
+  assert.equal(details.author, "Spartacus");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://app.mixcloud.com/oembed/?format=json&url=${encodeURIComponent("https://www.mixcloud.com/spartacus/party-time/")}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

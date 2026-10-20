@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "mixcloud";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,47 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+const MIXCLOUD_HOSTS = new Set([
+  "mixcloud.com",
+  "www.mixcloud.com",
+  "m.mixcloud.com",
+]);
+
+/** `user/cloudcast` or `user/playlists/slug` (slugs: letters, digits, `_`, `-`). */
+const MIXCLOUD_ID =
+  /^[A-Za-z0-9_-]{1,50}\/(?:playlists\/)?[A-Za-z0-9_-]{1,200}$/;
+
+const MIXCLOUD_PATH =
+  /^\/([A-Za-z0-9_-]{1,50})\/(?:(playlists)\/)?([A-Za-z0-9_-]{1,200})\/?$/;
+
+/** `/user/cloudcast` or `/user/playlists/slug` (not discover/upload/…). */
+function mixcloud(url: URL): OnlineVideo | undefined {
+  const match = MIXCLOUD_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const user = match[1]!;
+  const playlists = match[2];
+  const slug = match[3]!;
+  // Reserved first segments that are not artist pages.
+  if (
+    /^(?:discover|upload|dashboard|settings|competitions|categories|tag|tags|about|jobs|developers|pro|premium|signin|signup|login|search|live|widget|oembed|embed|player|select|advertise|support|terms|privacy|cookies|community-guidelines)$/i.test(
+      user,
+    )
+  ) {
+    return undefined;
+  }
+  const id = playlists ? `${user}/playlists/${slug}` : `${user}/${slug}`;
+  if (!MIXCLOUD_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "mixcloud",
+    id,
+    page: `https://www.mixcloud.com/${id}/`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +120,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return MIXCLOUD_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +161,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (MIXCLOUD_HOSTS.has(host)) {
+    return mixcloud(url);
   }
   return undefined;
 }

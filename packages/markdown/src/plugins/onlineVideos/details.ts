@@ -151,6 +151,24 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "mixcloud") {
+      // www.mixcloud.com/oembed redirects to app.mixcloud.com; host fetch
+      // refuses redirects, so call the app origin directly.
+      const page = `https://www.mixcloud.com/${id}/`;
+      const body = await this.json(
+        `https://app.mixcloud.com/oembed/?format=json&url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = mixcloudThumbnail(body);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +225,36 @@ export class VideoDetailsSource {
   }
 }
 
+/** Mixcloud oEmbed thumbnails (`thumbnailer.mixcloud.com`). */
+const MIXCLOUD_THUMB_HOSTS = new Set(["thumbnailer.mixcloud.com"]);
+
+/** Mixcloud oEmbed thumbnail when it is the thumbnailer CDN. */
+export function mixcloudThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.thumbnail_url);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !MIXCLOUD_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/unsafe\/\d+x\d+\/(?:extaudio|images)\/[A-Za-z0-9_./-]+\.(?:png|jpe?g|webp)$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://${url.hostname}${url.pathname}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
