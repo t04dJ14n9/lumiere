@@ -153,3 +153,13 @@ test("an expanded Sources list reserves every article, not only the first eight"
   // disclosed estimate after expand would jump the body by >200px.
   assert.ok(expanded - disclosed > 200, String(expanded - disclosed));
 });
+
+test("a wrapping tags list reserves more than one control row", () => {
+  const tags = Array.from(
+    { length: 36 },
+    (_, index) => `  - project-area-${index}-long-label`,
+  ).join("\n");
+  const height = estimate(`---\ntags:\n${tags}\n---\n`);
+  assert.ok(height > 200, String(height));
+  assert.ok(height > estimate("---\ntags:\n  - a\n---\n") * 2, String(height));
+});
