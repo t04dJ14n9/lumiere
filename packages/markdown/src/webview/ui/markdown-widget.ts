@@ -6,7 +6,7 @@ import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
   markdownBlockEstimatedHeight,
-  rememberHtmlBlockHeight,
+  rememberMarkdownBlockHeight,
 } from "./markdown-block-height";
 import { CLICK_SELECT } from "./pointer-selection";
 
@@ -64,33 +64,37 @@ export const FENCED_PREVIEW: BlockEditing = {
   select: fenceBody,
 };
 
-/** Observe HTML-block growth so remounts keep painted CSS height (vh/%/em). */
-const htmlObservers = new WeakMap<HTMLElement, ResizeObserver>();
+/** Observe block growth so remounts keep painted height (wrap/CSS/iframe). */
+const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
 
-function watchHtmlBlock(dom: HTMLElement, source: string): void {
-  if (!/^\s*</.test(source) || htmlObservers.has(dom)) {
+function watchMarkdownBlock(dom: HTMLElement, source: string): void {
+  if (!source || blockObservers.has(dom)) {
+    return;
+  }
+  // Unit stubs and older jsdom have no ResizeObserver.
+  if (typeof ResizeObserver === "undefined") {
     return;
   }
   const observer = new ResizeObserver((entries) => {
     const height = entries[0]?.contentRect.height ?? 0;
     if (height > 0) {
-      rememberHtmlBlockHeight(source, height);
+      rememberMarkdownBlockHeight(source, height);
     }
   });
   observer.observe(dom);
-  htmlObservers.set(dom, observer);
+  blockObservers.set(dom, observer);
 }
 
-function unwatchHtmlBlock(dom: HTMLElement, source: string): void {
-  htmlObservers.get(dom)?.disconnect();
-  htmlObservers.delete(dom);
+function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
+  blockObservers.get(dom)?.disconnect();
+  blockObservers.delete(dom);
   // Unit stubs omit getBoundingClientRect; skip measure then.
   if (typeof dom.getBoundingClientRect !== "function") {
     return;
   }
   const height = dom.getBoundingClientRect().height;
   if (height > 0) {
-    rememberHtmlBlockHeight(source, height);
+    rememberMarkdownBlockHeight(source, height);
   }
 }
 
@@ -173,7 +177,7 @@ export class MarkdownBlock extends WidgetType {
           view.requestMeasure();
         }
       });
-    watchHtmlBlock(shell, this.block.source);
+    watchMarkdownBlock(shell, this.block.source);
     return shell;
   }
 
@@ -208,7 +212,7 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override destroy(dom: HTMLElement): void {
-    unwatchHtmlBlock(dom, this.block.source);
+    unwatchMarkdownBlock(dom, this.block.source);
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
   }

@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   clearHtmlBlockHeights,
+  clearMarkdownBlockHeights,
   markdownBlockEstimatedHeight,
   rememberHtmlBlockHeight,
+  rememberMarkdownBlockHeight,
 } from "./markdown-block-height";
 
 test("empty source still reserves one line of chrome", () => {
@@ -137,5 +139,30 @@ test("remembered HTML-block height beats the CSS-unit floor on remount", () => {
   assert.equal(markdownBlockEstimatedHeight(callout), calloutFloor);
   assert.ok(calloutFloor < 200, `callout floor ${calloutFloor}`);
   clearHtmlBlockHeights();
+  assert.equal(markdownBlockEstimatedHeight(source), floor);
+});
+
+test("HTML attribute height percent is not treated as CSS pixels", () => {
+  clearMarkdownBlockHeights();
+  const pct = markdownBlockEstimatedHeight(
+    '<iframe src="https://example.com" height="100%" width="800"></iframe>',
+  );
+  const px = markdownBlockEstimatedHeight(
+    '<iframe src="https://example.com" height="100" width="800"></iframe>',
+  );
+  // 100% of VIEWPORT_FALLBACK 640, not 100px
+  assert.ok(pct >= 600, `pct attr got ${pct}`);
+  assert.ok(px >= 100 && px < 200, `px attr got ${px}`);
+  assert.ok(pct > px * 2, `pct=${pct} px=${px}`);
+});
+
+test("remembered MarkdownBlock height beats the formula on remount", () => {
+  clearMarkdownBlockHeights();
+  const source = "> [!note] Wrap\n> " + "word ".repeat(80);
+  const floor = markdownBlockEstimatedHeight(source);
+  rememberMarkdownBlockHeight(source, floor + 400);
+  const cached = markdownBlockEstimatedHeight(source);
+  assert.ok(cached >= floor + 400, `got ${cached}`);
+  clearMarkdownBlockHeights();
   assert.equal(markdownBlockEstimatedHeight(source), floor);
 });
