@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  oEmbedThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -330,4 +331,17 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("oEmbedThumbnail accepts YouTube img hosts only", () => {
+  assert.equal(
+    oEmbedThumbnail({
+      thumbnail_url: "https://i.ytimg.com/vi/lp-EO5I60KA/hqdefault.jpg",
+    }),
+    "https://i.ytimg.com/vi/lp-EO5I60KA/hqdefault.jpg",
+  );
+  assert.equal(
+    oEmbedThumbnail({ thumbnail_url: "https://evil.test/x.jpg" }),
+    undefined,
+  );
 });

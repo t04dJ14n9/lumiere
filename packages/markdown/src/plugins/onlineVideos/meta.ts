@@ -1,3 +1,4 @@
+import type { MediaKind } from "./parse";
 import type { VideoDetails } from "./protocol";
 
 /** `4:17` or `1:02:03`. */
@@ -14,8 +15,10 @@ export function videoMeta(
   provider: string,
   id: string,
   details: VideoDetails = {},
+  kind: MediaKind = "video",
 ): string {
   const known = [
+    kind === "playlist" ? "Playlist" : undefined,
     details.author,
     details.duration ? formatDuration(details.duration) : undefined,
   ].filter((part): part is string => Boolean(part));

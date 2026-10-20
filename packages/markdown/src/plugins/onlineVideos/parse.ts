@@ -1,17 +1,20 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili and Hugging Face model links (and YouTube
+ * playlists). Only a fully parsed and validated ID leaves this module;
+ * players and cards are built from it, never from the link text.
  */
 export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type MediaKind = "video" | "playlist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
+  /** Video or playlist kind (playlists are YouTube-only today). */
+  readonly kind: MediaKind;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
+   * `BV…` / `av` id, or a Hugging Face model id (`name` or `owner/name`).
    */
   readonly id: string;
-  /** YouTube start time in whole seconds. */
+  /** YouTube start time in whole seconds (videos only). */
   readonly start?: number;
   /** Bilibili part number (`?p=`), 1 for the first part. */
   readonly part?: number;
@@ -20,6 +23,8 @@ export interface OnlineVideo {
 }
 
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+/** Common public playlist prefixes; reject short/ambiguous tokens. */
+const YOUTUBE_PLAYLIST = /^(?:PL|UU|LL|FL|OL|RD)[A-Za-z0-9_-]{10,64}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
@@ -71,8 +76,15 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
-/** Whether `id` is an ID `parseVideoUrl` could have produced. */
-export function isVideoId(provider: VideoProvider, id: string): boolean {
+/** Whether `id` is an ID `parseVideoUrl` could have produced for that kind. */
+export function isVideoId(
+  provider: VideoProvider,
+  id: string,
+  kind: MediaKind = "video",
+): boolean {
+  if (kind === "playlist") {
+    return provider === "youtube" && YOUTUBE_PLAYLIST.test(id);
+  }
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
   }
@@ -102,14 +114,18 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
 
 function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (host === "youtu.be") {
-    return youtube(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
   }
   if (YOUTUBE_HOSTS.has(host)) {
+    const playlist = youtubePlaylist(url);
+    if (playlist) {
+      return playlist;
+    }
     const id =
       url.pathname === "/watch"
         ? url.searchParams.get("v")
         : YOUTUBE_PATHS.exec(url.pathname)?.[1];
-    return youtube(id ?? undefined, url);
+    return youtubeVideo(id ?? undefined, url);
   }
   if (BILIBILI_HOSTS.has(host)) {
     return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
@@ -121,7 +137,38 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   return undefined;
 }
 
-function youtube(id: string | undefined, url: URL): OnlineVideo | undefined {
+/**
+ * Playlist-only URLs (`/playlist?list=` or `/embed/videoseries?list=`).
+ * A watch URL with both `v` and `list` stays a single video.
+ */
+function youtubePlaylist(url: URL): OnlineVideo | undefined {
+  const list = url.searchParams.get("list");
+  if (!list || !YOUTUBE_PLAYLIST.test(list)) {
+    return undefined;
+  }
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  const playlistPath = path === "/playlist";
+  const videoseries =
+    path === "/embed/videoseries" || path === "/embed/videoseries/";
+  if (!playlistPath && !videoseries) {
+    return undefined;
+  }
+  // Prefer a concrete video when `v=` is present on a non-playlist path.
+  if (!playlistPath && url.searchParams.get("v")) {
+    return undefined;
+  }
+  return {
+    provider: "youtube",
+    kind: "playlist",
+    id: list,
+    page: `https://www.youtube.com/playlist?list=${list}`,
+  };
+}
+
+function youtubeVideo(
+  id: string | undefined,
+  url: URL,
+): OnlineVideo | undefined {
   if (!id || !YOUTUBE_ID.test(id)) {
     return undefined;
   }
@@ -130,8 +177,8 @@ function youtube(id: string | undefined, url: URL): OnlineVideo | undefined {
   );
   const page = `https://www.youtube.com/watch?v=${id}${start ? `&t=${start}s` : ""}`;
   return start
-    ? { provider: "youtube", id, start, page }
-    : { provider: "youtube", id, page };
+    ? { provider: "youtube", kind: "video", id, start, page }
+    : { provider: "youtube", kind: "video", id, page };
 }
 
 function bilibili(id: string | undefined, url: URL): OnlineVideo | undefined {
@@ -143,7 +190,7 @@ function bilibili(id: string | undefined, url: URL): OnlineVideo | undefined {
   }
   const part = positive(url.searchParams.get("p")) ?? 1;
   const page = `https://www.bilibili.com/video/${valid}/${part > 1 ? `?p=${part}` : ""}`;
-  return { provider: "bilibili", id: valid, part, page };
+  return { provider: "bilibili", kind: "video", id: valid, part, page };
 }
 
 function huggingface(id: string): OnlineVideo | undefined {
@@ -156,6 +203,7 @@ function huggingface(id: string): OnlineVideo | undefined {
   }
   return {
     provider: "huggingface",
+    kind: "video",
     id,
     page: `https://huggingface.co/${id}`,
   };

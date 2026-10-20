@@ -13,7 +13,7 @@ export const onlineVideosHost: Plugin<{ panel: PanelShell }> = {
   inject: { required: ["rpc", "workspace"] },
   apply(ctx) {
     ctx.effect(() =>
-      ctx.rpc.handle(protocol, "details", ({ provider, id }) => {
+      ctx.rpc.handle(protocol, "details", ({ provider, id, kind }) => {
         if (!ctx.workspace.isTrusted()) {
           throw new RpcError(
             "WorkspaceUntrusted",
@@ -23,7 +23,7 @@ export const onlineVideosHost: Plugin<{ panel: PanelShell }> = {
         source ??= new VideoDetailsSource({
           fetch: (url, init) => fetch(url, init),
         });
-        return source.get(provider, id);
+        return source.get(provider, id, kind);
       }),
     );
   },

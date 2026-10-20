@@ -33,15 +33,16 @@ export function videoCard(
   const card = element("span", "mw-video");
   card.dataset.provider = video.provider;
   const label = options.label.trim();
+  const noun = video.kind === "playlist" ? "playlist" : "video";
   const title = element(
     "span",
     "mw-video-title",
-    label || `${provider.name} video`,
+    label || `${provider.name} ${noun}`,
   );
   const meta = element(
     "span",
     "mw-video-meta",
-    videoMeta(provider.name, video.id),
+    videoMeta(provider.name, video.id, {}, video.kind),
   );
   meta.title = video.id;
   const thumbnail = options.trusted ? thumbnailUrl(video) : undefined;
@@ -51,11 +52,19 @@ export function videoCard(
   const body = element("span", "mw-video-body");
   body.append(title, meta);
   const actions = element("span", "mw-video-actions");
-  if (options.trusted && options.player && provider.embeddable) {
+  if (
+    options.trusted &&
+    options.player &&
+    provider.embeddable &&
+    video.kind !== "playlist"
+  ) {
     actions.append(playButton(card, video, options));
   }
   const open = opener(video, "mw-video-open", options);
-  open.textContent = `Open on ${provider.name}`;
+  open.textContent =
+    video.kind === "playlist"
+      ? `Open playlist on ${provider.name}`
+      : `Open on ${provider.name}`;
   actions.append(open);
   body.append(actions);
   if (!options.trusted) {
@@ -103,6 +112,7 @@ function showDetails({
     providers[video.provider].name,
     video.id,
     details,
+    video.kind,
   );
   if (
     details.cover &&

@@ -3,7 +3,7 @@
  * fetched by the extension host (the webview CSP allows no network). Every
  * failure resolves to `{}`, so the card simply stays as it is.
  */
-import type { VideoProvider } from "./parse";
+import type { MediaKind, VideoProvider } from "./parse";
 import { isVideoId } from "./parse";
 
 import type { VideoDetails } from "./protocol";
@@ -42,6 +42,7 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
+const YOUTUBE_THUMB_HOSTS = new Set(["i.ytimg.com", "img.youtube.com"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -77,20 +78,26 @@ export class VideoDetailsSource {
     this.concurrency = options.concurrency ?? 4;
   }
 
-  get(provider: VideoProvider, id: string): Promise<VideoDetails> {
-    if (!isVideoId(provider, id)) {
+  get(
+    provider: VideoProvider,
+    id: string,
+    kind: MediaKind = "video",
+  ): Promise<VideoDetails> {
+    if (!isVideoId(provider, id, kind)) {
       return Promise.resolve({});
     }
-    const key = `${provider}:${id}`;
+    const key = `${provider}:${kind}:${id}`;
     const cached = this.cache.get(key);
     if (cached && cached.expires > this.now()) {
       return cached.value;
     }
     const entry = { expires: Infinity, value: Promise.resolve({}) };
-    entry.value = this.queued(() => this.lookup(provider, id)).catch(() => {
-      entry.expires = this.now() + this.retryAfterMs;
-      return {};
-    });
+    entry.value = this.queued(() => this.lookup(provider, id, kind)).catch(
+      () => {
+        entry.expires = this.now() + this.retryAfterMs;
+        return {};
+      },
+    );
     this.cache.delete(key);
     this.cache.set(key, entry);
     for (const old of this.cache.keys()) {
@@ -118,6 +125,7 @@ export class VideoDetailsSource {
   private async lookup(
     provider: VideoProvider,
     id: string,
+    kind: MediaKind,
   ): Promise<VideoDetails> {
     const timeout = new AbortController();
     const timer = setTimeout(
@@ -125,7 +133,7 @@ export class VideoDetailsSource {
       this.timeoutMs,
     );
     try {
-      return await this.fetchDetails(provider, id, timeout.signal);
+      return await this.fetchDetails(provider, id, kind, timeout.signal);
     } finally {
       clearTimeout(timer);
     }
@@ -134,15 +142,29 @@ export class VideoDetailsSource {
   private async fetchDetails(
     provider: VideoProvider,
     id: string,
+    kind: MediaKind,
     signal: AbortSignal,
   ): Promise<VideoDetails> {
     if (provider === "youtube") {
-      const page = `https://www.youtube.com/watch?v=${id}`;
+      const page =
+        kind === "playlist"
+          ? `https://www.youtube.com/playlist?list=${id}`
+          : `https://www.youtube.com/watch?v=${id}`;
       const body = await this.json(
         `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`,
         signal,
       );
-      return parseOEmbed(body);
+      const details = parseOEmbed(body);
+      if (kind === "playlist") {
+        const thumb = oEmbedThumbnail(body);
+        if (thumb) {
+          const image = await this.image(thumb, signal).catch(() => undefined);
+          if (image !== undefined) {
+            details.cover = image;
+          }
+        }
+      }
+      return details;
     }
     if (provider === "huggingface") {
       const body = await this.json(
@@ -205,6 +227,30 @@ export class VideoDetailsSource {
     }
     return response;
   }
+}
+
+/** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
+export function oEmbedThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.thumbnail_url);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !YOUTUBE_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  return url.href;
 }
 
 export function parseOEmbed(body: unknown): VideoDetails {
