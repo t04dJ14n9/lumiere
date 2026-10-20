@@ -161,7 +161,8 @@ async function syncTagViewContext(ctx: {
     execute(command: string, ...args: unknown[]): Promise<unknown>;
   };
 }): Promise<void> {
-  const frequency = ctx.settings.get<string>(SORT_SETTING, "frequency") === "frequency";
+  const frequency =
+    ctx.settings.get<string>(SORT_SETTING, "frequency") === "frequency";
   const nested = ctx.settings.get<boolean>(NESTED_SETTING, true);
   await ctx.hostCommands.execute(
     "setContext",
