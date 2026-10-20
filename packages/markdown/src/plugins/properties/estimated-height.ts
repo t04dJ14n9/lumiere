@@ -8,6 +8,9 @@ import type { PropertyTypes } from "../../markdown/properties/types";
  * frontmatter, so that one-line reserve shifts every coordinate below the
  * sheet by about the sheet's real height.
  *
+ * Wrapping longtext values count visual rows (pre-wrap), not only
+ * source newlines — same class of bug as wrapping tag chips.
+ *
  * The numbers are the default 16px sheet in `properties.css` (row min
  * height plus its padding, heading, add button, source articles). Once the
  * sheet is drawn, measurement replaces this guess.
@@ -118,6 +121,11 @@ function listHeight(row: string): number | undefined {
   return Math.max(VALUE_MIN, rows * CHIP_ROW);
 }
 
+/**
+ * Longtext uses pre-wrap + overflow-wrap:anywhere. A single YAML line can
+ * paint many visual rows; newline-only counting blanks the body the same way
+ * one-row tag chips did before wrap-aware listHeight.
+ */
 function longTextHeight(row: string): number {
   const field =
     /<div ([^>]*metadata-input-longtext[^>]*)>([\s\S]*?)<\/div>/.exec(row);
@@ -126,7 +134,13 @@ function longTextHeight(row: string): number {
   if (!tag || text === undefined || tag.includes("hidden")) {
     return VALUE_MIN;
   }
-  return Math.max(VALUE_MIN, text.split("\n").length * LINE);
+  const plain = text.replace(/<[^>]+>/g, "");
+  let rows = 0;
+  for (const line of plain.split("\n")) {
+    const width = Math.max(line.length, 1) * CHAR_WIDTH;
+    rows += Math.max(1, Math.ceil(width / LIST_WIDTH));
+  }
+  return Math.max(VALUE_MIN, rows * LINE);
 }
 
 /** Visible source articles only. Rows past the disclosure stay in the markup with `hidden`. */

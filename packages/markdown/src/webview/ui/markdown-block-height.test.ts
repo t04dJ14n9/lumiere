@@ -51,3 +51,19 @@ test("short display math reserves MathJax height beyond bare line count", () => 
     `math=${height} should exceed short callout=${plainCallout}`,
   );
 });
+
+test("HTML blocks with media height attrs reserve painted height, not line count", () => {
+  const img = markdownBlockEstimatedHeight(
+    '<img src="x.png" height="800" width="400">',
+  );
+  const iframe = markdownBlockEstimatedHeight(
+    '<iframe src="https://example.com" height="500" width="800"></iframe>',
+  );
+  const bare = markdownBlockEstimatedHeight('<img src="x.png" alt="no size">');
+  const plain = markdownBlockEstimatedHeight("<div>hello</div>");
+  assert.ok(img >= 800, `img got ${img}`);
+  assert.ok(iframe >= 500, `iframe got ${iframe}`);
+  assert.ok(bare >= 200, `bare img got ${bare}`);
+  assert.ok(plain < 80, `plain div got ${plain}`);
+  assert.ok(img > plain * 10, `img=${img} plain=${plain}`);
+});
