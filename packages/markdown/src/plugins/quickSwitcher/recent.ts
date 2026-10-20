@@ -20,9 +20,9 @@ export function rememberOpen(
   if (!/\.md$/i.test(uri)) {
     return Promise.resolve();
   }
-  const next = [uri, ...readRecent(storage).filter((entry) => entry !== uri)].slice(
-    0,
-    MAX_RECENT,
-  );
+  const next = [
+    uri,
+    ...readRecent(storage).filter((entry) => entry !== uri),
+  ].slice(0, MAX_RECENT);
   return storage.update(RECENT_KEY, next);
 }

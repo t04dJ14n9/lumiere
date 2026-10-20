@@ -150,7 +150,6 @@ function unresolvedCandidates(index: VaultIndex): Candidate[] {
   }));
 }
 
-
 /** Lower is more recent; missing keys sort after every opened note. */
 function recentRank(recent: readonly string[]): Map<string, number> {
   const order = new Map<string, number>();
@@ -170,7 +169,9 @@ function noteRecentRank(
     return Number.POSITIVE_INFINITY;
   }
   const file = candidate.item.value.file;
-  return order.get(file.uri) ?? order.get(file.path) ?? Number.POSITIVE_INFINITY;
+  return (
+    order.get(file.uri) ?? order.get(file.path) ?? Number.POSITIVE_INFINITY
+  );
 }
 
 /** The first of `texts` the query matches, each later one a point lower. */
