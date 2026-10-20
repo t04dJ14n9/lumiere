@@ -134,3 +134,25 @@ test("callout fold button toggles without editing, then its body accepts input",
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("before\n\nxyz\n\nafter");
 });
+
+test("typing after clicking a drawn horizontal rule replaces only the rule", async ({
+  page,
+}) => {
+  const source = "before\n\n---\n\nafter";
+  await open(page, source);
+  await page.evaluate(() => window.harness.reveal(window.harness.text.length));
+  const rule = page.locator(".cm-content .md-hr-line");
+  await expect(rule).toHaveCount(1);
+  await expect(rule).not.toContainText("---");
+  await rule.click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.capture()))
+    .toMatchObject({
+      from: source.indexOf("---"),
+      to: source.indexOf("---") + 3,
+    });
+  await page.keyboard.type("xyz");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("before\n\nxyz\n\nafter");
+});
