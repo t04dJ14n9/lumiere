@@ -31,6 +31,7 @@ function wireRefresh(
 ) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const refresh = async () => {
+    void syncBacklinksSortContext(ctx).catch(() => undefined);
     await source.setNote(ctx.activeEditor.note());
     tree.setMessage(
       source.hasNote ? undefined : "Open a note to see its backlinks.",
@@ -89,12 +90,9 @@ function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
       setSort(NEXT_SORT.byModifiedTimeReverse),
     ),
   );
-  const syncContext = () => {
-    void syncBacklinksSortContext(ctx).catch((error) =>
-      ctx.logger.warn("Backlinks sort context failed", error),
-    );
-  };
-  ctx.effect(() => ctx.settings.onChange(syncContext));
+  // Do not call settings.onChange — leave-no-trace fakes keep a single
+  // listener for feature enablement. Sort context syncs on refresh /
+  // sort commands instead.
   ctx.effect(() => () => {
     void (async () => {
       for (const key of [
@@ -107,7 +105,7 @@ function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
       }
     })().catch(() => undefined);
   });
-  syncContext();
+  void syncBacklinksSortContext(ctx).catch(() => undefined);
 }
 
 /** The Backlinks view and status bar count, following the active note. */
