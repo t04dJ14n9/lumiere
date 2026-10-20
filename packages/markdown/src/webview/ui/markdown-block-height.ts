@@ -20,8 +20,11 @@
  * fraction typesets far taller than its source. Count `\\` rows inside the
  * formula as well as source lines, with a floor so remounts stay honest.
  *
- * Raw HTML blocks (`<img height>`, `<iframe>`, bare `<img>`) are another
- * short-source / tall-paint case: line×24 under-reserves the painted media.
+ * Raw HTML blocks (`<img height>`, `<iframe>`, bare `<img>`, CSS `height`)
+ * are another short-source / tall-paint case: line×24 under-reserves the
+ * painted box. Attribute/`px` heights are exact; `vh`/`em`/`%` use a stable
+ * viewport/font fallback. After measure, remember painted height so remounts
+ * keep exotic CSS (and under-parsed units) honest.
  */
 const LINE = 24;
 const CHROME = 12;
@@ -40,6 +43,32 @@ const HTML_MEDIA_DEFAULT = 240;
  */
 const CALLOUT_LINE = 36;
 const CALLOUT_CHROME = 40;
+/**
+ * Fallback pane height for `vh` / `%` CSS. Matches the constrained remount
+ * harness scroller and a typical note webview; measure + cache corrects.
+ */
+const VIEWPORT_FALLBACK = 640;
+/** Fallback font size for `em` CSS heights in HTML blocks. */
+const FONT_FALLBACK = 16;
+
+/** Painted heights for HTML blocks, keyed by Markdown source. */
+const measuredHtmlHeights = new Map<string, number>();
+
+/** Remember an HTML block's painted height for the next off-viewport remount. */
+export function rememberHtmlBlockHeight(source: string, height: number): void {
+  if (!/^\s*</.test(source) || !(height > 0)) {
+    return;
+  }
+  const previous = measuredHtmlHeights.get(source) ?? 0;
+  if (height > previous) {
+    measuredHtmlHeights.set(source, height);
+  }
+}
+
+/** Test helper: drop remembered HTML-block heights. */
+export function clearHtmlBlockHeights(): void {
+  measuredHtmlHeights.clear();
+}
 
 function isMermaidFence(source: string): boolean {
   const first = source.split("\n", 1)[0] ?? "";
@@ -64,8 +93,9 @@ function mathRows(source: string): number {
 }
 
 /**
- * Height from HTML media tags in an HTMLBlock. Returns undefined when the
- * source is not HTML or has no media, so callers fall through to line×24.
+ * Height from HTML media tags / CSS height in an HTMLBlock. Returns undefined
+ * when the source is not HTML or has no media/height, so callers fall through
+ * to line×24.
  */
 function htmlMediaHeight(source: string): number | undefined {
   if (!/^\s*</.test(source)) {
@@ -77,12 +107,24 @@ function htmlMediaHeight(source: string): number | undefined {
     attributed += Number(match[1]);
     attributedCount += 1;
   }
-  for (const match of source.matchAll(/height\s*:\s*(\d+)\s*px/gi)) {
+  for (const match of source.matchAll(/height\s*:\s*(\d+(?:\.\d+)?)\s*px/gi)) {
     attributed += Number(match[1]);
     attributedCount += 1;
   }
+  for (const match of source.matchAll(/height\s*:\s*(\d+(?:\.\d+)?)\s*vh/gi)) {
+    attributed += (Number(match[1]) / 100) * VIEWPORT_FALLBACK;
+    attributedCount += 1;
+  }
+  for (const match of source.matchAll(/height\s*:\s*(\d+(?:\.\d+)?)\s*%/gi)) {
+    attributed += (Number(match[1]) / 100) * VIEWPORT_FALLBACK;
+    attributedCount += 1;
+  }
+  for (const match of source.matchAll(/height\s*:\s*(\d+(?:\.\d+)?)\s*em/gi)) {
+    attributed += Number(match[1]) * FONT_FALLBACK;
+    attributedCount += 1;
+  }
   const mediaTags = (
-    source.match(/<(?:img|iframe|video|object|embed)\b/gi) ?? []
+    source.match(/<(?:img|iframe|video|object|embed|svg)\b/gi) ?? []
   ).length;
   if (attributedCount === 0 && mediaTags === 0) {
     return undefined;
@@ -105,7 +147,16 @@ export function markdownBlockEstimatedHeight(source: string): number {
   }
   const html = htmlMediaHeight(source);
   if (html !== undefined) {
-    return Math.max(LINE + CHROME, html, CHROME + lines * LINE);
+    const floor = Math.max(LINE + CHROME, html, CHROME + lines * LINE);
+    const cached = measuredHtmlHeights.get(source);
+    return cached === undefined ? floor : Math.max(floor, cached);
+  }
+  // Non-media HTML can still paint tall via layout; use cache after measure.
+  if (/^\s*</.test(source)) {
+    const cached = measuredHtmlHeights.get(source);
+    if (cached !== undefined) {
+      return Math.max(CHROME + lines * LINE, cached);
+    }
   }
   if (isCallout(source)) {
     return CALLOUT_CHROME + lines * CALLOUT_LINE;

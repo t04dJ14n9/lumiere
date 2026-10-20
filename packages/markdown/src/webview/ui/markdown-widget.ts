@@ -4,7 +4,10 @@ import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
-import { markdownBlockEstimatedHeight } from "./markdown-block-height";
+import {
+  markdownBlockEstimatedHeight,
+  rememberHtmlBlockHeight,
+} from "./markdown-block-height";
 import { CLICK_SELECT } from "./pointer-selection";
 
 /** A span of a block's source, as offsets into it. */
@@ -60,6 +63,36 @@ export const FENCED_PREVIEW: BlockEditing = {
   guardMargin: true,
   select: fenceBody,
 };
+
+/** Observe HTML-block growth so remounts keep painted CSS height (vh/%/em). */
+const htmlObservers = new WeakMap<HTMLElement, ResizeObserver>();
+
+function watchHtmlBlock(dom: HTMLElement, source: string): void {
+  if (!/^\s*</.test(source) || htmlObservers.has(dom)) {
+    return;
+  }
+  const observer = new ResizeObserver((entries) => {
+    const height = entries[0]?.contentRect.height ?? 0;
+    if (height > 0) {
+      rememberHtmlBlockHeight(source, height);
+    }
+  });
+  observer.observe(dom);
+  htmlObservers.set(dom, observer);
+}
+
+function unwatchHtmlBlock(dom: HTMLElement, source: string): void {
+  htmlObservers.get(dom)?.disconnect();
+  htmlObservers.delete(dom);
+  // Unit stubs omit getBoundingClientRect; skip measure then.
+  if (typeof dom.getBoundingClientRect !== "function") {
+    return;
+  }
+  const height = dom.getBoundingClientRect().height;
+  if (height > 0) {
+    rememberHtmlBlockHeight(source, height);
+  }
+}
 
 /** Own a render pass even when an async post-processor finishes after removal. */
 export class MarkdownBlock extends WidgetType {
@@ -140,6 +173,7 @@ export class MarkdownBlock extends WidgetType {
           view.requestMeasure();
         }
       });
+    watchHtmlBlock(shell, this.block.source);
     return shell;
   }
 
@@ -174,6 +208,7 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override destroy(dom: HTMLElement): void {
+    unwatchHtmlBlock(dom, this.block.source);
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
   }
