@@ -8,6 +8,7 @@ import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { embedEstimatedHeight } from "./estimated-height";
 import type { RenderBlock } from "../livePreview/api";
 import type { EditorState } from "@codemirror/state";
+import type { EditorView } from "@codemirror/view";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
@@ -122,6 +123,19 @@ function registerEmbedRenderers(ctx: Context): void {
  * the line to ~24px without estimatedHeight.
  */
 class EmbedInline extends MarkdownInline {
+  /**
+   * Missing `|WxH` images paint as short unresolved text (~100px). Without a
+   * min-height, lineBlockAt stays short even though estimatedHeight is 640+,
+   * and off-viewport remounts keep that measured height in the map.
+   */
+  override toDOM(view: EditorView): HTMLElement {
+    const dom = super.toDOM(view);
+    const reserve = embedEstimatedHeight(this.source);
+    if (reserve > 0) {
+      dom.style.minHeight = `${reserve}px`;
+    }
+    return dom;
+  }
   override get estimatedHeight(): number {
     return embedEstimatedHeight(this.source);
   }
