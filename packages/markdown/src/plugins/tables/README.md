@@ -40,7 +40,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `webview.ts`: named registrations for rendering, wheel motion, projection and commands.
 - `environment.ts`: injected capabilities available to table interactions.
 - `content.ts`: asynchronous render-pass ownership and cancellation.
-- `widget.ts`: Live Preview widget creation, reuse and disposal.
+- `widget.ts`: Live Preview widget creation, reuse and disposal; `estimatedHeight` reserves row height before measure and across off-viewport rebuilds.
+- `estimated-height.ts`: pure row-count reserve used by the widget.
+- `estimated-height.test.ts`: empty/invalid, row scaling, and tall-table unit cases.
 - `controller.ts`: collaborator wiring and incoming snapshot reconciliation.
 - `grid.ts`: source snapshot, rendered cells and whole-table edits.
 - `projection.ts`: active cell lifetime and edits into outer source offsets.

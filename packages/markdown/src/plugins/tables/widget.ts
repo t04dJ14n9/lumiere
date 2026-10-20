@@ -2,6 +2,7 @@ import { WidgetType, type EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../livePreview/api";
 import { TableController } from "./controller";
 import type { TableEnvironment } from "./environment";
+import { tableEstimatedHeight } from "./estimated-height";
 import { entersTable } from "./navigation";
 
 export {
@@ -90,5 +91,8 @@ export class TableWidget extends WidgetType {
   override destroy(root: HTMLElement): void {
     controllers.get(root)?.destroy();
     controllers.delete(root);
+  }
+  override get estimatedHeight(): number {
+    return tableEstimatedHeight(this.block.source);
   }
 }
