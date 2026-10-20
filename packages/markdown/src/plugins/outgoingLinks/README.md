@@ -1,12 +1,15 @@
 # Outgoing links
 
-Shows the files the active note links to, and its links whose note does not
-exist yet. This is Obsidian's **Outgoing links** core plugin.
+Shows the files the active note links to, its links whose note does not
+exist yet, and (when expanded) other notes mentioned by name without a link.
+This is Obsidian's **Outgoing links** core plugin.
 
 ## How it works
 
 The view follows the active tab and reads the note's resolved and unresolved
-links from the vault index, refreshing when indexing settles.
+links from the vault index, refreshing when indexing settles. Unlinked
+mentions scan the active note's text for other notes' basenames and aliases
+outside any link (same matcher as Backlinks), only when that section expands.
 
 ## Files
 
@@ -21,6 +24,8 @@ links from the vault index, refreshing when indexing settles.
 
 ## Limits and differences from Obsidian
 
-- Unlinked mentions of other notes (Obsidian's second section) are not shown.
 - Clicking a link not created yet does nothing; follow it in the note to
   create it.
+- Unlinked mentions read the active note once per expand; very large vaults
+  still walk every candidate basename (same cost class as Backlinks unlinked,
+  but only one file body is read).

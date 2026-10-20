@@ -82,16 +82,65 @@ test("a line opens its note at the mention", async () => {
   ]);
 });
 
-test("outgoing links list resolved files with counts, then links not created yet", async () => {
+test("outgoing links list resolved files, unresolved, and unlinked mentions", async () => {
   const { vaults } = memoryVaults(notes);
   const tree = new OutgoingLinksTree(vaults);
   await tree.setNote(uriOf("Target.md"));
   assert.deepEqual(await render(tree), [
     ["Links (1)", ["Other (×2)"]],
     ["Not created yet (1)", ["Missing"]],
+    ["Unlinked mentions", []],
+  ]);
+  await tree.setNote(uriOf("C.md"));
+  assert.deepEqual(await render(tree), [
+    ["Links (0)", []],
+    ["Not created yet (0)", []],
+    [
+      "Unlinked mentions",
+      [
+        [
+          "Target (2)",
+          [
+            "Mentions target and the big map, no link.",
+            "Mentions target and the big map, no link.",
+          ],
+        ],
+      ],
+    ],
   ]);
   await tree.setNote(undefined);
   assert.deepEqual(await tree.roots(), []);
+});
+
+test("an outgoing unlinked context line opens the active note at the mention", async () => {
+  const { vaults } = memoryVaults(notes);
+  const tree = new OutgoingLinksTree(vaults);
+  await tree.setNote(uriOf("C.md"));
+  const roots = await tree.roots();
+  const unlinked = roots.find((node) => node.id === "unlinked")!;
+  const [file] = await tree.children(unlinked);
+  const [line] = await tree.children(file!);
+  assert.equal(file!.label, "Target");
+  assert.deepEqual(line!.command?.args, [
+    uriOf("C.md"),
+    notes["C.md"].toLowerCase().indexOf("target"),
+  ]);
+});
+
+test("outgoing unlinked mentions skip notes already linked from here", async () => {
+  const { vaults } = memoryVaults({
+    ...notes,
+    "E.md": "Plain Target word and also [[Target]].",
+  });
+  const tree = new OutgoingLinksTree(vaults);
+  await tree.setNote(uriOf("E.md"));
+  const unlinked = (await tree.roots()).find((node) => node.id === "unlinked")!;
+  const files = await tree.children(unlinked);
+  assert.deepEqual(
+    files.map((node) => node.label),
+    [],
+    "Target is already a resolved outbound link",
+  );
 });
 
 test("Backlinks and Outgoing Links are off until turned on", async () => {

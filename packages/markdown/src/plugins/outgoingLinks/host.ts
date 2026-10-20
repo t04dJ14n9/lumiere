@@ -29,8 +29,11 @@ export const outgoingLinksHost: Plugin = {
     ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
     ctx.on("vault/resolved", schedule);
     ctx.effect(() =>
-      ctx.hostCommands.register(OPEN_COMMAND, (uri) =>
-        ctx.vaults.open(String(uri)),
+      ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
+        ctx.vaults.open(
+          String(uri),
+          offset === undefined ? {} : { offset: Number(offset) },
+        ),
       ),
     );
     void refresh();
