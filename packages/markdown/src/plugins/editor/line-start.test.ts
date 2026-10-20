@@ -67,7 +67,36 @@ test("End goes to the line's true end, past the markers that end it", () => {
   assert.equal(end("a **bold** *it*", 14), 15);
   assert.equal(end("x ==hi==", 6), 8);
   assert.equal(end("a `code`", 7), 8);
+  // Wikilink / MD link / autolink closers are also hidden in LP.
+  assert.equal(end("a [[Home]]", "a [[Home".length), 10);
+  assert.equal(end("see [t](u)", "see [t".length), 10);
+  assert.equal(end("see [t](<a b>)", "see [t".length), 14);
+  assert.equal(end("see [t][lab]", "see [t".length), 12);
+  assert.equal(end("**[[x]]**", "**[[x".length), 9);
+  assert.equal(end("<https://x.io>", "<https://x.io".length), 14);
   assert.equal(end("a **b** c", 9), undefined);
+  assert.equal(end("a [[x]] y", "a [[x".length), undefined);
   assert.equal(end("plain text", 10), undefined);
   assert.equal(end("a **b** c\nnext", 9), undefined);
+});
+
+test("End goes past LP-hidden styled inline HTML closers", () => {
+  const end = (text: string, visualEnd: number) =>
+    lineEndTarget(EditorState.create({ doc: text }), visualEnd);
+  // decorateInlineHtml hides </kbd> / </u> / </mark>.
+  assert.equal(end("a <kbd>Ctrl</kbd>", 11), 17);
+  assert.equal(end("x <u>hi</u>", 7), 11);
+  assert.equal(end("a <kbd>Ctrl</kbd>**", 11), 19);
+  assert.equal(end("a <kbd>Ctrl</kbd> more", 11), undefined);
+  assert.equal(end("end <mark>x</mark>", 11), 18);
+});
+
+test("End unifies link and HTML closers in one trailing run", () => {
+  const end = (text: string, visualEnd: number) =>
+    lineEndTarget(EditorState.create({ doc: text }), visualEnd);
+  // Cross-surface combinations (link + HTML closers in one run).
+  assert.equal(end("a [[x]]</kbd>", "a [[x".length), 13);
+  assert.equal(end("t <kbd>x</kbd>]]", "t <kbd>x".length), 16);
+  assert.equal(end("see [t](u)**", "see [t".length), 12);
+  assert.equal(end("<https://x.io></u>", "<https://x.io".length), 18);
 });
