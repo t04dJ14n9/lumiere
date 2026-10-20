@@ -172,8 +172,10 @@ export class BacklinksTree implements TreeSource {
 
   private sorted(paths: readonly string[]): string[] {
     const note = this.note!;
-    return sortBacklinkPaths(paths, this.sortOrder(), (path) =>
-      note.vault.index.file(path)?.mtime ?? 0,
+    return sortBacklinkPaths(
+      paths,
+      this.sortOrder(),
+      (path) => note.vault.index.file(path)?.mtime ?? 0,
     );
   }
 
@@ -204,12 +206,8 @@ export function sortBacklinkPaths(
       return [...paths].sort((a, b) => byName(b, a));
     case "byModifiedTime":
       // Obsidian labelSortNewToOld: newer mtime first, then name.
-      return [...paths].sort(
-        (a, b) => mtimeOf(b) - mtimeOf(a) || byName(a, b),
-      );
+      return [...paths].sort((a, b) => mtimeOf(b) - mtimeOf(a) || byName(a, b));
     case "byModifiedTimeReverse":
-      return [...paths].sort(
-        (a, b) => mtimeOf(a) - mtimeOf(b) || byName(a, b),
-      );
+      return [...paths].sort((a, b) => mtimeOf(a) - mtimeOf(b) || byName(a, b));
   }
 }

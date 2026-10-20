@@ -32,7 +32,11 @@ test("byModifiedTime is newer mtime first, then alphabetical", () => {
   const mtime = (path: string) =>
     ({ "a.md": 10, "b.md": 30, "c.md": 30, "d.md": 5 })[path] ?? 0;
   assert.deepEqual(
-    sortBacklinkPaths(["a.md", "b.md", "c.md", "d.md"], "byModifiedTime", mtime),
+    sortBacklinkPaths(
+      ["a.md", "b.md", "c.md", "d.md"],
+      "byModifiedTime",
+      mtime,
+    ),
     ["b.md", "c.md", "a.md", "d.md"],
   );
 });
