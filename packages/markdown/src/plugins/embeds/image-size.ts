@@ -89,9 +89,32 @@ export function targetRange(
   return partsOf(source)?.target;
 }
 
-/** Where a size goes in `source`, where Tab puts the caret. */
-export function sizeOffset(source: string): number | undefined {
-  return partsOf(source)?.to;
+/**
+ * The alias / size segment Tab selects, as Obsidian 1.14's
+ * `editSelectedImageAlias` (REA): after the first `|` in a wiki embed
+ * (`![[a.png|100]]`, `![[a.png|alt|50]]`), or the whole Markdown alt
+ * (`![alt](a.png)`, `![alt|50](a.png)`). With no wiki pipe, an empty
+ * range at the end of the path (before `]]`), ready to type.
+ */
+export function aliasRange(
+  source: string,
+): { from: number; to: number } | undefined {
+  const wiki = /^!\[\[([^\]]*)\]\]$/u.exec(source);
+  if (wiki) {
+    const inner = wiki[1]!;
+    const pipe = inner.indexOf("|");
+    if (pipe < 0) {
+      const at = 3 + inner.length;
+      return { from: at, to: at };
+    }
+    return { from: 3 + pipe + 1, to: 3 + inner.length };
+  }
+  const markdown = /^!\[([^\]]*)\]\(/u.exec(source);
+  if (!markdown) {
+    return undefined;
+  }
+  const alt = markdown[1]!;
+  return { from: 2, to: 2 + alt.length };
 }
 
 /**

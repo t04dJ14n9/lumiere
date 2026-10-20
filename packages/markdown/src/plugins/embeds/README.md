@@ -18,8 +18,8 @@ next press moves past): it stays outlined. Then `+` and `-`
 resize it in steps of 25 pixels, from the width it shows, up to the width of
 the note's text (written as `![[a.png|100]]`, or in a Markdown image's alt
 text, `![100](a.png)`); `0` removes the size; Enter shows its source with
-the file name selected, and Tab with the caret where the size is written,
-until the caret leaves it; Backspace or Delete removes the embed; Escape, a
+the file name selected, and Tab with the alias / size segment selected
+(as Obsidian's `editSelectedImageAlias`), until the caret leaves it; Backspace or Delete removes the embed; Escape, a
 click elsewhere or any edit lets it go
 (`image-selection.ts`, `image-size.ts`).
 
