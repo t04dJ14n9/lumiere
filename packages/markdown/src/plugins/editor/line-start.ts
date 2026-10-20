@@ -50,17 +50,22 @@ function toLineStart(extend: boolean) {
 
 /**
  * Where End (Cmd+Right on macOS) goes, as in Obsidian 1.14: past the
- * formatting markers that end the line (`**`, `==`, `` ` ``), hidden in Live
- * Preview, to the line's true end. Returns undefined where the default
- * applies: on wrapped lines before the last, and where text follows.
+ * Live Preview–hidden closers that end the line (emphasis `**`/`__`, highlight
+ * `==`, code `` ` ``, math `$`, comments `%%`, wikilink `]]`, Markdown
+ * `](…)` / `][…]`, autolink `>`), to the line's true end. Returns undefined
+ * where the default applies: on wrapped lines before the last, and where
+ * visible text follows.
  */
+const TRAILING_CLOSERS =
+  /^(?:[*_~=`$%]+|\]\]|\]\([^)\n]*\)|\]\[[^\]\n]*\]|>)+$/u;
+
 export function lineEndTarget(
   state: EditorState,
   visualEnd: number,
 ): number | undefined {
   const line = state.doc.lineAt(visualEnd);
   const rest = state.sliceDoc(visualEnd, line.to);
-  return rest && /^[*_~=`$%]+$/u.test(rest) ? line.to : undefined;
+  return rest && TRAILING_CLOSERS.test(rest) ? line.to : undefined;
 }
 
 function toLineEnd(extend: boolean) {

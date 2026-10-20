@@ -50,7 +50,15 @@ test("End goes to the line's true end, past the markers that end it", () => {
   assert.equal(end("a **bold** *it*", 14), 15);
   assert.equal(end("x ==hi==", 6), 8);
   assert.equal(end("a `code`", 7), 8);
+  // Wikilink / MD link / autolink closers are also hidden in LP.
+  assert.equal(end("a [[Home]]", "a [[Home".length), 10);
+  assert.equal(end("see [t](u)", "see [t".length), 10);
+  assert.equal(end("see [t](<a b>)", "see [t".length), 14);
+  assert.equal(end("see [t][lab]", "see [t".length), 12);
+  assert.equal(end("**[[x]]**", "**[[x".length), 9);
+  assert.equal(end("<https://x.io>", "<https://x.io".length), 14);
   assert.equal(end("a **b** c", 9), undefined);
+  assert.equal(end("a [[x]] y", "a [[x".length), undefined);
   assert.equal(end("plain text", 10), undefined);
   assert.equal(end("a **b** c\nnext", 9), undefined);
 });
