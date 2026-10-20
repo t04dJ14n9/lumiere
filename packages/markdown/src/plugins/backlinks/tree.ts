@@ -8,6 +8,34 @@ import type { MentionLine } from "../../markdown/mentions";
 export const VIEW_ID = contributionId("backlinks");
 export const OPEN_COMMAND = contributionId("backlinks.open");
 
+/** Obsidian BacklinkView.sortOrder values we can honour (vault index has mtime, not ctime). */
+export const SORT_ORDERS = [
+  "alphabetical",
+  "alphabeticalReverse",
+  "byModifiedTime",
+  "byModifiedTimeReverse",
+] as const;
+export type BacklinkSortOrder = (typeof SORT_ORDERS)[number];
+
+export const SORT_SETTING = "backlinks.sortOrder";
+export const SORT_ALPHABETICAL_CONTEXT = `${VIEW_ID}.sortAlphabetical`;
+export const SORT_ALPHABETICAL_REVERSE_CONTEXT = `${VIEW_ID}.sortAlphabeticalReverse`;
+export const SORT_MODIFIED_CONTEXT = `${VIEW_ID}.sortByModifiedTime`;
+export const SORT_MODIFIED_REVERSE_CONTEXT = `${VIEW_ID}.sortByModifiedTimeReverse`;
+
+export const SORT_BY_ALPHABETICAL = `${VIEW_ID}.sortByAlphabetical`;
+export const SORT_BY_ALPHABETICAL_REVERSE = `${VIEW_ID}.sortByAlphabeticalReverse`;
+export const SORT_BY_MODIFIED = `${VIEW_ID}.sortByModifiedTime`;
+export const SORT_BY_MODIFIED_REVERSE = `${VIEW_ID}.sortByModifiedTimeReverse`;
+
+/** Checked label cycles forward through Obsidian's sort orders. */
+export const NEXT_SORT: Record<BacklinkSortOrder, BacklinkSortOrder> = {
+  alphabetical: "alphabeticalReverse",
+  alphabeticalReverse: "byModifiedTime",
+  byModifiedTime: "byModifiedTimeReverse",
+  byModifiedTimeReverse: "alphabetical",
+};
+
 interface Note {
   uri: string;
   path: string;
@@ -26,7 +54,10 @@ export class BacklinksTree implements TreeSource {
   private readonly files = new Map<Group, Promise<string[]>>();
   private readonly lines = new Map<string, MentionLine[]>();
 
-  constructor(private readonly vaults: Vaults) {}
+  constructor(
+    private readonly vaults: Vaults,
+    private readonly sortOrder: () => BacklinkSortOrder = () => "alphabetical",
+  ) {}
 
   /** Follow a new active note; `undefined` when no note is active. */
   async setNote(uri: string | undefined): Promise<void> {
@@ -109,7 +140,7 @@ export class BacklinksTree implements TreeSource {
       const text = await this.vaults.text(this.uriOf(path));
       this.lines.set(`linked:${path}`, linkedLines(text, isTarget(path)));
     }
-    return sortBacklinkPaths(paths);
+    return this.sorted(paths);
   }
 
   private async unlinkedFiles(): Promise<string[]> {
@@ -136,7 +167,14 @@ export class BacklinksTree implements TreeSource {
         paths.push(file.path);
       }
     }
-    return sortBacklinkPaths(paths);
+    return this.sorted(paths);
+  }
+
+  private sorted(paths: readonly string[]): string[] {
+    const note = this.note!;
+    return sortBacklinkPaths(paths, this.sortOrder(), (path) =>
+      note.vault.index.file(path)?.mtime ?? 0,
+    );
   }
 
   private uriOf(path: string): string {
@@ -144,11 +182,34 @@ export class BacklinksTree implements TreeSource {
   }
 }
 
-/** Obsidian backlinks default sortOrder="alphabetical" (file name, then path). */
-export function sortBacklinkPaths(paths: readonly string[]): string[] {
-  return [...paths].sort(
-    (a, b) =>
-      stemOf(a).localeCompare(stemOf(b), undefined, { sensitivity: "base" }) ||
-      a.localeCompare(b),
-  );
+export function parseSortOrder(value: unknown): BacklinkSortOrder {
+  return SORT_ORDERS.includes(value as BacklinkSortOrder)
+    ? (value as BacklinkSortOrder)
+    : "alphabetical";
+}
+
+/** Obsidian backlinks sortOrder (file name / modified time). */
+export function sortBacklinkPaths(
+  paths: readonly string[],
+  order: BacklinkSortOrder = "alphabetical",
+  mtimeOf: (path: string) => number = () => 0,
+): string[] {
+  const byName = (a: string, b: string) =>
+    stemOf(a).localeCompare(stemOf(b), undefined, { sensitivity: "base" }) ||
+    a.localeCompare(b);
+  switch (order) {
+    case "alphabetical":
+      return [...paths].sort(byName);
+    case "alphabeticalReverse":
+      return [...paths].sort((a, b) => byName(b, a));
+    case "byModifiedTime":
+      // Obsidian labelSortNewToOld: newer mtime first, then name.
+      return [...paths].sort(
+        (a, b) => mtimeOf(b) - mtimeOf(a) || byName(a, b),
+      );
+    case "byModifiedTimeReverse":
+      return [...paths].sort(
+        (a, b) => mtimeOf(a) - mtimeOf(b) || byName(a, b),
+      );
+  }
 }
