@@ -1,14 +1,14 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and GitHub repository links.
+ * Only a fully parsed and validated ID leaves this module; players and cards
+ * are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "github";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a GitHub `owner/repo` path.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,6 +71,44 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/**
+ * GitHub owner/repo. Names are 1–100 chars of `[A-Za-z0-9._-]` (not `.` / `..`).
+ */
+const GITHUB_NAME = /^[A-Za-z0-9._-]{1,100}$/;
+const GITHUB_PATH = /^\/([A-Za-z0-9._-]{1,100})\/([A-Za-z0-9._-]{1,100})\/?$/;
+const GITHUB_HOSTS = new Set(["github.com"]);
+/** Site paths that look like owner/repo but are not repositories. */
+const GITHUB_RESERVED = new Set([
+  "settings",
+  "notifications",
+  "marketplace",
+  "explore",
+  "topics",
+  "trending",
+  "collections",
+  "events",
+  "sponsors",
+  "login",
+  "join",
+  "orgs",
+  "users",
+  "about",
+  "pricing",
+  "enterprise",
+  "customer-stories",
+  "security",
+  "team",
+  "pulls",
+  "issues",
+  "codespaces",
+  "account",
+  "new",
+]);
+
+function isGithubName(value: string): boolean {
+  return GITHUB_NAME.test(value) && value !== "." && value !== "..";
+}
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
@@ -79,7 +117,14 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  const slash = id.indexOf("/");
+  if (slash < 1 || id.indexOf("/", slash + 1) !== -1) {
+    return false;
+  }
+  return isGithubName(id.slice(0, slash)) && isGithubName(id.slice(slash + 1));
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +162,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (GITHUB_HOSTS.has(host)) {
+    return github(url.pathname);
   }
   return undefined;
 }
@@ -158,6 +206,27 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function github(pathname: string): OnlineVideo | undefined {
+  const match = GITHUB_PATH.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  const owner = match[1]!;
+  const repo = match[2]!;
+  if (
+    !isGithubName(owner) ||
+    !isGithubName(repo) ||
+    GITHUB_RESERVED.has(owner.toLowerCase())
+  ) {
+    return undefined;
+  }
+  return {
+    provider: "github",
+    id: `${owner}/${repo}`,
+    page: `https://github.com/${owner}/${repo}`,
   };
 }
 

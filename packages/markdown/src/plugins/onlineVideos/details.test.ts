@@ -5,9 +5,11 @@ import {
   USER_AGENT,
   VideoDetailsSource,
   coverUrl,
+  githubAvatarUrl,
   imageDataUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
+  parseGithubRepo,
   parseOEmbed,
 } from "./details";
 
@@ -307,6 +309,38 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("githubAvatarUrl accepts avatars.githubusercontent.com /u/ ids only", () => {
+  assert.equal(
+    githubAvatarUrl("https://avatars.githubusercontent.com/u/6154722?v=4"),
+    "https://avatars.githubusercontent.com/u/6154722",
+  );
+  for (const value of [
+    "https://evil.test/u/6154722",
+    "https://avatars.githubusercontent.com/id/6154722",
+    "http://avatars.githubusercontent.com/u/6154722",
+    "https://avatars.githubusercontent.com/u/0",
+  ]) {
+    assert.equal(githubAvatarUrl(value), undefined);
+  }
+});
+
+test("parseGithubRepo uses full_name and owner login", () => {
+  assert.deepEqual(
+    parseGithubRepo({
+      full_name: "microsoft/vscode",
+      name: "vscode",
+      owner: {
+        login: "microsoft",
+        avatar_url: "https://avatars.githubusercontent.com/u/6154722?v=4",
+      },
+    }),
+    {
+      details: { title: "microsoft/vscode", author: "microsoft" },
+      cover: "https://avatars.githubusercontent.com/u/6154722",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +363,35 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a GitHub lookup uses api.github.com and may fetch the avatar", async () => {
+  const cover = "https://avatars.githubusercontent.com/u/6154722";
+  const { fetch, calls } = fakeFetch({
+    "https://api.github.com/repos/": () =>
+      response({
+        full_name: "microsoft/vscode",
+        name: "vscode",
+        owner: {
+          login: "microsoft",
+          avatar_url: `${cover}?v=4`,
+        },
+      }),
+    "https://avatars.githubusercontent.com/": () =>
+      response(PNG, { type: "image/png" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "github",
+    "microsoft/vscode",
+  );
+  assert.equal(details.title, "microsoft/vscode");
+  assert.equal(details.author, "microsoft");
+  assert.equal(
+    details.cover,
+    `data:image/png;base64,${Buffer.from(PNG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://api.github.com/repos/microsoft/vscode");
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

@@ -105,6 +105,32 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("GitHub repository pages on github.com", () => {
+  assert.deepEqual(parseVideoUrl("https://github.com/microsoft/vscode"), {
+    provider: "github",
+    id: "microsoft/vscode",
+    page: "https://github.com/microsoft/vscode",
+  });
+  assert.deepEqual(parseVideoUrl("https://github.com/microsoft/vscode/"), {
+    provider: "github",
+    id: "microsoft/vscode",
+    page: "https://github.com/microsoft/vscode",
+  });
+  assert.equal(
+    parseVideoUrl("https://www.github.com/microsoft/vscode"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://github.com/microsoft/vscode/issues/1"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://github.com/topics/javascript"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://github.com/microsoft/."), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +155,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://www.github.com/microsoft/vscode",
+    "https://github.com.evil.test/microsoft/vscode",
+    "https://github.com/microsoft/vscode/issues/1",
+    "https://github.com/topics/javascript",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

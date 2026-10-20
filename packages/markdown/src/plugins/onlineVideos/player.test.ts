@@ -85,3 +85,12 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("GitHub refuses an in-webview player", () => {
+  assert.equal(providers.github.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://github.com/microsoft/vscode")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://github.com/microsoft/vscode")));
+});

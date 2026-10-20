@@ -151,6 +151,23 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "github") {
+      const slash = id.indexOf("/");
+      const owner = id.slice(0, slash);
+      const repo = id.slice(slash + 1);
+      const body = await this.json(
+        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
+        signal,
+      );
+      const { details, cover } = parseGithubRepo(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +263,51 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** GitHub repo API: full_name, owner login, avatar. */
+export function parseGithubRepo(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected GitHub response");
+  }
+  const title = text(body.full_name, 300) ?? text(body.name, 300);
+  const owner = isRecord(body.owner) ? body.owner : {};
+  const author = text(owner.login, 100);
+  const cover = githubAvatarUrl(owner.avatar_url);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/**
+ * GitHub avatars on `avatars.githubusercontent.com` under `/u/{id}` (query stripped).
+ */
+export function githubAvatarUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "avatars.githubusercontent.com" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    !/^\/u\/[1-9][0-9]{0,15}$/.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  return `https://avatars.githubusercontent.com${url.pathname}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */
