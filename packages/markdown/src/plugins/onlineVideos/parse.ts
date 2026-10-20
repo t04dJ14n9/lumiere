@@ -1,10 +1,10 @@
 /**
- * Recognise YouTube, Bilibili, Hugging Face, Spotify and SoundCloud links
- * (and YouTube playlists). Only a fully parsed and validated ID leaves this
- * module; players and cards are built from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm
+ * links (and YouTube playlists). Only a fully parsed and validated ID leaves
+ * this module; players and cards are built from it, never from the link text.
  */
 export type VideoProvider =
-  "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud";
+  "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
 export type MediaKind = "video" | "playlist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
@@ -13,8 +13,9 @@ export interface OnlineVideo {
   /**
    * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
    * `BV…` / `av` id, a Hugging Face model id (`name` or `owner/name`), a
-   * Spotify `track|album|playlist|episode|show:…` id, or a SoundCloud
-   * `user/slug` (or `user/sets/slug`) path.
+   * Spotify `track|album|playlist|episode|show:…` id, a SoundCloud
+   * `user/slug` (or `user/sets/slug`) path, or an npm package name
+   * (`lodash` or `@scope/name`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -96,6 +97,27 @@ const SPOTIFY_PATH =
 
 const SPOTIFY_HOSTS = new Set(["open.spotify.com"]);
 
+const NPM_NAME =
+  /^(?:@[a-z0-9-][a-z0-9-._]{0,213}\/[a-z0-9-][a-z0-9-._]{0,213}|[a-z0-9-][a-z0-9-._]{0,213})$/;
+
+/** Package page; optional `/v/{version}` is normalised away. */
+const NPM_PATH = /^\/package\/(@[^/]+\/[^/]+|[^/@]+)(?:\/v\/[^/]+)?\/?$/;
+
+const NPM_HOSTS = new Set(["www.npmjs.com", "npmjs.com"]);
+
+function npmPackage(name: string): OnlineVideo | undefined {
+  const id = name.toLowerCase();
+  if (!NPM_NAME.test(id) || id.length > 214) {
+    return undefined;
+  }
+  return {
+    provider: "npm",
+    kind: "video",
+    id,
+    page: `https://www.npmjs.com/package/${id}`,
+  };
+}
+
 /** `/track|album|playlist|episode|show/{22-char id}`. */
 function spotify(url: URL): OnlineVideo | undefined {
   const match = SPOTIFY_PATH.exec(url.pathname);
@@ -134,28 +156,20 @@ export function isVideoId(
   if (provider === "spotify") {
     return SPOTIFY_ID.test(id);
   }
-  return SOUNDCLOUD_ID.test(id);
+  if (provider === "soundcloud") {
+    return SOUNDCLOUD_ID.test(id);
+  }
+  return id.length <= 214 && NPM_NAME.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   const url = httpUrl(raw);
-  if (!url) {
-    return undefined;
-  }
-  const host = url.hostname.toLowerCase();
-  if (host === "youtu.be") {
-    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
-  }
-  if (YOUTUBE_HOSTS.has(host)) {
-    const playlist = youtubePlaylist(url);
-    if (playlist) {
-      return playlist;
-    }
-    const id =
-      url.pathname === "/watch"
-        ? url.searchParams.get("v")
-        : YOUTUBE_PATHS.exec(url.pathname)?.[1];
-    return youtubeVideo(id ?? undefined, url);
+  return url ? parseKnownHost(url.hostname.toLowerCase(), url) : undefined;
+}
+
+function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
+  if (host === "youtu.be" || YOUTUBE_HOSTS.has(host)) {
+    return parseYoutubeHost(host, url);
   }
   if (BILIBILI_HOSTS.has(host)) {
     return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
@@ -169,6 +183,10 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   }
   if (SOUNDCLOUD_HOSTS.has(host)) {
     return soundcloud(url);
+  }
+  if (NPM_HOSTS.has(host)) {
+    const match = NPM_PATH.exec(url.pathname);
+    return match ? npmPackage(match[1]!) : undefined;
   }
   return undefined;
 }
@@ -189,6 +207,21 @@ function httpUrl(raw: string): URL | undefined {
     return undefined;
   }
   return url;
+}
+
+function parseYoutubeHost(host: string, url: URL): OnlineVideo | undefined {
+  if (host === "youtu.be") {
+    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+  }
+  const playlist = youtubePlaylist(url);
+  if (playlist) {
+    return playlist;
+  }
+  const id =
+    url.pathname === "/watch"
+      ? url.searchParams.get("v")
+      : YOUTUBE_PATHS.exec(url.pathname)?.[1];
+  return youtubeVideo(id ?? undefined, url);
 }
 
 /**

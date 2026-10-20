@@ -99,3 +99,12 @@ test("SoundCloud refuses an in-webview player", () => {
   );
   assert.equal(providers.soundcloud.embeddable, false);
 });
+
+test("npm refuses an in-webview player", () => {
+  assert.equal(providers.npm.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://www.npmjs.com/package/lodash")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://www.npmjs.com/package/lodash")));
+});

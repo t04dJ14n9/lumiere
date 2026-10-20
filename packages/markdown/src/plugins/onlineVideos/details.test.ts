@@ -12,6 +12,8 @@ import {
   oEmbedThumbnail,
   spotifyThumbnail,
   soundcloudThumbnail,
+  npmRegistryPath,
+  parseNpmPackage,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -422,4 +424,70 @@ test("a SoundCloud lookup uses oEmbed and may fetch a sndcdn cover", async () =>
   assert.ok(
     calls[0]!.url.startsWith("https://soundcloud.com/oembed?format=json&url="),
   );
+});
+
+test("npmRegistryPath keeps @ and encodes the slash for scoped names", () => {
+  assert.equal(npmRegistryPath("lodash"), "lodash");
+  assert.equal(npmRegistryPath("@babel/core"), "@babel%2Fcore");
+});
+
+test("parseNpmPackage prefers description and a named author", () => {
+  assert.deepEqual(
+    parseNpmPackage({
+      name: "lodash",
+      description: "Lodash modular utilities.",
+      author: { name: "John-David Dalton", email: "john.doe@example.com" },
+    }),
+    {
+      title: "Lodash modular utilities.",
+      author: "John-David Dalton",
+    },
+  );
+  assert.deepEqual(
+    parseNpmPackage({
+      name: "@babel/core",
+      description: "Babel compiler core.",
+      maintainers: [{ name: "babel-bot", email: "bot@example.com" }],
+    }),
+    {
+      title: "Babel compiler core.",
+      author: "babel-bot",
+    },
+  );
+  assert.deepEqual(
+    parseNpmPackage({
+      name: "left-pad",
+      author: "someone@example.com",
+    }),
+    { title: "left-pad" },
+  );
+});
+
+test("an npm lookup fetches the registry document", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://registry.npmjs.org/lodash": () =>
+      response({
+        name: "lodash",
+        description: "Lodash modular utilities.",
+        author: { name: "John-David Dalton" },
+      }),
+    "https://registry.npmjs.org/@babel%2Fcore": () =>
+      response({
+        name: "@babel/core",
+        description: "Babel compiler core.",
+        maintainers: [{ name: "babel-bot" }],
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("npm", "lodash"), {
+    title: "Lodash modular utilities.",
+    author: "John-David Dalton",
+  });
+  assert.deepEqual(await source.get("npm", "@babel/core"), {
+    title: "Babel compiler core.",
+    author: "babel-bot",
+  });
+  assert.equal(calls[0]?.url, "https://registry.npmjs.org/lodash");
+  assert.equal(calls[1]?.url, "https://registry.npmjs.org/@babel%2Fcore");
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
