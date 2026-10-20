@@ -64,7 +64,9 @@ test("off-viewport display math rebuild keeps MathJax height in the map", async 
       measured,
       mathH,
       afterRebuild: view.lineBlockAt(from).height,
-      inDom: !!document.querySelector(".math-display, mjx-container, [data-math]"),
+      inDom: !!document.querySelector(
+        ".math-display, mjx-container, [data-math]",
+      ),
     };
   });
 

@@ -30,7 +30,9 @@ test("off-viewport query rebuild keeps results-sized height in the map", async (
   await page.setViewportSize({ width: 1100, height: 760 });
   await open(page, note());
   await constrain(page);
-  await expect(page.locator(".embedded-search, .hybrid-query").first()).toBeVisible();
+  await expect(
+    page.locator(".embedded-search, .hybrid-query").first(),
+  ).toBeVisible();
 
   const result = await page.evaluate(async () => {
     const fiber = [...window.harness.views[0]!.plugins].find(

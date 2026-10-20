@@ -28,7 +28,10 @@ test("off-viewport inline WxH image rebuild keeps line height in the map", async
   await page.setViewportSize({ width: 1100, height: 760 });
   await open(page, note());
   await constrain(page);
-  await expect(page.locator(".md-inline-render, img, .file-embed").first()).toBeVisible({
+  // Bare `img` matches CodeMirror cm-widgetBuffer nodes (always hidden).
+  await expect(
+    page.locator(".md-inline-render, .file-embed, .unresolved-embed").first(),
+  ).toBeVisible({
     timeout: 5000,
   });
 

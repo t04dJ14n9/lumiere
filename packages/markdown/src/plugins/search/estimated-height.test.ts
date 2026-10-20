@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  isQueryFence,
-  queryEstimatedHeight,
-} from "./estimated-height";
+import { isQueryFence, queryEstimatedHeight } from "./estimated-height";
 
 test("detects query fences, not other languages", () => {
   assert.equal(isQueryFence("```query\ntag:#x\n```"), true);
