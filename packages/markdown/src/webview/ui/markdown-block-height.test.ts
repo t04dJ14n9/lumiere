@@ -19,3 +19,20 @@ test("line count scales the reserve for tall callouts", () => {
   assert.ok(large > small * 5);
   assert.ok(large > 800, `got ${large}`);
 });
+
+test("short Mermaid fences reserve tall SVG height, not bare line count", () => {
+  const source = [
+    "```mermaid",
+    "flowchart TB",
+    "  A[Start] --> B[Step]",
+    "  B --> C[End]",
+    "```",
+  ].join("\n");
+  const plain = markdownBlockEstimatedHeight("> [!note]\n> one\n> two\n> three\n");
+  const mermaid = markdownBlockEstimatedHeight(source);
+  assert.ok(mermaid >= 320, `got ${mermaid}`);
+  assert.ok(
+    mermaid > plain,
+    `mermaid=${mermaid} should exceed same-ish line callout=${plain}`,
+  );
+});
