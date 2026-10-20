@@ -49,10 +49,20 @@ function toLineStart(extend: boolean) {
 }
 
 /**
+ * Live Preview–hidden closers that can trail the visible line end: emphasis
+ * `**`/`__`, highlight `==`, code/math/comment markers, wikilink `]]`,
+ * Markdown `](…)` / `][…]`, autolink `>`, and styled inline HTML `</kbd>` /
+ * `</u>` / …. End / Cmd+Right steps past any run of these (Obsidian 1.14).
+ * One TRAILING_CLOSERS covers link/autolink and HTML closer surfaces.
+ */
+const TRAILING_CLOSERS =
+  /^(?:[*_~=`$%]+|\]\]|\]\([^)\n]*\)|\]\[[^\]\n]*\]|>|<\/[a-z]+>)+$/iu;
+
+/**
  * Where End (Cmd+Right on macOS) goes, as in Obsidian 1.14: past the
- * formatting markers that end the line (`**`, `==`, `` ` ``), hidden in Live
- * Preview, to the line's true end. Returns undefined where the default
- * applies: on wrapped lines before the last, and where text follows.
+ * Live Preview–hidden closers that end the line, to the line's true end.
+ * Returns undefined where the default applies: on wrapped lines before the
+ * last, and where visible text follows.
  */
 export function lineEndTarget(
   state: EditorState,
@@ -60,7 +70,7 @@ export function lineEndTarget(
 ): number | undefined {
   const line = state.doc.lineAt(visualEnd);
   const rest = state.sliceDoc(visualEnd, line.to);
-  return rest && /^[*_~=`$%]+$/u.test(rest) ? line.to : undefined;
+  return rest && TRAILING_CLOSERS.test(rest) ? line.to : undefined;
 }
 
 function toLineEnd(extend: boolean) {
