@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  sizeOffset,
+  aliasRange,
   steppedWidth,
   targetRange,
   withWidth,
@@ -45,12 +45,18 @@ test("the size is the last | part of an embed, or of a Markdown image's alt text
   assert.equal(writtenWidth("![[pic.png]]"), undefined);
 });
 
-test("Enter selects the file name; Tab goes where the size is written", () => {
+test("Enter selects the file name; Tab selects the alias / size segment", () => {
   assert.deepEqual(targetRange("![[pic.png]]"), { from: 3, to: 10 });
   assert.deepEqual(targetRange("![[pic.png#x|20]]"), { from: 3, to: 10 });
   assert.deepEqual(targetRange("![alt](a.png)"), { from: 7, to: 12 });
-  assert.equal(sizeOffset("![[pic.png]]"), 10);
-  assert.equal(sizeOffset("![alt](a.png)"), 5);
+  // Obsidian editSelectedImageAlias (REA): wiki pipe body, or MD alt.
+  assert.deepEqual(aliasRange("![[pic.png]]"), { from: 10, to: 10 });
+  assert.deepEqual(aliasRange("![[pic.png|100]]"), { from: 11, to: 14 });
+  assert.deepEqual(aliasRange("![[pic.png#x|20]]"), { from: 13, to: 15 });
+  assert.deepEqual(aliasRange("![[pic.png|alt|50]]"), { from: 11, to: 17 });
+  assert.deepEqual(aliasRange("![alt](a.png)"), { from: 2, to: 5 });
+  assert.deepEqual(aliasRange("![alt|50](a.png)"), { from: 2, to: 8 });
+  assert.deepEqual(aliasRange("![](a.png)"), { from: 2, to: 2 });
 });
 
 test("an image embed has no Edit button; a note embed reveals on a click", async () => {

@@ -9,7 +9,7 @@ import {
 import { ViewPlugin, keymap, type EditorView } from "@codemirror/view";
 import { embedsNote } from "./clicks";
 import {
-  sizeOffset,
+  aliasRange,
   steppedWidth,
   targetRange,
   withWidth,
@@ -188,27 +188,24 @@ function resize(view: EditorView, change: 1 | -1 | 0): boolean {
   return true;
 }
 
-/** Enter selects the file name, Tab puts the caret where the size goes. */
-function editSource(view: EditorView, part: "target" | "size"): boolean {
+/** Enter selects the file name; Tab selects the alias / size segment. */
+function editSource(view: EditorView, part: "target" | "alias"): boolean {
   const range = view.state.field(selectedImage);
   if (!range) {
     return false;
   }
   const source = view.state.sliceDoc(range.from, range.to);
-  const target = targetRange(source);
-  const size = sizeOffset(source);
-  const effects = editImage.of(range);
-  if (part === "target" && target) {
-    view.dispatch({
-      selection: {
-        anchor: range.from + target.from,
-        head: range.from + target.to,
-      },
-      effects,
-    });
-  } else if (part === "size" && size !== undefined) {
-    view.dispatch({ selection: { anchor: range.from + size }, effects });
+  const segment = part === "target" ? targetRange(source) : aliasRange(source);
+  if (!segment) {
+    return false;
   }
+  view.dispatch({
+    selection: {
+      anchor: range.from + segment.from,
+      head: range.from + segment.to,
+    },
+    effects: editImage.of(range),
+  });
   return true;
 }
 
@@ -312,9 +309,10 @@ const selectedClass = ViewPlugin.define((view) => {
  * Selecting and editing images in Live Preview, as Obsidian 1.13 does
  * (measured): a click, or an arrow key from just beside it, selects an
  * image; then `+` and `-` resize it in steps
- * of 25 pixels, `0` resets its size, Enter selects its file name, Tab puts
- * the caret where its size goes, Backspace or Delete removes it and Escape
- * lets it go. Selection also paints Obsidian's `.image-resize-corner`
+ * of 25 pixels, `0` resets its size, Enter selects its file name, Tab selects
+ * its alias / size segment (Obsidian `editSelectedImageAlias`), Backspace or
+ * Delete removes it and Escape lets it go. Selection also paints Obsidian's
+ * `.image-resize-corner`
  * chevron chrome (CSS); drag-to-resize is still `+`/`-` only.
  */
 export function imageSelection(): Extension {
@@ -328,7 +326,7 @@ export function imageSelection(): Extension {
         { key: "-", run: (view) => resize(view, -1) },
         { key: "0", run: (view) => resize(view, 0) },
         { key: "Enter", run: (view) => editSource(view, "target") },
-        { key: "Tab", run: (view) => editSource(view, "size") },
+        { key: "Tab", run: (view) => editSource(view, "alias") },
         { key: "Backspace", run: remove },
         { key: "Delete", run: remove },
         { key: "Escape", run: deselect },
