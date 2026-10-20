@@ -45,16 +45,7 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     ctx.provide("propertyRenderers", renderers);
     let previewCount = listPreviewCount(settings.listPreviewCount);
     const expandedLists = new Set<string>();
-    ctx.on("editor/focusProperties", () => {
-      const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
-        ".hybrid-properties [data-properties-heading]",
-      );
-      if (!heading?.getClientRects().length) {
-        return undefined;
-      }
-      heading.focus();
-      return true;
-    });
+    registerFocusProperties(ctx);
     const lifetime = new AbortController();
     ctx.effect(() => () => lifetime.abort());
     const heading = propertyHeadingFocus(() => {
@@ -103,6 +94,19 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     registerDraftFlush(ctx);
   },
 };
+
+function registerFocusProperties(ctx: Context): void {
+  ctx.on("editor/focusProperties", () => {
+    const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
+      ".hybrid-properties [data-properties-heading]",
+    );
+    if (!heading?.getClientRects().length) {
+      return undefined;
+    }
+    heading.focus();
+    return true;
+  });
+}
 
 function createEditing(
   ctx: Context,

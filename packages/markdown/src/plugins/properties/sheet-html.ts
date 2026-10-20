@@ -108,11 +108,11 @@ function propertyBody(
   return complexFallback(options.draft);
 }
 
-function propertyRow(
+function propertyTypeMeta(
   key: string,
   value: unknown,
   options: PropertyRowOptions,
-): string {
+): { okf: boolean; unknown: boolean; typeLabel: string; typeName: string } {
   const { kind } = options;
   const okf =
     !options.custom &&
@@ -125,11 +125,6 @@ function propertyRow(
     !okf &&
     options.draft !== undefined &&
     isUnknownPropertyValue(value);
-  const warning = mismatchWarning(
-    kind,
-    !unknown && !okf && !matchesPropertyKind(kind, value),
-  );
-  const body = propertyBody(key, value, options);
   let typeLabel = propertyKindLabels[kind];
   let typeName: string = kind === "list" ? "multitext" : kind;
   if (options.custom && key.toLowerCase() === "sources") {
@@ -143,6 +138,25 @@ function propertyRow(
     typeLabel = "Unknown";
     typeName = "unknown";
   }
+  return { okf, unknown, typeLabel, typeName };
+}
+
+function propertyRow(
+  key: string,
+  value: unknown,
+  options: PropertyRowOptions,
+): string {
+  const { kind } = options;
+  const { okf, unknown, typeLabel, typeName } = propertyTypeMeta(
+    key,
+    value,
+    options,
+  );
+  const warning = mismatchWarning(
+    kind,
+    !unknown && !okf && !matchesPropertyKind(kind, value),
+  );
+  const body = propertyBody(key, value, options);
   const icon = propertyIcon(key, value, unknown ? "unknown" : kind);
   return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${typeLabel}`)}><span class="metadata-property-icon">${icon}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("title", key)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", typeName)}>${body}</div>${warning}</div>`;
 }
