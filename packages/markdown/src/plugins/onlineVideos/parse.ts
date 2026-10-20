@@ -48,6 +48,7 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+
 const SOUNDCLOUD_HOSTS = new Set([
   "soundcloud.com",
   "www.soundcloud.com",
@@ -171,19 +172,18 @@ export function isVideoId(
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   const url = httpUrl(raw);
-  return url ? parseKnownHost(url.hostname.toLowerCase(), url) : undefined;
-}
-
-function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
-  if (host === "youtu.be" || YOUTUBE_HOSTS.has(host)) {
-    return parseYoutubeHost(host, url);
+  if (!url) {
+    return undefined;
+  }
+  const host = url.hostname.toLowerCase();
+  if (host === "youtu.be") {
+    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+  }
+  if (YOUTUBE_HOSTS.has(host)) {
+    return youtubeFromHost(url);
   }
   if (BILIBILI_HOSTS.has(host)) {
-    const bangumi = bilibiliBangumi(url);
-    if (bangumi) {
-      return bangumi;
-    }
-    return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+    return bilibiliFromHost(url);
   }
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
@@ -220,10 +220,7 @@ function httpUrl(raw: string): URL | undefined {
   return url;
 }
 
-function parseYoutubeHost(host: string, url: URL): OnlineVideo | undefined {
-  if (host === "youtu.be") {
-    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
-  }
+function youtubeFromHost(url: URL): OnlineVideo | undefined {
   const playlist = youtubePlaylist(url);
   if (playlist) {
     return playlist;
@@ -233,6 +230,14 @@ function parseYoutubeHost(host: string, url: URL): OnlineVideo | undefined {
       ? url.searchParams.get("v")
       : YOUTUBE_PATHS.exec(url.pathname)?.[1];
   return youtubeVideo(id ?? undefined, url);
+}
+
+function bilibiliFromHost(url: URL): OnlineVideo | undefined {
+  const bangumi = bilibiliBangumi(url);
+  if (bangumi) {
+    return bangumi;
+  }
+  return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
 }
 
 /**

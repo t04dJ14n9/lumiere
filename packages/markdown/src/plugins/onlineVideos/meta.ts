@@ -17,12 +17,12 @@ export function videoMeta(
   details: VideoDetails = {},
   kind: MediaKind = "video",
 ): string {
-  const kindLabel =
-    kind === "playlist"
-      ? "Playlist"
-      : kind === "bangumi"
-        ? "Bangumi"
-        : undefined;
+  let kindLabel: string | undefined;
+  if (kind === "playlist") {
+    kindLabel = "Playlist";
+  } else if (kind === "bangumi") {
+    kindLabel = "Bangumi";
+  }
   const known = [
     kindLabel,
     details.author,
