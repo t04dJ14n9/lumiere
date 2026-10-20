@@ -39,7 +39,8 @@ const YAML_FIELD = 76;
 /** Flex-wrap chips in the value column (default ~14px sheet width). */
 const LIST_WIDTH = 340;
 const CHIP_GAP = 6;
-const CHIP_CHROME = 30;
+/** Border + content/remove --pill-padding-x + × button (Obsidian multi-select-pill). */
+const CHIP_CHROME = 36;
 const CHAR_WIDTH = TEXT * 0.55;
 const CHIP_ROW = LINE;
 
