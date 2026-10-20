@@ -5,6 +5,7 @@ import type {} from "../livePreview/api";
 import type {} from "../resources/api";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import { embedEstimatedHeight } from "./estimated-height";
 import type { RenderBlock } from "../livePreview/api";
 import type { EditorState } from "@codemirror/state";
 import type { SyntaxNodeRef } from "@lezer/common";
@@ -57,9 +58,16 @@ function soleEmbed(
     : undefined;
 }
 
+/** MarkdownBlock with a height reserve so off-viewport remounts stay tall. */
+class EmbedBlock extends MarkdownBlock {
+  override get estimatedHeight(): number {
+    return embedEstimatedHeight(this.block.source);
+  }
+}
+
 function registerEmbedRenderers(ctx: Context): void {
   const widget = (block: RenderBlock) =>
-    new MarkdownBlock(block, ctx.render, embedEditing(block.source));
+    new EmbedBlock(block, ctx.render, embedEditing(block.source));
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "embed",
