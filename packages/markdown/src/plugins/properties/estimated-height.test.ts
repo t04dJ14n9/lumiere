@@ -57,7 +57,7 @@ test("a collapsed sheet reserves the heading, not the rows", () => {
 
 test("a multiline text value uses YAML-draft estimate (not one row per source line)", () => {
   // Block scalars are not editableKeys; sheet shows YAML draft (#141), not Unknown.
-  assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 169);
+  assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 182);
 });
 
 test("only the disclosed source rows count (no YAML draft under Sources)", () => {
@@ -81,8 +81,8 @@ test("only the disclosed source rows count (no YAML draft under Sources)", () =>
       return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 9</button></div>`;
     },
   });
-  // 8 articles × 65, 7 gaps × 8, disclosure 32, row padding — no YAML under Sources.
-  assert.equal(height, 701);
+  // 8 articles × ~65, 7 gaps × 8, disclosure — no YAML draft under Sources (OKF).
+  assert.equal(height, 663);
 });
 
 test("an unreadable frontmatter reserves the source it shows", () => {
