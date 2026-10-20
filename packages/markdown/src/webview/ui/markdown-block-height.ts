@@ -105,7 +105,9 @@ export const markdownBlockWidthTracker = ViewPlugin.fromClass(
     }
     update(update: ViewUpdate) {
       if (update.geometryChanged || update.docChanged) {
-        rememberMarkdownBlockContentWidth(update.view.contentDOM?.clientWidth ?? 0);
+        rememberMarkdownBlockContentWidth(
+          update.view.contentDOM?.clientWidth ?? 0,
+        );
       }
     }
   },
