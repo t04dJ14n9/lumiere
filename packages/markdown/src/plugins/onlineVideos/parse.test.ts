@@ -105,6 +105,46 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("arXiv abs/pdf/html pages keep new and legacy ids; versions stick", () => {
+  assert.deepEqual(parseVideoUrl("https://arxiv.org/abs/1706.03762"), {
+    provider: "arxiv",
+    id: "1706.03762",
+    page: "https://arxiv.org/abs/1706.03762",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.arxiv.org/pdf/1706.03762v7.pdf"),
+    {
+      provider: "arxiv",
+      id: "1706.03762v7",
+      page: "https://arxiv.org/abs/1706.03762v7",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://arxiv.org/html/1706.03762"), {
+    provider: "arxiv",
+    id: "1706.03762",
+    page: "https://arxiv.org/abs/1706.03762",
+  });
+  assert.deepEqual(parseVideoUrl("https://arxiv.org/abs/hep-th/9901001"), {
+    provider: "arxiv",
+    id: "hep-th/9901001",
+    page: "https://arxiv.org/abs/hep-th/9901001",
+  });
+  assert.deepEqual(parseVideoUrl("https://arxiv.org/pdf/math.GT/0309136"), {
+    provider: "arxiv",
+    id: "math.GT/0309136",
+    page: "https://arxiv.org/abs/math.GT/0309136",
+  });
+  assert.equal(parseVideoUrl("https://arxiv.org/abs/"), undefined);
+  assert.equal(
+    parseVideoUrl("https://export.arxiv.org/abs/1706.03762"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://ar5iv.labs.arxiv.org/html/1706.03762"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +169,18 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://export.arxiv.org/abs/1706.03762",
+    "https://arxiv.org.evil.test/abs/1706.03762",
+    "https://arxiv.org/abs/",
+    "https://arxiv.org/abs/1706.037",
+    "https://arxiv.org/abs/1706.037621",
+    "https://arxiv.org/abs/1706.03762v0",
+    "https://arxiv.org/abs/1706.03762/extra",
+    "https://arxiv.org/list/cs.LG/recent",
+    "https://arxiv.org/search/?query=transformer",
+    "https://arxiv.org/pdf/not-an-id",
+    "https://ar5iv.labs.arxiv.org/html/1706.03762",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and arXiv abstract/pdf/html
+ * links. Only a fully parsed and validated ID leaves this module; players and
+ * cards are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "arxiv";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or an arXiv id (new-style `1706.03762` /
+   * `1706.03762v7`, or legacy `hep-th/9901001`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -70,6 +71,19 @@ const HF_RESERVED = new Set([
   "organizations",
   "collections",
 ]);
+/**
+ * New-style YYMM.NNNNN[N][vN]; legacy archive[/subject]/YYMMNNN[vN].
+ * Kept under 32 chars so the RPC id bound stays tight.
+ */
+const ARXIV_NEW = /^\d{4}\.\d{4,5}(?:v[1-9][0-9]{0,2})?$/;
+const ARXIV_LEGACY =
+  /^[a-z]+(?:-[a-z]+)*(?:\.[A-Za-z][A-Za-z0-9-]*)?\/\d{7}(?:v[1-9][0-9]{0,2})?$/;
+/** `/abs|pdf|html/{id}` (new) or `/abs|pdf|html/{archive}/{YYMMNNN}` (legacy). */
+const ARXIV_NEW_PATH =
+  /^\/(abs|pdf|html)\/(\d{4}\.\d{4,5}(?:v[1-9][0-9]{0,2})?)(?:\.pdf)?\/?$/;
+const ARXIV_LEGACY_PATH =
+  /^\/(abs|pdf|html)\/([a-z]+(?:-[a-z]+)*(?:\.[A-Za-z][A-Za-z0-9-]*)?)\/(\d{7}(?:v[1-9][0-9]{0,2})?)(?:\.pdf)?\/?$/;
+const ARXIV_HOSTS = new Set(["arxiv.org", "www.arxiv.org"]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
@@ -79,7 +93,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return isArxivId(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +134,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (ARXIV_HOSTS.has(host)) {
+    return arxiv(url.pathname);
   }
   return undefined;
 }
@@ -159,6 +179,30 @@ function huggingface(id: string): OnlineVideo | undefined {
     id,
     page: `https://huggingface.co/${id}`,
   };
+}
+
+function arxiv(pathname: string): OnlineVideo | undefined {
+  const neu = ARXIV_NEW_PATH.exec(pathname);
+  if (neu) {
+    const id = neu[2]!;
+    if (!isArxivId(id)) {
+      return undefined;
+    }
+    return { provider: "arxiv", id, page: `https://arxiv.org/abs/${id}` };
+  }
+  const legacy = ARXIV_LEGACY_PATH.exec(pathname);
+  if (!legacy) {
+    return undefined;
+  }
+  const id = `${legacy[2]!}/${legacy[3]!}`;
+  if (!isArxivId(id)) {
+    return undefined;
+  }
+  return { provider: "arxiv", id, page: `https://arxiv.org/abs/${id}` };
+}
+
+function isArxivId(id: string): boolean {
+  return id.length <= 32 && (ARXIV_NEW.test(id) || ARXIV_LEGACY.test(id));
 }
 
 /** `90`, `90s`, `1m30s` or `1h2m3s`; anything else is ignored. */

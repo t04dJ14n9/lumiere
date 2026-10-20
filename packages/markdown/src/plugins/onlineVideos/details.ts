@@ -151,6 +151,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "arxiv") {
+      return this.arxivDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -169,9 +172,31 @@ export class VideoDetailsSource {
     return details;
   }
 
+  /**
+   * arXiv Atom export API: entry `title` as title; first author (+ " et al."
+   * when more). No cover. Body is Atom XML (not JSON).
+   */
+  private async arxivDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const xml = await this.text(
+      `https://export.arxiv.org/api/query?id_list=${encodeURIComponent(id)}&max_results=1`,
+      signal,
+    );
+    return parseArxivAtom(xml, id);
+  }
+
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
     const response = await this.request(url, signal);
     return response.json();
+  }
+
+  private async text(url: string, signal: AbortSignal): Promise<string> {
+    const response = await this.request(url, signal);
+    return new TextDecoder().decode(
+      new Uint8Array(await response.arrayBuffer()),
+    );
   }
 
   private async image(url: string, signal: AbortSignal): Promise<string> {
@@ -246,6 +271,44 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+/**
+ * arXiv Atom feed: first `<entry>` title and authors. First author alone, or
+ * first + " et al." when there are more. Falls back to the id when title is
+ * missing. Feed-level titles are ignored.
+ */
+export function parseArxivAtom(xml: unknown, fallback: string): VideoDetails {
+  if (typeof xml !== "string") {
+    throw new Error("Unexpected arXiv response");
+  }
+  const entry = /<entry>([\s\S]*?)<\/entry>/.exec(xml)?.[1];
+  if (!entry) {
+    throw new Error("Unexpected arXiv response");
+  }
+  const titleRaw = /<title[^>]*>([\s\S]*?)<\/title>/.exec(entry)?.[1];
+  const names = [...entry.matchAll(/<author>\s*<name>([\s\S]*?)<\/name>/g)].map(
+    (match) => decodeXml(match[1]!),
+  );
+  let author: string | undefined;
+  if (names.length === 1) {
+    author = names[0];
+  } else if (names.length > 1) {
+    author = `${names[0]} et al.`;
+  }
+  return withoutUndefined({
+    title: text(decodeXml(titleRaw ?? ""), 300) ?? text(fallback, 300),
+    author: text(author, 100),
+  });
+}
+
+function decodeXml(value: string): string {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

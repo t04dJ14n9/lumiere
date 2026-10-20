@@ -6,6 +6,7 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  parseArxivAtom,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
@@ -124,6 +125,80 @@ test("oEmbed responses give the YouTube title and channel", () => {
   );
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
+});
+
+const ARXIV_ATOM = `<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>arXiv Query: id_list=1706.03762</title>
+  <entry>
+    <id>http://arxiv.org/abs/1706.03762v7</id>
+    <title>Attention Is All You Need</title>
+    <summary>The dominant sequence transduction models...</summary>
+    <author><name>Ashish Vaswani</name></author>
+    <author><name>Noam Shazeer</name></author>
+    <author><name>Niki Parmar</name></author>
+  </entry>
+</feed>`;
+
+test("arXiv Atom feeds give title and first author (+ et al.)", () => {
+  assert.deepEqual(parseArxivAtom(ARXIV_ATOM, "1706.03762"), {
+    title: "Attention Is All You Need",
+    author: "Ashish Vaswani et al.",
+  });
+  assert.deepEqual(
+    parseArxivAtom(
+      `<feed><entry><title>  Solo\nPaper </title><author><name>Ada Lovelace</name></author></entry></feed>`,
+      "0001.00001",
+    ),
+    { title: "Solo Paper", author: "Ada Lovelace" },
+  );
+  assert.deepEqual(
+    parseArxivAtom(
+      `<feed><entry><title></title><author><name>Ada</name></author></entry></feed>`,
+      "hep-th/9901001",
+    ),
+    { title: "hep-th/9901001", author: "Ada" },
+  );
+  assert.throws(() => parseArxivAtom("<feed></feed>", "1706.03762"));
+  assert.throws(() => parseArxivAtom(null, "1706.03762"));
+});
+
+test("arXiv details hit the Atom export API and skip covers", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://export.arxiv.org/api/query?id_list=1706.03762&max_results=1": () =>
+      response(new TextEncoder().encode(ARXIV_ATOM), {
+        type: "application/atom+xml",
+      }),
+    "https://export.arxiv.org/api/query?id_list=hep-th%2F9901001&max_results=1":
+      () =>
+        response(
+          new TextEncoder().encode(
+            `<feed><entry><title>Old Style</title><author><name>Author One</name></author></entry></feed>`,
+          ),
+          { type: "application/atom+xml" },
+        ),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("arxiv", "1706.03762"), {
+    title: "Attention Is All You Need",
+    author: "Ashish Vaswani et al.",
+  });
+  assert.deepEqual(await source.get("arxiv", "hep-th/9901001"), {
+    title: "Old Style",
+    author: "Author One",
+  });
+  assert.equal(calls.length, 2);
+  assert.equal(
+    calls[0]!.url,
+    "https://export.arxiv.org/api/query?id_list=1706.03762&max_results=1",
+  );
+  assert.equal(calls[0]!.headers["User-Agent"], USER_AGENT);
+  assert.equal(
+    calls[1]!.url,
+    "https://export.arxiv.org/api/query?id_list=hep-th%2F9901001&max_results=1",
+  );
+  assert.deepEqual(await source.get("arxiv", "../evil"), {});
+  assert.deepEqual(await source.get("arxiv", "1706.037"), {});
 });
 
 test("data URLs are typed by the image's signature", () => {

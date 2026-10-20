@@ -85,3 +85,13 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("arXiv refuses an in-webview player", () => {
+  assert.equal(providers.arxiv.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://arxiv.org/abs/1706.03762")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://arxiv.org/abs/1706.03762")));
+  assert.throws(() => playerUrl(video("https://arxiv.org/abs/hep-th/9901001")));
+});
