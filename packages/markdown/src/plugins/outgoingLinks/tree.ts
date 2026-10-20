@@ -7,6 +7,8 @@ import type { MentionLine } from "../../markdown/mentions";
 
 export const VIEW_ID = contributionId("outgoingLinks");
 export const OPEN_COMMAND = contributionId("outgoingLinks.open");
+/** Create and open a note for an unresolved outbound linkpath. */
+export const CREATE_COMMAND = contributionId("outgoingLinks.create");
 
 /**
  * The Outgoing links view for the active note: files it links to, links whose
@@ -117,8 +119,11 @@ export class OutgoingLinksTree implements TreeSource {
         label: linkpath,
         description: countText("", count),
         icon: "circle-slash",
-        tooltip:
-          "No note has this name yet. Click the link in the note to create it.",
+        tooltip: "No note has this name yet. Click to create it.",
+        command: {
+          id: CREATE_COMMAND,
+          args: [this.note!.uri, linkpath],
+        },
       }));
   }
 
