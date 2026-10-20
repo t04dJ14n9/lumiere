@@ -20,15 +20,24 @@ const STYLED_TAGS = new Set([
   "span",
 ]);
 
-/** The element name of a plain opening tag such as `<kbd>`. */
+/**
+ * The element name of an opening tag such as `<kbd>` or `<kbd class="x">`.
+ * Attributes are allowed (Obsidian Live Preview still styles the content and
+ * hides both tags); self-closing and end tags are rejected.
+ */
 function openingName(tag: string): string | undefined {
-  const name = /^<([a-z]+)>$/i.exec(tag)?.[1]?.toLowerCase();
+  // Self-closing forms (`<br/>`, `<kbd />`) are not openers for a pair.
+  if (/\/\s*>$/u.test(tag)) {
+    return undefined;
+  }
+  const name = /^<([a-z]+)(?:\s[^>]*)?>$/i.exec(tag)?.[1]?.toLowerCase();
   return name && STYLED_TAGS.has(name) ? name : undefined;
 }
 
 /**
- * A `<kbd>…</kbd>`-style pair in a paragraph: its content takes the
- * element's look and both tags hide until the caret is in the pair.
+ * A `<kbd>…</kbd>`-style pair in a paragraph (attributes on the opener
+ * allowed): its content takes the element's look and both tags hide until
+ * the caret is in the pair.
  */
 export function decorateInlineHtml(
   node: SyntaxNodeRef,
