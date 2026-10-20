@@ -1,17 +1,18 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Dailymotion links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "dailymotion";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Dailymotion `x…` id.
    */
   readonly id: string;
-  /** YouTube start time in whole seconds. */
+  /** YouTube or Dailymotion start time in whole seconds. */
   readonly start?: number;
   /** Bilibili part number (`?p=`), 1 for the first part. */
   readonly part?: number;
@@ -35,6 +36,14 @@ const BILIBILI_HOSTS = new Set([
   "bilibili.com",
   "www.bilibili.com",
   "m.bilibili.com",
+]);
+/** Dailymotion public video ids (`x7tgad0`, `xbpuegi`). */
+const DAILYMOTION_ID = /^x[0-9a-z]{5,15}$/;
+const DAILYMOTION_PATH = /^\/(?:embed\/)?video\/(x[0-9a-z]{5,15})\/?$/;
+const DAILYMOTION_HOSTS = new Set([
+  "dailymotion.com",
+  "www.dailymotion.com",
+  "m.dailymotion.com",
 ]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
@@ -79,7 +88,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return DAILYMOTION_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +129,12 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (host === "dai.ly") {
+    return dailymotion(/^\/(x[0-9a-z]{5,15})\/?$/.exec(url.pathname)?.[1], url);
+  }
+  if (DAILYMOTION_HOSTS.has(host)) {
+    return dailymotion(DAILYMOTION_PATH.exec(url.pathname)?.[1], url);
   }
   return undefined;
 }
@@ -159,6 +177,20 @@ function huggingface(id: string): OnlineVideo | undefined {
     id,
     page: `https://huggingface.co/${id}`,
   };
+}
+
+function dailymotion(
+  id: string | undefined,
+  url: URL,
+): OnlineVideo | undefined {
+  if (!id || !DAILYMOTION_ID.test(id)) {
+    return undefined;
+  }
+  const start = seconds(url.searchParams.get("start"));
+  const page = `https://www.dailymotion.com/video/${id}${start ? `?start=${start}` : ""}`;
+  return start
+    ? { provider: "dailymotion", id, start, page }
+    : { provider: "dailymotion", id, page };
 }
 
 /** `90`, `90s`, `1m30s` or `1h2m3s`; anything else is ignored. */

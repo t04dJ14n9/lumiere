@@ -5,8 +5,10 @@ import {
   USER_AGENT,
   VideoDetailsSource,
   coverUrl,
+  dailymotionThumbnail,
   imageDataUrl,
   parseBilibiliView,
+  parseDailymotionVideo,
   parseHuggingFaceModel,
   parseOEmbed,
 } from "./details";
@@ -124,6 +126,84 @@ test("oEmbed responses give the YouTube title and channel", () => {
   );
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
+});
+
+test("Dailymotion video API responses give title, author, length and dmcdn cover", () => {
+  const body = {
+    title: "Midnight Sun | Iceland",
+    "owner.screenname": "Dailymotion player demo",
+    duration: 87,
+    thumbnail_480_url: "https://s2.dmcdn.net/v/SBL5q1g4216Xv_gel/x480",
+  };
+  assert.deepEqual(parseDailymotionVideo(body), {
+    details: {
+      title: "Midnight Sun | Iceland",
+      author: "Dailymotion player demo",
+      duration: 87,
+    },
+    cover: "https://s2.dmcdn.net/v/SBL5q1g4216Xv_gel/x480",
+  });
+  assert.throws(() =>
+    parseDailymotionVideo({ error: { code: 404, message: "not found" } }),
+  );
+  assert.throws(() => parseDailymotionVideo("<html>"));
+});
+
+test("Dailymotion thumbnails are accepted only from s1–s3.dmcdn.net /v/ paths", () => {
+  assert.equal(
+    dailymotionThumbnail("https://s1.dmcdn.net/v/SBL5q1g4216Cpp0_n"),
+    "https://s1.dmcdn.net/v/SBL5q1g4216Cpp0_n",
+  );
+  assert.equal(
+    dailymotionThumbnail("https://s2.dmcdn.net/v/SBL5q1g4216Xv_gel/x480"),
+    "https://s2.dmcdn.net/v/SBL5q1g4216Xv_gel/x480",
+  );
+  for (const value of [
+    "https://s4.dmcdn.net/v/abc/x480",
+    "https://evil.test/v/abc/x480",
+    "https://s2.dmcdn.net.evil.test/v/abc",
+    "https://s2.dmcdn.net/other/abc",
+    "https://s2.dmcdn.net/v/abc?x=1",
+    "https://s2.dmcdn.net:8080/v/abc",
+    "https://s2.dmcdn.net/v/../abc",
+    "javascript:alert(1)",
+    "",
+    undefined,
+  ]) {
+    assert.equal(dailymotionThumbnail(value), undefined, String(value));
+  }
+});
+
+test("a Dailymotion lookup fetches the video API and a CDN thumbnail", async () => {
+  const thumb = "https://s2.dmcdn.net/v/SBL5q1g4216Xv_gel/x480";
+  const fields = "title,owner.screenname,duration,thumbnail_480_url";
+  const { fetch, calls } = fakeFetch({
+    "https://api.dailymotion.com/video/x7tgad0": () =>
+      response({
+        title: "Midnight Sun | Iceland",
+        "owner.screenname": "Dailymotion player demo",
+        duration: 87.4,
+        thumbnail_480_url: thumb,
+      }),
+    "https://s2.dmcdn.net/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "dailymotion",
+    "x7tgad0",
+  );
+  assert.equal(details.title, "Midnight Sun | Iceland");
+  assert.equal(details.author, "Dailymotion player demo");
+  assert.equal(details.duration, 87);
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://api.dailymotion.com/video/x7tgad0?fields=${encodeURIComponent(fields)}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
 
 test("data URLs are typed by the image's signature", () => {
@@ -276,6 +356,7 @@ test("invalid IDs never reach the network, and at most four lookups run at once"
   const source = new VideoDetailsSource({ fetch, maxEntries: 3 });
   assert.deepEqual(await source.get("youtube", "../../evil?"), {});
   assert.deepEqual(await source.get("bilibili", "BV1/../x"), {});
+  assert.deepEqual(await source.get("dailymotion", "x7tg"), {});
   assert.equal(peak, 0);
   const ids = Array.from({ length: 10 }, (_, i) => `dQw4w9WgXc${i}`);
   await Promise.all(ids.map((id) => source.get("youtube", id)));

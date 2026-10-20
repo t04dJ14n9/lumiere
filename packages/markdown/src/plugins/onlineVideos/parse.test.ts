@@ -45,6 +45,35 @@ test("YouTube start times in seconds or h/m/s", () => {
   assert.equal(parseVideoUrl(`https://youtu.be/${ID}?t=0`)?.start, undefined);
 });
 
+test("Dailymotion video, embed and dai.ly links give the x… id", () => {
+  assert.deepEqual(parseVideoUrl("https://www.dailymotion.com/video/x7tgad0"), {
+    provider: "dailymotion",
+    id: "x7tgad0",
+    page: "https://www.dailymotion.com/video/x7tgad0",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.dailymotion.com/embed/video/x7tgad0/"),
+    {
+      provider: "dailymotion",
+      id: "x7tgad0",
+      page: "https://www.dailymotion.com/video/x7tgad0",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://dai.ly/x7tgad0"), {
+    provider: "dailymotion",
+    id: "x7tgad0",
+    page: "https://www.dailymotion.com/video/x7tgad0",
+  });
+  assert.equal(
+    parseVideoUrl("https://www.dailymotion.com/video/x7tgad0?start=42")?.start,
+    42,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.dailymotion.com/video/x7tgad0?start=42")?.page,
+    "https://www.dailymotion.com/video/x7tgad0?start=42",
+  );
+});
+
 test("Bilibili BV and av links keep the part number", () => {
   assert.deepEqual(
     parseVideoUrl("https://www.bilibili.com/video/BV1DRHU6LELy/?spm_id_from=x"),
@@ -129,6 +158,12 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://www.dailymotion.com/video/",
+    "https://www.dailymotion.com/video/SHORT",
+    "https://www.dailymotion.com/video/x7tgad0/extra",
+    "https://evil.dailymotion.com.evil.test/video/x7tgad0",
+    "https://dai.ly/x7tg",
+    "https://www.dailymotion.com/playlist/x1",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

@@ -42,6 +42,12 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
+/** Dailymotion CDN thumbnails (`thumbnail_480_url`). */
+const DAILYMOTION_THUMB_HOSTS = new Set([
+  "s1.dmcdn.net",
+  "s2.dmcdn.net",
+  "s3.dmcdn.net",
+]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -151,6 +157,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "dailymotion") {
+      return this.dailymotionDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -162,6 +171,26 @@ export class VideoDetailsSource {
       const image = await this.image(cover + COVER_SIZE, signal).catch(
         () => undefined,
       );
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
+  /** Dailymotion video API, plus a dmcdn cover when the thumbnail is allowed. */
+  private async dailymotionDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const fields = "title,owner.screenname,duration,thumbnail_480_url";
+    const body = await this.json(
+      `https://api.dailymotion.com/video/${id}?fields=${encodeURIComponent(fields)}`,
+      signal,
+    );
+    const { details, cover } = parseDailymotionVideo(body);
+    if (cover) {
+      const image = await this.image(cover, signal).catch(() => undefined);
       if (image !== undefined) {
         details.cover = image;
       }
@@ -205,6 +234,58 @@ export class VideoDetailsSource {
     }
     return response;
   }
+}
+
+/** Dailymotion video API details and a dmcdn thumbnail when allowlisted. */
+export function parseDailymotionVideo(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body) || isRecord(body.error)) {
+    throw new Error("Unexpected Dailymotion response");
+  }
+  const duration =
+    typeof body.duration === "number" &&
+    Number.isFinite(body.duration) &&
+    body.duration > 0 &&
+    body.duration < 1_000_000
+      ? Math.floor(body.duration)
+      : undefined;
+  const cover = dailymotionThumbnail(body.thumbnail_480_url);
+  return {
+    details: withoutUndefined({
+      title: text(body.title, 300),
+      author: text(body["owner.screenname"], 100),
+      duration,
+    }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/** Dailymotion CDN thumbnail when it is a known `s*.dmcdn.net` host. */
+export function dailymotionThumbnail(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !DAILYMOTION_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/v\/[A-Za-z0-9_-]+(?:\/x(?:120|240|360|480|720))?$/.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  return `https://${url.hostname}${url.pathname}`;
 }
 
 export function parseOEmbed(body: unknown): VideoDetails {
