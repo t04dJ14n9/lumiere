@@ -5,7 +5,8 @@ as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), YouTube playlists (`/playlist?list=` and
 `/embed/videoseries?list=`), `![](https://www.bilibili.com/video/BV…)` or
-`…/video/av123`, with `?p=` for a part, Hugging Face
+`…/video/av123`, with `?p=` for a part, bangumi `…/bangumi/play/ep…` or
+`…/ss…`, Hugging Face
 `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
 `/tree/…` normalised away), Spotify
 `open.spotify.com/{track|album|playlist|episode|show}/…`, SoundCloud
@@ -39,9 +40,9 @@ player.
 `parse.ts` accepts only the hosts and path shapes above and validated IDs
 (11 characters of `[A-Za-z0-9_-]` for YouTube videos, a `PL`/`UU`/`LL`/`FL`/
 `OL`/`RD` prefix plus 10–64 characters for playlists, `BV` plus 10
-alphanumerics or `av` digits for Bilibili, Hugging Face model ids, Spotify
-`type:22-char` ids, SoundCloud `user/slug` paths, npm package names).
-`player.ts` builds the player URL from the parsed
+alphanumerics or `av` digits for Bilibili, `ep…` / `ss…` for bangumi,
+Hugging Face model ids, Spotify `type:22-char` ids, SoundCloud `user/slug`
+paths, npm package names). `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
 `sandbox="allow-scripts allow-same-origin allow-presentation"`,
@@ -62,12 +63,15 @@ ID alone, and the webview CSP allows no network (`connect-src` is the
 webview only), so the extension host looks them up (`host.ts`, `details.ts`)
 when a trusted card asks over the `onlineVideos.details` RPC:
 
-- Bilibili: `https://api.bilibili.com/x/web-interface/view?bvid=…` (or
-  `aid=`), reading `data.title`, `data.owner.name`, `data.duration` and
+- Bilibili videos: `https://api.bilibili.com/x/web-interface/view?bvid=…`
+  (or `aid=`), reading `data.title`, `data.owner.name`, `data.duration` and
   `data.pic`. The cover is fetched only from `i0`–`i2.hdslb.com` under
   `/bfs/`, scaled by Bilibili to 480×270 (`@480w_270h_1c.jpg`, about
   25 KB), limited to 512 KB, typed by its JPEG/PNG/GIF/WebP signature and
   handed to the webview as a `data:` URL, so `img-src` is not loosened.
+- Bilibili bangumi: `https://api.bilibili.com/pgc/view/web/season` with
+  `ep_id=` or `season_id=`; episode titles combine season + long title,
+  duration is converted from milliseconds, cover from the episode or season.
 - YouTube: keyless oEmbed (`https://www.youtube.com/oembed`) for the title
   and channel; the still stays the ID-derived `i.ytimg.com` image. Playlists
   use the same endpoint and may show its `i.ytimg.com` thumbnail as a cover.
@@ -138,12 +142,12 @@ off, the links fall back to Embeds (a remote image).
 Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's,
 YouTube's, Hugging Face's, Spotify's, SoundCloud's and npm's public
 endpoints, which may change or rate-limit. YouTube playlists
-(`/playlist?list=` and embed videoseries) render as cards with an oEmbed
-title and optional cover. Channels, Bilibili bangumi and other providers
-stay images. Hugging Face, Spotify, SoundCloud and npm have no in-webview
-player (Open on provider only). Hub redirects (legacy single-segment model
-ids) fail the host lookup because redirects are refused; the card still
-opens the page. Spotify uses keyless oEmbed
+(`/playlist?list=` and embed videoseries) and Bilibili bangumi
+(`/bangumi/play/ep…` / `ss…`) render as cards. Channels and other
+providers stay images. Bangumi, Hugging Face, Spotify, SoundCloud and npm
+have no in-webview player (Open on provider only). Hub redirects (legacy
+single-segment model ids) fail the host lookup because redirects are
+refused; the card still opens the page. Spotify uses keyless oEmbed
 (`https://open.spotify.com/oembed`) for title and CDN cover. SoundCloud
 uses keyless oEmbed (`https://soundcloud.com/oembed`) for title and sndcdn
 cover. npm uses the keyless registry for description and author.

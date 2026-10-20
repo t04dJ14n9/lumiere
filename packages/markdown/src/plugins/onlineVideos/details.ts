@@ -180,7 +180,7 @@ export class VideoDetailsSource {
       );
       return parseNpmPackage(body);
     }
-    return this.fetchBilibiliView(id, signal);
+    return this.fetchBilibili(id, kind, signal);
   }
 
   private async fetchYoutube(
@@ -234,10 +234,30 @@ export class VideoDetailsSource {
     return details;
   }
 
-  private async fetchBilibiliView(
+  private async fetchBilibili(
     id: string,
+    kind: MediaKind,
     signal: AbortSignal,
   ): Promise<VideoDetails> {
+    if (kind === "bangumi") {
+      const query = id.startsWith("ep")
+        ? `ep_id=${id.slice(2)}`
+        : `season_id=${id.slice(2)}`;
+      const body = await this.json(
+        `https://api.bilibili.com/pgc/view/web/season?${query}`,
+        signal,
+      );
+      const { details, cover } = parseBilibiliSeason(body, id);
+      if (cover) {
+        const image = await this.image(cover + COVER_SIZE, signal).catch(
+          () => undefined,
+        );
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -370,6 +390,55 @@ export function parseBilibiliView(body: unknown): {
       author: text(owner.name, 100),
       duration,
     }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/** Season API details; `id` is `ep…` or `ss…` so an episode can pick its row. */
+export function parseBilibiliSeason(
+  body: unknown,
+  id: string,
+): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body) || body.code !== 0 || !isRecord(body.result)) {
+    throw new Error("Unexpected Bilibili bangumi response");
+  }
+  const result = body.result;
+  const seasonTitle = text(result.title, 300) ?? text(result.season_title, 300);
+  const up = isRecord(result.up_info) ? result.up_info : {};
+  const author = text(up.uname, 100);
+  const episodes = Array.isArray(result.episodes) ? result.episodes : [];
+  if (id.startsWith("ep")) {
+    const epId = Number(id.slice(2));
+    const episode = episodes.find(
+      (row) => isRecord(row) && row.id === epId,
+    ) as Record<string, unknown> | undefined;
+    const epLabel =
+      text(episode?.long_title, 200) ?? text(episode?.title, 100);
+    const title =
+      seasonTitle && epLabel
+        ? `${seasonTitle} · ${epLabel}`.slice(0, 300)
+        : (epLabel ?? seasonTitle);
+    // Bangumi episode duration is milliseconds.
+    const ms =
+      typeof episode?.duration === "number" &&
+      Number.isInteger(episode.duration) &&
+      episode.duration > 0 &&
+      episode.duration < 1_000_000_000
+        ? episode.duration
+        : undefined;
+    const duration = ms !== undefined ? Math.floor(ms / 1000) : undefined;
+    const cover = coverUrl(episode?.cover) ?? coverUrl(result.cover);
+    return {
+      details: withoutUndefined({ title, author, duration }),
+      ...(cover ? { cover } : {}),
+    };
+  }
+  const cover = coverUrl(result.cover) ?? coverUrl(result.square_cover);
+  return {
+    details: withoutUndefined({ title: seasonTitle, author }),
     ...(cover ? { cover } : {}),
   };
 }

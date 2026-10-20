@@ -17,8 +17,10 @@ export function videoMeta(
   details: VideoDetails = {},
   kind: MediaKind = "video",
 ): string {
+  const kindLabel =
+    kind === "playlist" ? "Playlist" : kind === "bangumi" ? "Bangumi" : undefined;
   const known = [
-    kind === "playlist" ? "Playlist" : undefined,
+    kindLabel,
     details.author,
     details.duration ? formatDuration(details.duration) : undefined,
   ].filter((part): part is string => Boolean(part));

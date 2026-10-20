@@ -70,8 +70,8 @@ export const PLAYER_SANDBOX =
   "allow-scripts allow-same-origin allow-presentation";
 
 export function playerUrl(video: OnlineVideo): string {
-  if (video.kind === "playlist") {
-    throw new Error("Playlists have no in-webview player");
+  if (video.kind === "playlist" || video.kind === "bangumi") {
+    throw new Error(`${video.kind} has no in-webview player`);
   }
   const provider = providers[video.provider];
   if (video.provider === "huggingface") {
