@@ -51,19 +51,29 @@ export const linksHost: Plugin<{ panel: PanelShell }> = {
  */
 function registerUnresolvedLinks(ctx: Context, panel: PanelShell): void {
   let sent = "";
-  const current = () => {
-    const paths = unresolvedPaths(
-      ctx.vault,
-      notePath(ctx.vault.root, panel.document.uri),
-    );
-    sent = paths.join("\n");
+  const forUri = (uri: string): string[] => {
+    try {
+      if (!uri.startsWith(ctx.vault.root)) {
+        return [];
+      }
+      return unresolvedPaths(ctx.vault, notePath(ctx.vault.root, uri));
+    } catch {
+      return [];
+    }
+  };
+  const current = (params: { source?: string } = {}) => {
+    const uri = params.source ?? panel.document.uri;
+    const paths = forUri(uri);
+    if (!params.source) {
+      sent = paths.join("\n");
+    }
     return paths;
   };
   ctx.effect(() => ctx.rpc.handle(protocol, "unresolved", current));
   ctx.effect(() =>
     ctx.vault.onDidResolve(() => {
       const previous = sent;
-      const paths = current();
+      const paths = current({});
       if (sent !== previous) {
         ctx.rpc.notify(protocol, "unresolvedChanged", paths, {
           coalesce: true,
