@@ -29,10 +29,10 @@ function wireTagRefresh(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const refresh = async () => {
     const vault = await currentVault(ctx.activeEditor, ctx.vaults);
-    const sort = ctx.settings.get<string>(SORT_SETTING, "frequency");
+    const sort = String(ctx.settings.get(SORT_SETTING, "frequency"));
     source.update(vault?.index, {
       sort: sort === "name" ? "name" : "frequency",
-      nested: ctx.settings.get<boolean>(NESTED_SETTING, true),
+      nested: Boolean(ctx.settings.get(NESTED_SETTING, true)),
     });
     tree.setMessage(message(vault, source.isEmpty));
     tree.refresh();
@@ -162,8 +162,8 @@ async function syncTagViewContext(ctx: {
   };
 }): Promise<void> {
   const frequency =
-    ctx.settings.get<string>(SORT_SETTING, "frequency") === "frequency";
-  const nested = ctx.settings.get<boolean>(NESTED_SETTING, true);
+    String(ctx.settings.get(SORT_SETTING, "frequency")) === "frequency";
+  const nested = Boolean(ctx.settings.get(NESTED_SETTING, true));
   await ctx.hostCommands.execute(
     "setContext",
     SORT_FREQUENCY_CONTEXT,
