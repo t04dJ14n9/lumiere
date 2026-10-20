@@ -6,6 +6,8 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  peertubePage,
+  peertubeThumbnail,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
@@ -329,5 +331,82 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("peertubePage rebuilds allowlisted watch URLs", () => {
+  assert.equal(
+    peertubePage("tilvids.com:9mp9wuRiWvJQ5Mf8xg5UY1"),
+    "https://tilvids.com/w/9mp9wuRiWvJQ5Mf8xg5UY1",
+  );
+  assert.throws(() => peertubePage("evil.example:9mp9wuRiWvJQ5Mf8xg5UY1"));
+});
+
+test("peertubeThumbnail accepts same-host lazy-static thumbnails only", () => {
+  assert.equal(
+    peertubeThumbnail(
+      {
+        thumbnail_url:
+          "https://tilvids.com/lazy-static/thumbnails/1030afd4-c689-4f2b-bbb0-b9935c33c6db.jpg",
+      },
+      "tilvids.com",
+    ),
+    "https://tilvids.com/lazy-static/thumbnails/1030afd4-c689-4f2b-bbb0-b9935c33c6db.jpg",
+  );
+  for (const [body, host] of [
+    [
+      {
+        thumbnail_url:
+          "https://evil.example/lazy-static/thumbnails/1030afd4-c689-4f2b-bbb0-b9935c33c6db.jpg",
+      },
+      "tilvids.com",
+    ],
+    [
+      {
+        thumbnail_url:
+          "https://tilvids.com/lazy-static/thumbnails/1030afd4-c689-4f2b-bbb0-b9935c33c6db.jpg?x=1",
+      },
+      "tilvids.com",
+    ],
+    [
+      {
+        thumbnail_url:
+          "https://tilvids.com/static/thumbnails/1030afd4-c689-4f2b-bbb0-b9935c33c6db.jpg",
+      },
+      "tilvids.com",
+    ],
+  ] as const) {
+    assert.equal(peertubeThumbnail(body, host), undefined);
+  }
+});
+
+test("a PeerTube lookup uses instance oEmbed and may fetch the cover", async () => {
+  const thumb =
+    "https://tilvids.com/lazy-static/thumbnails/1030afd4-c689-4f2b-bbb0-b9935c33c6db.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://tilvids.com/services/oembed": () =>
+      response({
+        title: "video platforms",
+        author_name: "Mticas Photography",
+        thumbnail_url: thumb,
+      }),
+    "https://tilvids.com/lazy-static/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "peertube",
+    "tilvids.com:9mp9wuRiWvJQ5Mf8xg5UY1",
+  );
+  assert.equal(details.title, "video platforms");
+  assert.equal(details.author, "Mticas Photography");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://tilvids.com/services/oembed?url=${encodeURIComponent("https://tilvids.com/w/9mp9wuRiWvJQ5Mf8xg5UY1")}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

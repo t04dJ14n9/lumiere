@@ -105,6 +105,42 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("PeerTube allowlisted instance watch/embed links", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://tilvids.com/w/9mp9wuRiWvJQ5Mf8xg5UY1"),
+    {
+      provider: "peertube",
+      id: "tilvids.com:9mp9wuRiWvJQ5Mf8xg5UY1",
+      page: "https://tilvids.com/w/9mp9wuRiWvJQ5Mf8xg5UY1",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://video.blender.org/videos/watch/4815edd4-2867-412b-86e6-da69b177c7f5",
+    ),
+    {
+      provider: "peertube",
+      id: "video.blender.org:4815edd4-2867-412b-86e6-da69b177c7f5",
+      page: "https://video.blender.org/w/4815edd4-2867-412b-86e6-da69b177c7f5",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://peertube.opencloud.lu/videos/embed/1J49cZ9NvZy1sLmx8dJKDi",
+    ),
+    {
+      provider: "peertube",
+      id: "peertube.opencloud.lu:1J49cZ9NvZy1sLmx8dJKDi",
+      page: "https://peertube.opencloud.lu/w/1J49cZ9NvZy1sLmx8dJKDi",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://evil.example/w/9mp9wuRiWvJQ5Mf8xg5UY1"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://tilvids.com/accounts/foo"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +165,8 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://evil.example/w/9mp9wuRiWvJQ5Mf8xg5UY1",
+    "https://tilvids.com/accounts/foo",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

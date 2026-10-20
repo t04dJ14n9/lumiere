@@ -4,7 +4,7 @@
  * failure resolves to `{}`, so the card simply stays as it is.
  */
 import type { VideoProvider } from "./parse";
-import { isVideoId } from "./parse";
+import { isVideoId, PEERTUBE_HOSTS } from "./parse";
 
 import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
@@ -151,6 +151,24 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+
+    if (provider === "peertube") {
+      const page = peertubePage(id);
+      const host = page.slice("https://".length).split("/", 1)[0]!;
+      const body = await this.json(
+        `https://${host}/services/oembed?url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = peertubeThumbnail(body, host);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +264,55 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** Rebuild `https://{host}/w/{video}` from a PeerTube `{host}:{video}` id. */
+export function peertubePage(id: string): string {
+  const match =
+    /^([a-z0-9][a-z0-9.-]{0,62}):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Za-z0-9]{18,24})$/.exec(
+      id,
+    );
+  if (!match || !PEERTUBE_HOSTS.has(match[1]!)) {
+    throw new Error("Invalid PeerTube id");
+  }
+  return `https://${match[1]}/w/${match[2]}`;
+}
+
+/**
+ * PeerTube oEmbed `thumbnail_url` when on the same allowlisted host under
+ * `/lazy-static/thumbnails/{uuid}.jpg`.
+ */
+export function peertubeThumbnail(
+  body: unknown,
+  host: string,
+): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  if (!PEERTUBE_HOSTS.has(host)) {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.thumbnail_url);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname.toLowerCase() !== host ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/lazy-static\/thumbnails\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpe?g$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://${host}${url.pathname}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

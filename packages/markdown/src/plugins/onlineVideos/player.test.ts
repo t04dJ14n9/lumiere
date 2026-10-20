@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("PeerTube refuses an in-webview player", () => {
+  assert.equal(providers.peertube.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://tilvids.com/w/9mp9wuRiWvJQ5Mf8xg5UY1")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://tilvids.com/w/9mp9wuRiWvJQ5Mf8xg5UY1")),
+  );
+});

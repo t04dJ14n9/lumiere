@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and PeerTube links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "peertube";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a PeerTube
+   * `{host}:{uuid|shortUUID}` id on an allowlisted instance.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -23,6 +24,33 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** PeerTube UUID or shortUUID. */
+const PEERTUBE_VIDEO =
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Za-z0-9]{18,24})$/;
+const PEERTUBE_ID =
+  /^([a-z0-9][a-z0-9.-]{0,62}):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Za-z0-9]{18,24})$/;
+const PEERTUBE_PATH =
+  /^\/(?:w|videos\/watch|videos\/embed)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Za-z0-9]{18,24})\/?$/;
+/**
+ * Public PeerTube instances we will call. Covers and oEmbed stay on the same
+ * host; unknown instances stay images.
+ */
+export const PEERTUBE_HOSTS = new Set([
+  "framatube.org",
+  "peertube.tv",
+  "tilvids.com",
+  "video.blender.org",
+  "peertube.opencloud.lu",
+  "phijkchu.com",
+  "skeptikon.fr",
+  "p.lu",
+  "video.antopie.org",
+  "peertube.uno",
+  "tube.tchncs.de",
+  "peertube.social",
+  "sepiatube.fr",
+  "peer.tube",
+]);
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -79,7 +107,11 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  const match = PEERTUBE_ID.exec(id);
+  return !!match && PEERTUBE_HOSTS.has(match[1]!);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +149,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+
+  if (PEERTUBE_HOSTS.has(host)) {
+    return peertube(host, PEERTUBE_PATH.exec(url.pathname)?.[1]);
   }
   return undefined;
 }
@@ -158,6 +194,21 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function peertube(
+  host: string,
+  video: string | undefined,
+): OnlineVideo | undefined {
+  if (!video || !PEERTUBE_VIDEO.test(video) || !PEERTUBE_HOSTS.has(host)) {
+    return undefined;
+  }
+  const id = `${host}:${video}`;
+  return {
+    provider: "peertube",
+    id,
+    page: `https://${host}/w/${video}`,
   };
 }
 
