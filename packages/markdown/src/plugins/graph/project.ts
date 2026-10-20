@@ -82,7 +82,7 @@ export function buildConceptGraph(input: {
     if (!source || !note.metadata) {
       continue;
     }
-    for (const link of bodyLinks(note.metadata)) {
+    for (const link of noteLinks(note.metadata)) {
       const hit = classifyHit(input, source.path, link, byPath);
       if (hit) {
         recordHit(source, hit, counts, neighbours);
@@ -134,8 +134,13 @@ function isConcept(bundleRoot: string, path: string): boolean {
   );
 }
 
-function bodyLinks(metadata: NoteMetadata) {
-  return [...metadata.links, ...metadata.embeds];
+/** Body links/embeds plus frontmatter wikilinks (Obsidian graph includes both). */
+function noteLinks(metadata: NoteMetadata) {
+  return [
+    ...metadata.links,
+    ...metadata.embeds,
+    ...metadata.frontmatterLinks,
+  ];
 }
 
 function classifyHit(
@@ -148,7 +153,7 @@ function classifyHit(
     ): ResolvedTarget;
   },
   sourcePath: string,
-  link: ReturnType<typeof bodyLinks>[number],
+  link: ReturnType<typeof noteLinks>[number],
   nodes: Map<string, ConceptNode>,
 ): EdgeHit | undefined {
   const linktext = linkpathOf(link);
