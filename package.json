@@ -88,6 +88,26 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.backlinks.sortByAlphabetical",
+        "title": "✓ File name (A to Z)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.backlinks.sortByAlphabeticalReverse",
+        "title": "✓ File name (Z to A)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.backlinks.sortByModifiedTime",
+        "title": "✓ Modified time (new to old)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.backlinks.sortByModifiedTimeReverse",
+        "title": "✓ Modified time (old to new)",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.bridge.copyEnvelope",
         "title": "Copy Bridge Envelope",
         "category": "Lumière"
@@ -1364,6 +1384,22 @@
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.assets.enabled"
         },
         {
+          "command": "lumiere.markdown.backlinks.sortByAlphabetical",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.sortByAlphabeticalReverse",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.sortByModifiedTime",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.sortByModifiedTimeReverse",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.bridge.copyEnvelope",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.bridge.enabled"
         },
@@ -2152,6 +2188,26 @@
       ],
       "view/title": [
         {
+          "command": "lumiere.markdown.backlinks.sortByAlphabetical",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.sortAlphabetical",
+          "group": "backlinksSort@1"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.sortByAlphabeticalReverse",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.sortAlphabeticalReverse",
+          "group": "backlinksSort@1"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.sortByModifiedTime",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.sortByModifiedTime",
+          "group": "backlinksSort@1"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.sortByModifiedTimeReverse",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.sortByModifiedTimeReverse",
+          "group": "backlinksSort@1"
+        },
+        {
           "command": "lumiere.markdown.outline.expandAll",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && view == lumiere.markdown.outline",
           "group": "navigation@1"
@@ -2676,6 +2732,17 @@
           "lumiere.markdown.autoPair.markdown": {
             "type": "boolean",
             "default": true,
+            "scope": "resource"
+          },
+          "lumiere.markdown.backlinks.sortOrder": {
+            "enum": [
+              "alphabetical",
+              "alphabeticalReverse",
+              "byModifiedTime",
+              "byModifiedTimeReverse"
+            ],
+            "default": "alphabetical",
+            "description": "Order of Linked and Unlinked mentions in the Backlinks view (Obsidian sortOrder). Created-time sorts are omitted: the vault index has mtime only.",
             "scope": "resource"
           },
           "lumiere.markdown.editor.defaultMode": {

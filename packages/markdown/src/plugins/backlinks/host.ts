@@ -96,15 +96,17 @@ function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
     );
   };
   ctx.effect(() => ctx.settings.onChange(syncContext));
-  ctx.effect(() => async () => {
-    for (const key of [
-      SORT_ALPHABETICAL_CONTEXT,
-      SORT_ALPHABETICAL_REVERSE_CONTEXT,
-      SORT_MODIFIED_CONTEXT,
-      SORT_MODIFIED_REVERSE_CONTEXT,
-    ]) {
-      await ctx.hostCommands.execute("setContext", key, undefined);
-    }
+  ctx.effect(() => () => {
+    void (async () => {
+      for (const key of [
+        SORT_ALPHABETICAL_CONTEXT,
+        SORT_ALPHABETICAL_REVERSE_CONTEXT,
+        SORT_MODIFIED_CONTEXT,
+        SORT_MODIFIED_REVERSE_CONTEXT,
+      ]) {
+        await ctx.hostCommands.execute("setContext", key, undefined);
+      }
+    })().catch(() => undefined);
   });
   syncContext();
 }
