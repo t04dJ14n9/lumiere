@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "rubygems";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,26 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+const GEM_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?$/;
+
+/** Gem page; optional `/versions/{ver}` or trailing paths normalised away. */
+const GEM_PATH =
+  /^\/gems\/([A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?)(?:\/.*)?\/?$/;
+
+const GEM_HOSTS = new Set(["rubygems.org", "www.rubygems.org"]);
+
+function rubygems(name: string): OnlineVideo | undefined {
+  const id = name.toLowerCase();
+  if (!GEM_NAME.test(id) || id.length > 100) {
+    return undefined;
+  }
+  return {
+    provider: "rubygems",
+    id,
+    page: `https://rubygems.org/gems/${id}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +99,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return id.length <= 100 && GEM_NAME.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +140,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (GEM_HOSTS.has(host)) {
+    const match = GEM_PATH.exec(url.pathname);
+    return match ? rubygems(match[1]!) : undefined;
   }
   return undefined;
 }

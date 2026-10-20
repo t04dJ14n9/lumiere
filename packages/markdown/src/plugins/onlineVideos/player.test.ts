@@ -85,3 +85,12 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("RubyGems refuses an in-webview player", () => {
+  assert.equal(providers.rubygems.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://rubygems.org/gems/rails")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://rubygems.org/gems/rails")));
+});

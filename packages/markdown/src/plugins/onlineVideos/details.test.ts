@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseRubyGemsGem,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -330,4 +331,57 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("parseRubyGemsGem prefers info and authors", () => {
+  assert.deepEqual(
+    parseRubyGemsGem({
+      name: "rails",
+      info: "Ruby on Rails is a full-stack web framework.",
+      authors: "David Heinemeier Hansson",
+    }),
+    {
+      title: "Ruby on Rails is a full-stack web framework.",
+      author: "David Heinemeier Hansson",
+    },
+  );
+  assert.deepEqual(
+    parseRubyGemsGem({
+      name: "rake",
+      info: "",
+      authors: "Jim Weirich",
+    }),
+    { title: "rake", author: "Jim Weirich" },
+  );
+  assert.deepEqual(parseRubyGemsGem({ name: "left-pad" }), {
+    title: "left-pad",
+  });
+});
+
+test("a RubyGems lookup fetches the gem JSON document", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://rubygems.org/api/v1/gems/rails.json": () =>
+      response({
+        name: "rails",
+        info: "Ruby on Rails is a full-stack web framework.",
+        authors: "David Heinemeier Hansson",
+      }),
+    "https://rubygems.org/api/v1/gems/rake.json": () =>
+      response({
+        name: "rake",
+        info: "Rake is a Make-like program implemented in Ruby.",
+        authors: "Jim Weirich",
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("rubygems", "rails"), {
+    title: "Ruby on Rails is a full-stack web framework.",
+    author: "David Heinemeier Hansson",
+  });
+  assert.deepEqual(await source.get("rubygems", "rake"), {
+    title: "Rake is a Make-like program implemented in Ruby.",
+    author: "Jim Weirich",
+  });
+  assert.deepEqual(await source.get("rubygems", "../evil"), {});
+  assert.equal(calls.length, 2);
 });

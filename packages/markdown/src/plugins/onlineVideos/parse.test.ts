@@ -133,3 +133,30 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("RubyGems gem pages and version tails", () => {
+  assert.deepEqual(parseVideoUrl("https://rubygems.org/gems/rails"), {
+    provider: "rubygems",
+    id: "rails",
+    page: "https://rubygems.org/gems/rails",
+  });
+  assert.deepEqual(parseVideoUrl("https://www.rubygems.org/gems/Rails/"), {
+    provider: "rubygems",
+    id: "rails",
+    page: "https://rubygems.org/gems/rails",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://rubygems.org/gems/rails/versions/8.1.4"),
+    {
+      provider: "rubygems",
+      id: "rails",
+      page: "https://rubygems.org/gems/rails",
+    },
+  );
+  assert.equal(parseVideoUrl("https://rubygems.org/gems/.hidden"), undefined);
+  assert.equal(
+    parseVideoUrl("https://rubygems.org/search?query=rails"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://api.rubygems.org/gems/rails"), undefined);
+});

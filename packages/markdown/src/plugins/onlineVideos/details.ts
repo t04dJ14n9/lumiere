@@ -151,6 +151,13 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "rubygems") {
+      const body = await this.json(
+        `https://rubygems.org/api/v1/gems/${encodeURIComponent(id)}.json`,
+        signal,
+      );
+      return parseRubyGemsGem(body);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +214,15 @@ export class VideoDetailsSource {
   }
 }
 
+export function parseRubyGemsGem(body: unknown): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected RubyGems response");
+  }
+  return withoutUndefined({
+    title: text(body.info, 300) ?? text(body.name, 300),
+    author: text(body.authors, 100),
+  });
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
