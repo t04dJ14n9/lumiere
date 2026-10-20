@@ -4,6 +4,7 @@ import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
+import { markdownBlockEstimatedHeight } from "./markdown-block-height";
 import { CLICK_SELECT } from "./pointer-selection";
 
 /** A span of a block's source, as offsets into it. */
@@ -166,6 +167,10 @@ export class MarkdownBlock extends WidgetType {
   override destroy(dom: HTMLElement): void {
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
+  }
+
+  override get estimatedHeight(): number {
+    return markdownBlockEstimatedHeight(this.block.source);
   }
 }
 
