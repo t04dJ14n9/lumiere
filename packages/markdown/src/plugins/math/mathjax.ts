@@ -1,15 +1,6 @@
 import { mathjax } from "@mathjax/src/cjs/mathjax.js";
 import { TeX } from "@mathjax/src/cjs/input/tex.js";
 import { SVG } from "@mathjax/src/cjs/output/svg.js";
-import { browserAdaptor } from "@mathjax/src/cjs/adaptors/browserAdaptor.js";
-import { RegisterHTMLHandler } from "@mathjax/src/cjs/handlers/html.js";
-import "@mathjax/src/cjs/input/tex/ams/AmsConfiguration.js";
-import "@mathjax/src/cjs/input/tex/newcommand/NewcommandConfiguration.js";
-import "@mathjax/src/cjs/input/tex/mathtools/MathtoolsConfiguration.js";
-import "@mathjax/src/cjs/input/tex/cancel/CancelConfiguration.js";
-import "@mathjax/src/cjs/input/tex/color/ColorConfiguration.js";
-import "@mathjax/src/cjs/input/tex/noundefined/NoUndefinedConfiguration.js";
-import "@mathjax/src/cjs/input/tex/configmacros/ConfigMacrosConfiguration.js";
 import { loadDynamicFont } from "./fonts";
 import { macrosEqual, normalizeMacros, type MathMacro } from "./macros";
 
@@ -27,11 +18,11 @@ const PACKAGES = [
 // Without a loader, a formula that needs one of the font's dynamic files
 // (\mathbb, \ell, …) fails with "dynamic file … failed to load".
 mathjax.asyncLoad = loadDynamicFont;
-const adaptor = browserAdaptor();
-RegisterHTMLHandler(adaptor);
 
 let userMacros: Record<string, MathMacro> = {};
-let formulas = createFormulas(userMacros);
+let formulas: ReturnType<typeof createFormulas> | undefined;
+let adaptor: { outerHTML(node: unknown): string } | undefined;
+let browserReady: Promise<void> | undefined;
 
 function createFormulas(macros: Record<string, MathMacro>) {
   return mathjax.document(document, {
@@ -43,6 +34,24 @@ function createFormulas(macros: Record<string, MathMacro>) {
   });
 }
 
+async function ensureBrowser(): Promise<void> {
+  if (formulas && adaptor) {
+    return;
+  }
+  browserReady ??= (async () => {
+    // browserAdaptor needs `window`/`document` — only load in a real webview,
+    // never at module import (Node unit tests import this graph).
+    const { browserAdaptor } =
+      await import("@mathjax/src/cjs/adaptors/browserAdaptor.js");
+    const { RegisterHTMLHandler } =
+      await import("@mathjax/src/cjs/handlers/html.js");
+    adaptor = browserAdaptor();
+    RegisterHTMLHandler(adaptor);
+    formulas = createFormulas(userMacros);
+  })();
+  await browserReady;
+}
+
 /** Apply Obsidian-style MathJax macros; rebuilds the TeX input jax when they change. */
 export function setUserMacros(raw: Record<string, string> | undefined): void {
   const next = normalizeMacros(raw);
@@ -50,14 +59,17 @@ export function setUserMacros(raw: Record<string, string> | undefined): void {
     return;
   }
   userMacros = next;
-  formulas = createFormulas(userMacros);
+  if (formulas && adaptor) {
+    formulas = createFormulas(userMacros);
+  }
 }
 
 export async function typeset(
   expression: string,
   display: boolean,
 ): Promise<string> {
-  const result = (await formulas.convertPromise(expression, {
+  await ensureBrowser();
+  const result = (await formulas!.convertPromise(expression, {
     display,
     em: 16,
     ex: 8,
@@ -69,5 +81,5 @@ export async function typeset(
   if (error) {
     throw new Error(error.getAttribute("data-mjx-error") ?? "TeX error");
   }
-  return adaptor.outerHTML(result);
+  return adaptor!.outerHTML(result);
 }
