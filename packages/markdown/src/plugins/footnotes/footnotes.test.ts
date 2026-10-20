@@ -89,6 +89,32 @@ test("insertion uses an unused label, leaves the caret after the reference and s
       `[^1]${ending}`,
     );
   }
+  // EOF with trailing blanks: blanks stay before the reference, so the
+  // definition still needs its own blank line after it (Obsidian 1.14).
+  for (const [source, expected] of [
+    ["body\n", "body\n[^1]\n\n[^1]: \n"],
+    ["body\n\n", "body\n\n[^1]\n\n[^1]: \n"],
+    ["body\n\n\n", "body\n\n\n[^1]\n\n[^1]: \n"],
+    ["\n\n", "\n\n[^1]\n\n[^1]: \n"],
+  ] as const) {
+    const atEnd = EditorState.create({
+      doc: source,
+      selection: { anchor: source.length },
+    });
+    const next = atEnd.update(insertFootnote(atEnd)).state;
+    assert.equal(next.doc.toString(), expected, JSON.stringify(source));
+    assert.equal(next.selection.main.head, source.length + 4);
+  }
+  // Caret on a trailing blank line (not past the last newline) still gets a
+  // blank line between the reference and the definition.
+  const onBlank = EditorState.create({
+    doc: "body\n\n",
+    selection: { anchor: 5 },
+  });
+  assert.equal(
+    onBlank.update(insertFootnote(onBlank)).newDoc.toString(),
+    "body\n[^1]\n\n[^1]: \n",
+  );
   // As in Obsidian, the reference goes before the selection, which stays.
   const state = EditorState.create({
     doc: "some text",
