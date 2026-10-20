@@ -159,6 +159,9 @@ function registerEmbedUnresolved(ctx: Context): void {
     void ctx.rpc
       .call(protocol, "unresolved", source ? { source } : {})
       .then((paths) => {
+        if (!ctx.isLive || !pass.container.isConnected) {
+          return;
+        }
         tagUnresolvedAnchors(pass.container, new Set(paths));
       })
       .catch((error) =>
@@ -172,6 +175,10 @@ async function refreshRenderedUnresolved(
   ctx: Context,
   view: EditorView,
 ): Promise<void> {
+  // Plugin teardown can clear contentDOM before a late unresolved RPC lands.
+  if (!view.contentDOM?.isConnected) {
+    return;
+  }
   const roots = [
     ...view.contentDOM.querySelectorAll<HTMLElement>(".markdown-rendered"),
   ];
