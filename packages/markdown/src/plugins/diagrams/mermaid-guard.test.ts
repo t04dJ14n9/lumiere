@@ -14,7 +14,7 @@ type Stub = {
   createElement?(tag: string): Stub;
 };
 
-function el(tag = "div"): Stub {
+function el(_tag = "div"): Stub {
   const node: Stub = {
     className: "",
     attrs: {},

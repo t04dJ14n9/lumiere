@@ -35,11 +35,7 @@ export class DiagramRenderer {
       .catch((error) => {
         if (request.isActive) {
           // Obsidian-style guarded chrome: title, error, and source.
-          failure = showMermaidGuard(
-            fence.element,
-            error,
-            fence.source,
-          );
+          failure = showMermaidGuard(fence.element, error, fence.source);
           pass.measure();
           this.logger.warn("Diagram rendering failed", error);
         }
