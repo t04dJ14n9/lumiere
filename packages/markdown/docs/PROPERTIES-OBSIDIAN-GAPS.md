@@ -16,6 +16,7 @@ Severity: **P0** height/remount or editing broken · **P1** clear visual/interac
 | ID | Gap | PR | Notes |
 | --- | --- | --- | --- |
 | G1 | Unfocused longtext expands fully; Obsidian clamps to 3 lines + `max-height: 300px`, clears clamp on focus | [#136](https://github.com/t04dJ14n9/lumiere/pull/136) | `app.css` `--metadata-input-longtext-lines: 3`; estimate capped |
+| G2–G5 | Sheet 2rem margin, 0.875em font, row rings, 3px gap | [#137](https://github.com/t04dJ14n9/lumiere/pull/137) (base `#136`) | stacked chrome polish |
 
 ---
 
