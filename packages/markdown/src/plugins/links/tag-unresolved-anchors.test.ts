@@ -16,12 +16,18 @@ function anchor(href: string, cls = ""): HTMLAnchorElement {
       },
       toggle: (n: string, force?: boolean) => {
         if (force === undefined) {
-          if (names.has(n)) names.delete(n);
-          else names.add(n);
+          if (names.has(n)) {
+            names.delete(n);
+          } else {
+            names.add(n);
+          }
           return;
         }
-        if (force) names.add(n);
-        else names.delete(n);
+        if (force) {
+          names.add(n);
+        } else {
+          names.delete(n);
+        }
       },
       contains: (n: string) => names.has(n),
       get value() {

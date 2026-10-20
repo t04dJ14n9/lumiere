@@ -15,9 +15,6 @@ export function tagUnresolvedAnchors(
       continue;
     }
     const key = unresolvedKey(href);
-    anchor.classList.toggle(
-      "is-unresolved",
-      key !== "" && unresolved.has(key),
-    );
+    anchor.classList.toggle("is-unresolved", key !== "" && unresolved.has(key));
   }
 }
