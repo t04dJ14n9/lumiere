@@ -33,7 +33,7 @@ export interface SnapshotRequest {
 }
 
 const EMPTY_REASON =
-  "No OKF bundle is open. Choose a bundle to draw its notes.";
+  "No vault folder is open. Open a folder to draw its notes.";
 
 /** A panel with nowhere to draw. The generation still moves so a stale graph clears. */
 export function emptySnapshot(generation: number): GraphSnapshot {
@@ -174,7 +174,7 @@ function guardPayload(snapshot: GraphSnapshot): GraphSnapshot {
     nodes: [],
     edges: [],
     legend: [],
-    reason: "This graph is too large to draw. Narrow the bundle or filters.",
+    reason: "This graph is too large to draw. Narrow the scope or filters.",
   };
 }
 

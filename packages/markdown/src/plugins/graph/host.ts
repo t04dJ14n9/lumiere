@@ -4,7 +4,7 @@ import type {} from "../vault/api";
 import { contributionId } from "../../shared/setting-schema";
 import { createGraphSession } from "./session";
 
-/** Window panel for one OKF bundle. It does not follow whichever note is active later. */
+/** Window panel for one graph scope (bundle or whole vault). It does not follow the active note later. */
 export const graphHost: Plugin = {
   name: "graph",
   inject: {

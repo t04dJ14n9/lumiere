@@ -1,17 +1,18 @@
 # Vault Graph
 
-Draws one OKF bundle as a directed graph of notes in its own panel, similar to
-Obsidian's graph view, scoped to the bundle rather than the whole vault.
+Draws notes as a directed graph in its own panel, similar to Obsidian's graph
+view. The scope can be one OKF bundle or the **whole vault**.
 
 ## How it works
 
-**Open Vault Graph** captures the active note's bundle, or asks when that note
-belongs to none or to more than one. The host builds a concept graph from
-Markdown files in that bundle, drops reserved `index.md` and `log.md`, and
-aggregates body links and note embeds. A worker lays the drawing out. The
-panel reads the worker script from the extension and starts it from a blob
-URL, which a webview is allowed to do. Filtering and later edits keep
-coordinates; a large change waits for **Re-layout**.
+**Open Vault Graph** prefers the active note's OKF bundle when unambiguous,
+offers **Whole vault** plus any bundles when choosing, and falls back to the
+whole vault when no OKF bundles exist. The host builds a concept graph from
+Markdown files in that scope, drops reserved `index.md` and `log.md`, and
+aggregates body links, note embeds and frontmatter wikilinks. A worker lays
+the drawing out. The panel reads the worker script from the extension and
+starts it from a blob URL, which a webview is allowed to do. Filtering and
+later edits keep coordinates; a large change waits for **Re-layout**.
 Clicking a node asks the host to open that note. The host checks the scope, the
 snapshot generation and that the id is still in the drawing.
 
@@ -41,16 +42,16 @@ part of the editor bundle.
 
 Injects the host services `hostCommands`, `dialogs`, `views`, `activeEditor` and `settings`, `vaults` and `okf`. Provides nothing. Listens to
 `vault/changed` and `vault/resolved`. Commands are
-`lumiere.markdown.graph.open` and `lumiere.markdown.graph.chooseBundle`.
+`lumiere.markdown.graph.open` and `lumiere.markdown.graph.chooseBundle` (scope picker).
 Settings: `lumiere.markdown.graph.maxNodes` (2000), `maxEdges` (20000),
 `defaultMode` (`global`), `localDepth` (2) and `colorBy` (`type`).
 
 ## Limits and differences from Obsidian
 
-The graph is one bundle, not the whole vault. Edges are directed and come from
-body links, note embeds, frontmatter wikilinks, and OKF `sources` rows whose
-`resource` is a vault path (http(s) sources stay off the graph). Caps are hard:
-2000 notes, 20000 aggregated edges and 1.5 MB. A larger graph is refused, not
-sampled. There is no 3D view, saved layout or trust badge. Layout is a bounded
-force pass in a worker that stops while the panel is hidden and when the panel
-closes.
+The graph scope is one OKF bundle or the whole vault (picker includes
+**Whole vault**). Edges are directed and come from body links, note embeds,
+frontmatter wikilinks, and OKF `sources` rows whose `resource` is a vault path
+(http(s) sources stay off the graph). Caps are hard: 2000 notes, 20000
+aggregated edges and 1.5 MB. A larger graph is refused, not sampled. There is
+no 3D view, saved layout or trust badge. Layout is a bounded force pass in a
+worker that stops while the panel is hidden and when the panel closes.
