@@ -58,6 +58,23 @@ test("Home stops at text start past LP-hidden leading openers", () => {
   assert.equal(homePast("- a long item", 8), undefined);
 });
 
+test("Home stops at text start past LP-hidden coloured highlight openers", () => {
+  // Obsidian 1.14 `==🔵text==`: LP hides `==` and the colour emoji; CM's
+  // visual start lands in the tinted text. Home still stops at item text
+  // start first (#255 family).
+  const homePast = (doc: string, visualStart: number) => {
+    const state = EditorState.create({ doc });
+    return lineStartTarget(state, doc.length, visualStart);
+  };
+  assert.equal(homePast("- ==🔵hi==", "- ==🔵".length), 2);
+  assert.equal(homePast("- ==🔴x==", "- ==🔴".length), 2);
+  assert.equal(homePast("- **==🔵hi==**", "- **==🔵".length), 2);
+  assert.equal(homePast("- [ ] ==🟢task==", "- [ ] ==🟢".length), 6);
+  assert.equal(homePast("> ==🟣q==", "> ==🟣".length), 2);
+  // Soft wrap with real text between: default (unchanged).
+  assert.equal(homePast("- a long item", 8), undefined);
+});
+
 // Measured in Obsidian 1.14.4: End goes past the markers that end the line,
 // which Live Preview hides (the editor's own move stops before them).
 test("End goes to the line's true end, past the markers that end it", () => {
