@@ -1,7 +1,12 @@
 import type { Plugin } from "@workshop/core";
 import type {} from "../vault/api";
+import type { HostSettings } from "../../shared/host";
 import {
   CREATE_COMMAND,
+  DISABLE_EXTRA_CONTEXT,
+  ENABLE_EXTRA_CONTEXT,
+  EXTRA_CONTEXT_CONTEXT,
+  EXTRA_CONTEXT_SETTING,
   NEXT_SORT,
   OPEN_COMMAND,
   OutgoingLinksTree,
@@ -21,6 +26,10 @@ import {
 
 const REFRESH_DELAY_MS = 300;
 
+function wantsExtraContext(settings: HostSettings): boolean {
+  return settings.get<boolean>(EXTRA_CONTEXT_SETTING, false);
+}
+
 type OutgoingCtx = Parameters<NonNullable<Plugin["apply"]>>[0];
 
 function wireRefresh(
@@ -31,6 +40,13 @@ function wireRefresh(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const refresh = async () => {
     void syncOutgoingSortContext(ctx).catch(() => undefined);
+    void Promise.resolve(
+      ctx.hostCommands.execute(
+        "setContext",
+        EXTRA_CONTEXT_CONTEXT,
+        wantsExtraContext(ctx.settings),
+      ) as unknown,
+    ).catch(() => undefined);
     await source.setNote(ctx.activeEditor.note());
     tree.setMessage(
       source.hasNote ? undefined : "Open a note to see its outgoing links.",
@@ -43,7 +59,7 @@ function wireRefresh(
   };
   ctx.effect(() => () => clearTimeout(timer));
   ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
-  ctx.on("vault/resolved", schedule);
+  ctx.effect(() => ctx.on("vault/resolved", schedule));
   ctx.effect(() =>
     ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
       ctx.vaults.open(
@@ -117,6 +133,58 @@ function wireSortMenus(ctx: OutgoingCtx, schedule: () => void) {
   void syncOutgoingSortContext(ctx).catch(() => undefined);
 }
 
+function seedExtraContext(ctx: OutgoingCtx): void {
+  void Promise.resolve(
+    ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      wantsExtraContext(ctx.settings),
+    ) as unknown,
+  ).catch(() => undefined);
+}
+
+function clearExtraContext(ctx: OutgoingCtx): void {
+  try {
+    const done = ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      undefined,
+    ) as unknown;
+    if (done && typeof (done as Promise<void>).then === "function") {
+      void Promise.resolve(done).catch(() => undefined);
+    }
+  } catch {
+    // ignore teardown races
+  }
+}
+
+function wireExtraContext(ctx: OutgoingCtx, refresh: () => Promise<void>) {
+  const setExtraContext = async (enabled: boolean) => {
+    await ctx.settings.access.update(EXTRA_CONTEXT_SETTING, enabled);
+    await ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      enabled,
+    );
+    await refresh();
+  };
+  ctx.effect(() =>
+    ctx.hostCommands.register(ENABLE_EXTRA_CONTEXT, () =>
+      setExtraContext(true),
+    ),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(DISABLE_EXTRA_CONTEXT, () =>
+      setExtraContext(false),
+    ),
+  );
+  // Do not call settings.onChange here — leave-no-trace fakes keep a
+  // single listener for feature enablement. Context syncs on refresh /
+  // enable-disable commands instead.
+  seedExtraContext(ctx);
+  ctx.effect(() => () => clearExtraContext(ctx));
+}
+
 /** The Outgoing Links view, following the active note. */
 export const outgoingLinksHost: Plugin = {
   name: "outgoingLinks",
@@ -133,11 +201,14 @@ export const outgoingLinksHost: Plugin = {
   apply(ctx) {
     const sortOrder = (): OutgoingSortOrder =>
       parseSortOrder(ctx.settings.get(SORT_SETTING, "alphabetical"));
-    const source = new OutgoingLinksTree(ctx.vaults, sortOrder);
+    const source = new OutgoingLinksTree(ctx.vaults, sortOrder, () =>
+      wantsExtraContext(ctx.settings),
+    );
     const tree = ctx.views.tree(VIEW_ID, source);
     ctx.effect(() => () => tree.dispose());
     const { refresh, schedule } = wireRefresh(ctx, source, tree);
     wireSortMenus(ctx, schedule);
+    wireExtraContext(ctx, refresh);
     void refresh();
   },
 };

@@ -7,6 +7,10 @@ import type { MentionLine } from "../../markdown/mentions";
 
 export const VIEW_ID = contributionId("outgoingLinks");
 export const OPEN_COMMAND = contributionId("outgoingLinks.open");
+export const EXTRA_CONTEXT_SETTING = "outgoingLinks.extraContext";
+export const EXTRA_CONTEXT_CONTEXT = `${VIEW_ID}.extraContext`;
+export const ENABLE_EXTRA_CONTEXT = `${VIEW_ID}.enableExtraContext`;
+export const DISABLE_EXTRA_CONTEXT = `${VIEW_ID}.disableExtraContext`;
 /** Create and open a note for an unresolved outbound linkpath. */
 export const CREATE_COMMAND = contributionId("outgoingLinks.create");
 
@@ -52,6 +56,7 @@ export class OutgoingLinksTree implements TreeSource {
   constructor(
     private readonly vaults: Vaults,
     private readonly sortOrder: () => OutgoingSortOrder = () => "alphabetical",
+    private readonly extraContext: () => boolean = () => false,
   ) {}
 
   async setNote(uri: string | undefined): Promise<void> {
@@ -112,22 +117,16 @@ export class OutgoingLinksTree implements TreeSource {
     }
     if (node.id.startsWith("unlinked:")) {
       const lines = this.lines.get(node.id) ?? [];
-      return lines.map((line) => ({
-        id: `${node.id}:${line.offset}`,
-        label: line.text,
-        tooltip: line.text,
-        command: {
-          id: OPEN_COMMAND,
-          args: [this.note!.uri, line.offset],
-        },
-      }));
+      return lines.flatMap((line) =>
+        mentionNodes(node.id, this.note!.uri, line),
+      );
     }
     return [];
   }
 
   private linkNodes(): TreeNode[] {
     const { path, vault } = this.note!;
-    const mtimeOf = (target: string) => vault.index.file(target)?.mtime ?? 0;
+    const mtimeOf = (p: string) => vault.index.file(p)?.mtime ?? 0;
     return [...vault.index.resolvedLinks(path)]
       .sort(([a], [b]) => compareOutgoingPaths(a, b, this.sortOrder(), mtimeOf))
       .map(([target, count]) => {
@@ -144,7 +143,6 @@ export class OutgoingLinksTree implements TreeSource {
 
   private unresolvedNodes(): TreeNode[] {
     const { path, vault } = this.note!;
-    // Unresolved paths have no file mtime — name order within the chosen mode.
     return [...vault.index.unresolvedLinks(path)]
       .sort(([a], [b]) => compareOutgoingPaths(a, b, this.sortOrder(), () => 0))
       .map(([linkpath, count]) => ({
@@ -192,6 +190,7 @@ export class OutgoingLinksTree implements TreeSource {
     const text = await this.vaults.text(note.uri);
     const linked = new Set(index.resolvedLinks(note.path).keys());
     const paths: string[] = [];
+    const options = { extraContext: this.extraContext() };
     for (const file of index.files()) {
       const isCandidate =
         file.extension === "md" &&
@@ -205,7 +204,7 @@ export class OutgoingLinksTree implements TreeSource {
         stemOf(file.path),
         ...(index.metadata(file.path)?.aliases ?? []),
       ];
-      const found = unlinkedLines(text, names);
+      const found = unlinkedLines(text, names, options);
       if (found.length > 0) {
         this.lines.set(`unlinked:${file.path}`, found);
         paths.push(file.path);
@@ -257,4 +256,34 @@ export function sortOutgoingPaths(
   mtimeOf: (path: string) => number = () => 0,
 ): string[] {
   return [...paths].sort((a, b) => compareOutgoingPaths(a, b, order, mtimeOf));
+}
+
+/** Match row plus optional adjacent context rows (Obsidian extraContext). */
+export function mentionNodes(
+  parentId: string,
+  uri: string,
+  line: MentionLine,
+): TreeNode[] {
+  const nodes: TreeNode[] = [];
+  if (line.before !== undefined) {
+    nodes.push({
+      id: `${parentId}:${line.offset}:before`,
+      label: line.before,
+      tooltip: line.before,
+    });
+  }
+  nodes.push({
+    id: `${parentId}:${line.offset}`,
+    label: line.text,
+    tooltip: line.text,
+    command: { id: OPEN_COMMAND, args: [uri, line.offset] },
+  });
+  if (line.after !== undefined) {
+    nodes.push({
+      id: `${parentId}:${line.offset}:after`,
+      label: line.after,
+      tooltip: line.after,
+    });
+  }
+  return nodes;
 }
