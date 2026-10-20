@@ -151,6 +151,20 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "gitlab") {
+      const body = await this.json(
+        `https://gitlab.com/api/v4/projects/${encodeURIComponent(id)}`,
+        signal,
+      );
+      const { details, cover } = parseGitlabProject(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +221,50 @@ export class VideoDetailsSource {
   }
 }
 
+/** GitLab project API: path_with_namespace, namespace name, project avatar. */
+export function parseGitlabProject(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected GitLab response");
+  }
+  const title =
+    text(body.path_with_namespace, 300) ?? text(body.name_with_namespace, 300);
+  const ns = isRecord(body.namespace) ? body.namespace : {};
+  const author = text(ns.name, 100) ?? text(ns.full_path, 100);
+  const cover = gitlabAvatarUrl(body.avatar_url);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+export function gitlabAvatarUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "gitlab.com" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    !/^\/uploads\/-\/system\/(?:project|group)\/avatar\/[1-9][0-9]{0,15}\/[A-Za-z0-9._-]+\.(?:jpe?g|png|webp|gif)$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://gitlab.com${url.pathname}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

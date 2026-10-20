@@ -1,6 +1,6 @@
 # Online Videos
 
-YouTube, Bilibili and Hugging Face model links written as images show as
+YouTube, Bilibili and Hugging Face model and GitLab links written as images show as
 video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), `![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with
@@ -118,7 +118,7 @@ off, the links fall back to Embeds (a remote image).
 
 ## Limits
 
-Lookups depend on Bilibili's, YouTube's and Hugging Face's public endpoints,
+Lookups depend on Bilibili's, YouTube's and Hugging Face's and GitLab's public endpoints,
 which may change or rate-limit. Playlists, channels, Bilibili bangumi and
 other providers are left as images. Hugging Face has no in-webview player
 (Open on Hugging Face only). Hub redirects (legacy single-segment model

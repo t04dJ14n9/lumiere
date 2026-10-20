@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  gitlabAvatarUrl,
+  parseGitlabProject,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +331,68 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("gitlabAvatarUrl accepts gitlab.com project/group avatar uploads only", () => {
+  assert.equal(
+    gitlabAvatarUrl(
+      "https://gitlab.com/uploads/-/system/project/avatar/278964/project_avatar.png?v=1792503163",
+    ),
+    "https://gitlab.com/uploads/-/system/project/avatar/278964/project_avatar.png",
+  );
+  for (const value of [
+    "https://evil.test/uploads/-/system/project/avatar/278964/project_avatar.png",
+    "https://gitlab.com/uploads/other/project_avatar.png",
+    "http://gitlab.com/uploads/-/system/project/avatar/278964/project_avatar.png",
+  ]) {
+    assert.equal(gitlabAvatarUrl(value), undefined);
+  }
+});
+
+test("parseGitlabProject uses path_with_namespace and namespace name", () => {
+  assert.deepEqual(
+    parseGitlabProject({
+      path_with_namespace: "gitlab-org/gitlab",
+      name_with_namespace: "GitLab.org / GitLab",
+      namespace: { name: "GitLab.org", full_path: "gitlab-org" },
+      avatar_url:
+        "https://gitlab.com/uploads/-/system/project/avatar/278964/project_avatar.png?v=1",
+    }),
+    {
+      details: { title: "gitlab-org/gitlab", author: "GitLab.org" },
+      cover:
+        "https://gitlab.com/uploads/-/system/project/avatar/278964/project_avatar.png",
+    },
+  );
+});
+
+test("a GitLab lookup uses api/v4/projects and may fetch the avatar", async () => {
+  const cover =
+    "https://gitlab.com/uploads/-/system/project/avatar/278964/project_avatar.png";
+  const { fetch, calls } = fakeFetch({
+    "https://gitlab.com/api/v4/projects/": () =>
+      response({
+        path_with_namespace: "gitlab-org/gitlab",
+        namespace: { name: "GitLab.org" },
+        avatar_url: `${cover}?v=1`,
+      }),
+    "https://gitlab.com/uploads/": () => response(PNG, { type: "image/png" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "gitlab",
+    "gitlab-org/gitlab",
+  );
+  assert.equal(details.title, "gitlab-org/gitlab");
+  assert.equal(details.author, "GitLab.org");
+  assert.equal(
+    details.cover,
+    `data:image/png;base64,${Buffer.from(PNG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://gitlab.com/api/v4/projects/gitlab-org%2Fgitlab",
+  );
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

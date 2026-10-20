@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "gitlab";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,67 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+const GITLAB_SEGMENT = /[A-Za-z0-9._-]{1,100}/;
+
+const GITLAB_PATH = new RegExp(
+  `^\\/(${GITLAB_SEGMENT.source}(?:\\/${GITLAB_SEGMENT.source}){1,9})\\/?$`,
+);
+
+const GITLAB_HOSTS = new Set(["gitlab.com"]);
+
+const GITLAB_RESERVED = new Set([
+  "explore",
+  "users",
+  "groups",
+  "projects",
+  "dashboard",
+  "help",
+  "search",
+  "admin",
+  "profile",
+  "login",
+  "userssign_in",
+  "oauth",
+  "api",
+  "ci",
+  "security",
+  "pricing",
+  "solutions",
+  "devops",
+]);
+
+function isGitlabPath(id: string): boolean {
+  const parts = id.split("/");
+  if (parts.length < 2 || parts.length > 10) {
+    return false;
+  }
+  return parts.every(
+    (part) =>
+      /^[A-Za-z0-9._-]{1,100}$/.test(part) && part !== "." && part !== "..",
+  );
+}
+
+function gitlab(pathname: string): OnlineVideo | undefined {
+  // GitLab routes project subpages under /-/… — only the project root.
+  if (pathname.includes("/-/")) {
+    return undefined;
+  }
+  const match = GITLAB_PATH.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  const id = match[1]!;
+  const owner = id.split("/")[0]!;
+  if (!isGitlabPath(id) || GITLAB_RESERVED.has(owner.toLowerCase())) {
+    return undefined;
+  }
+  return {
+    provider: "gitlab",
+    id,
+    page: `https://gitlab.com/${id}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +140,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return isGitlabPath(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +181,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (GITLAB_HOSTS.has(host)) {
+    return gitlab(url.pathname);
   }
   return undefined;
 }

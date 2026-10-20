@@ -133,3 +133,30 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("GitLab project pages on gitlab.com", () => {
+  assert.deepEqual(parseVideoUrl("https://gitlab.com/gitlab-org/gitlab"), {
+    provider: "gitlab",
+    id: "gitlab-org/gitlab",
+    page: "https://gitlab.com/gitlab-org/gitlab",
+  });
+  assert.deepEqual(parseVideoUrl("https://gitlab.com/gitlab-org/gitlab/"), {
+    provider: "gitlab",
+    id: "gitlab-org/gitlab",
+    page: "https://gitlab.com/gitlab-org/gitlab",
+  });
+  assert.deepEqual(parseVideoUrl("https://gitlab.com/group/sub/project"), {
+    provider: "gitlab",
+    id: "group/sub/project",
+    page: "https://gitlab.com/group/sub/project",
+  });
+  assert.equal(
+    parseVideoUrl("https://www.gitlab.com/gitlab-org/gitlab"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://gitlab.com/gitlab-org/gitlab/-/issues/1"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://gitlab.com/explore/projects"), undefined);
+});
