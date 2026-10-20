@@ -29,6 +29,10 @@ test("players come from the provider's embed origin with the parsed ID", () => {
     playerUrl(video("https://www.bilibili.com/video/av170001")),
     "https://player.bilibili.com/player.html?aid=170001&p=1&autoplay=0",
   );
+  assert.throws(
+    () => playerUrl(video("https://space.bilibili.com/2")),
+    /space has no in-webview player/,
+  );
 });
 
 test("player frames are sandboxed, lazy and send only the origin as referrer", () => {
@@ -109,10 +113,11 @@ test("npm refuses an in-webview player", () => {
   assert.throws(() => playerUrl(video("https://www.npmjs.com/package/lodash")));
 });
 
-test("bangumi, playlists and channels refuse an in-webview player", () => {
+test("bangumi, playlists, channels and spaces refuse an in-webview player", () => {
   assert.throws(() =>
     playerUrl(video("https://www.bilibili.com/bangumi/play/ep409506")),
   );
+  assert.throws(() => playerUrl(video("https://space.bilibili.com/2")));
   assert.throws(() =>
     playerUrl(video("https://www.youtube.com/@GoogleDevelopers")),
   );

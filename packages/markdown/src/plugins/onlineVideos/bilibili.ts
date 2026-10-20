@@ -1,6 +1,6 @@
 /**
- * Bilibili view and bangumi season responses, plus the hdslb cover allowlist.
- * Pure parsing: the host fetch lives in `details.ts`.
+ * Bilibili view, bangumi season and UP space card responses, plus the hdslb
+ * cover allowlist. Pure parsing: the host fetch lives in `details.ts`.
  */
 import type { VideoDetails } from "./protocol";
 
@@ -150,6 +150,24 @@ function bangumiDurationSeconds(value: unknown): number | undefined {
     return undefined;
   }
   return Math.floor(value / 1000);
+}
+
+/** UP space card: display name as title, face as cover when on hdslb.com. */
+export function parseBilibiliCard(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body) || body.code !== 0 || !isRecord(body.data)) {
+    throw new Error("Unexpected Bilibili response");
+  }
+  const card = isRecord(body.data.card) ? body.data.card : {};
+  const cover = coverUrl(card.face);
+  return {
+    details: withoutUndefined({
+      title: text(card.name, 300),
+    }),
+    ...(cover ? { cover } : {}),
+  };
 }
 
 export function coverUrl(value: unknown): string | undefined {

@@ -24,6 +24,8 @@ export function videoMeta(
     kindLabel = "Bangumi";
   } else if (kind === "channel") {
     kindLabel = "Channel";
+  } else if (kind === "space") {
+    kindLabel = "Space";
   }
   const known = [
     kindLabel,

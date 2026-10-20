@@ -7,7 +7,8 @@ as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `/embed/videoseries?list=`), YouTube channels (`/channel/UC…`, `/@handle`,
 `/c/…`, or `/user/…`), `![](https://www.bilibili.com/video/BV…)` or
 `…/video/av123`, with `?p=` for a part, bangumi `…/bangumi/play/ep…` or
-`…/ss…`, Hugging Face
+`…/ss…`, Bilibili UP spaces `![](https://space.bilibili.com/{mid})`
+(or `m.bilibili.com/space/{mid}`), Hugging Face
 `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
 `/tree/…` normalised away), Spotify
 `open.spotify.com/{track|album|playlist|episode|show}/…`, SoundCloud
@@ -17,21 +18,22 @@ Obsidian has no equivalent (it shows such links as broken images); local video
 (`![[clip.mp4]]`) stays with Embeds.
 
 A card shows a title (the alt text, else the provider's title, else "YouTube
-video", "Bilibili video", "Hugging Face video", "Spotify track/…",
-"SoundCloud track/playlist", or "npm video"), the provider with the author
-and length (or the ID), and **Open on YouTube/Bilibili/Hugging
-Face/Spotify/SoundCloud/npm**, which asks the host (Links RPC `open`) to open
-the page in the external browser. The card uses buttons rather than
-`<a href>`: VS Code's webview opens every clicked anchor itself as well,
-which would open the page twice. In a trusted workspace a YouTube card shows
-the video's still (`i.ytimg.com`, derived from the ID) and a Bilibili card
-the video's cover. A YouTube playlist card says **Open playlist** and may
-show the oEmbed thumbnail. A YouTube channel card says
-**Open channel on YouTube** (no cover — channels have no
-keyless oEmbed). Spotify and SoundCloud cards may show an oEmbed
-cover. Hugging Face and npm cards have no cover. In an untrusted workspace
-nothing is fetched: no title, cover, still or player, and the card says so.
-The caret on the link reveals its Markdown, as for images.
+video", "Bilibili video", "Bilibili space", "Hugging Face video", "Spotify
+track/…", "SoundCloud track/playlist", or "npm video"), the provider with
+the author and length (or the ID), and **Open on YouTube/Bilibili/Hugging
+Face/Spotify/SoundCloud/npm** (or **Open space on Bilibili**), which asks
+the host (Links RPC `open`) to open the page in the external browser. The
+card uses buttons rather than `<a href>`: VS Code's webview opens every
+clicked anchor itself as well, which would open the page twice. In a trusted
+workspace a YouTube card shows the video's still (`i.ytimg.com`, derived
+from the ID) and a Bilibili card the video's cover or the UP's face. A
+YouTube playlist card says **Open playlist** and may show the oEmbed
+thumbnail. A YouTube channel card says **Open channel on YouTube** (no
+cover — channels have no keyless oEmbed). Spotify and SoundCloud cards may
+show an oEmbed cover. Hugging Face and npm cards have no cover. In an
+untrusted workspace nothing is fetched: no title, cover, still or player,
+and the card says so. The caret on the link reveals its Markdown, as for
+images.
 
 **Play here** (Bilibili only) is off by default because Bilibili's player
 does not play in VS Code (below). `lumiere.markdown.onlineVideos.bilibiliPlayer`
@@ -44,7 +46,8 @@ player.
 (11 characters of `[A-Za-z0-9_-]` for YouTube videos, a `PL`/`UU`/`LL`/`FL`/
 `OL`/`RD` prefix plus 10–64 characters for playlists, `UC…` / `@handle` /
 `c:…` / `user:…` for channels, `BV` plus 10 alphanumerics or `av` digits for
-Bilibili, `ep…` / `ss…` for bangumi, Hugging Face model ids, Spotify
+Bilibili, `ep…` / `ss…` for bangumi, `space:{mid}` for UP spaces, Hugging
+Face model ids, Spotify
 `type:22-char` ids, SoundCloud `user/slug` paths, npm package names).
 `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
@@ -62,17 +65,19 @@ puts the image back when the pass is disposed.
 
 ### Titles and covers
 
-Bilibili covers and Hugging Face model metadata have no URL derived from the
-ID alone, and the webview CSP allows no network (`connect-src` is the
-webview only), so the extension host looks them up (`host.ts`, `details.ts`)
-when a trusted card asks over the `onlineVideos.details` RPC:
+Bilibili covers, UP faces and Hugging Face model metadata have no URL derived
+from the ID alone, and the webview CSP allows no network (`connect-src` is
+the webview only), so the extension host looks them up (`host.ts`,
+`details.ts`) when a trusted card asks over the `onlineVideos.details` RPC:
 
 - Bilibili videos: `https://api.bilibili.com/x/web-interface/view?bvid=…`
   (or `aid=`), reading `data.title`, `data.owner.name`, `data.duration` and
-  `data.pic`. The cover is fetched only from `i0`–`i2.hdslb.com` under
-  `/bfs/`, scaled by Bilibili to 480×270 (`@480w_270h_1c.jpg`, about
-  25 KB), limited to 512 KB, typed by its JPEG/PNG/GIF/WebP signature and
-  handed to the webview as a `data:` URL, so `img-src` is not loosened.
+  `data.pic`. Bilibili space: `…/x/web-interface/card?mid=…`, reading
+  `data.card.name` and `data.card.face`. Covers and faces are fetched only
+  from `i0`–`i2.hdslb.com` under `/bfs/`, scaled by Bilibili to 480×270
+  (`@480w_270h_1c.jpg`, about 25 KB), limited to 512 KB, typed by its
+  JPEG/PNG/GIF/WebP signature and handed to the webview as a `data:` URL,
+  so `img-src` is not loosened.
 - Bilibili bangumi: `https://api.bilibili.com/pgc/view/web/season` with
   `ep_id=` or `season_id=`; episode titles combine season + long title,
   duration is converted from milliseconds, cover from the episode or season.
@@ -121,8 +126,8 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 - `host.ts`: the trusted-only `details` RPC handler.
 - `details.ts`: provider lookups, cover fetches, timeout, concurrency
   and cache.
-- `bilibili.ts`: Bilibili view and bangumi season parsing, and hdslb cover
-  URLs.
+- `bilibili.ts`: Bilibili view, bangumi season and UP space card parsing, and
+  hdslb cover URLs.
 - `imageData.ts`: image signatures and cover data URLs.
 - `thumbnails.ts`: oEmbed / Spotify / SoundCloud cover URL allowlists.
 - `protocol.ts`: the `details` request.
@@ -153,11 +158,13 @@ Bilibili multi-part links (`?p=`) use the view API page title (series · part).
 Lookups depend on Bilibili's, YouTube's, Hugging Face's, Spotify's,
 SoundCloud's and npm's public endpoints, which may change or rate-limit.
 YouTube playlists (`/playlist?list=` and embed videoseries), YouTube channels
-(`/channel/UC…`, `/@handle`, `/c/…`, `/user/…`), and Bilibili bangumi
-(`/bangumi/play/ep…` / `ss…`) render as cards. Channels, bangumi, Hugging
-Face, Spotify, SoundCloud and npm have no in-webview player (Open on
-provider only). Hub redirects (legacy single-segment model ids) fail the
-host lookup because redirects are refused; the card still opens the page.
+(`/channel/UC…`, `/@handle`, `/c/…`, `/user/…`), Bilibili bangumi
+(`/bangumi/play/ep…` / `ss…`), and Bilibili UP spaces (`space.bilibili.com/{mid}`)
+render as cards. Channels, bangumi, spaces, Hugging Face, Spotify,
+SoundCloud and npm have no in-webview player (Open on provider only; spaces
+use **Open space on Bilibili**). Hub redirects (legacy single-segment model
+ids) fail the host lookup because redirects are refused; the card still
+opens the page.
 Spotify uses keyless oEmbed (`https://open.spotify.com/oembed`) for title
 and CDN cover. SoundCloud uses keyless oEmbed
 (`https://soundcloud.com/oembed`) for title and sndcdn cover. npm uses

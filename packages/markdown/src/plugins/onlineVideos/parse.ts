@@ -1,23 +1,24 @@
 /**
  * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm
- * links (YouTube playlists and channels, Bilibili bangumi). Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * links (YouTube playlists and channels, Bilibili bangumi and UP spaces).
+ * Only a fully parsed and validated ID leaves this module; players and
+ * cards are built from it, never from the link text.
  */
 export type VideoProvider =
   "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
-export type MediaKind = "video" | "playlist" | "bangumi" | "channel";
+export type MediaKind = "video" | "playlist" | "bangumi" | "channel" | "space";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
-  /** Video, playlist/channel (YouTube), or bangumi episode/season (Bilibili). */
+  /** Video, playlist/channel (YouTube), bangumi, or UP space (Bilibili). */
   readonly kind: MediaKind;
   /**
    * An 11-character YouTube video ID, a YouTube playlist ID, a channel
    * `UC…` / `@handle` / `c:…` / `user:…`, a Bilibili `BV…` / `av` id, a
-   * bangumi `ep…` / `ss…` id, a Hugging Face model id (`name` or
-   * `owner/name`), a Spotify `track|album|playlist|episode|show:…` id, a
-   * SoundCloud `user/slug` (or `user/sets/slug`) path, or an npm package
-   * name (`lodash` or `@scope/name`).
+   * bangumi `ep…` / `ss…` id, a space `space:{mid}` id, a Hugging Face
+   * model id (`name` or `owner/name`), a Spotify
+   * `track|album|playlist|episode|show:…` id, a SoundCloud `user/slug`
+   * (or `user/sets/slug`) path, or an npm package name (`lodash` or
+   * `@scope/name`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -36,6 +37,9 @@ const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
 /** Bangumi episode (`ep409506`) or season (`ss40154`) ids. */
 const BANGUMI_ID = /^(?:ep|ss)([1-9][0-9]{0,9})$/;
+/** UP space mid (`space:2`). */
+const SPACE_ID = /^space:([1-9][0-9]{0,15})$/;
+const SPACE_PATH = /^\/([1-9][0-9]{0,15})\/?$/;
 /** YouTube channel id (`UCxxxx…` 24 chars), `@handle`, or `c:`/`user:` custom. */
 const YOUTUBE_CHANNEL_UC = /^UC[A-Za-z0-9_-]{22}$/;
 const YOUTUBE_CHANNEL_HANDLE = /^@[A-Za-z0-9._-]{3,30}$/;
@@ -55,6 +59,7 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+const BILIBILI_SPACE_HOSTS = new Set(["space.bilibili.com"]);
 
 const SOUNDCLOUD_HOSTS = new Set([
   "soundcloud.com",
@@ -159,6 +164,9 @@ export function isVideoId(
   if (kind === "bangumi") {
     return provider === "bilibili" && BANGUMI_ID.test(id);
   }
+  if (kind === "space") {
+    return provider === "bilibili" && SPACE_ID.test(id);
+  }
   if (kind === "channel") {
     return (
       provider === "youtube" &&
@@ -200,6 +208,9 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   }
   if (YOUTUBE_HOSTS.has(host)) {
     return youtubeFromHost(url);
+  }
+  if (BILIBILI_SPACE_HOSTS.has(host)) {
+    return bilibiliSpace(url);
   }
   if (BILIBILI_HOSTS.has(host)) {
     return bilibiliFromHost(url);
@@ -260,7 +271,29 @@ function bilibiliFromHost(url: URL): OnlineVideo | undefined {
   if (bangumi) {
     return bangumi;
   }
+  // m.bilibili.com/space/{mid}
+  const space = /^\/space\/([1-9][0-9]{0,15})\/?$/.exec(url.pathname);
+  if (space) {
+    return bilibiliSpaceId(space[1]!);
+  }
   return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+}
+
+function bilibiliSpace(url: URL): OnlineVideo | undefined {
+  const match = SPACE_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  return bilibiliSpaceId(match[1]!);
+}
+
+function bilibiliSpaceId(mid: string): OnlineVideo {
+  return {
+    provider: "bilibili",
+    kind: "space",
+    id: `space:${mid}`,
+    page: `https://space.bilibili.com/${mid}`,
+  };
 }
 
 /**

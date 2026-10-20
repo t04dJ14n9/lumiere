@@ -64,3 +64,14 @@ test("channel meta labels the kind before author or id", () => {
     "YouTube · Channel",
   );
 });
+
+test("space meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("Bilibili", "space:2", {}, "space"),
+    "Bilibili · Space",
+  );
+  assert.equal(
+    videoMeta("Bilibili", "space:2", { title: "碧诗" }, "space"),
+    "Bilibili · Space",
+  );
+});

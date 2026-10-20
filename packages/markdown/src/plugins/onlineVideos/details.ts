@@ -23,8 +23,17 @@ import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
 import { imageDataUrl } from "./imageData";
 export { imageDataUrl } from "./imageData";
-import { parseBilibiliSeason, parseBilibiliView } from "./bilibili";
-export { coverUrl, parseBilibiliSeason, parseBilibiliView } from "./bilibili";
+import {
+  parseBilibiliCard,
+  parseBilibiliSeason,
+  parseBilibiliView,
+} from "./bilibili";
+export {
+  coverUrl,
+  parseBilibiliCard,
+  parseBilibiliSeason,
+  parseBilibiliView,
+} from "./bilibili";
 
 /** The part of `fetch` this module uses, so tests can pass a fake. */
 export type Fetch = (
@@ -186,6 +195,9 @@ export class VideoDetailsSource {
     if (kind === "bangumi") {
       return this.fetchBangumi(id, signal);
     }
+    if (kind === "space") {
+      return this.fetchBilibiliSpace(id, signal);
+    }
     return this.fetchBilibiliView(id, part, signal);
   }
 
@@ -256,6 +268,25 @@ export class VideoDetailsSource {
       signal,
     );
     const { details, cover } = parseBilibiliSeason(body, id);
+    await this.attachCover(
+      details,
+      cover ? cover + COVER_SIZE : undefined,
+      signal,
+    );
+    return details;
+  }
+
+  /** UP space card API, plus a scaled face when the cover host is allowed. */
+  private async fetchBilibiliSpace(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const mid = id.slice("space:".length);
+    const body = await this.json(
+      `https://api.bilibili.com/x/web-interface/card?mid=${mid}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliCard(body);
     await this.attachCover(
       details,
       cover ? cover + COVER_SIZE : undefined,
