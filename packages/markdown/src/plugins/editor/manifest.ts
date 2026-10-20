@@ -48,7 +48,7 @@ export default defineManifest({
   nativeConfigKeys: { ...fontNativeKeys, ...caretNativeKeys },
   defaultEnabled: true,
   surfaces: ["host", "webview"],
-  capabilities: ["editorProvider", "commands", "navigation"],
+  capabilities: ["editorProvider", "commands", "keybindings", "navigation"],
   contributes: {
     commands: [
       { id: "jumpBack", title: "Go Back in Note", icon: "$(arrow-left)" },
@@ -63,6 +63,31 @@ export default defineManifest({
         id: "useForMarkdownInWorkspace",
         title: "Use Lumière for Markdown in This Workspace",
         scope: "workbench",
+      },
+      {
+        id: "toggleTextEditor",
+        title: "Toggle Text Editor",
+        scope: "workbench",
+        when: "activeCustomEditorId == 'lumiere.markdown.editor' || (editorLangId == 'markdown' && !activeCustomEditorId)",
+      },
+    ],
+    keybindings: [
+      // Lumière focused: Ctrl/Cmd+E → default text editor.
+      {
+        id: "toggleTextEditor",
+        key: "ctrl+e",
+        mac: "cmd+e",
+        scope: "editor",
+      },
+      // Built-in Markdown text editor focused: Ctrl/Cmd+E → Lumière.
+      // workbench scope so the binding is not gated on activeCustomEditorId /
+      // editorFocus (those keys are false while the text editor has focus).
+      {
+        id: "toggleTextEditor",
+        key: "ctrl+e",
+        mac: "cmd+e",
+        scope: "workbench",
+        when: "editorLangId == 'markdown' && editorTextFocus && !activeCustomEditorId",
       },
     ],
     menus: [

@@ -1110,6 +1110,7 @@ the active editor. They work in the command palette, keybindings and menus.
 | table commands (insert/move/delete row and column, align, sort) | `editor:table-*` | tables | — |
 | `toggleSourceMode` | `editor:toggle-source` | livePreview | — |
 | `openAsText` | none | editor | title action |
+| `toggleTextEditor` | none | editor | Mod+E (Lumière ↔ host text editor; not Obsidian's LP↔Source) |
 | `agentBridge` | none | copyLinkForAgent | none (context menu) |
 | `quickSwitcher` | `switcher:open` | quickSwitcher | none by default (Mod+O conflicts with VS Code's Open) |
 

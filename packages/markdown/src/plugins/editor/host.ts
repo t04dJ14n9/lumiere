@@ -1,6 +1,7 @@
 import { registerJumpHistory } from "./jump-host";
 import { registerEditorActions } from "./actions-host";
 import { registerMarkdownAssociation } from "./associations";
+import { registerToggleTextEditor } from "./toggle-text-editor";
 import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
@@ -28,6 +29,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
       "settings",
       "customEditors",
       "documents",
+      "activeEditor",
     ],
     optional: ["vaults"],
   },
@@ -50,6 +52,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     const setFocus = registerFocusContext(ctx, active);
     provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
+    registerToggleTextEditor(ctx);
     ctx.effect(() =>
       ctx.customEditors.register(MARKDOWN_EDITOR, (shell) => {
         const panel = createPanel(shell, ctx.documents, ctx, {

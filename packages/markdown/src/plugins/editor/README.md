@@ -93,6 +93,8 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
 - `associations.ts`: **Use Lumière for Markdown in This Workspace**.
+- `toggle-text-editor.ts`: **Toggle Text Editor** (Ctrl/Cmd+E) between Lumière
+  and the host default text editor.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
 - `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
@@ -122,7 +124,7 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 
 ## Services, events and settings
 
-Host injects the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `settings` and `customEditors`, plus `documents`, provides `editors`, and emits/listens to
+Host injects the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `settings`, `customEditors` and `activeEditor`, plus `documents`, provides `editors`, and emits/listens to
 `editor/opened`, `editor/closed` and `editor/activeChanged`. Webview injects
 `document`, `markdown` and `rpc`, provides `editor` and `menu`, listens to
 `document/syncStatus` and `editor/scrollInput` (widget scroll input cancels a
@@ -151,6 +153,14 @@ only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
 here that shows up in the plain text or Cursor Markdown editor, as Cursor's
 **Preview | Markdown** switch does, is warmed and reopened in this editor.
 Clean text tabs are closed; dirty text tabs keep their native document and undo.
+**Toggle Text Editor** (Ctrl/Cmd+E) switches the active note between Lumière
+and the host's default text editor via `vscode.openWith` (`default` ↔
+`lumiere.markdown.editor`). Opening as text still sets the reclaim bypass so
+Cursor does not yank the note back for 10 s. This is **not** Obsidian's
+Ctrl/Cmd+E (Live Preview ↔ Source); Source mode stays on the unbound
+**Toggle Live Preview/Source Mode** command. Selection and caret are not
+restored across the switch (`vscode.openWith` carries no range).
+
 **Open as Text** keeps the text editor for 10 s. A just-reclaimed note also
 ignores repeated tab notifications for 10 s; an explicit native command jump
 can still navigate to the next hunk during that interval.
@@ -173,6 +183,10 @@ editor already holds the dirty document. The workaround targets Cursor's
 custom-editor handoff assertion before `resolveCustomTextEditor` runs.
 
 ## Limits and differences from Obsidian
+
+Ctrl/Cmd+E toggles Lumière ↔ the host text editor, not Live Preview ↔ Source
+(an intentional diverge from Obsidian for host integration). Caret and
+selection are not preserved across that switch.
 
 VS Code owns text, saving and undo. The core editor cannot be disabled. Feature
 state belongs to its contributing plugin; inactive/unknown contribution keys
