@@ -27,6 +27,26 @@ const inlineClasses: Readonly<Record<string, string>> = {
   InlineCode: "md-inline-code",
 };
 
+/** True when this line carries a `>` QuoteMark (not a lazy continuation). */
+function quoteLineHasMark(
+  state: EditorState,
+  from: number,
+  to: number,
+): boolean {
+  let found = false;
+  state.field(documentTree).iterate({
+    from,
+    to,
+    enter(node) {
+      if (node.name === "QuoteMark") {
+        found = true;
+        return false;
+      }
+    },
+  });
+  return found;
+}
+
 /** The number of quotes around a node, counting the node itself. */
 export function quoteDepth(node: SyntaxNode | null): number {
   let depth = 0;
@@ -223,6 +243,16 @@ class InlineDecorations implements InlineContext {
       pos <= Math.min(node.to, visible.to);
     ) {
       const current = this.state.doc.lineAt(pos);
+      // Obsidian Live Preview paints lazy quote continuations (no `>` on the
+      // line) as ordinary paragraphs; CommonMark still nests them in the
+      // Blockquote node. Skip those lines so they do not get the quote bar.
+      if (
+        node.name === "Blockquote" &&
+        !quoteLineHasMark(this.state, current.from, current.to)
+      ) {
+        pos = current.to + 1;
+        continue;
+      }
       // A revealed quote line shows its dim `>` in place of the bar.
       const revealedQuote =
         node.name === "Blockquote" && this.lineRevealed(pos);

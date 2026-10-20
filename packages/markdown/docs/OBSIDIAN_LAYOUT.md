@@ -29,12 +29,11 @@ Differences that remain:
 - Tables: Obsidian hangs the table's handle strip in the margin, so the table
   lines up with the text; Workshop's table sits 16px in, because there its
   row grips would fall under the line-number gutter.
-- Inline math line height: matched Obsidian `.hmd-fold-math` (placeholder `line-height: 0`, inline SVG `overflow: hidden`).
+- Inline math can make its line 1–2px taller than Obsidian's.
 - CodeMirror pads every line 2px at the start; all text sits 2px right of
   Obsidian's.
-- A paragraph line right after a quote is part of the quote (CommonMark's lazy
-  continuation, as in Obsidian's reading view); Obsidian's Live Preview shows
-  it as a paragraph.
-- Continuation lines with more leading spaces than the item's content column
-  use Obsidian indent-size steps (`--list-indent` × floor(spaces/4) + 1em
-  nobullet last padding), not hang-under-item plus leftover spaces.
+- An empty line after a footnote definition is a normal line (Obsidian sets
+  it in the footnote's smaller size).
+- A continuation line indented exactly to a nested item's text starts under
+  that text; Obsidian places it by its number of spaces alone (4 spaces: 13px
+  right of a level-2 item's text), and it has no item spacing above or below.

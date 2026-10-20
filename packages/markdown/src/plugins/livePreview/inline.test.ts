@@ -313,3 +313,22 @@ test("labelled links leaving the vault are marked external once rendered", () =>
   );
   assert.equal(linkClass(false, "https://example.com"), "md-link");
 });
+
+test("lazy quote continuation lines are not painted as quotes (Obsidian LP)", () => {
+  const doc = "> quoted\nlazy para\n\nafter";
+  const state = EditorState.create({
+    doc,
+    extensions: [documentTree],
+  });
+  const quoteLines: number[] = [];
+  inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+    0,
+    doc.length,
+    (from, _to, value) => {
+      if (String(value.spec.class).split(" ").includes("md-quote")) {
+        quoteLines.push(state.doc.lineAt(from).number);
+      }
+    },
+  );
+  assert.deepEqual(quoteLines, [1]);
+});
