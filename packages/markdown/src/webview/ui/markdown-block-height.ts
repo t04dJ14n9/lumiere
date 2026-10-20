@@ -101,11 +101,11 @@ export function charsPerLineForEstimate(): number {
 export const markdownBlockWidthTracker = ViewPlugin.fromClass(
   class {
     constructor(view: EditorView) {
-      rememberMarkdownBlockContentWidth(view.contentDOM.clientWidth);
+      rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     }
     update(update: ViewUpdate) {
       if (update.geometryChanged || update.docChanged) {
-        rememberMarkdownBlockContentWidth(update.view.contentDOM.clientWidth);
+        rememberMarkdownBlockContentWidth(update.view.contentDOM?.clientWidth ?? 0);
       }
     }
   },

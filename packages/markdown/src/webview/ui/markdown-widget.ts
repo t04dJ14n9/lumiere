@@ -118,7 +118,7 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override toDOM(view: EditorView): HTMLElement {
-    rememberMarkdownBlockContentWidth(view.contentDOM.clientWidth);
+    rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     const shell = document.createElement("section");
     shell.className = `hybrid-block hybrid-${this.block.kind}`;
     // Async renders (Mermaid SVG, MathJax) paint short until ready. Remounts
