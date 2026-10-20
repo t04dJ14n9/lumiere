@@ -30,9 +30,7 @@ export function setImageSelectedChrome(
       host.classList.add(EMBED);
       tagged.add(host);
     }
-    if (
-      ![...host.children].some((child) => child.classList.contains(CORNER))
-    ) {
+    if (![...host.children].some((child) => child.classList.contains(CORNER))) {
       const corner = document.createElement("span");
       corner.className = CORNER;
       corner.setAttribute("aria-hidden", "true");

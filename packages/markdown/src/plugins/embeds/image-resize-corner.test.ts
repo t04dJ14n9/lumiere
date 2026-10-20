@@ -74,9 +74,11 @@ test("select adds image-embed host + one aria-hidden corner; deselect clears bot
     },
     querySelector(sel: string) {
       if (sel === "img.md-image-selected") {
-        return kids.find(
-          (c) => c.isImg && c.classList.contains("md-image-selected"),
-        ) ?? null;
+        return (
+          kids.find(
+            (c) => c.isImg && c.classList.contains("md-image-selected"),
+          ) ?? null
+        );
       }
       return null;
     },
@@ -149,7 +151,9 @@ test("select is idempotent: a second mark does not add another corner", () => {
   const restore = installDocument((corner) => {
     corner.remove = () => {
       const i = kids.indexOf(corner);
-      if (i >= 0) kids.splice(i, 1);
+      if (i >= 0) {
+        kids.splice(i, 1);
+      }
     };
   });
   try {
