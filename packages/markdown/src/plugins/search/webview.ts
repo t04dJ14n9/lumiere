@@ -67,6 +67,13 @@ function registerQueryFences(ctx: Context, client: QueryClient): void {
       pass,
       client,
       pass.documentUri ?? ctx.editor.source,
+      (target) => {
+        void ctx.rpc
+          .call(protocol, "open", target)
+          .catch((error) =>
+            ctx.logger.warn("Search result open failed", error),
+          );
+      },
     );
     const stop = () => {
       dispose();
