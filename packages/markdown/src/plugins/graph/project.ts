@@ -136,11 +136,7 @@ function isConcept(bundleRoot: string, path: string): boolean {
 
 /** Body links/embeds plus frontmatter wikilinks (Obsidian graph includes both). */
 function noteLinks(metadata: NoteMetadata) {
-  return [
-    ...metadata.links,
-    ...metadata.embeds,
-    ...metadata.frontmatterLinks,
-  ];
+  return [...metadata.links, ...metadata.embeds, ...metadata.frontmatterLinks];
 }
 
 function classifyHit(
