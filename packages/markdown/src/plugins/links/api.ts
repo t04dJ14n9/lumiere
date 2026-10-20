@@ -1,6 +1,6 @@
-import type { Infer } from "@workshop/core";
 import { StateEffect, StateField, type EditorState } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
+import type { Infer } from "@workshop/core";
 import type { request as requestSchema } from "./protocol";
 import { unresolvedKey } from "./target";
 
