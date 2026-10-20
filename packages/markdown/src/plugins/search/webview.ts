@@ -62,12 +62,19 @@ function registerQueryFences(ctx: Context, client: QueryClient): void {
     if (!isQuery(fence.language)) {
       return undefined;
     }
-    const dispose = bindSearchBlock(
+    const dispose = bindSearchBlock({
       fence,
       pass,
       client,
-      pass.documentUri ?? ctx.editor.source,
-    );
+      source: pass.documentUri ?? ctx.editor.source,
+      open: (target) => {
+        void ctx.rpc
+          .call(protocol, "open", target)
+          .catch((error) =>
+            ctx.logger.warn("Search result open failed", error),
+          );
+      },
+    });
     const stop = () => {
       dispose();
       cleanups.delete(stop);

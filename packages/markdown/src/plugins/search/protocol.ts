@@ -19,6 +19,12 @@ export const response = Schema.object({
   unreadable: Schema.number().min(0),
 });
 export type SearchResponse = Infer<typeof response>;
+export const openTarget = Schema.object({
+  path: Schema.string().max(8192),
+  offset: Schema.number().min(0).optional(),
+  /** Open beside (Cmd/Ctrl+Alt-click), as Obsidian does for search matches. */
+  side: Schema.boolean().optional(),
+});
 export const protocol = defineProtocol("search", {
   requests: {
     query: {
@@ -30,6 +36,8 @@ export const protocol = defineProtocol("search", {
       }),
       result: response,
     },
+    /** Open a result path at an optional content offset (match-line click). */
+    open: { params: openTarget, result: Schema.boolean() },
   },
   notifications: {
     changed: Schema.object({}),

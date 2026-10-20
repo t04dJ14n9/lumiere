@@ -1,13 +1,23 @@
 import type { RenderPass, Fence } from "../render/api";
 import type { QueryClient, SearchUpdate } from "./client";
 import type { SearchResponse } from "./protocol";
+
+/** Open a vault path from a search result (match line carries an offset). */
+export type OpenSearchResult = (target: {
+  path: string;
+  offset?: number;
+  side?: boolean;
+}) => void;
+
 /** Each rendered block owns one subscription, including manual refresh and teardown. */
-export function bindSearchBlock(
-  fence: Fence,
-  pass: RenderPass,
-  client: QueryClient,
-  source: string,
-): () => void {
+export function bindSearchBlock(input: {
+  fence: Fence;
+  pass: RenderPass;
+  client: QueryClient;
+  source: string;
+  open?: OpenSearchResult;
+}): () => void {
+  const { fence, pass, client, source, open } = input;
   const document = fence.element.ownerDocument;
   fence.element.classList.add("embedded-search");
   const header = document.createElement("div");
@@ -32,7 +42,7 @@ export function bindSearchBlock(
       if (!live) {
         return;
       }
-      renderResults({ status, results }, update);
+      renderResults({ status, results }, update, open);
       pass.measure();
     });
   };
@@ -52,6 +62,7 @@ export function bindSearchBlock(
 function renderResults(
   elements: { status: HTMLElement; results: HTMLElement },
   update: SearchUpdate,
+  open?: OpenSearchResult,
 ): void {
   const { status, results } = elements;
   results.replaceChildren();
@@ -65,7 +76,7 @@ function renderResults(
       ? ` · ${update.unreadable} files could not be searched`
       : "";
     status.textContent = `Searching… ${matches.length} so far${unreadable}`;
-    paintMatches(results, matches);
+    paintMatches(results, matches, open);
     return;
   }
   if (update.error) {
@@ -77,11 +88,12 @@ function renderResults(
     ? ` · ${update.unreadable} files could not be searched`
     : "";
   status.textContent = `${matches.length} ${matches.length === 1 ? "result" : "results"}${unreadable}`;
-  paintMatches(results, matches);
+  paintMatches(results, matches, open);
 }
 function paintMatches(
   results: HTMLElement,
   matches: SearchResponse["results"],
+  open?: OpenSearchResult,
 ): void {
   const doc = results.ownerDocument;
   for (const result of matches) {
@@ -99,7 +111,31 @@ function paintMatches(
         const row = doc.createElement("div");
         row.className = "search-result-file-match";
         row.setAttribute("data-offset", String(line.offset));
+        row.setAttribute("role", "button");
+        row.tabIndex = 0;
+        row.setAttribute("aria-label", `Open ${result.path} at match`);
         paintMatchText(row, line);
+        if (open) {
+          const go = (event: MouseEvent | KeyboardEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const side =
+              "metaKey" in event &&
+              (event.metaKey || event.ctrlKey) &&
+              event.altKey;
+            open({
+              path: result.path,
+              offset: line.offset,
+              ...(side ? { side: true } : {}),
+            });
+          };
+          row.onclick = go;
+          row.onkeydown = (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              go(event);
+            }
+          };
+        }
         nest.append(row);
       }
       item.append(nest);
@@ -132,4 +168,13 @@ function paintMatchText(
   if (mark.to < line.text.length) {
     row.append(doc.createTextNode(line.text.slice(mark.to)));
   }
+}
+
+/** Test helper: paint results into a detached list. */
+export function paintSearchMatchesForTest(
+  results: HTMLElement,
+  matches: SearchResponse["results"],
+  open?: OpenSearchResult,
+): void {
+  paintMatches(results, matches, open);
 }

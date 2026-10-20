@@ -4,6 +4,7 @@ import type {} from "../vault/api";
 import { protocol } from "./protocol";
 import { SearchWorker } from "./runner";
 import { searchVault } from "./query";
+import { resolveSearchOpen } from "./open";
 export const searchHost: Plugin<{ panel: PanelShell }> = {
   name: "search",
   inject: { required: ["rpc", "vault", "vaults", "extensions"] },
@@ -37,6 +38,16 @@ export const searchHost: Plugin<{ panel: PanelShell }> = {
         } finally {
           await worker.dispose();
         }
+      }),
+    );
+    ctx.effect(() =>
+      ctx.rpc.handle(protocol, "open", async (target) => {
+        const resolved = resolveSearchOpen(ctx.vault, target);
+        if (!resolved) {
+          return false;
+        }
+        await ctx.vaults.open(resolved.uri, resolved.options);
+        return true;
       }),
     );
     ctx.effect(() =>
