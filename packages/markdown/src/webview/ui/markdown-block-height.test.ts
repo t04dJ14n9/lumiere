@@ -20,6 +20,19 @@ test("line count scales the reserve for tall callouts", () => {
   assert.ok(large > 800, `got ${large}`);
 });
 
+test("callouts reserve title/padding chrome beyond bare line×24", () => {
+  const lines = Array.from(
+    { length: 40 },
+    (_, i) => `> Callout body line ${i} with enough text.`,
+  );
+  const source = `> [!note] Tall callout\n${lines.join("\n")}`;
+  const height = markdownBlockEstimatedHeight(source);
+  const bareLines = 12 + (1 + 40) * 24; // old CHROME + lines × LINE
+  assert.ok(height > bareLines, `got ${height} bare=${bareLines}`);
+  // Must clear 0.7 × ~1530 measured in the remount browser probe.
+  assert.ok(height > 1100, `got ${height}`);
+});
+
 test("short Mermaid fences reserve tall SVG height, not bare line count", () => {
   const source = [
     "```mermaid",
