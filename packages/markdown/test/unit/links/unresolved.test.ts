@@ -182,3 +182,56 @@ test("rendered Markdown links to missing notes are styled unresolved; revealed o
   const revealed = classes(doc.indexOf("Missing]"));
   assert.equal(revealed["Missing.md"], "md-link");
 });
+
+test("unresolved accepts an embedded note URI for that note's outbound misses", async () => {
+  const index = new MemoryVaultIndex({
+    root: "memory:///vault",
+    folderNote: "",
+    linkFormat: "shortest",
+  });
+  const entry = (path: string) => ({
+    uri: `memory:///vault/${encodeURI(path)}`,
+    path,
+    mtime: 1,
+    size: 1,
+  });
+  index.replaceFiles([entry("Host.md"), entry("Embed.md")]);
+  index.setMetadata("Host.md", metadata("![[Embed]]"));
+  index.setMetadata("Embed.md", metadata("[[OnlyInEmbed]] [[Host]]"));
+  index.notifyResolved();
+
+  const { host, client } = connectedEndpoints();
+  const root = createRoot();
+  root.provide("rpc", host);
+  root.provide("vault", index);
+  provideHostServices(root, fakeHost());
+  root.provide("resources", {
+    load: async () => {
+      throw new Error("Unused");
+    },
+  });
+  const panel = {
+    document: { uri: "memory:///vault/Host.md" },
+    active: () => true,
+  } as PanelShell;
+  root.plugin(linksHost, { panel });
+  await root.settled();
+
+  assert.deepEqual(await client.call(protocol, "unresolved", {}), []);
+  assert.deepEqual(
+    await client.call(protocol, "unresolved", {
+      source: "memory:///vault/Embed.md",
+    }),
+    ["onlyinembed"],
+  );
+  assert.deepEqual(
+    await client.call(protocol, "unresolved", {
+      source: "memory:///elsewhere/Evil.md",
+    }),
+    [],
+  );
+
+  await root.dispose();
+  host.dispose();
+  client.dispose();
+});

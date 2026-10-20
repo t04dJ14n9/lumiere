@@ -39,7 +39,13 @@ export const protocol = defineProtocol("links", {
       result: Schema.boolean(),
     },
     open: { params: request, result: Schema.boolean() },
-    unresolved: { params: Schema.object({}), result: unresolvedLinkpaths },
+    unresolved: {
+      params: Schema.object({
+        /** Note URI whose outbound unresolved set to return; host note when omitted. */
+        source: Schema.string().max(8192).optional(),
+      }),
+      result: unresolvedLinkpaths,
+    },
   },
   notifications: {
     unresolvedChanged: unresolvedLinkpaths,

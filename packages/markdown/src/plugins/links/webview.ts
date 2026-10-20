@@ -11,6 +11,7 @@ import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
 import { linkAt, followCaretLink } from "./caret-link";
 import { linkClickHandlers, type OpenLink } from "./clicks";
+import { tagUnresolvedAnchors } from "./tag-unresolved-anchors";
 export { linkAt } from "./caret-link";
 
 export const linksWebview: Plugin = {
@@ -28,6 +29,7 @@ export const linksWebview: Plugin = {
     const open = linkOpener(ctx, navigate);
     registerNavigation(ctx, navigate);
     registerUnresolvedLinks(ctx);
+    registerEmbedUnresolved(ctx);
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
@@ -133,9 +135,11 @@ function registerUnresolvedLinks(ctx: Context): void {
     live = false;
   });
   const apply = (paths: readonly string[]) => {
-    if (live) {
-      view.dispatch({ effects: setUnresolved.of(new Set(paths)) });
+    if (!live) {
+      return;
     }
+    view.dispatch({ effects: setUnresolved.of(new Set(paths)) });
+    void refreshRenderedUnresolved(ctx, view);
   };
   ctx.effect(() => ctx.editor.extend(unresolvedLinks));
   ctx.effect(() => ctx.rpc.on(protocol, "unresolvedChanged", apply));
@@ -143,6 +147,66 @@ function registerUnresolvedLinks(ctx: Context): void {
     .call(protocol, "unresolved", {})
     .then(apply)
     .catch((error) => ctx.logger.warn("Unresolved links unavailable", error));
+}
+
+/**
+ * Dim unresolved anchors inside rendered HTML (note embeds) using that note's
+ * outbound unresolved set — not the host note's.
+ */
+function registerEmbedUnresolved(ctx: Context): void {
+  ctx.on("render/postProcess", (pass) => {
+    const source = pass.documentUri;
+    void ctx.rpc
+      .call(protocol, "unresolved", source ? { source } : {})
+      .then((paths) => {
+        if (!ctx.isLive || !pass.container.isConnected) {
+          return;
+        }
+        tagUnresolvedAnchors(pass.container, new Set(paths));
+      })
+      .catch((error) =>
+        ctx.logger.warn("Embed unresolved links unavailable", error),
+      );
+  });
+}
+
+/** Re-tag every rendered surface after the vault re-resolves links. */
+async function refreshRenderedUnresolved(
+  ctx: Context,
+  view: EditorView,
+): Promise<void> {
+  // Plugin teardown can clear contentDOM before a late unresolved RPC lands.
+  if (!view.contentDOM?.isConnected) {
+    return;
+  }
+  const roots = [
+    ...view.contentDOM.querySelectorAll<HTMLElement>(".markdown-rendered"),
+  ];
+  if (roots.length === 0) {
+    return;
+  }
+  const groups = new Map<string, HTMLElement[]>();
+  for (const root of roots) {
+    const source = root.dataset.noteSource ?? "";
+    const list = groups.get(source) ?? [];
+    list.push(root);
+    groups.set(source, list);
+  }
+  for (const [source, elements] of groups) {
+    try {
+      const paths = await ctx.rpc.call(
+        protocol,
+        "unresolved",
+        source ? { source } : {},
+      );
+      const unresolved = new Set(paths);
+      for (const element of elements) {
+        tagUnresolvedAnchors(element, unresolved);
+      }
+    } catch (error) {
+      ctx.logger.warn("Embed unresolved refresh failed", error);
+    }
+  }
 }
 
 function registerWikiLinks(ctx: Context): void {
