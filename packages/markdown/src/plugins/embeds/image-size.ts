@@ -49,6 +49,16 @@ export function writtenWidth(source: string): number | undefined {
   return last && SIZE.test(last) ? Number(last.split("x")[0]) : undefined;
 }
 
+/** The height from `|WxH` in `source`, if both dimensions were written. */
+export function writtenHeight(source: string): number | undefined {
+  const last = partsOf(source)?.parts.at(-1);
+  if (!last || !SIZE.test(last)) {
+    return undefined;
+  }
+  const parts = last.split("x");
+  return parts.length === 2 ? Number(parts[1]) : undefined;
+}
+
 /** `source` with its size set to `width`, or removed for `undefined`. */
 export function withWidth(source: string, width: number | undefined): string {
   const found = partsOf(source);

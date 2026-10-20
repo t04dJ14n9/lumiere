@@ -14,5 +14,8 @@ const IMAGE = /\.(?:bmp|png|jpe?g|gif|svg|webp|avif)$/iu;
  * image file, which Obsidian 1.13 keeps rendered whatever the caret does.
  */
 export function embedsImage(source: string): boolean {
-  return IMAGE.test(embedTarget(source));
+  const target = embedTarget(source);
+  // Pasted / inspector data URLs have no file extension but stay rendered
+  // like image files (Obsidian 1.13 keeps the caret from revealing them).
+  return IMAGE.test(target) || /^data:image\//i.test(target);
 }

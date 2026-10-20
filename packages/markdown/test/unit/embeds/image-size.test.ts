@@ -5,6 +5,7 @@ import {
   steppedWidth,
   targetRange,
   withWidth,
+  writtenHeight,
   writtenWidth,
 } from "../../../src/plugins/embeds/image-size";
 
@@ -38,7 +39,9 @@ test("the size is the last | part of an embed, or of a Markdown image's alt text
   assert.equal(withWidth("![316](wide.png)", undefined), "![](wide.png)");
   assert.equal(withWidth("![alt](a.png)", 50), "![alt|50](a.png)");
   assert.equal(writtenWidth("![[pic.png|100x50]]"), 100);
+  assert.equal(writtenHeight("![[pic.png|100x50]]"), 50);
   assert.equal(writtenWidth("![alt|25](a.png)"), 25);
+  assert.equal(writtenHeight("![alt|25](a.png)"), undefined);
   assert.equal(writtenWidth("![[pic.png]]"), undefined);
 });
 

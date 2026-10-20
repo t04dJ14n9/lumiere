@@ -45,3 +45,12 @@ test("as in Obsidian, a click selects an embedded note; an image has no Edit but
   assert.equal(inlineEmbedClick("![[A]]"), inlineEmbedClick("![[B]]"));
   assert.equal(inlineEmbedClick("![[pic.png]]"), "none");
 });
+
+test("data:image URLs count as images so they stay rendered like files", async () => {
+  const { embedsImage, embedEditing } =
+    await import("../../../src/plugins/embeds/clicks");
+  const source =
+    "![x](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=)";
+  assert.equal(embedsImage(source), true);
+  assert.deepEqual(embedEditing(source), { reveal: "none" });
+});
