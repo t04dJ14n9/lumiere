@@ -233,3 +233,79 @@ test("PageDown from H1 paints the next body lines, not a black pane", async ({
   expect(after.visibleBody, JSON.stringify(after)).toBeGreaterThan(2);
   expect(after.blankRatio, JSON.stringify(after)).toBeLessThan(0.35);
 });
+
+test("in-note fragment jump with a tall sheet keeps neighbours painted", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 760 });
+  const entries = Array.from(
+    { length: 108 },
+    (_, index) =>
+      `  - title: Source ${index}\n    resource: https://example.com/${index}\n    id: id-${index}`,
+  ).join("\n");
+  const lead = Array.from(
+    { length: 15 },
+    (_, index) => `Lead paragraph ${index}.`,
+  ).join("\n\n");
+  const progress = Array.from(
+    { length: 20 },
+    (_, index) => `Progress paragraph ${index}.`,
+  ).join("\n\n");
+  const doc = `---\nsources:\n${entries}\n---\n# H1 Title\n\nSee [Progress](#progress).\n\n${lead}\n\n## Progress\n\n${progress}\n`;
+  await open(page, doc);
+  await constrain(page);
+  await expect(page.locator(".hybrid-properties")).toBeVisible();
+
+  // Production path: links navigate centres the fragment target.
+  await page.evaluate(() => window.harness.navigate({ fragment: "progress" }));
+  await page.waitForTimeout(150);
+
+  const after = await page.evaluate(() => {
+    const scroller = document.querySelector(".cm-scroller") as HTMLElement;
+    const vp = scroller.getBoundingClientRect();
+    let covered = 0;
+    for (const el of [
+      ...document.querySelectorAll(".cm-line"),
+      document.querySelector(".hybrid-properties"),
+    ]) {
+      if (!(el instanceof HTMLElement)) {
+        continue;
+      }
+      const rect = el.getBoundingClientRect();
+      const top = Math.max(rect.top, vp.top);
+      const bottom = Math.min(rect.bottom, vp.bottom);
+      if (bottom > top) {
+        covered += bottom - top;
+      }
+    }
+    const heading = [...document.querySelectorAll(".cm-line")].find((line) =>
+      line.textContent?.includes("Progress"),
+    );
+    const neighbours = [...document.querySelectorAll(".cm-line")].filter(
+      (line) => {
+        const rect = (line as HTMLElement).getBoundingClientRect();
+        return (
+          (line.textContent || "").includes("Progress paragraph") &&
+          rect.bottom > vp.top + 8 &&
+          rect.top < vp.bottom - 8 &&
+          (line as HTMLElement).offsetHeight > 8
+        );
+      },
+    );
+    const fiber = [...window.harness.views[0]!.plugins].find(
+      (plugin) => plugin.definition.name === "livePreview",
+    );
+    return {
+      headingText: heading?.textContent ?? null,
+      neighbourCount: neighbours.length,
+      blankRatio: 1 - Math.min(1, covered / vp.height),
+      reserved: fiber!.context!.editor.view.lineBlockAt(0).height,
+      scrollTop: scroller.scrollTop,
+    };
+  });
+
+  expect(after.headingText, JSON.stringify(after)).toMatch(/Progress/);
+  expect(after.neighbourCount, JSON.stringify(after)).toBeGreaterThan(1);
+  expect(after.blankRatio, JSON.stringify(after)).toBeLessThan(0.35);
+  expect(after.reserved).toBeGreaterThan(400);
+});
