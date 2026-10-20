@@ -102,3 +102,10 @@ test("the cell editor keeps the table's 1.3 line-height so open and closed cells
     );
   }
 });
+
+test("the cell editor's scroller is content-sized instead of CodeMirror's 100% height", () => {
+  assert.match(
+    css,
+    /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*height: auto;/,
+  );
+});

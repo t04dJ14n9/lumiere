@@ -198,6 +198,10 @@
   min-width: 40px;
 }
 #app .hybrid-table .cm-editor .cm-scroller {
+  /* CodeMirror's base theme is 100% high. In a table cell that participates
+     in intrinsic row sizing instead of matching the rendered cell's content
+     box, so opening the projected editor can make only that row taller. */
+  height: auto;
   overflow: visible;
   /* Same 1.3 as .hybrid-table table. Without this the nested editor inherits
      the note's --line-height (1.5 by default) and the cell grows when the
