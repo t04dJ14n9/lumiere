@@ -16,10 +16,10 @@ test("linked lines give one trimmed context line per link to the target", () => 
   assert.deepEqual(
     lines.map(({ line, text }) => [line, text]),
     [
+      [1, 'up: "[[Target]]"'],
       [3, "First [[Target]] and [[Other]]."],
       [4, "Second ![[Target#Part|alias]] and [t](Target.md)"],
       [4, "Second ![[Target#Part|alias]] and [t](Target.md)"],
-      [1, 'up: "[[Target]]"'],
     ],
   );
   assert.equal(
