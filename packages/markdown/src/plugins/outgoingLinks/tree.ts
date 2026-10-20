@@ -95,7 +95,7 @@ export class OutgoingLinksTree implements TreeSource {
   private linkNodes(): TreeNode[] {
     const { path, vault } = this.note!;
     return [...vault.index.resolvedLinks(path)]
-      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .sort(([a], [b]) => compareOutgoingPaths(a, b))
       .map(([target, count]) => {
         const uri = vault.index.file(target)?.uri ?? target;
         return {
@@ -111,7 +111,7 @@ export class OutgoingLinksTree implements TreeSource {
   private unresolvedNodes(): TreeNode[] {
     const { path, vault } = this.note!;
     return [...vault.index.unresolvedLinks(path)]
-      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .sort(([a], [b]) => compareOutgoingPaths(a, b))
       .map(([linkpath, count]) => ({
         id: `unresolved:${linkpath}`,
         label: linkpath,
@@ -173,10 +173,22 @@ export class OutgoingLinksTree implements TreeSource {
         paths.push(file.path);
       }
     }
-    return paths.sort((a, b) => (a < b ? -1 : 1));
+    return sortOutgoingPaths(paths);
   }
 }
 
 function countText(folder: string, count: number): string {
   return [folder, count > 1 ? `×${count}` : ""].filter(Boolean).join("  ");
+}
+
+/** Obsidian outgoing default alphabetical sort (basename, then path). */
+export function compareOutgoingPaths(a: string, b: string): number {
+  return (
+    stemOf(a).localeCompare(stemOf(b), undefined, { sensitivity: "base" }) ||
+    a.localeCompare(b)
+  );
+}
+
+export function sortOutgoingPaths(paths: readonly string[]): string[] {
+  return [...paths].sort(compareOutgoingPaths);
 }
