@@ -105,7 +105,6 @@ function decorateContinuations(
 ): void {
   const first = cx.state.doc.lineAt(item.from);
   const content = contentColumn(cx.state.sliceDoc(first.from, first.to));
-  const itemDepth = listDepthFromStyle(style);
   for (let child = item.firstChild; child; child = child.nextSibling) {
     // A task item's paragraph is a Task node.
     if (child.name !== "Paragraph" && child.name !== "Task") {
@@ -124,12 +123,9 @@ function decorateContinuations(
           });
           cx.hide(line.from, line.from + spaces);
         } else {
-          // Hang under item text: Obsidian still paints one cm-indent for the
-          // content column (plus ancestor guides). Keep --list-depth for hang.
-          const contStyle = `${style}; --list-guide-depth: ${itemDepth + 1}`;
-          cx.line(line.from, "md-list-line md-list-continuation", {
-            style: contStyle,
-          });
+          // Hang under item text: Obsidian 1.14.4 LP paints ancestor guides only
+          // (--list-depth), not an extra content-column guide on hang lines.
+          cx.line(line.from, "md-list-line md-list-continuation", { style });
           cx.hide(line.from, line.from + spaces);
         }
       }
@@ -139,12 +135,6 @@ function decorateContinuations(
       line = cx.state.doc.line(line.number + 1);
     }
   }
-}
-
-/** Nesting depth encoded on a list line's `--list-depth` style. */
-function listDepthFromStyle(style: string): number {
-  const match = /--list-depth:\s*(\d+)/.exec(style);
-  return match ? Number(match[1]) : 0;
 }
 
 /** Where an item's text starts on its first line, in characters. */

@@ -42,8 +42,9 @@ and code retain source-column guides.
 Guides use VS Code theme colors. Nested Live Preview list guides highlight the
 caret's depth with `--vscode-editorIndentGuide-activeBackground1` (Obsidian
 active indent). Source-mode active columns are tracked separately when that
-path is enabled. Indented list-prose continuations paint Obsidian nobullet
-`cm-indent` guides via `--list-guide-depth` (content column plus ancestors).
+path is enabled. Space-step list-prose continuations paint Obsidian nobullet
+`cm-indent` guides via `--list-guide-depth`; hang continuations keep ancestor
+`--list-depth` guides only (no extra hang column), matching Obsidian 1.14.4 LP.
 Separate source continuation lines in list prose that the list renderer does
 not normalize still lack guides. Quoted lists and code retain source-column
 guides.

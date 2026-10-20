@@ -795,10 +795,10 @@ On by default.
    its marker. In a scratch copy, add an ordered parent with three-space child
    indentation, tab-indented lists and task children: they use the same visual
    nesting steps. Long items keep
-   guides through soft wraps without a second set at source tab stops. Indented
-   list-prose continuation lines show the same nesting guides plus a content-column
-   guide (Obsidian nobullet `cm-indent`); indented code and non-list text retain
-   source-column guides.
+   guides through soft wraps without a second set at source tab stops. Hang
+   list-prose continuations keep ancestor nesting guides only; deeper space-step
+   continuations add Obsidian nobullet `cm-indent` columns. Indented code and
+   non-list text retain source-column guides.
 2. Toggle `lumiere.markdown.plugins.indentGuides.enabled` off: every guide
    disappears while bullets and indentation stay in place. Turn it on and
    switch to Source mode: guides follow source tab stops. Switch back: list

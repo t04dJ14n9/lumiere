@@ -28,8 +28,8 @@
   background-size: calc(var(--list-depth, 0) * var(--list-indent)) 100%;
 }
 
-/* Continuations: Obsidian nobullet cm-indent guides (content column + ancestors).
- * --list-guide-depth is set by the list renderer; hang layout keeps --list-depth. */
+/* Continuations: space-step lines set --list-guide-depth (Obsidian nobullet
+ * cm-indent). Hang lines omit it and fall back to --list-depth (ancestors only). */
 .mw-indent-guides .cm-line.md-list-continuation {
   background-size: calc(
       var(--list-guide-depth, var(--list-depth, 0)) * var(--list-indent)

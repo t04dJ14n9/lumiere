@@ -93,8 +93,7 @@ test("an item's indented continuation lines hang under its text; a lazy line doe
     {
       line: "  [[Home]] here",
       hidden: "  ",
-      style:
-        "--list-depth: 0; --list-marker: calc(1.25em + 3px); --list-guide-depth: 1",
+      style: "--list-depth: 0; --list-marker: calc(1.25em + 3px)",
     },
     {
       // Extra spaces beyond "- " → Obsidian indent-size steps, not hang + leftover.
@@ -105,14 +104,12 @@ test("an item's indented continuation lines hang under its text; a lazy line doe
     {
       line: "   three in",
       hidden: "   ",
-      style:
-        "--list-depth: 0; --list-marker: calc(1.5em + 6px); --list-guide-depth: 1",
+      style: "--list-depth: 0; --list-marker: calc(1.5em + 6px)",
     },
     {
       line: "      under task",
       hidden: "      ",
-      style:
-        "--list-depth: 0; --list-marker: calc(1.75em - 1px); --list-guide-depth: 1",
+      style: "--list-depth: 0; --list-marker: calc(1.75em - 1px)",
     },
   ]);
 });
@@ -157,7 +154,9 @@ test("continuation spaces beyond the content column use indent-size steps", () =
   ]);
 });
 
-test("nested hang continuations set list-guide-depth to ancestors plus content column", () => {
+test("nested hang continuations keep ancestor guides only (no extra hang column)", () => {
+  // Obsidian 1.14.4 LP: hang under nested shows the ancestor column, not a
+  // second content-column guide (that extra appears on deeper space-steps).
   const doc = "- parent\n  - child\n    under child\n\nafter";
   const state = EditorState.create({
     doc,
@@ -175,6 +174,6 @@ test("nested hang continuations set list-guide-depth to ancestors plus content c
     },
   );
   assert.deepEqual(styles, [
-    "--list-depth: 1; --list-marker: calc(1.25em + 3px); --list-guide-depth: 2",
+    "--list-depth: 1; --list-marker: calc(1.25em + 3px)",
   ]);
 });
