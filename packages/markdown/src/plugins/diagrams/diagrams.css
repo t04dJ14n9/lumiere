@@ -1,4 +1,4 @@
-/* Mermaid diagrams, centred; a failed diagram shows its source and the error. */
+/* Mermaid diagrams, centred; failures use Obsidian is-guarded chrome. */
 pre[data-fence="mermaid"]:has(> svg) {
   padding: 8px 0;
   overflow-x: auto;
@@ -23,9 +23,55 @@ pre[data-fence="mermaid"] svg {
 pre[data-fence="mermaid"] svg text {
   cursor: text;
 }
-.diagram-error {
-  margin: 4px 0 0;
-  color: var(--vscode-errorForeground, #e05252);
+
+/* Obsidian mermaid-wrapper.is-guarded (REA app.css ~11494); VS Code tokens. */
+.mermaid-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+.mermaid-wrapper.is-guarded {
+  overflow: hidden;
+  border: 1px solid var(--vscode-widget-border, var(--line, #8884));
+  border-radius: 6px;
+  text-align: start;
+}
+.mermaid-guard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+}
+.mermaid-guard-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mermaid-guard-title {
+  font-weight: 600;
   font-size: 0.875em;
+  color: var(--vscode-editor-foreground, inherit);
+}
+.mermaid-guard-description {
+  color: var(--vscode-descriptionForeground, var(--muted, #888));
+  font-size: 0.8125em;
   white-space: pre-wrap;
+}
+.mermaid-guard-source {
+  border-top: 1px solid var(--vscode-widget-border, var(--line, #8884));
+}
+.mermaid-guard-source pre {
+  margin: 0;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 0;
+  background: var(--vscode-textCodeBlock-background, var(--code, #0002));
+  overflow-x: auto;
+}
+.mermaid-guard-source code {
+  font-family: var(--vscode-editor-font-family, var(--code-font, monospace));
+  font-size: var(--code-size, 0.875em);
+  color: var(--vscode-editor-foreground, inherit);
+  white-space: pre;
 }

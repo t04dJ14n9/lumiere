@@ -34,8 +34,8 @@ export class DiagramRenderer {
       .then(() => this.renderQueued(request))
       .catch((error) => {
         if (request.isActive) {
-          // The source stays visible; say why it did not become a diagram.
-          failure = showFailure(fence.element, error);
+          // Obsidian-style guarded chrome: title, error, and source.
+          failure = showMermaidGuard(fence.element, error, fence.source);
           pass.measure();
           this.logger.warn("Diagram rendering failed", error);
         }
@@ -80,11 +80,45 @@ export class DiagramRenderer {
   }
 }
 
-function showFailure(element: HTMLElement, error: unknown): HTMLElement {
-  const message = element.ownerDocument.createElement("p");
-  message.className = "diagram-error";
-  message.setAttribute("role", "status");
-  message.textContent = `Mermaid could not draw this diagram: ${errorMessage(error)}`;
-  element.after(message);
-  return message;
+/**
+ * Obsidian `mermaid-wrapper.is-guarded` chrome when a diagram cannot render
+ * (REA app.css ~11494). Lumière keeps htmlLabels off, so there is no Allow
+ * button — only the header + source panel with VS Code theme tokens.
+ */
+export function showMermaidGuard(
+  element: HTMLElement,
+  error: unknown,
+  source: string,
+): HTMLElement {
+  const doc = element.ownerDocument;
+  const wrap = doc.createElement("div");
+  wrap.className = "mermaid-wrapper is-guarded";
+  wrap.setAttribute("role", "status");
+
+  const header = doc.createElement("div");
+  header.className = "mermaid-guard-header";
+  const text = doc.createElement("div");
+  text.className = "mermaid-guard-text";
+  const title = doc.createElement("div");
+  title.className = "mermaid-guard-title";
+  title.textContent = "Mermaid could not draw this diagram";
+  const description = doc.createElement("div");
+  description.className = "mermaid-guard-description";
+  description.textContent = errorMessage(error);
+  text.append(title, description);
+  header.append(text);
+
+  const sourceBox = doc.createElement("div");
+  sourceBox.className = "mermaid-guard-source";
+  const pre = doc.createElement("pre");
+  const code = doc.createElement("code");
+  code.className = "language-mermaid";
+  code.textContent = source;
+  pre.append(code);
+  sourceBox.append(pre);
+
+  wrap.append(header, sourceBox);
+  element.replaceChildren(wrap);
+  element.removeAttribute("aria-label");
+  return wrap;
 }
