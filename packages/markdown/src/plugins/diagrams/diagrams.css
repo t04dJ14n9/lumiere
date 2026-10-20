@@ -75,3 +75,21 @@ pre[data-fence="mermaid"] svg text {
   color: var(--vscode-editor-foreground, inherit);
   white-space: pre;
 }
+.mermaid-guard-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.mermaid-guard-actions button {
+  padding: 4px 10px;
+  border: 1px solid var(--vscode-button-border, var(--vscode-widget-border, #8884));
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground, var(--vscode-button-background, #8883));
+  color: var(--vscode-button-secondaryForeground, var(--vscode-button-foreground, inherit));
+  font-size: 0.8125em;
+  cursor: pointer;
+}
+.mermaid-guard-actions button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground, #8885));
+}

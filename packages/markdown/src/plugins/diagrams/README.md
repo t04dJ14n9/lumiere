@@ -31,5 +31,5 @@ No commands or default keybindings.
 
 HTML labels are disabled and SVG is sanitized. Theme is chosen from the VS Code
 light/dark theme when rendering. A failed render uses Obsidian's
-`mermaid-wrapper.is-guarded` chrome (title, error, source; no Allow button).
+`mermaid-wrapper.is-guarded` chrome (title, error, Allow, source). Allow persists vault trust (`lumiere.mermaid-vault-trust`, Obsidian `mermaid-vault-trust`) and retries with `htmlLabels: true`; SVG output is still sanitized. Untrusted renders keep `htmlLabels: false`.
 Live-reference visual parity remains for the owner's manual comparison.

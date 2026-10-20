@@ -28,3 +28,8 @@ test("diagrams.css paints Obsidian is-guarded chrome with VS Code tokens", () =>
   );
   assert.doesNotMatch(css, /\.diagram-error/);
 });
+
+test("diagrams.css styles Obsidian mermaid-guard-actions Allow control", () => {
+  assert.match(rule(".mermaid-guard-actions"), /display:\s*flex/);
+  assert.match(rule(".mermaid-guard-actions button"), /cursor:\s*pointer/);
+});
