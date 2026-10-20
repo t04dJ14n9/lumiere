@@ -23,6 +23,7 @@ import { documentTree } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import { markdownBlockWidthTracker } from "../../webview/ui/markdown-block-height";
 import {
   escapeBlock,
   verticalBlock,
@@ -138,6 +139,7 @@ function registerModeCommand(ctx: Context, service: LivePreview): void {
 function engineExtensions(ctx: Context) {
   return [
     documentTree,
+    markdownBlockWidthTracker,
     renderRevision,
     pointerSelectionTracking,
     fenceGuardSelectionSupport,

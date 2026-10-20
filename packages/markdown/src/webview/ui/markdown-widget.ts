@@ -6,6 +6,7 @@ import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
   markdownBlockEstimatedHeight,
+  rememberMarkdownBlockContentWidth,
   rememberMarkdownBlockHeight,
 } from "./markdown-block-height";
 import { CLICK_SELECT } from "./pointer-selection";
@@ -117,6 +118,7 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override toDOM(view: EditorView): HTMLElement {
+    rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     const shell = document.createElement("section");
     shell.className = `hybrid-block hybrid-${this.block.kind}`;
     // Async renders (Mermaid SVG, MathJax) paint short until ready. Remounts
