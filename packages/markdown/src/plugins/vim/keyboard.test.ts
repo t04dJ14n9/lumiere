@@ -160,3 +160,60 @@ test("IME Process command keys stay literal in insert mode and with modifiers", 
     undefined,
   );
 });
+
+for (const [key, code, expected] of [
+  ["。", "Period", "."],
+  ["，", "Comma", ","],
+  ["；", "Semicolon", ";"],
+] as const) {
+  test(`Chinese ${key} on ${code} becomes ${expected} for Vim commands`, () => {
+    assert.equal(
+      translatedVimKey(event(key, code, { shiftKey: false }), mode()),
+      expected,
+    );
+  });
+}
+
+for (const [code, shift, expected] of [
+  ["Period", false, "."],
+  ["Comma", false, ","],
+  ["Semicolon", false, ";"],
+  ["Slash", false, "/"],
+  ["Slash", true, "?"],
+  ["Minus", false, "-"],
+] as const) {
+  for (const key of ["Process", "Unidentified"] as const) {
+    test(`${key} on ${code} becomes ${expected} for Vim punctuation`, () => {
+      assert.equal(
+        imeVimCommandKey(event(key, code, { shiftKey: shift }), mode()),
+        expected,
+      );
+      assert.equal(
+        translatedVimKey(event(key, code, { shiftKey: shift }), mode()),
+        expected,
+      );
+    });
+  }
+}
+
+test("Chinese punctuation stays literal in insert mode and for f/t/r arguments", () => {
+  for (const field of ["insertMode", "expectLiteralNext"] as const) {
+    const vim = mode();
+    vim[field] = true;
+    assert.equal(
+      translatedVimKey(event("。", "Period", { shiftKey: false }), vim),
+      undefined,
+    );
+  }
+});
+
+test("ASCII punctuation and Chinese glyphs on the wrong code stay with the dependency", () => {
+  assert.equal(
+    translatedVimKey(event(".", "Period", { shiftKey: false }), mode()),
+    undefined,
+  );
+  assert.equal(
+    translatedVimKey(event("。", "Comma", { shiftKey: false }), mode()),
+    undefined,
+  );
+});
