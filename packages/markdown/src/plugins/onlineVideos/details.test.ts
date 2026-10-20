@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parsePackagistPackage,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -330,4 +331,63 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("parsePackagistPackage prefers description and first author", () => {
+  assert.deepEqual(
+    parsePackagistPackage(
+      {
+        packages: {
+          "symfony/http-foundation": [
+            {
+              description: "Defines an object-oriented layer for HTTP.",
+              authors: [
+                { name: "Fabien Potencier", email: "fabien@example.com" },
+                { name: "Symfony Community" },
+              ],
+            },
+          ],
+        },
+      },
+      "symfony/http-foundation",
+    ),
+    {
+      title: "Defines an object-oriented layer for HTTP.",
+      author: "Fabien Potencier",
+    },
+  );
+  assert.deepEqual(
+    parsePackagistPackage(
+      {
+        packages: {
+          "vendor/pkg": [{ description: "", authors: [] }],
+        },
+      },
+      "vendor/pkg",
+    ),
+    { title: "vendor/pkg" },
+  );
+});
+
+test("a Packagist lookup fetches Composer p2 metadata", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://repo.packagist.org/p2/symfony/http-foundation.json": () =>
+      response({
+        packages: {
+          "symfony/http-foundation": [
+            {
+              description: "Defines an object-oriented layer for HTTP.",
+              authors: [{ name: "Fabien Potencier" }],
+            },
+          ],
+        },
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("packagist", "symfony/http-foundation"), {
+    title: "Defines an object-oriented layer for HTTP.",
+    author: "Fabien Potencier",
+  });
+  assert.deepEqual(await source.get("packagist", "../evil/x"), {});
+  assert.equal(calls.length, 1);
 });

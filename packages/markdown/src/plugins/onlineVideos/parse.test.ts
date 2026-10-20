@@ -105,6 +105,39 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Packagist package pages", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://packagist.org/packages/symfony/http-foundation"),
+    {
+      provider: "packagist",
+      id: "symfony/http-foundation",
+      page: "https://packagist.org/packages/symfony/http-foundation",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://www.packagist.org/packages/Symfony/Http-Foundation/",
+    ),
+    {
+      provider: "packagist",
+      id: "symfony/http-foundation",
+      page: "https://packagist.org/packages/symfony/http-foundation",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://packagist.org/packages/symfony"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://packagist.org/search/?q=http"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://repo.packagist.org/p2/symfony/http-foundation.json"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +162,9 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://packagist.org/packages/_/bad",
+    "https://packagist.org/users/fabpot/",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

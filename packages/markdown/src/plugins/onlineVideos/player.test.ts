@@ -85,3 +85,16 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Packagist refuses an in-webview player", () => {
+  assert.equal(providers.packagist.embeddable, false);
+  assert.equal(
+    thumbnailUrl(
+      video("https://packagist.org/packages/symfony/http-foundation"),
+    ),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://packagist.org/packages/symfony/http-foundation")),
+  );
+});

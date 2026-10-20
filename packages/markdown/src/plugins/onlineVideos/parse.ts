@@ -1,14 +1,16 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Packagist package links.
+ * Only a fully parsed and validated ID leaves this module; players and cards
+ * are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "packagist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Packagist package id
+   * (`vendor/package`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -70,6 +72,16 @@ const HF_RESERVED = new Set([
   "organizations",
   "collections",
 ]);
+/**
+ * Packagist package name segment (Composer): lowercase letters, digits,
+ * `_`, `-`, `.`; vendor/package; at most 200 chars total.
+ */
+const PKG_SEGMENT = "[a-z0-9](?:[a-z0-9._-]{0,98}[a-z0-9])?";
+const PKG_ID = new RegExp(`^(${PKG_SEGMENT})\\/(${PKG_SEGMENT})$`);
+const PKG_PATH = new RegExp(
+  `^\\/packages\\/(${PKG_SEGMENT})\\/(${PKG_SEGMENT})(?:\\/.*)?\\/?$`,
+);
+const PKG_HOSTS = new Set(["packagist.org", "www.packagist.org"]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
@@ -79,7 +91,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return id.length <= 200 && PKG_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +132,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (PKG_HOSTS.has(host)) {
+    const match = PKG_PATH.exec(url.pathname.toLowerCase());
+    return match ? packagist(match[1]!, match[2]!) : undefined;
   }
   return undefined;
 }
@@ -158,6 +177,18 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function packagist(vendor: string, name: string): OnlineVideo | undefined {
+  const id = `${vendor}/${name}`;
+  if (!PKG_ID.test(id) || id.length > 200) {
+    return undefined;
+  }
+  return {
+    provider: "packagist",
+    id,
+    page: `https://packagist.org/packages/${id}`,
   };
 }
 

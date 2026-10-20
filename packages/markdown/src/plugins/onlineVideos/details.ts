@@ -151,6 +151,13 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "packagist") {
+      const body = await this.json(
+        `https://repo.packagist.org/p2/${id}.json`,
+        signal,
+      );
+      return parsePackagistPackage(body, id);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +253,43 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+/**
+ * Packagist Composer metadata (`/p2/{vendor}/{package}.json`): latest
+ * version `description` (else package id) as title; first author name.
+ * No cover.
+ */
+export function parsePackagistPackage(
+  body: unknown,
+  packageId: string,
+): VideoDetails {
+  if (!isRecord(body) || !isRecord(body.packages)) {
+    throw new Error("Unexpected Packagist response");
+  }
+  const versions = body.packages[packageId];
+  if (!Array.isArray(versions) || versions.length === 0) {
+    throw new Error("Unexpected Packagist response");
+  }
+  const latest = versions.find(isRecord) ?? {};
+  return withoutUndefined({
+    title: text(latest.description, 300) ?? text(packageId, 300),
+    author: packagistAuthor(latest),
+  });
+}
+
+function packagistAuthor(latest: Record<string, unknown>): string | undefined {
+  if (!Array.isArray(latest.authors)) {
+    return undefined;
+  }
+  for (const person of latest.authors) {
+    if (isRecord(person)) {
+      const name = text(person.name, 100);
+      if (name) {
+        return name;
+      }
+    }
+  }
+  return undefined;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */
