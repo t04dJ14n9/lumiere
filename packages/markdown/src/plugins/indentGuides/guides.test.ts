@@ -1,22 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorSelection, EditorState } from "@codemirror/state";
-import {
-  activeIndentWidth,
-  guideDecorations,
-  indentation,
-} from "./guides";
+import { activeIndentWidth, guideDecorations, indentation } from "./guides";
 
 function baseStyle(style: string): string {
   return style.replace(/;?--indent-active-at:[^;]*/g, "");
 }
 
-function widths(
-  doc: string,
-  isLivePreview: boolean,
-  tabSize = 4,
-  head = 0,
-) {
+function widths(doc: string, isLivePreview: boolean, tabSize = 4, head = 0) {
   const state = EditorState.create({
     doc,
     selection: EditorSelection.cursor(head),

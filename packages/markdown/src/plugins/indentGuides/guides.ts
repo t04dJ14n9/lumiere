@@ -52,7 +52,7 @@ export function guideDecorations(
   const ranges: Range<Decoration>[] = [];
   const active = activeIndentWidth(state);
   for (const visible of visibleRanges) {
-    for (let at = visible.from; at <= visible.to; ) {
+    for (let at = visible.from; at <= visible.to;) {
       const line = state.doc.lineAt(at);
       const width = indentation(line.text, state.tabSize);
       if (width && !(isLivePreview && usesListLayout(state, line))) {
