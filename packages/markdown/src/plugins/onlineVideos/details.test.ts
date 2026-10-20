@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { appleMusicThumbnail, parseAppleMusicLookup } from "./appleMusic";
 import type { Fetch, FetchResponse } from "./details";
 import {
   USER_AGENT,
@@ -307,6 +308,54 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("appleMusicThumbnail accepts isN-ssl.mzstatic.com thumb paths only", () => {
+  assert.equal(
+    appleMusicThumbnail(
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/41/47/004147b7-823c-eddb-3311-a36eb9ad284b/15ABKIM00035.rgb.jpg/100x100bb.jpg",
+    ),
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/41/47/004147b7-823c-eddb-3311-a36eb9ad284b/15ABKIM00035.rgb.jpg/600x600bb.jpg",
+  );
+  for (const value of [
+    "https://evil.test/image/thumb/Music221/v4/x/a.jpg/100x100bb.jpg",
+    "https://is1-ssl.mzstatic.com/other/a.jpg",
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/x/a.jpg/100x100bb.svg",
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/x/a.jpg/100x100bb.jpg?x=1",
+  ]) {
+    assert.equal(appleMusicThumbnail(value), undefined, value);
+  }
+});
+
+test("parseAppleMusicLookup reads song title, artist, length and cover", () => {
+  assert.deepEqual(
+    parseAppleMusicLookup(
+      {
+        resultCount: 1,
+        results: [
+          {
+            wrapperType: "track",
+            kind: "song",
+            trackName: "Another Saturday Night",
+            artistName: "Sam Cooke",
+            trackTimeMillis: 161907,
+            artworkUrl100:
+              "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/41/47/004147b7-823c-eddb-3311-a36eb9ad284b/15ABKIM00035.rgb.jpg/100x100bb.jpg",
+          },
+        ],
+      },
+      "song",
+    ),
+    {
+      details: {
+        title: "Another Saturday Night",
+        author: "Sam Cooke",
+        duration: 162,
+      },
+      cover:
+        "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/41/47/004147b7-823c-eddb-3311-a36eb9ad284b/15ABKIM00035.rgb.jpg/600x600bb.jpg",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +378,47 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("an Apple Music song lookup uses itunes lookup and may fetch artwork", async () => {
+  const thumb =
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/41/47/004147b7-823c-eddb-3311-a36eb9ad284b/15ABKIM00035.rgb.jpg/100x100bb.jpg";
+  const scaled =
+    "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/41/47/004147b7-823c-eddb-3311-a36eb9ad284b/15ABKIM00035.rgb.jpg/600x600bb.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://itunes.apple.com/lookup": () =>
+      response({
+        resultCount: 1,
+        results: [
+          {
+            wrapperType: "track",
+            kind: "song",
+            trackName: "Another Saturday Night",
+            artistName: "Sam Cooke",
+            trackTimeMillis: 161907,
+            artworkUrl100: thumb,
+          },
+        ],
+      }),
+    "https://is1-ssl.mzstatic.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "appleMusic",
+    "song:1440762745",
+  );
+  assert.equal(details.title, "Another Saturday Night");
+  assert.equal(details.author, "Sam Cooke");
+  assert.equal(details.duration, 162);
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://itunes.apple.com/lookup?id=1440762745&country=us",
+  );
+  assert.equal(calls[1]?.url, scaled);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

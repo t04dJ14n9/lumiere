@@ -3,6 +3,7 @@
  * fetched by the extension host (the webview CSP allows no network). Every
  * failure resolves to `{}`, so the card simply stays as it is.
  */
+import { parseAppleMusicLookup } from "./appleMusic";
 import type { VideoProvider } from "./parse";
 import { isVideoId } from "./parse";
 
@@ -150,6 +151,24 @@ export class VideoDetailsSource {
         signal,
       );
       return parseHuggingFaceModel(body);
+    }
+
+    if (provider === "appleMusic") {
+      const colon = id.indexOf(":");
+      const kind = id.slice(0, colon);
+      const resource = id.slice(colon + 1);
+      const body = await this.json(
+        `https://itunes.apple.com/lookup?id=${encodeURIComponent(resource)}&country=us`,
+        signal,
+      );
+      const { details, cover } = parseAppleMusicLookup(body, kind);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
     }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(

@@ -1,14 +1,16 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Apple Music links. Only
+ * a fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "appleMusic";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or an Apple Music
+   * `song|album:{digits}` id.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -23,6 +25,14 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** Apple Music catalog id with type prefix (`song:1440762745`). */
+const APPLE_MUSIC_ID = /^(song|album):([1-9][0-9]{0,15})$/;
+/**
+ * `/{cc}/song|album/{slug?}/{id}` — optional slug; `?i=` on album picks the
+ * song. Playlists/artists/stations stay images (lookup sparse or 400).
+ */
+const APPLE_MUSIC_PATH =
+  /^\/[a-z]{2}\/(song|album)(?:\/[^/]+)?\/([1-9][0-9]{0,15})\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -36,6 +46,7 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+const APPLE_MUSIC_HOSTS = new Set(["music.apple.com", "geo.music.apple.com"]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
 
@@ -79,7 +90,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return APPLE_MUSIC_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +131,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+
+  if (APPLE_MUSIC_HOSTS.has(host)) {
+    return appleMusic(url);
   }
   return undefined;
 }
@@ -158,6 +176,34 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+/** Song/album catalog ids; album `?i=` selects the song. */
+function appleMusic(url: URL): OnlineVideo | undefined {
+  const match = APPLE_MUSIC_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const kind = match[1]!;
+  const resource = match[2]!;
+  const songParam = url.searchParams.get("i");
+  if (kind === "album" && songParam && /^[1-9][0-9]{0,15}$/.test(songParam)) {
+    const id = `song:${songParam}`;
+    return {
+      provider: "appleMusic",
+      id,
+      page: `https://music.apple.com/us/song/${songParam}`,
+    };
+  }
+  const id = `${kind}:${resource}`;
+  if (!APPLE_MUSIC_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "appleMusic",
+    id,
+    page: `https://music.apple.com/us/${kind}/${resource}`,
   };
 }
 

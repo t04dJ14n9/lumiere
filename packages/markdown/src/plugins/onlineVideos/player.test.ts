@@ -71,8 +71,27 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
     thumbnailUrl(video("https://www.bilibili.com/video/BV1DRHU6LELy")),
     undefined,
   );
+  assert.equal(
+    thumbnailUrl(
+      video(
+        "https://music.apple.com/us/song/another-saturday-night/1440762745",
+      ),
+    ),
+    undefined,
+  );
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
+  assert.equal(providers.appleMusic.embeddable, false);
+});
+
+test("Apple Music refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(
+      video(
+        "https://music.apple.com/us/song/another-saturday-night/1440762745",
+      ),
+    ),
+  );
 });
 
 test("Hugging Face refuses an in-webview player", () => {

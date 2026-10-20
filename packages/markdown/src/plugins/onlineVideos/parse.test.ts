@@ -105,6 +105,55 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Apple Music song and album links (optional slug, album ?i= song)", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://music.apple.com/us/song/another-saturday-night/1440762745",
+    ),
+    {
+      provider: "appleMusic",
+      id: "song:1440762745",
+      page: "https://music.apple.com/us/song/1440762745",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://geo.music.apple.com/gb/album/aint-that-good-news/1440762551",
+    ),
+    {
+      provider: "appleMusic",
+      id: "album:1440762551",
+      page: "https://music.apple.com/us/album/1440762551",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://music.apple.com/us/album/aint-that-good-news/1440762551?i=1440762745",
+    ),
+    {
+      provider: "appleMusic",
+      id: "song:1440762745",
+      page: "https://music.apple.com/us/song/1440762745",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://music.apple.com/jp/album/1440762551"),
+    {
+      provider: "appleMusic",
+      id: "album:1440762551",
+      page: "https://music.apple.com/us/album/1440762551",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://music.apple.com/us/artist/sam-cooke/449060"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://music.apple.com/us/playlist/pl.abc/pl.abc"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +178,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://music.apple.com/us/artist/sam-cooke/449060",
+    "https://music.apple.com/us/playlist/hits/pl.u-abc",
+    "https://podcasts.apple.com/us/podcast/the-daily/id1200361736",
+    "https://music.apple.com.evil.test/us/song/x/1440762745",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
