@@ -35,6 +35,6 @@ Differences that remain:
 - A paragraph line right after a quote is part of the quote (CommonMark's lazy
   continuation, as in Obsidian's reading view); Obsidian's Live Preview shows
   it as a paragraph.
-- A continuation line indented exactly to a nested item's text starts under
-  that text; Obsidian places it by its number of spaces alone (4 spaces: 13px
-  right of a level-2 item's text), and it has no item spacing above or below.
+- Continuation lines with more leading spaces than the item's content column
+  use Obsidian indent-size steps (`--list-indent` × floor(spaces/4) + 1em
+  nobullet last padding), not hang-under-item plus leftover spaces.
