@@ -62,6 +62,15 @@ test("the allowlist accepts only the two player shapes", () => {
   }
 });
 
+test("PyPI refuses an in-webview player", () => {
+  assert.equal(providers.pypi.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://pypi.org/project/httpx/")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://pypi.org/project/httpx/")));
+});
+
 test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => {
   assert.equal(
     thumbnailUrl(video("https://youtu.be/dQw4w9WgXcQ")),

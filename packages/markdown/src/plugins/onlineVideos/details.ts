@@ -151,6 +151,13 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "pypi") {
+      const body = await this.json(
+        `https://pypi.org/pypi/${encodeURIComponent(id)}/json`,
+        signal,
+      );
+      return parsePypiProject(body);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +214,35 @@ export class VideoDetailsSource {
   }
 }
 
+export function parsePypiProject(body: unknown): VideoDetails {
+  if (!isRecord(body) || !isRecord(body.info)) {
+    throw new Error("Unexpected PyPI response");
+  }
+  const info = body.info;
+  const title = text(info.summary, 300) ?? text(info.name, 300);
+  return withoutUndefined({
+    title,
+    author: pypiAuthor(info),
+  });
+}
+
+/** Prefer a display name over a bare email address. */
+export function pypiAuthor(info: Record<string, unknown>): string | undefined {
+  const direct = text(info.author, 100);
+  if (direct && !direct.includes("@")) {
+    return direct;
+  }
+  const emailField =
+    typeof info.author_email === "string" ? info.author_email.trim() : "";
+  const named = /^(.*?)\s*<[^<>]+>$/.exec(emailField);
+  if (named) {
+    const fromEmail = text(named[1], 100);
+    if (fromEmail && !fromEmail.includes("@")) {
+      return fromEmail;
+    }
+  }
+  return direct;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

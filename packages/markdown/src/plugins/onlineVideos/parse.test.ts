@@ -133,3 +133,24 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("PyPI project links keep the package name; version paths normalise", () => {
+  assert.deepEqual(parseVideoUrl("https://pypi.org/project/httpx/"), {
+    provider: "pypi",
+    id: "httpx",
+    page: "https://pypi.org/project/httpx/",
+  });
+  assert.deepEqual(parseVideoUrl("https://pypi.org/project/Pillow"), {
+    provider: "pypi",
+    id: "Pillow",
+    page: "https://pypi.org/project/Pillow/",
+  });
+  assert.deepEqual(parseVideoUrl("https://pypi.org/project/requests/2.32.3/"), {
+    provider: "pypi",
+    id: "requests",
+    page: "https://pypi.org/project/requests/",
+  });
+  assert.equal(parseVideoUrl("https://www.pypi.org/project/httpx/"), undefined);
+  assert.equal(parseVideoUrl("https://pypi.org/simple/httpx/"), undefined);
+  assert.equal(parseVideoUrl("https://pypi.org/project/-bad/"), undefined);
+});

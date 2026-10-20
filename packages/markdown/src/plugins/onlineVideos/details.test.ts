@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parsePypiProject,
+  pypiAuthor,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -124,6 +126,82 @@ test("oEmbed responses give the YouTube title and channel", () => {
   );
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
+});
+
+test("PyPI project JSON gives summary as title and a display author", () => {
+  assert.deepEqual(
+    parsePypiProject({
+      info: {
+        name: "httpx",
+        summary: "  The next generation HTTP client. ",
+        author: null,
+        author_email: "Tom Christie <tom@tomchristie.com>",
+      },
+    }),
+    {
+      title: "The next generation HTTP client.",
+      author: "Tom Christie",
+    },
+  );
+  assert.deepEqual(
+    parsePypiProject({
+      info: {
+        name: "rich",
+        summary: "Render rich text",
+        author: "Will McGugan",
+        author_email: "willmcgugan@gmail.com",
+      },
+    }),
+    { title: "Render rich text", author: "Will McGugan" },
+  );
+  assert.deepEqual(
+    parsePypiProject({ info: { name: "empty", summary: "", author: null } }),
+    { title: "empty" },
+  );
+  assert.throws(() => parsePypiProject({ info: "nope" }));
+  assert.throws(() => parsePypiProject("<html>"));
+});
+
+test("pypiAuthor prefers a name over a bare email", () => {
+  assert.equal(
+    pypiAuthor({ author: "Will McGugan", author_email: "a@b.c" }),
+    "Will McGugan",
+  );
+  assert.equal(
+    pypiAuthor({
+      author: null,
+      author_email: "Sebastián Ramírez <tiangolo@gmail.com>",
+    }),
+    "Sebastián Ramírez",
+  );
+  assert.equal(pypiAuthor({ author: "a@b.c", author_email: "a@b.c" }), "a@b.c");
+  assert.equal(
+    pypiAuthor({ author: null, author_email: "only@email.com" }),
+    undefined,
+  );
+  assert.equal(pypiAuthor({}), undefined);
+});
+
+test("PyPI details are fetched from the JSON API with no cover", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://pypi.org/pypi/httpx/json": () =>
+      response({
+        info: {
+          name: "httpx",
+          summary: "The next generation HTTP client.",
+          author_email: "Tom Christie <tom@tomchristie.com>",
+        },
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("pypi", "httpx"), {
+    title: "The next generation HTTP client.",
+    author: "Tom Christie",
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]!.url, "https://pypi.org/pypi/httpx/json");
+  assert.equal(calls[0]!.headers["User-Agent"], USER_AGENT);
+  assert.deepEqual(await source.get("pypi", "-bad"), {});
 });
 
 test("data URLs are typed by the image's signature", () => {
