@@ -81,7 +81,16 @@ export const footnotes: MarkdownConfig = {
             depth++;
           }
           if (char === 93 && --depth === 0) {
-            return cx.addElement(cx.elt("InlineFootnote", pos, end + 1));
+            // Parse the body so tags/links inside ^[…] are indexed like Obsidian.
+            const innerFrom = pos + 2;
+            return cx.addElement(
+              cx.elt(
+                "InlineFootnote",
+                pos,
+                end + 1,
+                cx.parser.parseInline(cx.slice(innerFrom, end), innerFrom),
+              ),
+            );
           }
         }
         return -1;
