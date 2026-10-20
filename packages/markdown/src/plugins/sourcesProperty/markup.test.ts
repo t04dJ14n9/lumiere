@@ -26,7 +26,10 @@ test("expanded sources show every row without a disclosure button", () => {
     title: `Source ${index}`,
   }));
   const html = renderSources(entries, {}, { expanded: true });
-  assert.doesNotMatch(html, /Showing |data-source-more|data-source-extra| hidden/);
+  assert.doesNotMatch(
+    html,
+    /Showing |data-source-more|data-source-extra| hidden/,
+  );
   assert.equal(html.match(/data-source-index=/g)?.length, 9);
 });
 

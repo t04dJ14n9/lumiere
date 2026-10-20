@@ -64,9 +64,7 @@ export class BrowserHost {
       throw new Error("inlineTitle is not active");
     }
     view.dispatch({
-      effects: setTitle.of(
-        error === undefined ? { title } : { title, error },
-      ),
+      effects: setTitle.of(error === undefined ? { title } : { title, error }),
     });
   }
 

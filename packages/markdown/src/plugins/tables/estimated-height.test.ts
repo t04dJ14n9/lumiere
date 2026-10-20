@@ -8,9 +8,7 @@ test("empty or invalid source still reserves one row of chrome", () => {
 });
 
 test("row count drives the reserve; delimiter is not a painted row", () => {
-  const small = tableEstimatedHeight(
-    "| A | B |\n| --- | --- |\n| 1 | 2 |\n",
-  );
+  const small = tableEstimatedHeight("| A | B |\n| --- | --- |\n| 1 | 2 |\n");
   const large = tableEstimatedHeight(
     [
       "| A | B | C |",

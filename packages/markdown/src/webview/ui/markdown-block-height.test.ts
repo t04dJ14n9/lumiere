@@ -28,7 +28,9 @@ test("short Mermaid fences reserve tall SVG height, not bare line count", () => 
     "  B --> C[End]",
     "```",
   ].join("\n");
-  const plain = markdownBlockEstimatedHeight("> [!note]\n> one\n> two\n> three\n");
+  const plain = markdownBlockEstimatedHeight(
+    "> [!note]\n> one\n> two\n> three\n",
+  );
   const mermaid = markdownBlockEstimatedHeight(source);
   assert.ok(mermaid >= 320, `got ${mermaid}`);
   assert.ok(

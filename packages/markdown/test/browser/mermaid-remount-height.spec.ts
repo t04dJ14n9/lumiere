@@ -38,7 +38,9 @@ test("off-viewport mermaid rebuild keeps diagram height in the map", async ({
   await page.setViewportSize({ width: 1100, height: 760 });
   await open(page, note());
   await constrain(page);
-  await expect(page.locator('[aria-label="Mermaid diagram"], .cm-line').first()).toBeVisible();
+  await expect(
+    page.locator('[aria-label="Mermaid diagram"], .cm-line').first(),
+  ).toBeVisible();
   // Wait for mermaid SVG if rendered
   await page.waitForTimeout(800);
 
@@ -53,8 +55,9 @@ test("off-viewport mermaid rebuild keeps diagram height in the map", async ({
     const from = window.harness.text.indexOf("```mermaid");
     const measured = view.lineBlockAt(from).height;
     const svgH =
-      document.querySelector('pre[data-fence="mermaid"] svg')?.getBoundingClientRect()
-        .height ?? 0;
+      document
+        .querySelector('pre[data-fence="mermaid"] svg')
+        ?.getBoundingClientRect().height ?? 0;
     window.harness.reveal(window.harness.text.indexOf("Filler paragraph 30"));
     await new Promise((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(resolve)),
