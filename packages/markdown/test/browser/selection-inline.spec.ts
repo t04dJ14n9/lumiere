@@ -107,7 +107,11 @@ for (const [name, text] of Object.entries(LINES)) {
     });
     // A list line's first pixel is in its marker; the drag starts there or
     // at the line start.
-    expect(sel.from).toBeLessThanOrEqual(name === "task checkbox" ? 6 : 0);
+    // Embed-actions / image-embed chrome (#150) can map the line's left pixel
+    // onto the image (after "before "), same class of slack as task markers.
+    expect(sel.from).toBeLessThanOrEqual(
+      name === "task checkbox" ? 6 : name === "image" ? 8 : 0,
+    );
     expect(sel.to).toBe(text.length + 1);
     const m = await measure(page);
     if (/math|image|checkbox|mixed/.test(name)) {
