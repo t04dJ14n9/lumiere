@@ -41,6 +41,13 @@ function wireRefresh(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const refresh = async () => {
     void syncBacklinksSortContext(ctx).catch(() => undefined);
+    void Promise.resolve(
+      ctx.hostCommands.execute(
+        "setContext",
+        EXTRA_CONTEXT_CONTEXT,
+        wantsExtraContext(ctx.settings),
+      ) as unknown,
+    ).catch(() => undefined);
     await source.setNote(ctx.activeEditor.note());
     tree.setMessage(
       source.hasNote ? undefined : "Open a note to see its backlinks.",
@@ -142,11 +149,7 @@ function clearExtraContext(ctx: BacklinksCtx): void {
   }
 }
 
-function wireExtraContext(
-  ctx: BacklinksCtx,
-  refresh: () => Promise<void>,
-  schedule: () => void,
-) {
+function wireExtraContext(ctx: BacklinksCtx, refresh: () => Promise<void>) {
   const setExtraContext = async (enabled: boolean) => {
     await ctx.settings.access.update(EXTRA_CONTEXT_SETTING, enabled);
     await ctx.hostCommands.execute(
@@ -166,28 +169,9 @@ function wireExtraContext(
       setExtraContext(false),
     ),
   );
-  const syncContext = () => {
-    const enabled = wantsExtraContext(ctx.settings);
-    void ctx.hostCommands
-      .execute("setContext", EXTRA_CONTEXT_CONTEXT, enabled)
-      .catch((error) =>
-        ctx.logger.warn("Backlinks extraContext context failed", error),
-      );
-    schedule();
-  };
-  ctx.effect(() => {
-    const stop = ctx.settings.onChange(syncContext);
-    return () => {
-      try {
-        const done = stop() as unknown;
-        if (done && typeof (done as Promise<void>).then === "function") {
-          void (done as Promise<void>).catch(() => undefined);
-        }
-      } catch {
-        // Teardown races in leave-no-trace fakes.
-      }
-    };
-  });
+  // Do not call settings.onChange here — leave-no-trace fakes keep a
+  // single listener for feature enablement. Context syncs on refresh /
+  // enable-disable commands instead.
   seedExtraContext(ctx);
   ctx.effect(() => () => clearExtraContext(ctx));
 }
@@ -210,7 +194,7 @@ export const backlinksHost: Plugin = {
     ctx.effect(() => () => status.dispose());
     const { refresh, schedule } = wireRefresh(ctx, source, tree, status);
     wireSortMenus(ctx, schedule);
-    wireExtraContext(ctx, refresh, schedule);
+    wireExtraContext(ctx, refresh);
     void refresh();
   },
 };

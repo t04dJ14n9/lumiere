@@ -379,3 +379,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.toggleFoldProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential probe | behaviour measured |
 | Command: lumiere.markdown.addAlias | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: an empty `aliases` property (a new header right before the text), then the caret in it | Differential probe; unit tests | behaviour measured |
 | Command: lumiere.markdown.clearProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: the whole properties block goes | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.backlinks.enableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.backlinks.disableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.backlinks.extraContext | not observed | not manually observed | Manual scenario pending | not observed |
