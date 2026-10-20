@@ -151,6 +151,20 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "bgm") {
+      const body = await this.json(
+        `https://api.bgm.tv/v0/subjects/${encodeURIComponent(id)}`,
+        signal,
+      );
+      const { details, cover } = parseBgmSubject(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +221,53 @@ export class VideoDetailsSource {
   }
 }
 
+/** Bangumi subject API: Chinese name preferred, platform as author, cover. */
+export function parseBgmSubject(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Bangumi response");
+  }
+  const title = text(body.name_cn, 300) ?? text(body.name, 300);
+  const author = text(body.platform, 100);
+  const images = isRecord(body.images) ? body.images : {};
+  const cover =
+    bgmCoverUrl(images.common) ??
+    bgmCoverUrl(images.medium) ??
+    bgmCoverUrl(images.large);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+export function bgmCoverUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "lain.bgm.tv" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/(?:r\/\d+\/)?pic\/cover\/[A-Za-z0-9_./-]+\.(?:jpe?g|png|webp|gif)$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://lain.bgm.tv${url.pathname}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

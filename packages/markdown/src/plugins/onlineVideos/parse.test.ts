@@ -133,3 +133,19 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Bangumi subject pages on bgm.tv and bangumi.tv", () => {
+  assert.deepEqual(parseVideoUrl("https://bgm.tv/subject/12"), {
+    provider: "bgm",
+    id: "12",
+    page: "https://bgm.tv/subject/12",
+  });
+  assert.deepEqual(parseVideoUrl("https://bangumi.tv/subject/12/"), {
+    provider: "bgm",
+    id: "12",
+    page: "https://bgm.tv/subject/12",
+  });
+  assert.equal(parseVideoUrl("https://bgm.tv/subject/0"), undefined);
+  assert.equal(parseVideoUrl("https://bgm.tv/person/1"), undefined);
+  assert.equal(parseVideoUrl("https://www.bgm.tv/subject/12"), undefined);
+});

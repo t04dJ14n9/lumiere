@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  bgmCoverUrl,
+  parseBgmSubject,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +331,64 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("bgmCoverUrl accepts lain.bgm.tv cover paths only", () => {
+  assert.equal(
+    bgmCoverUrl("https://lain.bgm.tv/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg"),
+    "https://lain.bgm.tv/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg",
+  );
+  assert.equal(
+    bgmCoverUrl("https://lain.bgm.tv/pic/cover/l/c2/0a/12_q23bZ.jpg"),
+    "https://lain.bgm.tv/pic/cover/l/c2/0a/12_q23bZ.jpg",
+  );
+  for (const value of [
+    "https://evil.test/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg",
+    "https://lain.bgm.tv/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg?x=1",
+    "https://lain.bgm.tv/pic/avatar/l/c2/0a/12.jpg",
+  ]) {
+    assert.equal(bgmCoverUrl(value), undefined);
+  }
+});
+
+test("parseBgmSubject prefers name_cn and common cover", () => {
+  assert.deepEqual(
+    parseBgmSubject({
+      name: "ちょびっツ",
+      name_cn: "人形电脑天使心",
+      platform: "TV",
+      images: {
+        common: "https://lain.bgm.tv/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg",
+      },
+    }),
+    {
+      details: { title: "人形电脑天使心", author: "TV" },
+      cover: "https://lain.bgm.tv/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg",
+    },
+  );
+});
+
+test("a Bangumi lookup uses api.bgm.tv and may fetch the cover", async () => {
+  const cover = "https://lain.bgm.tv/r/400/pic/cover/l/c2/0a/12_q23bZ.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://api.bgm.tv/v0/subjects/": () =>
+      response({
+        name: "ちょびっツ",
+        name_cn: "人形电脑天使心",
+        platform: "TV",
+        images: { common: cover },
+      }),
+    "https://lain.bgm.tv/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get("bgm", "12");
+  assert.equal(details.title, "人形电脑天使心");
+  assert.equal(details.author, "TV");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://api.bgm.tv/v0/subjects/12");
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
