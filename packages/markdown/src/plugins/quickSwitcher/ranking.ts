@@ -38,17 +38,20 @@ const ATTACHMENTS = new Set([
  * Quick switcher items for a query, as Obsidian's switcher: notes and
  * attachments by name, then by path, notes' aliases, and links whose note
  * does not exist yet, best match first (excluded files 10 points lower). An
- * empty query lists recently modified notes. A query that names no note
+ * empty query lists recently **opened** notes (`recent`), falling back to
+ * mtime for notes never opened in this workspace. A query that names no note
  * offers to create it.
  */
 export function switcherItems(
   index: VaultIndex,
   query: string,
   limit = 50,
+  recent: readonly string[] = [],
 ): PickItem<SwitcherTarget>[] {
   const candidates = [...noteCandidates(index), ...unresolvedCandidates(index)];
   const trimmed = query.trim();
   if (!trimmed) {
+    const order = recentRank(recent);
     return candidates
       .filter(
         (candidate) =>
@@ -57,7 +60,14 @@ export function switcherItems(
           !candidate.isAttachment &&
           candidate.penalty === 0,
       )
-      .sort((a, b) => b.mtime - a.mtime)
+      .sort((a, b) => {
+        const ar = noteRecentRank(a, order);
+        const br = noteRecentRank(b, order);
+        if (ar !== br) {
+          return ar - br;
+        }
+        return b.mtime - a.mtime;
+      })
       .slice(0, limit)
       .map((candidate) => candidate.item);
   }
@@ -138,6 +148,29 @@ function unresolvedCandidates(index: VaultIndex): Candidate[] {
     mtime: 0,
     penalty: 0,
   }));
+}
+
+
+/** Lower is more recent; missing keys sort after every opened note. */
+function recentRank(recent: readonly string[]): Map<string, number> {
+  const order = new Map<string, number>();
+  for (const [index, id] of recent.entries()) {
+    if (!order.has(id)) {
+      order.set(id, index);
+    }
+  }
+  return order;
+}
+
+function noteRecentRank(
+  candidate: Candidate,
+  order: Map<string, number>,
+): number {
+  if (candidate.item.value.kind !== "note") {
+    return Number.POSITIVE_INFINITY;
+  }
+  const file = candidate.item.value.file;
+  return order.get(file.uri) ?? order.get(file.path) ?? Number.POSITIVE_INFINITY;
 }
 
 /** The first of `texts` the query matches, each later one a point lower. */

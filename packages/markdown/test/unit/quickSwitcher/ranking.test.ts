@@ -28,12 +28,26 @@ function vault() {
 
 const labels = (items: { label: string }[]) => items.map((item) => item.label);
 
-test("an empty query lists notes by most recent change", () => {
+test("an empty query lists notes by most recent change when none were opened", () => {
   assert.deepEqual(labels(switcherItems(vault(), "")), [
     "Daily",
     "Project Plan",
     "Planning",
   ]);
+});
+
+test("an empty query prefers recently opened notes over mtime", () => {
+  const index = vault();
+  const planning = index.files().find((file) => file.path === "notes/Planning.md")!;
+  const daily = index.files().find((file) => file.path === "Daily.md")!;
+  assert.deepEqual(
+    labels(switcherItems(index, "", 50, [planning.uri, daily.uri])),
+    ["Planning", "Daily", "Project Plan"],
+  );
+  assert.deepEqual(
+    labels(switcherItems(index, "", 50, [planning.path])),
+    ["Planning", "Daily", "Project Plan"],
+  );
 });
 
 test("prefix matches rank first, names above paths; aliases, not-created links and attachments are found; excluded files rank 10 lower", () => {
