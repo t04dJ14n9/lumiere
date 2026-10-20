@@ -105,6 +105,45 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("X/Twitter status links (twitter.com and x.com)", () => {
+  assert.deepEqual(parseVideoUrl("https://twitter.com/jack/status/20"), {
+    provider: "twitter",
+    id: "20",
+    page: "https://x.com/i/status/20",
+  });
+  assert.deepEqual(parseVideoUrl("https://x.com/jack/status/20?s=20&t=abc"), {
+    provider: "twitter",
+    id: "20",
+    page: "https://x.com/i/status/20",
+  });
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://mobile.twitter.com/OpenAI/statuses/1633128396691423232/",
+    ),
+    {
+      provider: "twitter",
+      id: "1633128396691423232",
+      page: "https://x.com/i/status/1633128396691423232",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://www.x.com/i/status/20"), {
+    provider: "twitter",
+    id: "20",
+    page: "https://x.com/i/status/20",
+  });
+  assert.deepEqual(parseVideoUrl("https://twitter.com/i/web/status/20"), {
+    provider: "twitter",
+    id: "20",
+    page: "https://x.com/i/status/20",
+  });
+  assert.equal(parseVideoUrl("https://twitter.com/jack"), undefined);
+  assert.equal(parseVideoUrl("https://twitter.com/jack/status/0"), undefined);
+  assert.equal(
+    parseVideoUrl("https://twitter.com/jack/status/20/photo/1"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +168,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://twitter.com/jack",
+    "https://twitter.com/intent/tweet",
+    "https://x.com/i/communities/1",
+    "https://twitter.com.evil.test/jack/status/20",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

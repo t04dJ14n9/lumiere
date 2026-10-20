@@ -151,6 +151,15 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "twitter") {
+      // publish.twitter.com 301s to publish.x.com; fetch refuses redirects.
+      const page = `https://twitter.com/i/status/${id}`;
+      const body = await this.json(
+        `https://publish.x.com/oembed?url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      return parseTwitterOEmbed(body);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +255,48 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/**
+ * X/Twitter oEmbed has no `title`; the tweet body lives in the first `<p>` of
+ * `html`. Author comes from `author_name`. No thumbnail is published.
+ */
+export function parseTwitterOEmbed(body: unknown): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected X oEmbed response");
+  }
+  return withoutUndefined({
+    title: tweetText(body.html),
+    author: text(body.author_name, 100),
+  });
+}
+
+/** First `<p>…</p>` from oEmbed HTML, tags stripped, entities decoded. */
+export function tweetText(html: unknown): string | undefined {
+  if (typeof html !== "string") {
+    return undefined;
+  }
+  const match = /<p\b[^>]*>([\s\S]*?)<\/p>/i.exec(html);
+  if (!match) {
+    return undefined;
+  }
+  const stripped = match[1]!
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n: string) => {
+      const code = Number(n);
+      return code > 0 && code < 0x110000 ? String.fromCodePoint(code) : "";
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, n: string) => {
+      const code = Number.parseInt(n, 16);
+      return code > 0 && code < 0x110000 ? String.fromCodePoint(code) : "";
+    });
+  return text(stripped, 300);
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

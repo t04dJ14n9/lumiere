@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseTwitterOEmbed,
+  tweetText,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -328,6 +330,54 @@ test("a Hugging Face lookup fetches the models API", async () => {
   assert.equal(
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
+  );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("tweetText takes the first oEmbed <p> and decodes entities", () => {
+  assert.equal(
+    tweetText(
+      '<blockquote><p lang="en">just setting up my twttr</p>&mdash; jack</blockquote>',
+    ),
+    "just setting up my twttr",
+  );
+  assert.equal(
+    tweetText("<p>hello &amp; &lt;world&gt; &#39;ok&#39;</p>"),
+    "hello & <world> 'ok'",
+  );
+  assert.equal(tweetText("<div>no p</div>"), undefined);
+  assert.equal(tweetText(null), undefined);
+});
+
+test("parseTwitterOEmbed reads author_name and tweet body from html", () => {
+  assert.deepEqual(
+    parseTwitterOEmbed({
+      author_name: "jack",
+      html: '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">just setting up my twttr</p></blockquote>',
+    }),
+    { title: "just setting up my twttr", author: "jack" },
+  );
+  assert.deepEqual(parseTwitterOEmbed({ author_name: "jack" }), {
+    author: "jack",
+  });
+});
+
+test("an X lookup uses publish.x.com oEmbed (no cover)", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://publish.x.com/oembed": () =>
+      response({
+        author_name: "jack",
+        html: '<blockquote><p lang="en">just setting up my twttr</p></blockquote>',
+        provider_name: "X",
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get("twitter", "20");
+  assert.equal(details.title, "just setting up my twttr");
+  assert.equal(details.author, "jack");
+  assert.equal(details.cover, undefined);
+  assert.equal(
+    calls[0]?.url,
+    `https://publish.x.com/oembed?url=${encodeURIComponent("https://twitter.com/i/status/20")}`,
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

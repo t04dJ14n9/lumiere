@@ -1,14 +1,14 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and X (Twitter) links. Only
+ * a fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "twitter";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or an X/Twitter status snowflake.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -23,6 +23,11 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** X/Twitter status snowflake (1–19 digits, no leading zero). */
+const TWITTER_ID = /^[1-9][0-9]{0,18}$/;
+/** `/{user}/status|statuses/{id}` or `/i/(web/)?status/{id}`. */
+const TWITTER_PATH =
+  /^\/(?:i\/(?:web\/)?|[A-Za-z0-9_]{1,15}\/)(?:status|statuses)\/([1-9][0-9]{0,18})\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -35,6 +40,15 @@ const BILIBILI_HOSTS = new Set([
   "bilibili.com",
   "www.bilibili.com",
   "m.bilibili.com",
+]);
+const TWITTER_HOSTS = new Set([
+  "twitter.com",
+  "www.twitter.com",
+  "mobile.twitter.com",
+  "m.twitter.com",
+  "x.com",
+  "www.x.com",
+  "mobile.x.com",
 ]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
@@ -79,7 +93,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return TWITTER_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +134,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (TWITTER_HOSTS.has(host)) {
+    return twitter(url);
   }
   return undefined;
 }
@@ -158,6 +178,23 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+/** Status/statuses snowflake; profiles, intents and media stay images. */
+function twitter(url: URL): OnlineVideo | undefined {
+  const match = TWITTER_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const id = match[1]!;
+  if (!TWITTER_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "twitter",
+    id,
+    page: `https://x.com/i/status/${id}`,
   };
 }
 
