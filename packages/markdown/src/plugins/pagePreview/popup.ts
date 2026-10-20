@@ -70,3 +70,14 @@ export function previewLabel(href: string): string {
     return href;
   } // Keep invalid escapes visible for the resolver error.
 }
+
+/** Obsidian `.mod-empty` centred muted status (missing note, errors, prompts). */
+export function setPreviewBody(
+  body: HTMLElement,
+  text: string,
+  kind: "loading" | "empty" | "ready" = "ready",
+): void {
+  void body.replaceChildren();
+  body.textContent = text;
+  body.classList.toggle("mod-empty", kind === "empty");
+}

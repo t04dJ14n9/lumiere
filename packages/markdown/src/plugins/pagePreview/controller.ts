@@ -1,7 +1,7 @@
 import type { RenderPass, RenderService } from "../render/api";
 import type { Resources } from "../resources/api";
 import { renderPreview } from "./content";
-import { createPreviewPopup, mountPreviewPopup } from "./popup";
+import { createPreviewPopup, mountPreviewPopup, setPreviewBody } from "./popup";
 
 export interface PreviewContext {
   resources: Resources;
@@ -111,7 +111,7 @@ class LinkPreviews {
     if (this.body) {
       void this.renderedPass?.dispose();
       delete this.renderedPass;
-      this.body.textContent = "Loading…";
+      setPreviewBody(this.body, "Loading…", "loading");
     }
     try {
       const resource = await base.resources.load(
@@ -123,8 +123,10 @@ class LinkPreviews {
         return;
       }
       if (!resource) {
-        throw new Error("Preview unavailable.");
+        setPreviewBody(this.body, "No preview available", "empty");
+        return;
       }
+      this.body.classList.remove("mod-empty");
       const next = await renderPreview({
         body: this.body,
         resource,
@@ -133,18 +135,39 @@ class LinkPreviews {
         wiki,
         render: base.render,
       });
-      if (request !== this.generation) {
-        await next?.dispose();
-      } else if (next) {
-        this.renderedPass = next;
-      } else {
-        delete this.renderedPass;
-      }
+      await this.commitRender(request, next);
     } catch (error) {
-      if (this.body && request === this.generation) {
-        this.body.textContent = String(error);
-      }
+      this.paintLoadError(request, error);
     }
+  }
+
+  private async commitRender(
+    request: number,
+    next: RenderPass | undefined,
+  ): Promise<void> {
+    if (request !== this.generation) {
+      await next?.dispose();
+      return;
+    }
+    if (next) {
+      this.renderedPass = next;
+      return;
+    }
+    // Attachment prompt already wrote body text; mark Obsidian empty chrome.
+    this.body?.classList.add("mod-empty");
+    delete this.renderedPass;
+  }
+
+  private paintLoadError(request: number, error: unknown): void {
+    if (!this.body || request !== this.generation) {
+      return;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    setPreviewBody(
+      this.body,
+      message.replace(/^Error:\s*/i, "") || "No preview available",
+      "empty",
+    );
   }
 
   private registerHover(): void {

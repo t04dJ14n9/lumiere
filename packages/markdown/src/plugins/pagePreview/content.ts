@@ -45,6 +45,7 @@ export async function renderPreview(options: {
       },
     );
   }
+  body.classList.add("mod-empty");
   body.textContent = `${resource.kind.toUpperCase()} attachment — use Open to view it.`;
   return undefined;
 }
