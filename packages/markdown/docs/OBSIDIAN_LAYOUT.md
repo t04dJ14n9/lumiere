@@ -17,6 +17,7 @@ paragraph's text.
 | Task text | 27px in (1.75em − 1px); a 16px box, 4px corners | same |
 | Indented continuation line of an item | text under the item's text (1px off); deeper indentation further in; an unindented (lazy) line at the margin, not a list line (measured on 1.14.4, 2026-10-18) | same; the spaces up to the item's text are hidden |
 | Quote text | 14px in per level, a 2px bar | same |
+| Lazy quote continuation (no leading `>` on the next non-blank line) | quote bar through both lines (CommonMark; measured on 1.14.4) | same (`md-quote` on every Blockquote line) |
 | Code | 0.875em (14px), lines 21px | same (`--code-size`) |
 | Code language label | 12px, in the corner | same |
 | Display math | 16px above and below the formula | same |

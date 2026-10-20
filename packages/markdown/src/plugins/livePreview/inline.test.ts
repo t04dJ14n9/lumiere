@@ -314,7 +314,10 @@ test("labelled links leaving the vault are marked external once rendered", () =>
   assert.equal(linkClass(false, "https://example.com"), "md-link");
 });
 
-test("lazy quote continuation lines are not painted as quotes (Obsidian LP)", () => {
+test("lazy quote continuation lines keep the quote bar (Obsidian LP / CommonMark)", () => {
+  // Obsidian 1.14.4 Live Preview paints CommonMark lazy continuations
+  // (non-blank line after `>` with no leading `>`) with md-quote chrome
+  // through both lines; a blank line ends the quote.
   const doc = "> quoted\nlazy para\n\nafter";
   const state = EditorState.create({
     doc,
@@ -330,5 +333,5 @@ test("lazy quote continuation lines are not painted as quotes (Obsidian LP)", ()
       }
     },
   );
-  assert.deepEqual(quoteLines, [1]);
+  assert.deepEqual(quoteLines, [1, 2]);
 });
