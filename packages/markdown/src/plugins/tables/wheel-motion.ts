@@ -3,6 +3,12 @@ type NoteViewport = Pick<
   "scrollTop" | "scrollHeight" | "clientHeight"
 > & { scrollTo(options: ScrollToOptions): void };
 
+/**
+ * A same-direction jump larger than this (or 40% of the remaining span) is
+ * treated as an external programmatic scroll, not a smooth-animation frame.
+ */
+const EXTERNAL_JUMP_PX = 64;
+
 /** One destination per editor panel, shared by its table widgets. */
 export class TableWheelMotion {
   private target: number | undefined;
@@ -44,14 +50,22 @@ export class TableWheelMotion {
     const current = this.viewport.scrollTop;
     const target = this.clamp(this.target);
     const remaining = target - this.previousTop;
+    const delta = current - this.previousTop;
     // Subpixel proximity is still progress, not completion. Rounded CSSOM
     // destinations are released by scrollend. A direction change or overshoot
     // means another scroll has taken over, so its old destination must be dropped.
     if (
       target === current ||
-      (current - this.previousTop) * remaining < 0 ||
+      delta * remaining < 0 ||
       (target - current) * remaining < 0
     ) {
+      this.stop();
+      return;
+    }
+    // Same-direction but too large for one animation frame: an external
+    // programmatic viewport change (scrollIntoView, host API) stole ownership.
+    const span = Math.abs(remaining);
+    if (span > 0 && Math.abs(delta) >= Math.max(EXTERNAL_JUMP_PX, span * 0.4)) {
       this.stop();
       return;
     }

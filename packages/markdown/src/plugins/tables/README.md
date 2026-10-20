@@ -106,9 +106,10 @@ Markdown offsets for consumers of the editor selection API. Live Preview always
 keeps tables rendered; only the focused cell reveals raw Markdown. Source mode
 shows the full table source. HTML conversion is delegated
 to the paste pipeline rather than implemented by the table widget.
-An external programmatic viewport change in the same direction as an unfinished
-wheel animation can retain its destination; there is no general ownership signal
-for that case. Pointer input, navigation and other wheel gestures cancel motion.
+An external programmatic viewport jump in the same direction as an unfinished
+wheel animation cancels the pending destination (large mid-flight deltas are
+treated as ownership theft; small smooth-animation frames keep it). Pointer
+input, navigation and other wheel gestures also cancel motion.
 Selected cells show their selection background through inline code while keeping
 its theme foreground and monospace styling; unselected code keeps its background.
 The open cell editor and rectangular grid selections share the same inset accent

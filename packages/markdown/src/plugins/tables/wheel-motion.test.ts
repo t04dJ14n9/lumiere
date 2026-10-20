@@ -152,6 +152,31 @@ test("a scroll moving away from or beyond the destination cancels pending motion
   }
 });
 
+test("a same-direction external jump mid-flight cancels pending motion", () => {
+  const viewport = note();
+  const motion = new TableWheelMotion(viewport, () => false);
+  motion.scroll(200);
+  // Programmatic set toward the destination (not a smooth-animation frame).
+  viewport.scrollTop = 700;
+  motion.observeScroll();
+  assert.deepEqual(viewport.calls.at(-1), {
+    top: 700,
+    behavior: "instant",
+  });
+  motion.scroll(120);
+  assert.equal(viewport.calls.at(-1)?.top, 820);
+});
+
+test("small same-direction animation frames keep the destination", () => {
+  const viewport = note();
+  const motion = new TableWheelMotion(viewport, () => false);
+  motion.scroll(200);
+  viewport.scrollTop = 630;
+  motion.observeScroll();
+  motion.scroll(100);
+  assert.equal(viewport.calls.at(-1)?.top, 900);
+});
+
 test("a shrinking note releases a destination once its new edge is reached", () => {
   const viewport = note();
   const motion = new TableWheelMotion(viewport, () => false);
