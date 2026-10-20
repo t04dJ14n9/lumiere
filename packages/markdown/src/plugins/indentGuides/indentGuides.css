@@ -32,8 +32,9 @@
  * --list-guide-depth is set by the list renderer; hang layout keeps --list-depth. */
 .mw-indent-guides .cm-line.md-list-continuation {
   background-size: calc(
-    var(--list-guide-depth, var(--list-depth, 0)) * var(--list-indent)
-  ) 100%;
+      var(--list-guide-depth, var(--list-depth, 0)) * var(--list-indent)
+    )
+    100%;
 }
 
 /* Obsidian active indent on nested Live Preview list guides. */
