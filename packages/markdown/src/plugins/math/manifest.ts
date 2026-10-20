@@ -8,7 +8,7 @@ export const config = Schema.object({
     .description(
       "MathJax TeX macros (name → replacement), as in Obsidian’s MathJax macros setting. Use #1…#9 for arguments.",
     ),
-}).default({});
+}).default({ macros: {} });
 
 export default defineManifest({
   id: "math",
