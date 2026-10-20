@@ -1332,6 +1332,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.files.newNoteFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.files.attachmentFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.marp.open` | `"workbench"` | workbench / textEditor; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.math.macros` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.obsidianCompat.configFolder` | `".obsidian"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.okfCore.bundles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
