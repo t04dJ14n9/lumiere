@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  wistiaThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -122,6 +123,10 @@ test("oEmbed responses give the YouTube title and channel", () => {
     }),
     { title: "Never Gonna Give You Up", author: "Rick Astley" },
   );
+  assert.deepEqual(parseOEmbed({ title: "Clap", duration: 16.51 }), {
+    title: "Clap",
+    duration: 16,
+  });
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
 });
@@ -130,6 +135,49 @@ test("data URLs are typed by the image's signature", () => {
   assert.match(imageDataUrl(JPEG), /^data:image\/jpeg;base64,/);
   assert.match(imageDataUrl(PNG), /^data:image\/png;base64,/);
   assert.throws(() => imageDataUrl(new TextEncoder().encode("<svg onload=x>")));
+});
+
+test("Wistia oEmbed thumbnails are accepted only from wistia embed hosts", () => {
+  const thumb =
+    "https://embed-ssl.wistia.com/deliveries/abc.jpg?image_crop_resized=960x540";
+  assert.equal(wistiaThumbnail({ thumbnail_url: thumb }), thumb);
+  assert.equal(
+    wistiaThumbnail({ thumbnail_url: "https://evil.test/deliveries/a.jpg" }),
+    undefined,
+  );
+  assert.equal(wistiaThumbnail({ title: "x" }), undefined);
+});
+
+test("a Wistia lookup fetches oEmbed and a CDN thumbnail", async () => {
+  const page = "https://fast.wistia.com/embed/iframe/e4a27b971d";
+  const thumb =
+    "https://embed-ssl.wistia.com/deliveries/abc.jpg?image_crop_resized=960x540";
+  const { fetch, calls } = fakeFetch({
+    "https://fast.wistia.com/oembed": () =>
+      response({
+        title: "Brendan - Make It Clap",
+        duration: 16.51,
+        thumbnail_url: thumb,
+      }),
+    "https://embed-ssl.wistia.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "wistia",
+    "e4a27b971d",
+  );
+  assert.equal(details.title, "Brendan - Make It Clap");
+  assert.equal(details.duration, 16);
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://fast.wistia.com/oembed?url=${encodeURIComponent(page)}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
 
 test("a Bilibili lookup fetches the view and a scaled cover with the extension's agent", async () => {

@@ -29,6 +29,10 @@ test("players come from the provider's embed origin with the parsed ID", () => {
     playerUrl(video("https://www.bilibili.com/video/av170001")),
     "https://player.bilibili.com/player.html?aid=170001&p=1&autoplay=0",
   );
+  assert.throws(
+    () => playerUrl(video("https://home.wistia.com/medias/e4a27b971d")),
+    /no in-webview player/,
+  );
 });
 
 test("player frames are sandboxed, lazy and send only the origin as referrer", () => {
@@ -73,6 +77,7 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
   );
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
+  assert.equal(providers.wistia.embeddable, false);
 });
 
 test("Hugging Face refuses an in-webview player", () => {

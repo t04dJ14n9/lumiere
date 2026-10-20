@@ -45,6 +45,26 @@ test("YouTube start times in seconds or h/m/s", () => {
   assert.equal(parseVideoUrl(`https://youtu.be/${ID}?t=0`)?.start, undefined);
 });
 
+test("Wistia media links give the hashed id", () => {
+  assert.deepEqual(parseVideoUrl("https://home.wistia.com/medias/e4a27b971d"), {
+    provider: "wistia",
+    id: "e4a27b971d",
+    page: "https://fast.wistia.com/embed/iframe/e4a27b971d",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://fast.wistia.com/embed/iframe/e4a27b971d/"),
+    {
+      provider: "wistia",
+      id: "e4a27b971d",
+      page: "https://fast.wistia.com/embed/iframe/e4a27b971d",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://wi.st/medias/e4a27b971d")?.id,
+    "e4a27b971d",
+  );
+});
+
 test("Bilibili BV and av links keep the part number", () => {
   assert.deepEqual(
     parseVideoUrl("https://www.bilibili.com/video/BV1DRHU6LELy/?spm_id_from=x"),
@@ -129,6 +149,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://home.wistia.com/medias/",
+    "https://home.wistia.com/medias/SHORT",
+    "https://evil.wistia.com.evil.test/medias/e4a27b971d",
+    "https://home.wistia.com/medias/e4a27b971d/extra",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

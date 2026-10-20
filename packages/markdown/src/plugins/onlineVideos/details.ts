@@ -42,6 +42,11 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
+/** Wistia oEmbed thumbnails (query params allowed). */
+const WISTIA_THUMB_HOSTS = new Set([
+  "embed-ssl.wistia.com",
+  "embed.wistia.com",
+]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -151,6 +156,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "wistia") {
+      return this.wistiaDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -162,6 +170,27 @@ export class VideoDetailsSource {
       const image = await this.image(cover + COVER_SIZE, signal).catch(
         () => undefined,
       );
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
+  /** Wistia oEmbed, plus a CDN thumbnail when the host is allowlisted. */
+  private async wistiaDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://fast.wistia.com/embed/iframe/${id}`;
+    const body = await this.json(
+      `https://fast.wistia.com/oembed?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    const thumb = wistiaThumbnail(body);
+    if (thumb) {
+      const image = await this.image(thumb, signal).catch(() => undefined);
       if (image !== undefined) {
         details.cover = image;
       }
@@ -207,13 +236,46 @@ export class VideoDetailsSource {
   }
 }
 
+/** Wistia oEmbed thumbnail when it is a known CDN host. */
+export function wistiaThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.thumbnail_url);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !WISTIA_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  return url.href;
+}
+
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
   }
+  // Wistia reports fractional seconds; cards show whole seconds.
+  const duration =
+    typeof body.duration === "number" &&
+    Number.isFinite(body.duration) &&
+    body.duration > 0 &&
+    body.duration < 1_000_000
+      ? Math.floor(body.duration)
+      : undefined;
   return withoutUndefined({
     title: text(body.title, 300),
     author: text(body.author_name, 100),
+    duration,
   });
 }
 

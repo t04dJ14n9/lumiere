@@ -1,14 +1,14 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Wistia links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "wistia";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Wistia media hashed id.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -23,6 +23,9 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** Wistia media hashed id (`e4a27b971d`). */
+const WISTIA_ID = /^[a-z0-9]{8,20}$/;
+const WISTIA_PATH = /^\/(?:medias|embed\/iframe)\/([a-z0-9]{8,20})\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -79,7 +82,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return WISTIA_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -118,7 +124,16 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
   }
+  if (isWistiaHost(host)) {
+    return wistia(url);
+  }
   return undefined;
+}
+
+function isWistiaHost(host: string): boolean {
+  return (
+    host === "wi.st" || host === "wistia.com" || host.endsWith(".wistia.com")
+  );
 }
 
 function youtube(id: string | undefined, url: URL): OnlineVideo | undefined {
@@ -158,6 +173,19 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function wistia(url: URL): OnlineVideo | undefined {
+  const match = WISTIA_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const id = match[1]!;
+  return {
+    provider: "wistia",
+    id,
+    page: `https://fast.wistia.com/embed/iframe/${id}`,
   };
 }
 
