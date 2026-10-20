@@ -195,6 +195,20 @@ export class TabSwaps<Tab extends object> {
   }
 }
 
+/**
+ * Whether a tab landing in the native editor during the post-reclaim hold
+ * should stay native (Host GUI S6). The tab judge then promotes `textBypass`
+ * so command selection reclaim — which only sees Open-as-Text / Edit leases —
+ * honors the same hold. Navigation hunks after reclaim still transfer: they
+ * never take this tab-skip path.
+ */
+export function shouldHoldNativeAfterReclaim(input: {
+  recentTransfer: boolean;
+  reclaimable: boolean;
+}): boolean {
+  return input.reclaimable && input.recentTransfer;
+}
+
 /** Cursor Markdown still needs the transfer warm even with a loaded document. */
 export function shouldWarmBeforeReclaim(
   kind: TabKind,

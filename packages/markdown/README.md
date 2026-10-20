@@ -104,7 +104,9 @@ remembers that per file. `lumiere.markdown.editor.reclaimTextEditor`
 closes the text tab, for notes the workspace association routes here.
 It leaves diffs, Git views, untitled files and anything opened with **Open
 as Text** alone. Asking for the text editor a second time within 10 seconds
-keeps it, which is how **Reopen Editor With… › Text Editor** still works.
+keeps it (the tab hold also arms the Open-as-Text bypass so selection
+reclaim cannot steal that tab), which is how **Reopen Editor With… › Text
+Editor** still works.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless

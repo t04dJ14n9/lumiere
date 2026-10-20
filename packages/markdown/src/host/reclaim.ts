@@ -5,6 +5,7 @@ import {
   Lease,
   isReclaimableNote,
   reclaimEnabled,
+  shouldHoldNativeAfterReclaim,
   shouldReclaim,
   shouldWarmBeforeReclaim,
   TabSwaps,
@@ -122,12 +123,26 @@ export function registerReclaim(
     // closes, after the new tab is shown, so judge that tab again then.
     if (handoffLease.has(swap.uri)) {
       swaps.hold(tab, swap);
-    } else if (
-      shouldReclaim(swap, reclaimContext(swap.uri)) &&
-      !recentTransfers.has(swap.uri)
-    ) {
-      transfer.open(tab, swap.uri);
+      return;
     }
+    if (!shouldReclaim(swap, reclaimContext(swap.uri))) {
+      return;
+    }
+    // Within 10s of a reclaim, a second Reopen With Text Editor (or Preview |
+    // Markdown) must keep the text tab. Promote to textBypass so command
+    // selection reclaim — which does not see recentTransfers — also honors
+    // the hold (Host GUI S6). Navigation hunks after reclaim still transfer:
+    // they never hit this tab-skip path.
+    if (
+      shouldHoldNativeAfterReclaim({
+        recentTransfer: recentTransfers.has(swap.uri),
+        reclaimable: true,
+      })
+    ) {
+      textBypass.allow(swap.uri);
+      return;
+    }
+    transfer.open(tab, swap.uri);
   };
   const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
     const endedSessions = new Set<string>();
@@ -236,6 +251,8 @@ function registerSelectionReclaim(
     ) {
       return;
     }
+    // Bypass hold lives in transfer.open so an in-flight reclaim can still
+    // absorb a later hunk, while a second Reopen-as-text stays native.
     transfer(tab, uri);
   });
   // Tab notifications can precede the native editor snapshot. Its initial
