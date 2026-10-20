@@ -28,7 +28,7 @@ Notation: `|` is the caret, `‹…›` a selection.
 | Shift+Tab | `1. a`, `\t1. b\|`, `2. c` | `1. a`, `2. b\|`, `3. c` |
 | Home, Cmd+Left | `- [ ] abc\|` | `- [ ] \|abc`, then `\|- [ ] abc` |
 | Shift+Home | `- abc\|` | `- ‹abc›` |
-| End, Cmd+Right (1.14) | `\|a **bold**` | `a **bold**\|`, past the hidden markers |
+| End, Cmd+Right (1.14) | `\|a **bold**`, `\|a <kbd>x</kbd>` | past hidden closers (`**`, `</kbd>`, …) to the line end |
 
 ## Pairing and formatting (autoPair, formatting, tasks)
 

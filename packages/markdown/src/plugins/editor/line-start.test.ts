@@ -54,3 +54,13 @@ test("End goes to the line's true end, past the markers that end it", () => {
   assert.equal(end("plain text", 10), undefined);
   assert.equal(end("a **b** c\nnext", 9), undefined);
 });
+
+test("End goes past LP-hidden styled inline HTML closers", () => {
+  const end = (text: string, visualEnd: number) =>
+    lineEndTarget(EditorState.create({ doc: text }), visualEnd);
+  assert.equal(end("a <kbd>Ctrl</kbd>", 11), 17);
+  assert.equal(end("x <u>hi</u>", 7), 11);
+  assert.equal(end("a <kbd>Ctrl</kbd>**", 11), 19);
+  assert.equal(end("a <kbd>Ctrl</kbd> more", 11), undefined);
+  assert.equal(end("end <mark>x</mark>", 11), 18);
+});
