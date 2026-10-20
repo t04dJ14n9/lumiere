@@ -32,10 +32,11 @@ remaining references, render passes, listeners and commands.
 
 Insert Footnote works as in Obsidian 1.14: the reference goes before the
 selection (the caret after it) and the definition at the end of the note,
-one blank line after the text, and a popover under the reference edits the
-definition: what is typed goes there, Enter continues it on an indented line,
-and Escape or a click elsewhere closes it, back at the reference
-(`definition-popover.ts`).
+one blank line after the text (including when the caret is at EOF on trailing
+blanks — those blanks stay before the reference), and a popover under the
+reference edits the definition: what is typed goes there, Enter continues it
+on an indented line, and Escape or a click elsewhere closes it, back at the
+reference (`definition-popover.ts`).
 On an ATX or Setext heading, the reference goes in a new paragraph after the
 whole heading so its text and outline entry stay intact.
 

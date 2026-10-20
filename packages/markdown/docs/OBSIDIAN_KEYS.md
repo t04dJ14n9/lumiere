@@ -47,8 +47,10 @@ Notation: `|` is the caret, `‹…›` a selection.
 
 Each command was run on the same note and selection in Obsidian and in
 Workshop (an empty line, a caret in a word, a selected word, two selected
-lines, a list item, a heading); 144 of 150 cases match, and the rest are
-Insert Footnote's caret, below.
+lines, a list item, a heading); 150 of 150 cases match. Insert Footnote keeps
+the caret after the reference and edits the definition in a popover (1.14);
+an EOF caret with trailing blanks still gets a blank line before the
+definition.
 
 | Command | Before | After |
 | --- | --- | --- |
@@ -62,7 +64,7 @@ Insert Footnote's caret, below.
 | Insert table | `te\|xt` | `text\n\n\|\|     \|     \|\n\| --- \| --- \|\n\|     \|     \|\n`: after the line |
 | Insert horizontal rule | `te\|xt` | `te\n\n---\n\|xt` |
 | Insert wikilink, Insert embed | `‹text›` | `[[text\|]]`: the caret after the text |
-| Insert footnote | `te\|xt` | `te[^1]xt\n\n[^1]: \|\n`: before the selection, which stays |
+| Insert footnote | `te\|xt` | `te[^1]\|xt\n\n[^1]: \n`: caret after the reference; popover edits the definition; before a selection, which stays |
 | Open link under cursor in new tab | | a tab VS Code keeps, as Cmd-click |
 | Insert code block | `te\|xt` | ` ```\nte\|xt\n``` `: around the selected lines |
 | Insert tag | `a ‹word› b` | `a #\|word b` |

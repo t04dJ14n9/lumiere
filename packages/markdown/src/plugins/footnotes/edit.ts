@@ -19,8 +19,12 @@ export function insertFootnote(state: EditorState): TransactionSpec & {
   const insertion = referenceInsertion(state);
   const marker = `[^${number}]`;
   const end = state.doc.length;
-  // One blank line before the definition, as Obsidian leaves it.
-  const trailing = /\n*$/u.exec(state.sliceDoc(Math.max(0, end - 2), end))![0];
+  // One blank line before the definition, as Obsidian leaves it. Count
+  // trailing newlines *after* the reference insertion point: blanks that
+  // already sit at EOF stay before an EOF reference, so measuring the whole
+  // document end would glue `[^n][^n]:` (or leave only a single newline).
+  const afterRef = state.sliceDoc(insertion.from, end);
+  const trailing = /\n*$/u.exec(afterRef)![0];
   const definition = `${"\n".repeat(Math.max(0, 2 - trailing.length))}${marker}: `;
   const reference = insertion.from + insertion.prefix.length + marker.length;
   return {
