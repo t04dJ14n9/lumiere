@@ -105,6 +105,36 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Open Library works and books on openlibrary.org", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://openlibrary.org/works/OL45804W/Fantastic_Mr_Fox"),
+    {
+      provider: "openLibrary",
+      id: "works/OL45804W",
+      page: "https://openlibrary.org/works/OL45804W",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://openlibrary.org/works/OL45804W"), {
+    provider: "openLibrary",
+    id: "works/OL45804W",
+    page: "https://openlibrary.org/works/OL45804W",
+  });
+  assert.deepEqual(parseVideoUrl("https://openlibrary.org/books/OL7353617M/"), {
+    provider: "openLibrary",
+    id: "books/OL7353617M",
+    page: "https://openlibrary.org/books/OL7353617M",
+  });
+  assert.equal(
+    parseVideoUrl("https://www.openlibrary.org/works/OL45804W"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://openlibrary.org/authors/OL34184A"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://openlibrary.org/works/OL0W"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +159,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://www.openlibrary.org/works/OL45804W",
+    "https://openlibrary.org.evil.test/works/OL45804W",
+    "https://openlibrary.org/authors/OL34184A",
+    "https://openlibrary.org/works/OL0W",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

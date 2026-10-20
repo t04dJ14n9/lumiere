@@ -1,14 +1,16 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Open Library links. Only
+ * a fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "openLibrary";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or an Open Library `works/OL…W` /
+   * `books/OL…M` path.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,6 +73,12 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/** Open Library work/edition OLID path (`works/OL45804W`, `books/OL7353617M`). */
+const OPENLIBRARY_ID = /^(?:works|books)\/OL[1-9][0-9]{0,9}[A-Z]$/;
+const OPENLIBRARY_PATH =
+  /^\/(works|books)\/(OL[1-9][0-9]{0,9}[A-Z])(?:\/[A-Za-z0-9._~%-]+)?\/?$/;
+const OPENLIBRARY_HOSTS = new Set(["openlibrary.org"]);
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
@@ -79,7 +87,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return OPENLIBRARY_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +128,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (OPENLIBRARY_HOSTS.has(host)) {
+    const match = OPENLIBRARY_PATH.exec(url.pathname);
+    return match ? openLibrary(`${match[1]}/${match[2]}`) : undefined;
   }
   return undefined;
 }
@@ -158,6 +173,17 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function openLibrary(id: string): OnlineVideo | undefined {
+  if (!OPENLIBRARY_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "openLibrary",
+    id,
+    page: `https://openlibrary.org/${id}`,
   };
 }
 

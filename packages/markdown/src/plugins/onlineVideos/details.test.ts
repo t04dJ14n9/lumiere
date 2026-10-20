@@ -6,9 +6,12 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  openLibraryCoverUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseOpenLibraryAuthor,
+  parseOpenLibraryItem,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +332,74 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("openLibraryCoverUrl builds medium covers only", () => {
+  assert.equal(
+    openLibraryCoverUrl(6498519),
+    "https://covers.openlibrary.org/b/id/6498519-M.jpg",
+  );
+  assert.equal(openLibraryCoverUrl(0), undefined);
+  assert.equal(openLibraryCoverUrl(-1), undefined);
+  assert.equal(openLibraryCoverUrl(1.5), undefined);
+});
+
+test("parseOpenLibraryItem reads title, author key and cover ids", () => {
+  assert.deepEqual(
+    parseOpenLibraryItem({
+      title: "Fantastic Mr Fox",
+      authors: [{ author: { key: "/authors/OL34184A" } }],
+      covers: [6498519, -1, 8904777],
+    }),
+    {
+      details: { title: "Fantastic Mr Fox" },
+      authorKey: "/authors/OL34184A",
+      covers: [6498519, 8904777],
+    },
+  );
+  assert.deepEqual(
+    parseOpenLibraryItem({
+      title: "Fantastic Mr. Fox",
+      authors: [{ key: "/authors/OL34184A" }],
+      covers: [],
+    }),
+    {
+      details: { title: "Fantastic Mr. Fox" },
+      authorKey: "/authors/OL34184A",
+      covers: [],
+    },
+  );
+  assert.equal(parseOpenLibraryAuthor({ name: "Roald Dahl" }), "Roald Dahl");
+});
+
+test("an Open Library lookup fetches work, author and a non-redirecting cover", async () => {
+  const cover = "https://covers.openlibrary.org/b/id/6498519-M.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://openlibrary.org/works/": () =>
+      response({
+        title: "Fantastic Mr Fox",
+        authors: [{ author: { key: "/authors/OL34184A" } }],
+        covers: [8904777, 6498519],
+      }),
+    "https://openlibrary.org/authors/": () => response({ name: "Roald Dahl" }),
+    "https://covers.openlibrary.org/b/id/8904777-M.jpg": () =>
+      response("", { status: 302, type: "text/html" }),
+    "https://covers.openlibrary.org/b/id/6498519-M.jpg": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "openLibrary",
+    "works/OL45804W",
+  );
+  assert.equal(details.title, "Fantastic Mr Fox");
+  assert.equal(details.author, "Roald Dahl");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://openlibrary.org/works/OL45804W.json");
+  assert.equal(calls[1]?.url, "https://openlibrary.org/authors/OL34184A.json");
+  assert.ok(calls.some((call) => call.url === cover));
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

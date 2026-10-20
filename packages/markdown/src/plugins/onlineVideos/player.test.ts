@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Open Library refuses an in-webview player", () => {
+  assert.equal(providers.openLibrary.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://openlibrary.org/works/OL45804W")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://openlibrary.org/works/OL45804W")),
+  );
+});

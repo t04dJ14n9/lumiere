@@ -131,6 +131,37 @@ export class VideoDetailsSource {
     }
   }
 
+  private async fetchOpenLibrary(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const body = await this.json(`https://openlibrary.org/${id}.json`, signal);
+    const { details, authorKey, covers } = parseOpenLibraryItem(body);
+    if (authorKey) {
+      const authorBody = await this.json(
+        `https://openlibrary.org${authorKey}.json`,
+        signal,
+      ).catch(() => undefined);
+      const author = parseOpenLibraryAuthor(authorBody);
+      if (author) {
+        details.author = author;
+      }
+    }
+    for (const coverId of covers) {
+      const cover = openLibraryCoverUrl(coverId);
+      if (!cover) {
+        continue;
+      }
+      // Some -M covers 302 to archive.org; redirect:error skips those.
+      const image = await this.image(cover, signal).catch(() => undefined);
+      if (image !== undefined) {
+        details.cover = image;
+        break;
+      }
+    }
+    return details;
+  }
+
   private async fetchDetails(
     provider: VideoProvider,
     id: string,
@@ -150,6 +181,9 @@ export class VideoDetailsSource {
         signal,
       );
       return parseHuggingFaceModel(body);
+    }
+    if (provider === "openLibrary") {
+      return this.fetchOpenLibrary(id, signal);
     }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
@@ -246,6 +280,77 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** Open Library work/edition JSON: title, author key, cover ids. */
+export function parseOpenLibraryItem(body: unknown): {
+  details: VideoDetails;
+  authorKey?: string;
+  covers: number[];
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Open Library response");
+  }
+  const title = text(body.title, 300);
+  const authorKey = openLibraryAuthorKey(body.authors);
+  const covers = openLibraryCoverIds(body.covers);
+  return {
+    details: withoutUndefined({ title }),
+    ...(authorKey ? { authorKey } : {}),
+    covers,
+  };
+}
+
+export function parseOpenLibraryAuthor(body: unknown): string | undefined {
+  if (!isRecord(body)) {
+    return undefined;
+  }
+  return text(body.name, 100) ?? text(body.personal_name, 100);
+}
+
+/** Work: `{ author: { key } }`; edition: `{ key }`. */
+function openLibraryAuthorKey(value: unknown): string | undefined {
+  if (!Array.isArray(value) || value.length === 0 || !isRecord(value[0])) {
+    return undefined;
+  }
+  const first = value[0];
+  const nested = isRecord(first.author) ? first.author : undefined;
+  const key =
+    (nested && typeof nested.key === "string" ? nested.key : undefined) ??
+    (typeof first.key === "string" ? first.key : undefined);
+  if (!key || !/^\/authors\/OL[1-9][0-9]{0,9}[A-Z]$/.test(key)) {
+    return undefined;
+  }
+  return key;
+}
+
+function openLibraryCoverIds(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const ids: number[] = [];
+  for (const item of value) {
+    if (
+      typeof item === "number" &&
+      Number.isInteger(item) &&
+      item > 0 &&
+      item < 1_000_000_000
+    ) {
+      ids.push(item);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Open Library covers on `covers.openlibrary.org` at medium size only.
+ * Large (`-L`) often 302s to archive.org, which we refuse.
+ */
+export function openLibraryCoverUrl(coverId: number): string | undefined {
+  if (!Number.isInteger(coverId) || coverId <= 0 || coverId >= 1_000_000_000) {
+    return undefined;
+  }
+  return `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */
