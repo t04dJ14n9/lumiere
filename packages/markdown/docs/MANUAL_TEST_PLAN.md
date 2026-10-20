@@ -308,6 +308,9 @@ Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
    source/live-preview toggles keep the native document authoritative. Check
    menu clipboard permissions, native pickers/locales and actual IME with the
    owner's editor; these are not established by the DOM event unit fakes.
+9b. `lumiere.markdown.properties.listPreviewCount` (default 3): a tags list or
+   Sources sheet with more than N items shows disclosure; raise/lower N and
+   confirm the chip/row preview count updates without rewriting YAML.
 10. Keep `title` as an ordinary editable text property (WorkVault uses the
     filename stem). Add `decision_confidence_and_supporting_evidence: high` and
     a nested `decision_conf` map with `score`, `rationale` and a `factors` list.
@@ -1318,6 +1321,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.outline.followCursor` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.properties.listPreviewCount` | `3` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.scratch.folder` | `"scratch"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.tags.viewSort` | `"name"` | name / frequency; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.tags.viewNested` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
