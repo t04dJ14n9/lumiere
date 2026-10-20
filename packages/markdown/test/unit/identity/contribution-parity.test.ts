@@ -38,7 +38,10 @@ import { OPEN_COMMAND as outlineOpenCommand } from "../../../src/plugins/outline
 import { outlineHost } from "../../../src/plugins/outline/host";
 import { OPEN_COMMAND as backlinksOpenCommand } from "../../../src/plugins/backlinks/tree";
 import { backlinksHost } from "../../../src/plugins/backlinks/host";
-import { OPEN_COMMAND as outgoingOpenCommand } from "../../../src/plugins/outgoingLinks/tree";
+import {
+  CREATE_COMMAND as outgoingCreateCommand,
+  OPEN_COMMAND as outgoingOpenCommand,
+} from "../../../src/plugins/outgoingLinks/tree";
 import { outgoingLinksHost } from "../../../src/plugins/outgoingLinks/host";
 import { SEARCH_COMMAND } from "../../../src/plugins/tags/tree";
 import { tagsViewHost } from "../../../src/plugins/tags/view";
@@ -124,6 +127,7 @@ test("tree hosts register open and search commands outside contributes", async (
     SEARCH_COMMAND,
     backlinksOpenCommand,
     outgoingOpenCommand,
+    outgoingCreateCommand,
   ]);
   const capturedOutside = [...captured.ids]
     .filter((id) => !contributed.has(id))
