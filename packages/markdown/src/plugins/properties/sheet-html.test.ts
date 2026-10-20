@@ -284,4 +284,3 @@ test("sheet heading and add control use Obsidian class aliases and lucide-plus",
   assert.match(html, /data-lucide="plus"/);
   assert.doesNotMatch(html, /＋/);
 });
-});
