@@ -1,22 +1,25 @@
 # Online Videos
 
-YouTube and Bilibili links written as images show as video cards:
-`![Title](https://www.youtube.com/watch?v=ID)`, `https://youtu.be/ID`,
-Shorts, `/embed/` and `/live/` links (with `t=` or `start=`), and
-`![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with `?p=` for
-a part. Obsidian has no equivalent (it shows such links as broken images);
-local video (`![[clip.mp4]]`) stays with Embeds.
+YouTube, Bilibili and Hugging Face model links written as images show as
+video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
+`https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
+`start=`), `![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with
+`?p=` for a part, and Hugging Face
+`![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
+`/tree/…` normalised away). Obsidian has no equivalent (it shows such links
+as broken images); local video (`![[clip.mp4]]`) stays with Embeds.
 
 A card shows a title (the alt text, else the provider's title, else "YouTube
-video" or "Bilibili video"), the provider with the author and length (or the
-ID), and **Open on YouTube/Bilibili**, which asks the host (Links RPC
-`open`) to open the page in the external browser. The card uses buttons
-rather than `<a href>`: VS Code's webview opens every clicked anchor itself
-as well, which would open the page twice. In a trusted workspace a YouTube
-card shows the video's still (`i.ytimg.com`, derived from the ID) and a
-Bilibili card the video's cover. In an untrusted workspace nothing is
-fetched: no title, cover, still or player, and the card says so. The caret
-on the link reveals its Markdown, as for images.
+video", "Bilibili video" or "Hugging Face video"), the provider with the
+author and length (or the ID), and **Open on YouTube/Bilibili/Hugging Face**,
+which asks the host (Links RPC `open`) to open the page in the external
+browser. The card uses buttons rather than `<a href>`: VS Code's webview
+opens every clicked anchor itself as well, which would open the page twice.
+In a trusted workspace a YouTube card shows the video's still (`i.ytimg.com`,
+derived from the ID) and a Bilibili card the video's cover. Hugging Face
+cards have no cover. In an untrusted workspace nothing is fetched: no title,
+cover, still or player, and the card says so. The caret on the link reveals
+its Markdown, as for images.
 
 **Play here** (Bilibili only) is off by default because Bilibili's player
 does not play in VS Code (below). `lumiere.markdown.onlineVideos.bilibiliPlayer`
@@ -27,7 +30,7 @@ player.
 
 `parse.ts` accepts only the hosts and path shapes above and validated IDs
 (11 characters of `[A-Za-z0-9_-]` for YouTube, `BV` plus 10 alphanumerics or
-`av` digits for Bilibili). `player.ts` builds the player URL from the parsed
+`av` digits for Bilibili, Hugging Face model ids). `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
 `sandbox="allow-scripts allow-same-origin allow-presentation"`,
@@ -43,10 +46,10 @@ puts the image back when the pass is disposed.
 
 ### Titles and covers
 
-Bilibili covers have no URL derived from the ID, and the webview CSP allows
-no network (`connect-src` is the webview only), so the extension host looks
-them up (`host.ts`, `details.ts`) when a trusted card asks over the
-`onlineVideos.details` RPC:
+Bilibili covers and Hugging Face model metadata have no URL derived from the
+ID alone, and the webview CSP allows no network (`connect-src` is the
+webview only), so the extension host looks them up (`host.ts`, `details.ts`)
+when a trusted card asks over the `onlineVideos.details` RPC:
 
 - Bilibili: `https://api.bilibili.com/x/web-interface/view?bvid=…` (or
   `aid=`), reading `data.title`, `data.owner.name`, `data.duration` and
@@ -56,6 +59,9 @@ them up (`host.ts`, `details.ts`) when a trusted card asks over the
   handed to the webview as a `data:` URL, so `img-src` is not loosened.
 - YouTube: keyless oEmbed (`https://www.youtube.com/oembed`) for the title
   and channel; the still stays the ID-derived `i.ytimg.com` image.
+- Hugging Face: keyless `https://huggingface.co/api/models/{id}` for
+  `pipeline_tag` / model id and `author` (else the owner segment). No cover.
+  Datasets and Spaces stay images.
 
 The host refuses the RPC in an untrusted workspace (and the webview does not
 ask), checks the ID again, sends `User-Agent: MarkdownWorkshop (VS Code
@@ -112,6 +118,9 @@ off, the links fall back to Embeds (a remote image).
 
 ## Limits
 
-Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's and
-YouTube's public endpoints, which may change or rate-limit. Playlists,
-channels, Bilibili bangumi and other providers are left as images.
+Lookups depend on Bilibili's, YouTube's and Hugging Face's public endpoints,
+which may change or rate-limit. Playlists, channels, Bilibili bangumi and
+other providers are left as images. Hugging Face has no in-webview player
+(Open on Hugging Face only). Hub redirects (legacy single-segment model
+ids) fail the host lookup because redirects are refused; the card still
+opens the page.

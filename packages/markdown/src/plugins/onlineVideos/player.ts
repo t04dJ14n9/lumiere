@@ -11,7 +11,7 @@ interface Provider {
    * Whether the card may offer "Play here" (Bilibili, behind the
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
-   * gets no referrer to check.
+   * gets no referrer to check. Hugging Face has no in-webview player.
    */
   readonly embeddable: boolean;
 }
@@ -31,6 +31,14 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
     pathPattern: /^\/player\.html$/,
     embeddable: true,
   },
+  huggingface: {
+    name: "Hugging Face",
+    origin: "https://huggingface.co",
+    path: "/",
+    pathPattern:
+      /^\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,99})?)$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -39,6 +47,9 @@ export const PLAYER_SANDBOX =
 
 export function playerUrl(video: OnlineVideo): string {
   const provider = providers[video.provider];
+  if (video.provider === "huggingface") {
+    throw new Error("Hugging Face has no in-webview player");
+  }
   if (video.provider === "youtube") {
     const url = new URL(`${provider.path}${video.id}`, provider.origin);
     url.searchParams.set("rel", "0");
@@ -92,7 +103,7 @@ export function playerAttributes(video: OnlineVideo): Record<string, string> {
   };
 }
 
-/** YouTube's still for the video; Bilibili covers need an API call, so none. */
+/** YouTube's still for the video; other covers need an API call, so none. */
 export function thumbnailUrl(video: OnlineVideo): string | undefined {
   return video.provider === "youtube"
     ? `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`

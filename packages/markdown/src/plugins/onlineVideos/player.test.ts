@@ -74,3 +74,14 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
 });
+
+test("Hugging Face refuses an in-webview player", () => {
+  assert.equal(providers.huggingface.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://huggingface.co/google/gemma-2-2b")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
+  );
+});
