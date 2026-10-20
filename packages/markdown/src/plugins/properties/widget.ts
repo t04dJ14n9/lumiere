@@ -11,6 +11,7 @@ import { bindPropertyFields } from "./fields";
 import { bindPropertyLists } from "./lists";
 import { bindPropertyControls } from "./controls";
 import { keepSelectAllInField } from "./select-all";
+import { propertiesEstimatedHeight } from "./estimated-height";
 const lifetimes = new WeakMap<HTMLElement, () => void>();
 export class PropertyWidget extends WidgetType {
   constructor(
@@ -79,5 +80,23 @@ export class PropertyWidget extends WidgetType {
   }
   override ignoreEvent(): boolean {
     return true;
+  }
+  /**
+   * Reserve the sheet's rows before CodeMirror has measured the widget.
+   * Without this the height map treats the whole frontmatter as one line.
+   */
+  override get estimatedHeight(): number {
+    return propertiesEstimatedHeight({
+      source: this.source,
+      hidden: this.hidden,
+      collapsed: this.context.propertyEditor?.collapsed?.() ?? false,
+      allowEmpty: this.allowEmpty,
+      ...(this.context.propertyEditor?.types
+        ? { types: this.context.propertyEditor.types() }
+        : {}),
+      ...(this.context.renderProperty
+        ? { renderValue: this.context.renderProperty }
+        : {}),
+    });
   }
 }
