@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { embedEstimatedHeight } from "./estimated-height";
+import {
+  clearNoteEmbedHeights,
+  embedEstimatedHeight,
+  rememberNoteEmbedHeight,
+} from "./estimated-height";
 import { writtenHeight, writtenWidth } from "./image-size";
 
 test("WxH size reserves the written height, not one line", () => {
@@ -26,11 +30,33 @@ test("width-only and unsized images still beat the one-line default", () => {
   }
 });
 
-test("note embeds, media and PDF cards use kind defaults above one line", () => {
-  assert.ok(embedEstimatedHeight("![[Note]]") > 100);
+test("note embeds reserve a multi-paragraph floor above the old 120px", () => {
+  clearNoteEmbedHeights();
+  const note = embedEstimatedHeight("![[Note]]");
+  const heading = embedEstimatedHeight("![[Other#Heading]]");
+  const md = embedEstimatedHeight("![[folder/Other.md]]");
+  // Previously NOTE_DEFAULT was 120 (+ chrome ≈136). Tall notes need more.
+  for (const height of [note, heading, md]) {
+    assert.ok(height > 300, `got ${height}`);
+  }
   assert.ok(embedEstimatedHeight("![[clip.mp4]]") > 150);
   assert.ok(embedEstimatedHeight("![[doc.pdf]]") > 40);
   assert.ok(embedEstimatedHeight("![[doc.pdf]]") < 120);
+});
+
+test("remembered note-embed height beats the floor on remount estimate", () => {
+  clearNoteEmbedHeights();
+  const source = "![[TallNote]]";
+  const floor = embedEstimatedHeight(source);
+  rememberNoteEmbedHeight(source, 900);
+  const cached = embedEstimatedHeight(source);
+  assert.ok(cached >= 900, `got ${cached}`);
+  assert.ok(cached > floor, `${cached} vs floor ${floor}`);
+  // Non-notes ignore the cache API.
+  rememberNoteEmbedHeight("![[pic.png]]", 900);
+  assert.ok(embedEstimatedHeight("![[pic.png]]") < 300);
+  clearNoteEmbedHeights();
+  assert.equal(embedEstimatedHeight(source), floor);
 });
 
 test("inline WxH images use the same height reserve as block embeds", () => {

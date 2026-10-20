@@ -50,7 +50,7 @@ Injects `editor`, `commands`, `livePreview`, `render`, `resources` and `rpc`;
 provides no services. Listens to `render/postProcess`; no kernel events emitted.
 Uses Links RPC to open an embedded target. `lumiere.markdown.plugins.embeds.enabled`
 defaults to true. Insert Embed has no default keybinding. Remote media follows
-workspace trust from Render. YouTube/Bilibili image links share the EmbedBlock height reserve via Online Videos `api` (`parseVideoUrl`) so off-viewport remounts keep card height.
+workspace trust from Render. YouTube/Bilibili image links share the EmbedBlock height reserve via Online Videos `api` (`parseVideoUrl`) so off-viewport remounts keep card height. Note embeds reserve a multi-paragraph floor and remember painted height across off-viewport remounts (`estimated-height.ts`).
 
 ## Limits and differences from Obsidian
 

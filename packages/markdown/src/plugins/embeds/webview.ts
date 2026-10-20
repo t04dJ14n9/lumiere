@@ -5,7 +5,10 @@ import type {} from "../livePreview/api";
 import type {} from "../resources/api";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
-import { embedEstimatedHeight } from "./estimated-height";
+import {
+  embedEstimatedHeight,
+  rememberNoteEmbedHeight,
+} from "./estimated-height";
 import type { RenderBlock } from "../livePreview/api";
 import type { EditorState } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
@@ -13,7 +16,12 @@ import type { SyntaxNodeRef } from "@lezer/common";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
-import { embedEditing, embedsImage, inlineEmbedClick } from "./clicks";
+import {
+  embedEditing,
+  embedsImage,
+  embedsNote,
+  inlineEmbedClick,
+} from "./clicks";
 import { editingImageAt, imageSelection } from "./image-selection";
 import { writtenHeight } from "./image-size";
 export const embedsWebview: Plugin = {
@@ -60,8 +68,43 @@ function soleEmbed(
     : undefined;
 }
 
+/** Observe note-embed growth so remounts keep the painted height. */
+const noteObservers = new WeakMap<HTMLElement, ResizeObserver>();
+
+function watchNoteEmbed(dom: HTMLElement, source: string): void {
+  if (!embedsNote(source) || noteObservers.has(dom)) {
+    return;
+  }
+  const observer = new ResizeObserver((entries) => {
+    const height = entries[0]?.contentRect.height ?? 0;
+    if (height > 0) {
+      rememberNoteEmbedHeight(source, height);
+    }
+  });
+  observer.observe(dom);
+  noteObservers.set(dom, observer);
+}
+
+function unwatchNoteEmbed(dom: HTMLElement, source: string): void {
+  noteObservers.get(dom)?.disconnect();
+  noteObservers.delete(dom);
+  const height = dom.getBoundingClientRect().height;
+  if (height > 0) {
+    rememberNoteEmbedHeight(source, height);
+  }
+}
+
 /** MarkdownBlock with a height reserve so off-viewport remounts stay tall. */
 class EmbedBlock extends MarkdownBlock {
+  override toDOM(view: EditorView): HTMLElement {
+    const dom = super.toDOM(view);
+    watchNoteEmbed(dom, this.block.source);
+    return dom;
+  }
+  override destroy(dom: HTMLElement): void {
+    unwatchNoteEmbed(dom, this.block.source);
+    super.destroy(dom);
+  }
   override get estimatedHeight(): number {
     return embedEstimatedHeight(this.block.source);
   }
@@ -139,6 +182,7 @@ class EmbedInline extends MarkdownInline {
    * apply when `|WxH` is written — unsized images (selection-inline) must
    * stay in normal inline flow so drag geometry hits line start. Persistent
    * decorations keep estimatedHeight off-viewport for remounts.
+   * Note embeds also watch painted height for the measured cache (#125).
    */
   override toDOM(view: EditorView): HTMLElement {
     const node = super.toDOM(view);
@@ -150,7 +194,12 @@ class EmbedInline extends MarkdownInline {
         node.style.verticalAlign = "text-top";
       }
     }
+    watchNoteEmbed(node, this.source);
     return node;
+  }
+  override destroy(dom: HTMLElement): void {
+    unwatchNoteEmbed(dom, this.source);
+    super.destroy(dom);
   }
 }
 

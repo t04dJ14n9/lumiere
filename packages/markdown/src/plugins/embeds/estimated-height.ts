@@ -17,6 +17,11 @@ import { writtenHeight, writtenWidth } from "./image-size";
  *
  * YouTube / Bilibili image links become `.mw-video` cards (16:9 thumb ≈200px
  * wide). Without a dedicated reserve they fall through to CARD_DEFAULT (~64px).
+ *
+ * Note embeds are worse: the source is one line (`![[Other]]`) while resolved
+ * content can be many paragraphs. A modest floor covers first paint; after
+ * measure, remember the painted height so an off-viewport remount does not
+ * fall back to the floor and jump every coordinate below the embed.
  */
 const CHROME = 16;
 /** Portrait / unknown images without `|WxH` — better than one line. */
@@ -31,8 +36,31 @@ const MEDIA_DEFAULT = 180;
 const ONLINE_VIDEO_DEFAULT = 200;
 /** PDF and other attachment cards. */
 const CARD_DEFAULT = 48;
-/** Note embeds: content unknown until resolve; keep a modest reserve. */
-const NOTE_DEFAULT = 120;
+/**
+ * Note embeds: content unknown until resolve. 360 ≈ 15 body lines — enough
+ * that a multi-paragraph remount rarely blanks PageDown before measure, and
+ * short/missing notes shrink on first paint. Measured cache covers taller.
+ */
+const NOTE_DEFAULT = 360;
+
+/** Painted heights for note embeds, keyed by Markdown source. */
+const measuredNoteHeights = new Map<string, number>();
+
+/** Remember a note embed's painted height for the next off-viewport remount. */
+export function rememberNoteEmbedHeight(source: string, height: number): void {
+  if (!embedsNote(source) || !(height > 0)) {
+    return;
+  }
+  const previous = measuredNoteHeights.get(source) ?? 0;
+  if (height > previous) {
+    measuredNoteHeights.set(source, height);
+  }
+}
+
+/** Test helper: drop remembered note-embed heights. */
+export function clearNoteEmbedHeights(): void {
+  measuredNoteHeights.clear();
+}
 
 function embedTarget(source: string): string {
   return (
@@ -64,7 +92,9 @@ export function embedEstimatedHeight(source: string): number {
     return IMAGE_DEFAULT + CHROME;
   }
   if (embedsNote(source)) {
-    return NOTE_DEFAULT + CHROME;
+    const floor = NOTE_DEFAULT + CHROME;
+    const cached = measuredNoteHeights.get(source);
+    return cached === undefined ? floor : Math.max(floor, cached);
   }
   // Online Videos replaces matching image URLs with tall cards.
   if (parseVideoUrl(embedTarget(source))) {
