@@ -151,6 +151,17 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "neodb") {
+      const body = await this.json(`https://neodb.social/api/${id}`, signal);
+      const { details, cover } = parseNeodbItem(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +257,65 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** NeoDB item API: display title, first credit-like field, cover under /m/. */
+export function parseNeodbItem(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected NeoDB response");
+  }
+  const title = text(body.display_title, 300) ?? text(body.title, 300);
+  const author =
+    firstName(body.director) ??
+    firstName(body.author) ??
+    firstName(body.artist) ??
+    firstName(body.developer) ??
+    firstName(body.host) ??
+    text(body.category, 100);
+  const cover = neodbCoverUrl(body.cover_image_url);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/** First string in a NeoDB credit array (director / author / artist / …). */
+function firstName(value: unknown): string | undefined {
+  if (!Array.isArray(value) || value.length === 0) {
+    return undefined;
+  }
+  return text(value[0], 100);
+}
+
+/**
+ * NeoDB covers on `neodb.social` under `/m/…` (jpeg/png/webp/gif; no query).
+ */
+export function neodbCoverUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "neodb.social" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/m\/[A-Za-z0-9_./-]+\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  return `https://neodb.social${url.pathname}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

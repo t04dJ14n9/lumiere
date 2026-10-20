@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and NeoDB links. Only a fully
+ * parsed and validated ID leaves this module; players and cards are built from
+ * it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "neodb";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a NeoDB `{kind}/{uuid}` path (e.g.
+   * `movie/…`, `tv/season/…`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,6 +72,14 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/** NeoDB item uuid (typeids are typically 22 chars). */
+const NEODB_UUID = "[A-Za-z0-9]{16,32}";
+/** Canonical NeoDB kinds that answer 200 without a redirect. */
+const NEODB_KIND = "(?:movie|book|game|album|podcast|performance|tv/season)";
+const NEODB_ID = new RegExp(`^${NEODB_KIND}/${NEODB_UUID}$`);
+const NEODB_PATH = new RegExp(`^/(${NEODB_KIND})/(${NEODB_UUID})/?$`);
+const NEODB_HOSTS = new Set(["neodb.social"]);
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
@@ -79,7 +88,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return NEODB_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +129,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (NEODB_HOSTS.has(host)) {
+    const match = NEODB_PATH.exec(url.pathname);
+    return match ? neodb(`${match[1]}/${match[2]}`) : undefined;
   }
   return undefined;
 }
@@ -158,6 +174,17 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function neodb(id: string): OnlineVideo | undefined {
+  if (!NEODB_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "neodb",
+    id,
+    page: `https://neodb.social/${id}`,
   };
 }
 

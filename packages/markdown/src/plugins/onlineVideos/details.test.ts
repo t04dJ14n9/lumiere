@@ -6,8 +6,10 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  neodbCoverUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
+  parseNeodbItem,
   parseOEmbed,
 } from "./details";
 
@@ -307,6 +309,61 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("neodbCoverUrl accepts neodb.social /m/ covers only", () => {
+  assert.equal(
+    neodbCoverUrl(
+      "https://neodb.social/m/item/doubanmovie/2023/01/30/eb0c8821-ae0e-4438-b629-a2c769c161cb.jpg",
+    ),
+    "https://neodb.social/m/item/doubanmovie/2023/01/30/eb0c8821-ae0e-4438-b629-a2c769c161cb.jpg",
+  );
+  assert.equal(
+    neodbCoverUrl(
+      "https://neodb.social/m/item/rss/2023/02/07/aeea1a1b-2c39-402e-907b-3e5c2849da32.png",
+    ),
+    "https://neodb.social/m/item/rss/2023/02/07/aeea1a1b-2c39-402e-907b-3e5c2849da32.png",
+  );
+  for (const value of [
+    "https://evil.test/m/item/doubanmovie/2023/01/30/eb0c8821.jpg",
+    "https://neodb.social/m/item/x.jpg?x=1",
+    "https://neodb.social/static/cover.jpg",
+    "http://neodb.social/m/item/x.jpg",
+  ]) {
+    assert.equal(neodbCoverUrl(value), undefined);
+  }
+});
+
+test("parseNeodbItem prefers display_title and director", () => {
+  assert.deepEqual(
+    parseNeodbItem({
+      title: "Inception",
+      display_title: "Inception",
+      category: "movie",
+      director: ["Christopher Nolan"],
+      cover_image_url:
+        "https://neodb.social/m/item/doubanmovie/2023/01/30/eb0c8821-ae0e-4438-b629-a2c769c161cb.jpg",
+    }),
+    {
+      details: { title: "Inception", author: "Christopher Nolan" },
+      cover:
+        "https://neodb.social/m/item/doubanmovie/2023/01/30/eb0c8821-ae0e-4438-b629-a2c769c161cb.jpg",
+    },
+  );
+  assert.deepEqual(
+    parseNeodbItem({
+      title: "Abbey Road",
+      category: "music",
+      artist: ["Beatles"],
+      cover_image_url:
+        "https://neodb.social/m/album/2021/12/0864c8ecff-4fd0-4d9c-98d5-969bdd294d2f.jpg",
+    }),
+    {
+      details: { title: "Abbey Road", author: "Beatles" },
+      cover:
+        "https://neodb.social/m/album/2021/12/0864c8ecff-4fd0-4d9c-98d5-969bdd294d2f.jpg",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +386,37 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a NeoDB lookup uses /api/{kind}/{uuid} and may fetch the cover", async () => {
+  const cover =
+    "https://neodb.social/m/item/doubanmovie/2023/01/30/eb0c8821-ae0e-4438-b629-a2c769c161cb.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://neodb.social/api/": () =>
+      response({
+        title: "Inception",
+        display_title: "Inception",
+        category: "movie",
+        director: ["Christopher Nolan"],
+        cover_image_url: cover,
+      }),
+    "https://neodb.social/m/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "neodb",
+    "movie/0OsXZTIt1UOOveQi3UXBil",
+  );
+  assert.equal(details.title, "Inception");
+  assert.equal(details.author, "Christopher Nolan");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://neodb.social/api/movie/0OsXZTIt1UOOveQi3UXBil",
+  );
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

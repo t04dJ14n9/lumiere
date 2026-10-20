@@ -105,6 +105,43 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("NeoDB item pages on neodb.social", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://neodb.social/movie/0OsXZTIt1UOOveQi3UXBil"),
+    {
+      provider: "neodb",
+      id: "movie/0OsXZTIt1UOOveQi3UXBil",
+      page: "https://neodb.social/movie/0OsXZTIt1UOOveQi3UXBil",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://neodb.social/tv/season/618r0odMtjSbOQY8jgl6Yc/"),
+    {
+      provider: "neodb",
+      id: "tv/season/618r0odMtjSbOQY8jgl6Yc",
+      page: "https://neodb.social/tv/season/618r0odMtjSbOQY8jgl6Yc",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://neodb.social/album/4T777msayq1yERmzPGCG30"),
+    {
+      provider: "neodb",
+      id: "album/4T777msayq1yERmzPGCG30",
+      page: "https://neodb.social/album/4T777msayq1yERmzPGCG30",
+    },
+  );
+  // Bare /tv/{id} 302s to /tv/season/; www answers 521 — reject both.
+  assert.equal(
+    parseVideoUrl("https://neodb.social/tv/1mXAyR60koQYq5kCM31SjN"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.neodb.social/movie/0OsXZTIt1UOOveQi3UXBil"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://neodb.social/movie/short"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +166,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://neodb.social/tv/1mXAyR60koQYq5kCM31SjN",
+    "https://neodb.social.evil.test/movie/0OsXZTIt1UOOveQi3UXBil",
+    "https://www.neodb.social/movie/0OsXZTIt1UOOveQi3UXBil",
+    "https://neodb.social/music/4T777msayq1yERmzPGCG30",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
