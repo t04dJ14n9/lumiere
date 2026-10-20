@@ -1,6 +1,6 @@
 import { embedsImage } from "../../markdown/images";
 import { mediaKind } from "../../shared/media-kinds";
-import { parseVideoUrl } from "../onlineVideos/parse";
+import { parseVideoUrl } from "../onlineVideos/api";
 import { embedsNote } from "./clicks";
 import { writtenHeight, writtenWidth } from "./image-size";
 
