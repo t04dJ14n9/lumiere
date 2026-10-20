@@ -15,7 +15,9 @@ arrows, accented letters) in separate files that MathJax asks for on first use;
 each is a chunk of the webview bundle, so they load offline and only when
 needed. Each render pass owns its pending result and restoration callback, and
 plugin disposal clears all remaining renders. Editing commands wrap or unwrap
-the selection through CodeMirror.
+the selection through CodeMirror. Rendered clicks synchronize the editor range
+and browser selection, including a second click on a display preview whose
+source is already shown, so typing replaces the body and preserves delimiters.
 
 ## Files
 

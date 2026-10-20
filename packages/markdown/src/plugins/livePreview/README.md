@@ -116,8 +116,8 @@ for `- [ ]`). Both code fences reveal anywhere in the block. Callouts reveal
 source with quote marks per line and inline syntax per element. Definition
 markers reveal on their first line; math and HTML blocks reveal whole, and
 display math keeps its rendered formula below the source. A click on a
-rendered math block reveals it as in Obsidian, selecting the formula. Callouts
-reveal through Edit, selecting the whole callout; their titles toggle folds.
+rendered math block reveals it as in Obsidian, selecting the formula. Callout
+title/body clicks and Edit select the whole source; their fold buttons toggle disclosure.
 Rendered fenced code (diagrams,
 queries, processed code) only from its Edit button, selecting the code
 (`BlockEditing` in `src/webview/ui/markdown-widget.ts`).

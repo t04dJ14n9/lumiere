@@ -66,14 +66,18 @@ details.callout > summary {
 details.callout > summary::-webkit-details-marker {
   display: none;
 }
-details.callout > summary::after {
-  content: "›";
+.callout-fold {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
   margin-left: 2px;
   font-size: 1.2em;
   line-height: 1;
   transition: transform 100ms;
 }
-details.callout[open] > summary::after {
+details.callout[open] > summary > .callout-fold {
   transform: rotate(90deg);
 }
 /* The body keeps a line's height of space above and below, as in Obsidian. */

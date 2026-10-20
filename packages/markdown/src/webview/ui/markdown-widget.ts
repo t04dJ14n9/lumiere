@@ -9,7 +9,7 @@ import {
   rememberMarkdownBlockContentWidth,
   rememberMarkdownBlockHeight,
 } from "./markdown-block-height";
-import { CLICK_SELECT } from "./pointer-selection";
+import { selectRenderedSource } from "./source-selection";
 
 /** A span of a block's source, as offsets into it. */
 export interface SourceSpan {
@@ -29,6 +29,8 @@ export interface BlockEditing {
   reveal: "click" | "button" | "none";
   /** Also keep clicks in the editor margin beside the block from revealing it. */
   guardMargin?: boolean;
+  /** Summary text edits source; buttons inside it still own their events. */
+  editSummary?: boolean;
   /**
    * The part of the source revealing selects; the whole block unless given.
    * Obsidian selects a formula or a diagram's code without its delimiters.
@@ -147,7 +149,7 @@ export class MarkdownBlock extends WidgetType {
     const reveal = () => this.revealSource(view, shell);
     edit.addEventListener("click", reveal, { signal: events.signal });
     if (this.editing.reveal === "click") {
-      bindClickToEdit(shell, reveal, events.signal);
+      bindClickToEdit(shell, reveal, events.signal, this.editing.editSummary);
     }
     if (this.editing.guardMargin) {
       bindFenceClickGuard(view, shell, this.block, events.signal);
@@ -194,12 +196,11 @@ export class MarkdownBlock extends WidgetType {
       from: 0,
       to: source.length,
     };
-    view.focus();
-    view.dispatch({
-      selection: { anchor: start + span.to, head: start + span.from },
-      scrollIntoView: false,
-      userEvent: CLICK_SELECT,
-    });
+    selectRenderedSource(
+      view,
+      { from: start + span.from, to: start + span.to },
+      { settled: true },
+    );
   }
 
   /**

@@ -10,9 +10,10 @@ render service. The post-processor binds disclosures to panel-local memory.
 That memory is a `folds` view-state contribution, restored on registration and
 mapped across renamed source identities. Each pass owns its event listeners and
 bindings; plugin disposal removes registrations and remaining pass handlers.
-Foldable titles toggle disclosure; a `-` callout starts closed. Pointer clicks
-in the body or padding keep the callout rendered. Its Edit button reveals
-source, as does moving the caret into the block with the keyboard.
+The fold button toggles disclosure; a `-` callout starts closed. Clicking title
+text, body or padding reveals and selects the whole callout source, as does its
+Edit button. Typing replaces that visible selection. Links and controls keep
+their own clicks; keyboard navigation can reveal source with a caret.
 
 ## Files
 
@@ -23,7 +24,7 @@ source, as does moving the caret into the block with the keyboard.
 - `callouts.test.ts`: recognition and insertion units.
 - `view-state.test.ts`: persistence, restore and source-remapping units.
 - `disclosure.test.ts`: title/chevron toggling and listener disposal.
-- `../../../test/unit/callouts/interaction.test.ts`: button-only source editing.
+- `../../../test/unit/callouts/interaction.test.ts`: rendered-click and button source editing.
 - `callouts.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

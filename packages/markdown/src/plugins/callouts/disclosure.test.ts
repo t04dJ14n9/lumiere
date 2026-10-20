@@ -4,11 +4,16 @@ import { bindDisclosure } from "./webview";
 
 // A summary's descendants bubble clicks to it in the browser. Dispatch at
 // that boundary to check disclosure ownership without a browser regression.
-test("the title and chevron toggle a folded callout, and disposal releases their listeners", (t) => {
+test("the fold control toggles, title text stays editable, and disposal releases listeners", (t) => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, "Element");
   class Element extends EventTarget {
-    closest() {
-      return null;
+    constructor(readonly isTitleText = false) {
+      super();
+    }
+    closest(selector: string) {
+      return this.isTitleText && selector.includes(".callout-title-text")
+        ? this
+        : null;
     }
   }
   Object.defineProperty(globalThis, "Element", {
@@ -36,6 +41,15 @@ test("the title and chevron toggle a folded callout, and disposal releases their
     remember: () => remembered++,
   });
   assert.equal(details.open, false);
+  const textClick = new Event("click", { cancelable: true });
+  Object.defineProperty(textClick, "target", { value: new Element(true) });
+  title.dispatchEvent(textClick);
+  assert.equal(
+    details.open,
+    false,
+    "title source editing must not toggle the fold",
+  );
+  assert.equal(remembered, 0);
   for (const expected of [true, false]) {
     const event = new Event("click", { cancelable: true });
     title.dispatchEvent(event);

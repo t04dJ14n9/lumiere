@@ -4,12 +4,21 @@ import { calloutsWebview } from "../../../src/plugins/callouts/webview";
 import { blockRenderers } from "../../../src/plugins/livePreview/registry";
 import { fixture } from "../features/fixture";
 
-test("callout content has no click-to-edit listener, while Edit still reveals the source", async (t) => {
+test("callout content and Edit select the source before typing replaces it", async (t) => {
   class Element extends EventTarget {
     readonly children: Element[] = [];
     readonly events: string[] = [];
     className = "";
     classList = { add() {} };
+    ownerDocument = doc;
+    contains(node: Element): boolean {
+      return (
+        node === this || this.children.some((child) => child.contains(node))
+      );
+    }
+    closest() {
+      return null;
+    }
     append(...children: Element[]) {
       this.children.push(...children);
     }
@@ -21,22 +30,32 @@ test("callout content has no click-to-edit listener, while Edit still reveals th
       super.addEventListener(...args);
     }
   }
+  class MouseEvent extends Event {
+    button = 0;
+    clientX = 0;
+    clientY = 0;
+  }
   const doc = Object.assign(new EventTarget(), {
     defaultView: new EventTarget(),
     createElement: () => new Element(),
+    getSelection: () => null,
   });
-  const previous = Object.getOwnPropertyDescriptor(globalThis, "document");
-  Object.defineProperty(globalThis, "document", {
-    value: doc,
-    configurable: true,
-  });
-  t.after(() => {
-    if (previous) {
-      Object.defineProperty(globalThis, "document", previous);
-    } else {
-      Reflect.deleteProperty(globalThis, "document");
-    }
-  });
+  for (const [name, value] of Object.entries({
+    document: doc,
+    Element,
+    Node: Element,
+    MouseEvent,
+  })) {
+    const previous = Object.getOwnPropertyDescriptor(globalThis, name);
+    Object.defineProperty(globalThis, name, { value, configurable: true });
+    t.after(() => {
+      if (previous) {
+        Object.defineProperty(globalThis, name, previous);
+      } else {
+        Reflect.deleteProperty(globalThis, name);
+      }
+    });
+  }
   const f = fixture();
   t.after(() => f.root.dispose());
   f.root.plugin(calloutsWebview);
@@ -51,7 +70,12 @@ test("callout content has no click-to-edit listener, while Edit still reveals th
     selection: { anchor: source.length + 2 },
   });
   Object.assign(f.view.dom, { ownerDocument: doc });
-  Object.assign(f.view, { posAtDOM: () => 0, focus() {}, requestMeasure() {} });
+  Object.assign(f.view, {
+    posAtDOM: (_node: Node, offset = 0) => offset,
+    domAtPos: (offset: number) => ({ node: {}, offset }),
+    focus() {},
+    requestMeasure() {},
+  });
   const renderer = f.view.state
     .facet(blockRenderers)
     .find((item) => item.kind === "callout");
@@ -64,13 +88,19 @@ test("callout content has no click-to-edit listener, while Edit still reveals th
   });
   const shell = widget.toDOM(f.view) as unknown as Element;
   t.after(() => widget.destroy(shell as unknown as HTMLElement));
-  assert.ok(
-    !shell.events.includes("mousedown"),
-    "title, body and padding cannot arm source editing",
+  assert.ok(shell.events.includes("mousedown"));
+  shell.dispatchEvent(new MouseEvent("mousedown"));
+  const release = new MouseEvent("mouseup");
+  Object.defineProperty(release, "target", { value: shell });
+  doc.dispatchEvent(release);
+  assert.equal(
+    f.view.state.sliceDoc(
+      f.view.state.selection.main.from,
+      f.view.state.selection.main.to,
+    ),
+    source,
   );
-  const selection = f.view.state.selection;
-  shell.dispatchEvent(new Event("click"));
-  assert.ok(f.view.state.selection.eq(selection));
+  f.view.dispatch({ selection: { anchor: f.view.state.doc.length } });
   shell.children[0]!.dispatchEvent(new Event("click"));
   assert.equal(
     f.view.state.sliceDoc(
@@ -79,4 +109,6 @@ test("callout content has no click-to-edit listener, while Edit still reveals th
     ),
     source,
   );
+  f.view.dispatch(f.view.state.replaceSelection("xyz"));
+  assert.equal(f.view.state.doc.toString(), "xyz\n\nafter");
 });
