@@ -6,6 +6,7 @@ import {
   markdownBlockEstimatedHeight,
   rememberHtmlBlockHeight,
   rememberMarkdownBlockHeight,
+  wrappedVisualRows,
 } from "./markdown-block-height";
 
 test("empty source still reserves one line of chrome", () => {
@@ -165,4 +166,24 @@ test("remembered MarkdownBlock height beats the formula on remount", () => {
   assert.ok(cached >= floor + 400, `got ${cached}`);
   clearMarkdownBlockHeights();
   assert.equal(markdownBlockEstimatedHeight(source), floor);
+});
+
+test("wrapping callout lines reserve multiple visual rows per source line", () => {
+  const longLine =
+    "> Callout body line 0 with a very long run of words that should wrap on a narrow pane and inflate the painted height beyond line times twenty four.";
+  const source = `> [!note] Tall wrapping callout\n${Array.from({ length: 30 }, () => longLine).join("\n")}`;
+  const rows = wrappedVisualRows(source);
+  const height = markdownBlockEstimatedHeight(source);
+  const plainLines = source.split("\n").length;
+  assert.ok(rows > plainLines * 2, `rows=${rows} lines=${plainLines}`);
+  // Painted ~2237 on a 480px pane; first-paint reserve must clear 0.7×.
+  assert.ok(height >= 1560, `got ${height}`);
+});
+
+test("short callout lines stay near one visual row each", () => {
+  const source = "> [!note]\n> one\n> two\n> three\n";
+  const rows = wrappedVisualRows(source);
+  assert.equal(rows, source.split("\n").length);
+  const height = markdownBlockEstimatedHeight(source);
+  assert.ok(height < 250, `got ${height}`);
 });

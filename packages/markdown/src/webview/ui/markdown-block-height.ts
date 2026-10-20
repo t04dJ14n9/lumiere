@@ -26,8 +26,10 @@
  * `height="N%"`) use a stable viewport/font fallback.
  *
  * Wrapping callouts (and other MarkdownBlocks) can paint far taller than
- * line×24 on a narrow pane. After measure, remember painted height so an
- * off-viewport remount does not fall back to the formula and jump the map.
+ * line×24 on a narrow pane. Count ceil(chars / CHARS_PER_LINE) per line so
+ * first paint off-viewport (no ResizeObserver sample yet) still reserves
+ * near the eventual measured height. After measure, remember painted height
+ * so remounts do not fall back to the formula and jump the map.
  */
 const LINE = 24;
 const CHROME = 12;
@@ -54,6 +56,11 @@ const CALLOUT_CHROME = 40;
 const VIEWPORT_FALLBACK = 640;
 /** Fallback font size for `em` CSS heights in HTML blocks. */
 const FONT_FALLBACK = 16;
+/**
+ * Conservative wrap width for a narrow Live Preview pane (~480px content).
+ * Matches the spirit of inlineTitle's CHARS_PER_LINE; prefer slight overshoot.
+ */
+const CHARS_PER_LINE = 40;
 
 /** Painted heights for MarkdownBlock widgets, keyed by source. */
 const measuredBlockHeights = new Map<string, number>();
@@ -113,6 +120,20 @@ function mathRows(source: string): number {
   const texRows = (body.match(/\\\\/g) ?? []).length + 1;
   const sourceLines = Math.max(1, source.split("\n").length);
   return Math.max(sourceLines, texRows);
+}
+
+/**
+ * Visual rows after soft-wrap. Strip leading `>` markers so quote chrome does
+ * not inflate the character count; empty lines still reserve one row.
+ */
+export function wrappedVisualRows(source: string): number {
+  let rows = 0;
+  for (const line of source.split("\n")) {
+    const text = line.replace(/^(?:>\s*)+/u, "");
+    const len = Math.max(1, text.length);
+    rows += Math.max(1, Math.ceil(len / CHARS_PER_LINE));
+  }
+  return Math.max(1, rows);
 }
 
 /**
@@ -176,10 +197,12 @@ function formulaHeight(source: string): number {
   if (html !== undefined) {
     return Math.max(LINE + CHROME, html, CHROME + lines * LINE);
   }
+  const wrapped = CHROME + wrappedVisualRows(source) * LINE;
   if (isCallout(source)) {
-    return CALLOUT_CHROME + lines * CALLOUT_LINE;
+    // Keep callout chrome floor (#128) and lift further when lines wrap (#133).
+    return Math.max(CALLOUT_CHROME + lines * CALLOUT_LINE, wrapped);
   }
-  return CHROME + lines * LINE;
+  return wrapped;
 }
 
 /** Reserve rendered-block height from Markdown source before DOM measure. */
