@@ -15,6 +15,7 @@ import {
   soundcloudThumbnail,
   npmRegistryPath,
   parseNpmPackage,
+  parseDockerHubRepository,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -569,4 +570,68 @@ test("a bangumi lookup uses the season API with ep_id or season_id", async () =>
     ],
   );
   assert.deepEqual(await source.get("bilibili", "ep409506"), {});
+});
+
+test("parseDockerHubRepository prefers description and namespace", () => {
+  assert.deepEqual(
+    parseDockerHubRepository({
+      name: "nginx",
+      namespace: "library",
+      description: "Official build of Nginx.",
+      user: "library",
+    }),
+    {
+      title: "Official build of Nginx.",
+      author: "library",
+    },
+  );
+  assert.deepEqual(
+    parseDockerHubRepository({
+      name: "redis",
+      namespace: "bitnami",
+      description: "",
+      user: "bitnami",
+    }),
+    {
+      title: "bitnami/redis",
+      author: "bitnami",
+    },
+  );
+  assert.deepEqual(
+    parseDockerHubRepository({
+      name: "orphan",
+      user: "someone",
+    }),
+    { title: "orphan", author: "someone" },
+  );
+});
+
+test("a Docker Hub lookup fetches the repositories document", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://hub.docker.com/v2/repositories/library/nginx/": () =>
+      response({
+        name: "nginx",
+        namespace: "library",
+        description: "Official build of Nginx.",
+        user: "library",
+      }),
+    "https://hub.docker.com/v2/repositories/bitnami/redis/": () =>
+      response({
+        name: "redis",
+        namespace: "bitnami",
+        description: "Bitnami Secure Image for redis",
+        user: "bitnami",
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("dockerhub", "library/nginx"), {
+    title: "Official build of Nginx.",
+    author: "library",
+  });
+  assert.deepEqual(await source.get("dockerhub", "bitnami/redis"), {
+    title: "Bitnami Secure Image for redis",
+    author: "bitnami",
+  });
+  assert.deepEqual(await source.get("dockerhub", "../evil/x"), {});
+  assert.equal(calls.length, 2);
 });

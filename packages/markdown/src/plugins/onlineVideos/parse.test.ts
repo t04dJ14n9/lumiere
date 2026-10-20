@@ -297,3 +297,42 @@ test("npm package pages, scoped and versioned", () => {
   );
   assert.equal(parseVideoUrl("https://registry.npmjs.org/lodash"), undefined);
 });
+
+test("Docker Hub /r/ and official /_/ pages", () => {
+  assert.deepEqual(parseVideoUrl("https://hub.docker.com/r/bitnami/redis"), {
+    provider: "dockerhub",
+    kind: "video",
+    id: "bitnami/redis",
+    page: "https://hub.docker.com/r/bitnami/redis",
+  });
+  assert.deepEqual(parseVideoUrl("https://hub.docker.com/_/nginx"), {
+    provider: "dockerhub",
+    kind: "video",
+    id: "library/nginx",
+    page: "https://hub.docker.com/_/nginx",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://hub.docker.com/r/library/nginx/tags"),
+    {
+      provider: "dockerhub",
+      kind: "video",
+      id: "library/nginx",
+      page: "https://hub.docker.com/_/nginx",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://hub.docker.com/_/Nginx/"), {
+    provider: "dockerhub",
+    kind: "video",
+    id: "library/nginx",
+    page: "https://hub.docker.com/_/nginx",
+  });
+  assert.equal(parseVideoUrl("https://hub.docker.com/u/bitnami"), undefined);
+  assert.equal(
+    parseVideoUrl("https://hub.docker.com/search?q=nginx"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.docker.com/products/docker-hub"),
+    undefined,
+  );
+});

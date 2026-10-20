@@ -11,6 +11,7 @@ import {
   spotifyThumbnail,
 } from "./thumbnails";
 import { npmRegistryPath, parseNpmPackage } from "./npm";
+import { parseDockerHubRepository } from "./dockerhub";
 
 export {
   oEmbedThumbnail,
@@ -18,6 +19,7 @@ export {
   spotifyThumbnail,
 } from "./thumbnails";
 export { npmRegistryPath, parseNpmPackage } from "./npm";
+export { parseDockerHubRepository } from "./dockerhub";
 
 import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
@@ -172,6 +174,13 @@ export class VideoDetailsSource {
         signal,
       );
       return parseNpmPackage(body);
+    }
+    if (provider === "dockerhub") {
+      const body = await this.json(
+        `https://hub.docker.com/v2/repositories/${id}/`,
+        signal,
+      );
+      return parseDockerHubRepository(body);
     }
     if (kind === "bangumi") {
       return this.fetchBangumi(id, signal);

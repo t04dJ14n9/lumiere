@@ -1,11 +1,17 @@
 /**
- * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm
- * links (YouTube playlists, Bilibili bangumi). Only a fully parsed and
- * validated ID leaves this module; players and cards are built from it,
- * never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm and
+ * Docker Hub links (YouTube playlists, Bilibili bangumi). Only a fully
+ * parsed and validated ID leaves this module; players and cards are built
+ * from it, never from the link text.
  */
 export type VideoProvider =
-  "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
+  | "youtube"
+  | "bilibili"
+  | "huggingface"
+  | "spotify"
+  | "soundcloud"
+  | "npm"
+  | "dockerhub";
 export type MediaKind = "video" | "playlist" | "bangumi";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
@@ -15,8 +21,9 @@ export interface OnlineVideo {
    * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
    * `BV…` / `av` id, a bangumi `ep…` / `ss…` id, a Hugging Face model id
    * (`name` or `owner/name`), a Spotify `track|album|playlist|episode|show:…`
-   * id, a SoundCloud `user/slug` (or `user/sets/slug`) path, or an npm
-   * package name (`lodash` or `@scope/name`).
+   * id, a SoundCloud `user/slug` (or `user/sets/slug`) path, an npm
+   * package name (`lodash` or `@scope/name`), or a Docker Hub
+   * `namespace/name` (official `library/name`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -140,6 +147,26 @@ function spotify(url: URL): OnlineVideo | undefined {
   };
 }
 
+const DH_SEGMENT = "[a-z0-9]+(?:[._-][a-z0-9]+)*";
+const DH_ID = new RegExp(`^(${DH_SEGMENT})\\/(${DH_SEGMENT})$`);
+/** `/r/{ns}/{name}` or official `/_/{name}`; tags/settings tails normalised away. */
+const DH_PATH = new RegExp(
+  `^\\/(?:r\\/(${DH_SEGMENT})\\/(${DH_SEGMENT})|_\\/(${DH_SEGMENT}))(?:\\/.*)?\\/?$`,
+);
+const DH_HOSTS = new Set(["hub.docker.com"]);
+
+function dockerhub(namespace: string, name: string): OnlineVideo | undefined {
+  const id = `${namespace}/${name}`;
+  if (!DH_ID.test(id) || id.length > 200) {
+    return undefined;
+  }
+  const page =
+    namespace === "library"
+      ? `https://hub.docker.com/_/${name}`
+      : `https://hub.docker.com/r/${namespace}/${name}`;
+  return { provider: "dockerhub", kind: "video", id, page };
+}
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced for that kind. */
 export function isVideoId(
   provider: VideoProvider,
@@ -152,6 +179,10 @@ export function isVideoId(
   if (kind === "bangumi") {
     return provider === "bilibili" && BANGUMI_ID.test(id);
   }
+  return isProviderVideoId(provider, id);
+}
+
+function isProviderVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
   }
@@ -166,6 +197,9 @@ export function isVideoId(
   }
   if (provider === "soundcloud") {
     return SOUNDCLOUD_ID.test(id);
+  }
+  if (provider === "dockerhub") {
+    return id.length <= 200 && DH_ID.test(id);
   }
   return id.length <= 214 && NPM_NAME.test(id);
 }
@@ -185,6 +219,11 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   if (BILIBILI_HOSTS.has(host)) {
     return bilibiliFromHost(url);
   }
+  return parseKnownHost(host, url);
+}
+
+/** Registry / oEmbed hosts (HF, Spotify, SoundCloud, npm, Docker Hub). */
+function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
@@ -198,6 +237,15 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   if (NPM_HOSTS.has(host)) {
     const match = NPM_PATH.exec(url.pathname);
     return match ? npmPackage(match[1]!) : undefined;
+  }
+  if (DH_HOSTS.has(host)) {
+    const match = DH_PATH.exec(url.pathname.toLowerCase());
+    if (!match) {
+      return undefined;
+    }
+    const namespace = match[1] ?? "library";
+    const name = match[2] ?? match[3]!;
+    return dockerhub(namespace, name);
   }
   return undefined;
 }

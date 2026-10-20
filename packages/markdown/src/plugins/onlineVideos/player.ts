@@ -11,8 +11,8 @@ interface Provider {
    * Whether the card may offer "Play here" (Bilibili, behind the
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
-   * gets no referrer to check. Hugging Face, Spotify, SoundCloud and npm have
-   * no in-webview player.
+   * gets no referrer to check. Hugging Face, Spotify, SoundCloud, npm and
+   * Docker Hub have no in-webview player.
    */
   readonly embeddable: boolean;
 }
@@ -63,6 +63,14 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
       /^\/package\/(?:@[a-z0-9-][a-z0-9-._]{0,213}\/[a-z0-9-][a-z0-9-._]{0,213}|[a-z0-9-][a-z0-9-._]{0,213})$/,
     embeddable: false,
   },
+  dockerhub: {
+    name: "Docker Hub",
+    origin: "https://hub.docker.com",
+    path: "/",
+    pathPattern:
+      /^\/(?:r\/[a-z0-9]+(?:[._-][a-z0-9]+)*\/[a-z0-9]+(?:[._-][a-z0-9]+)*|_\/[a-z0-9]+(?:[._-][a-z0-9]+)*)$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -80,7 +88,8 @@ export function playerUrl(video: OnlineVideo): string {
   if (
     video.provider === "spotify" ||
     video.provider === "soundcloud" ||
-    video.provider === "npm"
+    video.provider === "npm" ||
+    video.provider === "dockerhub"
   ) {
     throw new Error(`${video.provider} has no in-webview player`);
   }

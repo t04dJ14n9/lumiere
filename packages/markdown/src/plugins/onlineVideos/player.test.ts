@@ -125,3 +125,12 @@ test("bangumi and playlists refuse an in-webview player", () => {
     ),
   );
 });
+
+test("Docker Hub refuses an in-webview player", () => {
+  assert.equal(providers.dockerhub.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://hub.docker.com/_/nginx")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://hub.docker.com/_/nginx")));
+});

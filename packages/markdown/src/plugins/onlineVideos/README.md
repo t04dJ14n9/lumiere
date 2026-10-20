@@ -1,7 +1,7 @@
 # Online Videos
 
-YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm links written
-as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
+YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm and Docker Hub
+links written as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), YouTube playlists (`/playlist?list=` and
 `/embed/videoseries?list=`), `![](https://www.bilibili.com/video/BV…)` or
@@ -10,8 +10,11 @@ as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
 `/tree/…` normalised away), Spotify
 `open.spotify.com/{track|album|playlist|episode|show}/…`, SoundCloud
-`soundcloud.com/{user}/{track}` or `…/sets/{playlist}`, and npm
-`www.npmjs.com/package/{name}` (scoped `@scope/name`, optional `/v/{version}`).
+`soundcloud.com/{user}/{track}` or `…/sets/{playlist}`, npm
+`www.npmjs.com/package/{name}` (scoped `@scope/name`, optional `/v/{version}`),
+and Docker Hub `hub.docker.com/r/{namespace}/{name}` or official
+`hub.docker.com/_/{name}` (tags/settings tails normalised; official →
+`library/{name}`).
 Obsidian has no equivalent (it shows such links as broken images); local video
 (`![[clip.mp4]]`) stays with Embeds.
 
@@ -144,14 +147,15 @@ off, the links fall back to Embeds (a remote image).
 ## Limits
 
 Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's,
-YouTube's, Hugging Face's, Spotify's, SoundCloud's and npm's public
-endpoints, which may change or rate-limit. YouTube playlists
+YouTube's, Hugging Face's, Spotify's, SoundCloud's, npm's and Docker Hub's
+public endpoints, which may change or rate-limit. YouTube playlists
 (`/playlist?list=` and embed videoseries) and Bilibili bangumi
 (`/bangumi/play/ep…` / `ss…`) render as cards. Channels and other
-providers stay images. Bangumi, Hugging Face, Spotify, SoundCloud and npm
+providers stay images. Bangumi, Hugging Face, Spotify, SoundCloud, npm and Docker Hub
 have no in-webview player (Open on provider only). Hub redirects (legacy
 single-segment model ids) fail the host lookup because redirects are
 refused; the card still opens the page. Spotify uses keyless oEmbed
 (`https://open.spotify.com/oembed`) for title and CDN cover. SoundCloud
 uses keyless oEmbed (`https://soundcloud.com/oembed`) for title and sndcdn
-cover. npm uses the keyless registry for description and author.
+cover. npm uses the keyless registry for description and author. Docker Hub uses
+the keyless Hub v2 repositories API for description and namespace.
