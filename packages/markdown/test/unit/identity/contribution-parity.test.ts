@@ -109,10 +109,14 @@ test("owned when/enablement clauses do not use old prefix", () => {
 test("runtime command registration matches contributes.commands", async () => {
   const captured = await captureRegisteredCommands();
   assert.deepEqual(captured.problems, []);
+  // View-title sort/toggles register in tree host apply (not commandsHost).
+  const tree = await captureTreeHostCommands();
+  assert.deepEqual(tree.problems, []);
+  const registered = new Set([...captured.ids, ...tree.ids]);
   const contributed = new Set(
     contributes.commands.map((command) => command.command),
   );
-  const missing = [...contributed].filter((id) => !captured.ids.has(id)).sort();
+  const missing = [...contributed].filter((id) => !registered.has(id)).sort();
   const extra = [...captured.ids].filter((id) => !contributed.has(id)).sort();
   assert.deepEqual({ missing, extra }, { missing: [], extra: [] });
 });

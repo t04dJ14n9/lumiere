@@ -75,8 +75,9 @@ its clicks.
 
 ## Limits and differences from Obsidian
 
-Uses a native quick pick for search results, not a search pane. Sorting and
-nesting are settings rather than buttons in the view. Search and the view
+Uses a native quick pick for search results, not a search pane. Sorting
+(frequency ↔ name) and nesting toggles sit on the Tags view title bar (and
+remain available as settings). Search and the view
 reflect currently indexed metadata; hidden and excluded files follow the
 vault's policy. Full visual interaction parity remains for owner comparison.
 

@@ -589,8 +589,10 @@ title, then set `lumiere.markdown.plugins.inlineTitle.enabled` to true.
    `#Idea` are one tag; a parent tag includes its children.
 2. The Explorer's **Tags** view nests `area › tags › nested` with note
    counts. `lumiere.markdown.tags.viewSort` (`name`, `frequency`) and
-   `lumiere.markdown.tags.viewNested` change it. Typing a new tag without
-   saving adds it within a second.
+   `lumiere.markdown.tags.viewNested` change it; the view title menu runs
+   `lumiere.markdown.tags.sortByFrequency`, `lumiere.markdown.tags.sortByName`,
+   `lumiere.markdown.tags.enableNested`, and `lumiere.markdown.tags.disableNested`.
+   Typing a new tag without saving adds it within a second.
 
 ### suggest
 
@@ -1190,6 +1192,10 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.toggle` — Toggle Markdown Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Markdown Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
 | `lumiere.markdown.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workshop; switch to a plain text split and confirm its native symbol shortcut remains available. |
+| `lumiere.markdown.tags.sortByFrequency` — ✓ Sort by Frequency | unbound | On a disposable fixture with Tags open, use the view title sort; confirm frequency order and checkmark, then undo where applicable. |
+| `lumiere.markdown.tags.sortByName` — ✓ Sort by Name | unbound | On a disposable fixture with Tags open, use the view title sort; confirm name order and checkmark, then undo where applicable. |
+| `lumiere.markdown.tags.enableNested` — Show Nested Tags | unbound | On a disposable fixture with Tags open, enable nested tags from the view title; confirm nesting returns. |
+| `lumiere.markdown.tags.disableNested` — ✓ Show Nested Tags | unbound | On a disposable fixture with Tags open, disable nested tags from the view title; confirm a flat list. |
 | `lumiere.markdown.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleFoldProperties` — Toggle Fold Properties | unbound | On a disposable fixture, run Toggle Fold Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.addAlias` — Add Alias | unbound | On a disposable fixture, run Add Alias; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |

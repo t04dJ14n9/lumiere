@@ -6,6 +6,14 @@ import type { VaultIndex } from "../vault/api";
 
 export const VIEW_ID = contributionId("tags");
 export const SEARCH_COMMAND = contributionId("tags.search");
+export const SORT_SETTING = "tags.viewSort";
+export const NESTED_SETTING = "tags.viewNested";
+export const SORT_FREQUENCY_CONTEXT = `${VIEW_ID}.sortFrequency`;
+export const NESTED_CONTEXT = `${VIEW_ID}.nested`;
+export const SORT_BY_FREQUENCY = `${VIEW_ID}.sortByFrequency`;
+export const SORT_BY_NAME = `${VIEW_ID}.sortByName`;
+export const ENABLE_NESTED = `${VIEW_ID}.enableNested`;
+export const DISABLE_NESTED = `${VIEW_ID}.disableNested`;
 
 export interface TagsViewOptions {
   sort: "name" | "frequency";
