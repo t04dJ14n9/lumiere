@@ -27,3 +27,29 @@
   background-repeat: no-repeat;
   background-size: calc(var(--list-depth, 0) * var(--list-indent)) 100%;
 }
+
+/* Obsidian cm-active-indent: brighter guide at the caret's indent column. */
+.mw-indent-guide.mw-indent-guide-active {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(var(--indent-step) - 1px),
+      var(--vscode-editorIndentGuide-background1, #7774)
+        calc(var(--indent-step) - 1px),
+      var(--vscode-editorIndentGuide-background1, #7774) var(--indent-step)
+    ),
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(var(--indent-active-at) - 1px),
+      var(--vscode-editorIndentGuide-activeBackground1, #ccc8)
+        calc(var(--indent-active-at) - 1px),
+      var(--vscode-editorIndentGuide-activeBackground1, #ccc8)
+        var(--indent-active-at)
+    );
+  background-repeat: no-repeat, no-repeat;
+  background-size:
+    var(--indent-width) 100%,
+    var(--indent-active-at) 100%;
+}

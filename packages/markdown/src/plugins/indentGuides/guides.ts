@@ -17,6 +17,15 @@ export function indentation(text: string, tabSize: number): number {
   return width;
 }
 
+/**
+ * Indentation columns of the caret line (Obsidian cm-active-indent).
+ * Zero when the caret line is flush left — no active guide.
+ */
+export function activeIndentWidth(state: EditorState): number {
+  const line = state.doc.lineAt(state.selection.main.head);
+  return indentation(line.text, state.tabSize);
+}
+
 /** List chrome replaces source whitespace; code and quotes keep their own layout. */
 function usesListLayout(state: EditorState, line: Line): boolean {
   const leading = /^[ \t]*/.exec(line.text)![0];
@@ -41,16 +50,23 @@ export function guideDecorations(
   isLivePreview: boolean,
 ): DecorationSet {
   const ranges: Range<Decoration>[] = [];
+  const active = activeIndentWidth(state);
   for (const visible of visibleRanges) {
     for (let at = visible.from; at <= visible.to;) {
       const line = state.doc.lineAt(at);
       const width = indentation(line.text, state.tabSize);
       if (width && !(isLivePreview && usesListLayout(state, line))) {
+        const isActive = active > 0 && width >= active;
+        const style =
+          `--indent-width:${width}ch;--indent-step:${state.tabSize}ch` +
+          (isActive ? `;--indent-active-at:${active}ch` : "");
         ranges.push(
           Decoration.line({
             attributes: {
-              style: `--indent-width:${width}ch;--indent-step:${state.tabSize}ch`,
-              class: "mw-indent-guide",
+              style,
+              class: isActive
+                ? "mw-indent-guide mw-indent-guide-active"
+                : "mw-indent-guide",
             },
           }).range(line.from),
         );

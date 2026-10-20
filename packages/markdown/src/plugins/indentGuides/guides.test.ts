@@ -1,11 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EditorState } from "@codemirror/state";
-import { guideDecorations, indentation } from "./guides";
+import { EditorSelection, EditorState } from "@codemirror/state";
+import { activeIndentWidth, guideDecorations, indentation } from "./guides";
 
-function widths(doc: string, isLivePreview: boolean, tabSize = 4) {
+function baseStyle(style: string): string {
+  return style.replace(/;?--indent-active-at:[^;]*/g, "");
+}
+
+function widths(doc: string, isLivePreview: boolean, tabSize = 4, head = 0) {
   const state = EditorState.create({
     doc,
+    selection: EditorSelection.cursor(head),
     extensions: [EditorState.tabSize.of(tabSize)],
   });
   const result: Record<number, string> = {};
@@ -13,7 +18,25 @@ function widths(doc: string, isLivePreview: boolean, tabSize = 4) {
     0,
     doc.length,
     (from, _to, decoration) => {
-      result[state.doc.lineAt(from).number] = decoration.spec.attributes.style;
+      result[state.doc.lineAt(from).number] = baseStyle(
+        decoration.spec.attributes.style,
+      );
+    },
+  );
+  return result;
+}
+
+function activeClasses(doc: string, head: number, isLivePreview = false) {
+  const state = EditorState.create({
+    doc,
+    selection: EditorSelection.cursor(head),
+  });
+  const result: Record<number, string> = {};
+  guideDecorations(state, [{ from: 0, to: doc.length }], isLivePreview).between(
+    0,
+    doc.length,
+    (from, _to, decoration) => {
+      result[state.doc.lineAt(from).number] = decoration.spec.attributes.class;
     },
   );
   return result;
@@ -88,4 +111,35 @@ test("code blocks inside lists keep their own source indentation guides", () => 
 test("quoted lists retain the quote layout and its existing source guides", () => {
   const doc = "  > - parent\n  >   - child";
   assert.deepEqual(widths(doc, true), widths(doc, false));
+});
+
+test("active indent width follows the caret line", () => {
+  const doc = "plain\n  two\n\tfour";
+  const at = (head: number) =>
+    activeIndentWidth(
+      EditorState.create({
+        doc,
+        selection: EditorSelection.cursor(head),
+        extensions: [EditorState.tabSize.of(4)],
+      }),
+    );
+  assert.equal(at(0), 0);
+  assert.equal(at(doc.indexOf("two")), 2);
+  assert.equal(at(doc.indexOf("four")), 4);
+});
+
+test("caret indent column marks mw-indent-guide-active on deep enough lines", () => {
+  const doc = ["root", "  a", "    b", "  c"].join("\n");
+  const head = doc.indexOf("b");
+  // Only lines whose indent reaches the caret column (4) light the active guide.
+  assert.deepEqual(activeClasses(doc, head), {
+    2: "mw-indent-guide",
+    3: "mw-indent-guide mw-indent-guide-active",
+    4: "mw-indent-guide",
+  });
+  assert.deepEqual(activeClasses(doc, 0), {
+    2: "mw-indent-guide",
+    3: "mw-indent-guide",
+    4: "mw-indent-guide",
+  });
 });
