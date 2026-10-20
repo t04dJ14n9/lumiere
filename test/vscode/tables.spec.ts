@@ -11,6 +11,7 @@ import { readState, paths } from "./state";
 import { geometry } from "../../packages/markdown/test/support/gutter-geometry";
 import {
   closeBrowser,
+  command,
   docScreenshot,
   openWorkbench,
   readNote,
@@ -59,6 +60,49 @@ async function undoToOriginal(page: Page, what: string): Promise<void> {
   }
   expect(readNote(), `${what}: undo restores the original`).toBe(TABLE);
 }
+
+test("tables in the real editor: a projected short or empty cell keeps its row height", async () => {
+  const browser = await chromium.connectOverCDP(readState().webSocket);
+  try {
+    const page = workbenchPage(browser);
+    const editor = await openWorkbench(page);
+    await editor.click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.insertText(
+      "| 指标 | 单位 | 公示单价（元） |\n| --- | --- | --- |\n| 日志写流量 | GBasdasd | 0.0135 |\n|  |  |  |\n",
+    );
+    await page.keyboard.press("ControlOrMeta+s");
+    const frame = await tableFrame(() => page.frames());
+    const table = frame.locator(".hybrid-table");
+    await command(page, "Lumière: Toggle Vim Mode");
+    await expect
+      .poll(() => frame.locator(".cm-vim-panel, .cm-fat-cursor").count())
+      .toBeGreaterThan(0);
+
+    for (const cell of [
+      table.locator("tbody tr").nth(0).locator("td").nth(2),
+      table.locator("tbody tr").nth(1).locator("td").nth(0),
+    ]) {
+      const row = cell.locator("..");
+      const closedHeight = await row.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      await cell.click();
+      await expect(table.locator(".cm-editor")).toHaveCount(1);
+      const openHeight = await row.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      expect(
+        Math.abs(openHeight - closedHeight),
+        JSON.stringify({ closedHeight, openHeight }),
+      ).toBeLessThanOrEqual(1);
+    }
+
+    await command(page, "Lumière: Toggle Vim Mode");
+  } finally {
+    await closeBrowser(browser);
+  }
+});
 
 test("tables in the real editor: typing, Tab, edge buttons, native undo and external edits", async () => {
   const browser = await chromium.connectOverCDP(readState().webSocket);

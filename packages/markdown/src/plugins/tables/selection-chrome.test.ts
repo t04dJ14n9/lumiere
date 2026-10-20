@@ -91,3 +91,21 @@ test("add-row and add-column strips do not fade in while already hittable", () =
     /\.table-row-btn,\s*\.table-col-btn \{[^}]*transition:/,
   );
 });
+
+test("the cell editor keeps the table's 1.3 line-height so open and closed cells match", () => {
+  for (const part of ["cm-scroller", "cm-content", "cm-line"] as const) {
+    assert.match(
+      css,
+      new RegExp(
+        `#app \\.hybrid-table \\.cm-editor \\.${part} \\{[^}]*line-height: 1\\.3;`,
+      ),
+    );
+  }
+});
+
+test("the cell editor's scroller is content-sized instead of CodeMirror's 100% height", () => {
+  assert.match(
+    css,
+    /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*height: auto;/,
+  );
+});
