@@ -180,7 +180,16 @@ class EmbedPass {
     if (image !== node) {
       node.replaceChildren(image);
     }
-    const host = image !== node ? node : (image.parentElement ?? node);
+    // Markdown <img data-resource> has no embed span; wrap so .image-embed
+    // chrome never tags the line/paragraph (that split selection into bands).
+    let host: HTMLElement;
+    if (image !== node) {
+      host = node;
+    } else {
+      host = document.createElement("span");
+      image.replaceWith(host);
+      host.append(image);
+    }
     const inspect = document.createElement("button");
     inspect.type = "button";
     inspect.className = "inspect-image";
