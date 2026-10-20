@@ -75,6 +75,36 @@ test("Bilibili BV and av links keep the part number", () => {
   );
 });
 
+test("Hugging Face model pages, owner/name and tree paths", () => {
+  assert.deepEqual(parseVideoUrl("https://huggingface.co/google/gemma-2-2b"), {
+    provider: "huggingface",
+    id: "google/gemma-2-2b",
+    page: "https://huggingface.co/google/gemma-2-2b",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.huggingface.co/google/gemma-2-2b/tree/main"),
+    {
+      provider: "huggingface",
+      id: "google/gemma-2-2b",
+      page: "https://huggingface.co/google/gemma-2-2b",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://huggingface.co/bert-base-uncased"), {
+    provider: "huggingface",
+    id: "bert-base-uncased",
+    page: "https://huggingface.co/bert-base-uncased",
+  });
+  assert.equal(
+    parseVideoUrl("https://huggingface.co/datasets/squad"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://huggingface.co/spaces/foo/bar"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -95,6 +125,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://www.bilibili.com/video/av0",
     "https://www.bilibili.com/bangumi/play/ep1",
     "https://space.bilibili.com/video/BV1DRHU6LELy",
+    "https://huggingface.co.evil.test/google/gemma-2-2b",
+    "https://huggingface.co/datasets/squad",
+    "https://huggingface.co/spaces/foo/bar",
+    "https://hf.co/google/gemma-2-2b",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

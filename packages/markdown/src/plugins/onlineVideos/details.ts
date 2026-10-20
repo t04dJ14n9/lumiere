@@ -144,6 +144,13 @@ export class VideoDetailsSource {
       );
       return parseOEmbed(body);
     }
+    if (provider === "huggingface") {
+      const body = await this.json(
+        `https://huggingface.co/api/models/${id}`,
+        signal,
+      );
+      return parseHuggingFaceModel(body);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -208,6 +215,37 @@ export function parseOEmbed(body: unknown): VideoDetails {
     title: text(body.title, 300),
     author: text(body.author_name, 100),
   });
+}
+
+/**
+ * Hugging Face model API (`/api/models/{id}`): pipeline tag or model id as
+ * title; author from `author` or the owner segment of the id. No cover.
+ */
+export function parseHuggingFaceModel(body: unknown): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Hugging Face response");
+  }
+  const modelId =
+    text(body.modelId, 200) ?? text(body.id, 200) ?? text(body._id, 200);
+  const pipeline = text(body.pipeline_tag, 100);
+  const title =
+    pipeline && modelId ? `${pipeline} · ${modelId}` : (pipeline ?? modelId);
+  return withoutUndefined({
+    title,
+    author: huggingfaceAuthor(body, modelId),
+  });
+}
+
+function huggingfaceAuthor(
+  body: Record<string, unknown>,
+  modelId: string | undefined,
+): string | undefined {
+  const direct = text(body.author, 100);
+  if (direct) {
+    return direct;
+  }
+  const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
+  return text(owner, 100);
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

@@ -1,12 +1,15 @@
 /**
- * Recognise YouTube and Bilibili video links. Only a fully parsed and
- * validated ID leaves this module; players and cards are built from it, never
- * from the link text.
+ * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
+ * parsed and validated ID leaves this module; players and cards are built
+ * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
-  /** An 11-character YouTube ID, or a Bilibili `BV…` ID or `av` number. */
+  /**
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
+   * model id (`name` or `owner/name`).
+   */
   readonly id: string;
   /** YouTube start time in whole seconds. */
   readonly start?: number;
@@ -36,11 +39,47 @@ const BILIBILI_HOSTS = new Set([
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
 
+/**
+ * Hugging Face model id: `name` or `owner/name` (letters, digits, `.`, `_`,
+ * `-`); at most 200 chars. Hub marketing paths are rejected.
+ */
+const HF_SEGMENT = "[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?";
+const HF_ID = new RegExp(`^(?:${HF_SEGMENT}|${HF_SEGMENT}/${HF_SEGMENT})$`);
+const HF_PATH = new RegExp(
+  `^\\/(${HF_SEGMENT}(?:\\/${HF_SEGMENT})?)(?:\\/(?:tree|blob|resolve|discussions|settings)(?:\\/.*)?)?\\/?$`,
+);
+const HF_HOSTS = new Set(["huggingface.co", "www.huggingface.co"]);
+const HF_RESERVED = new Set([
+  "models",
+  "datasets",
+  "spaces",
+  "docs",
+  "blog",
+  "learn",
+  "pricing",
+  "enterprise",
+  "login",
+  "join",
+  "settings",
+  "api",
+  "chat",
+  "spaces",
+  "datasets",
+  "tasks",
+  "metrics",
+  "organizations",
+  "collections",
+]);
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
-  return provider === "youtube"
-    ? YOUTUBE_ID.test(id)
-    : BVID.test(id) || CANONICAL_AID.test(id);
+  if (provider === "youtube") {
+    return YOUTUBE_ID.test(id);
+  }
+  if (provider === "bilibili") {
+    return BVID.test(id) || CANONICAL_AID.test(id);
+  }
+  return id.length <= 200 && HF_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -58,7 +97,10 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   ) {
     return undefined;
   }
-  const host = url.hostname.toLowerCase();
+  return parseKnownHost(url.hostname.toLowerCase(), url);
+}
+
+function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (host === "youtu.be") {
     return youtube(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
   }
@@ -71,6 +113,10 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   }
   if (BILIBILI_HOSTS.has(host)) {
     return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+  }
+  if (HF_HOSTS.has(host)) {
+    const match = HF_PATH.exec(url.pathname);
+    return match ? huggingface(match[1]!) : undefined;
   }
   return undefined;
 }
@@ -98,6 +144,21 @@ function bilibili(id: string | undefined, url: URL): OnlineVideo | undefined {
   const part = positive(url.searchParams.get("p")) ?? 1;
   const page = `https://www.bilibili.com/video/${valid}/${part > 1 ? `?p=${part}` : ""}`;
   return { provider: "bilibili", id: valid, part, page };
+}
+
+function huggingface(id: string): OnlineVideo | undefined {
+  if (!HF_ID.test(id) || id.length > 200) {
+    return undefined;
+  }
+  const root = id.split("/")[0]!.toLowerCase();
+  if (HF_RESERVED.has(root)) {
+    return undefined;
+  }
+  return {
+    provider: "huggingface",
+    id,
+    page: `https://huggingface.co/${id}`,
+  };
 }
 
 /** `90`, `90s`, `1m30s` or `1h2m3s`; anything else is ignored. */

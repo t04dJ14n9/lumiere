@@ -7,6 +7,7 @@ import {
   coverUrl,
   imageDataUrl,
   parseBilibiliView,
+  parseHuggingFaceModel,
   parseOEmbed,
 } from "./details";
 
@@ -279,4 +280,54 @@ test("invalid IDs never reach the network, and at most four lookups run at once"
   const ids = Array.from({ length: 10 }, (_, i) => `dQw4w9WgXc${i}`);
   await Promise.all(ids.map((id) => source.get("youtube", id)));
   assert.equal(peak, 4);
+});
+
+test("parseHuggingFaceModel prefers pipeline · id and author", () => {
+  assert.deepEqual(
+    parseHuggingFaceModel({
+      id: "google/gemma-2-2b",
+      modelId: "google/gemma-2-2b",
+      pipeline_tag: "text-generation",
+      author: "google",
+    }),
+    {
+      title: "text-generation · google/gemma-2-2b",
+      author: "google",
+    },
+  );
+  assert.deepEqual(
+    parseHuggingFaceModel({
+      id: "owner/model",
+      modelId: "owner/model",
+    }),
+    {
+      title: "owner/model",
+      author: "owner",
+    },
+  );
+});
+
+test("a Hugging Face lookup fetches the models API", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://huggingface.co/api/models/google/gemma-2-2b": () =>
+      response({
+        id: "google/gemma-2-2b",
+        modelId: "google/gemma-2-2b",
+        pipeline_tag: "text-generation",
+        author: "google",
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "huggingface",
+    "google/gemma-2-2b",
+  );
+  assert.deepEqual(details, {
+    title: "text-generation · google/gemma-2-2b",
+    author: "google",
+  });
+  assert.equal(
+    calls[0]?.url,
+    "https://huggingface.co/api/models/google/gemma-2-2b",
+  );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
