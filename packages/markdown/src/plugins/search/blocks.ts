@@ -1,5 +1,6 @@
 import type { RenderPass, Fence } from "../render/api";
 import type { QueryClient, SearchUpdate } from "./client";
+import type { SearchResponse } from "./protocol";
 /** Each rendered block owns one subscription, including manual refresh and teardown. */
 export function bindSearchBlock(
   fence: Fence,
@@ -80,14 +81,55 @@ function renderResults(
 }
 function paintMatches(
   results: HTMLElement,
-  matches: { path: string; href: string }[],
+  matches: SearchResponse["results"],
 ): void {
+  const doc = results.ownerDocument;
   for (const result of matches) {
-    const item = results.ownerDocument.createElement("li");
-    const link = results.ownerDocument.createElement("a");
+    const item = doc.createElement("li");
+    item.className = "search-result-file-title";
+    const link = doc.createElement("a");
     link.href = result.href;
     link.textContent = result.path;
     item.append(link);
+    const lines = result.matches ?? [];
+    if (lines.length > 0) {
+      const nest = doc.createElement("div");
+      nest.className = "search-result-file-matches";
+      for (const line of lines) {
+        const row = doc.createElement("div");
+        row.className = "search-result-file-match";
+        row.setAttribute("data-offset", String(line.offset));
+        paintMatchText(row, line);
+        nest.append(row);
+      }
+      item.append(nest);
+    }
     results.append(item);
+  }
+}
+function paintMatchText(
+  row: HTMLElement,
+  line: NonNullable<SearchResponse["results"][number]["matches"]>[number],
+): void {
+  const mark = line.mark;
+  if (
+    !mark ||
+    mark.from < 0 ||
+    mark.to <= mark.from ||
+    mark.to > line.text.length
+  ) {
+    row.textContent = line.text;
+    return;
+  }
+  const doc = row.ownerDocument;
+  if (mark.from > 0) {
+    row.append(doc.createTextNode(line.text.slice(0, mark.from)));
+  }
+  const span = doc.createElement("span");
+  span.className = "search-result-file-matched-text";
+  span.textContent = line.text.slice(mark.from, mark.to);
+  row.append(span);
+  if (mark.to < line.text.length) {
+    row.append(doc.createTextNode(line.text.slice(mark.to)));
   }
 }

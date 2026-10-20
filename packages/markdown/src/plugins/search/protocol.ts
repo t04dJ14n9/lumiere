@@ -1,8 +1,18 @@
 import { Schema, type Infer } from "@workshop/core";
 import { defineProtocol } from "../../shared/rpc/protocol";
+export const matchLine = Schema.object({
+  text: Schema.string().max(512),
+  offset: Schema.number().min(0),
+  mark: Schema.object({
+    from: Schema.number().min(0),
+    to: Schema.number().min(0),
+  }).optional(),
+});
 export const result = Schema.object({
   path: Schema.string().max(8192),
   href: Schema.string().max(32768),
+  /** Content lines under the file (Obsidian search-result-file-match). */
+  matches: Schema.array(matchLine).max(100).optional(),
 });
 export const response = Schema.object({
   results: Schema.array(result).max(100000),

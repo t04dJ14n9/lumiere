@@ -21,10 +21,11 @@ live subscriptions. Result links use encoded relative paths and normal navigatio
 - `worker-protocol.ts`: validated worker startup, submissions and replies.
 - `runner.ts`: worker startup, deadlines, pending requests and termination.
 - `query.ts`: indexed file eligibility, cached metadata/live reads and result ordering.
+- `match-lines.ts`: content-needle scan for Obsidian-style match-line snippets.
 - `../../markdown/search/plan.ts`: scope-aware content/metadata requirements.
 - `host.ts`: RPC handlers and index change notification.
 - `client.ts`: subscriptions, refresh generations and cancellation.
-- `blocks.ts`: accessible status, refresh button and result links.
+- `blocks.ts`: accessible status, refresh button, result links and nested match lines.
 - `webview.ts`: query renderer and rendered-fence ownership.
 - `../../workers/search.ts`: isolated query compilation and evaluation entry.
 - `search.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
@@ -44,4 +45,7 @@ has a 15-second deadline and each document has a 5-second evaluation deadline.
 A failed worker affects its query only. Results reflect the index's eligible files
 and unsaved text available through the host. Large vault searches may be slow;
 partial match snapshots stream over RPC (throttled) while the query runs, then the
-final sorted set replaces them. Excluded files are omitted. No Dataview.
+final sorted set replaces them. Excluded files are omitted. Content hits nest up to
+25 match lines per file (highlighted substring, truncated around the hit); file /
+path / tag / property-only queries stay path-only. Match rows open the file (same
+href) — offset navigation is not wired through markdown links. No Dataview.

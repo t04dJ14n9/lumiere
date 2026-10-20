@@ -45,3 +45,33 @@
   padding-inline-start: 1.4em;
   overflow: auto;
 }
+.embedded-search .search-result-file-title {
+  list-style: disc;
+}
+.embedded-search .search-result-file-matches {
+  margin: 4px 0 8px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85em;
+  line-height: 1.35;
+  overflow: hidden;
+}
+.embedded-search .search-result-file-match {
+  padding: 4px 10px 4px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.embedded-search .search-result-file-match:last-child {
+  border-bottom: none;
+}
+.embedded-search .search-result-file-matched-text {
+  color: var(--vscode-editor-foreground);
+  background: var(
+    --vscode-editor-findMatchHighlightBackground,
+    rgba(234, 92, 0, 0.33)
+  );
+}

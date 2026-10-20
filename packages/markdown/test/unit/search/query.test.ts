@@ -42,6 +42,7 @@ test("vault search uses live text, excludes hidden files and counts per-document
   const input = {
     vault: vault(),
     source: "file:///vault/folder/Note.md",
+    query: "content:meeting",
     worker,
     token: new CancelToken(),
     read: async (uri: string) => {
@@ -54,6 +55,14 @@ test("vault search uses live text, excludes hidden files and counts per-document
   assert.deepEqual(
     result.results.map((item) => item.href),
     ["../other/A%20%23.md", "Note.md"],
+  );
+  assert.ok(
+    result.results.every(
+      (item) =>
+        item.matches?.length === 1 &&
+        item.matches[0]?.text === "Meeting" &&
+        item.matches[0]?.mark?.from === 0,
+    ),
   );
   assert.equal(reads.length, 3);
   await assert.rejects(
@@ -91,6 +100,7 @@ test("indexed predicates avoid note reads while content scopes conservatively re
   const result = await searchVault({
     vault: index,
     source: "file:///vault/folder/Note.md",
+    query,
     worker,
     token: new CancelToken(),
     read: async () => {
@@ -102,6 +112,7 @@ test("indexed predicates avoid note reads while content scopes conservatively re
     result.results.map((item) => item.path),
     ["folder/Note.md"],
   );
+  assert.equal(result.results[0]?.matches, undefined);
   assert.equal(
     queryRequirements(parseSearch("path:folder OR file:Note")).text,
     false,
@@ -128,6 +139,7 @@ test("searchVault emits partial snapshots as matches accumulate", async () => {
   const result = await searchVault({
     vault: vault(),
     source: "file:///vault/folder/Note.md",
+    query: "content:meeting",
     worker,
     token: new CancelToken(),
     read: async (uri: string) => {

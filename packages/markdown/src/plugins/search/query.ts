@@ -5,9 +5,12 @@ import { folderOf, nameOf, relativeVaultPath } from "../../shared/vault-path";
 import type { SearchEvaluator } from "./runner";
 import type { SearchResponse } from "./protocol";
 import type { SearchDocument } from "../../markdown/search/evaluate";
+import { extractMatchLines } from "./match-lines";
 export interface SearchInput {
   vault: VaultIndex;
   source: string;
+  /** Raw query string; used for match-line snippets after a file hits. */
+  query: string;
   worker: SearchEvaluator;
   token: Cancellation;
   read(uri: string): Promise<string>;
@@ -17,7 +20,7 @@ export interface SearchInput {
 /** Minimum gap between partial snapshots; final sort still arrives via the RPC result. */
 const PARTIAL_INTERVAL_MS = 32;
 export async function searchVault(input: SearchInput): Promise<SearchResponse> {
-  const { vault, source, worker, token, read } = input;
+  const { vault, source, worker, token, read, query } = input;
   const origin = vault.files().find((file) => file.uri === source);
   if (!origin) {
     throw new Error("Unknown search source");
@@ -50,7 +53,15 @@ export async function searchVault(input: SearchInput): Promise<SearchResponse> {
           .split("/")
           .map(encodeURIComponent)
           .join("/");
-        results.push({ path: file.path, href });
+        const matches =
+          document.text.length > 0
+            ? extractMatchLines(document.text, query)
+            : [];
+        results.push({
+          path: file.path,
+          href,
+          ...(matches.length > 0 ? { matches } : {}),
+        });
         emit.push({ results: [...results], unreadable });
       }
     } catch (error) {
