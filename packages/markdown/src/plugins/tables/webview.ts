@@ -24,6 +24,7 @@ import { insertTable, tableOperation } from "./commands";
 import { vimTableEntry } from "./vim-entry";
 import { TableWheelMotion } from "./wheel-motion";
 import type { TableWheelEvent } from "./wheel-scroll";
+import { cellPointerOffset } from "./cell-pointer";
 export const tablesWebview: Plugin = {
   name: "tables",
   inject: {
@@ -80,7 +81,7 @@ function createEnvironment(
     renderContent: (element, source, offset) =>
       content.renderContent(element, source, offset),
     position: (source, element, point) =>
-      livePreview.position?.(source, element, point),
+      cellPointerOffset(source, element, point, livePreview.position),
     wrap: (marker, target) => formatting?.wrap(marker, target) ?? false,
     canFormat: formatting !== undefined,
     clearFormatting: (source) => formatting?.clear(source) ?? source,
