@@ -74,12 +74,17 @@ function propertyBody(
   value: unknown,
   options: PropertyRowOptions,
 ): string {
-  // Custom renderers (e.g. Sources) keep structured YAML editing even for [].
+  // Custom renderers (e.g. Sources / OKF) keep stacked UI + YAML draft.
   if (options.custom) {
     return complexEditable(key, options);
   }
   if (options.editable) {
     return editableValue(key, value, options.kind);
+  }
+  // Nested maps/lists Obsidian cannot type: Unknown widget = JSON.stringify
+  // (REA MetadataEditor `mod-unknown` + lucide-file-question). Not YAML drafts.
+  if (options.draft !== undefined && isUnknownPropertyValue(value)) {
+    return unknownPropertyValue(value);
   }
   return complexEditable(key, options);
 }
@@ -90,18 +95,28 @@ function propertyRow(
   options: PropertyRowOptions,
 ): string {
   const { kind } = options;
-  // Nested maps/lists use the YAML (or custom) complex path. Obsidian shows
-  // those as type "unknown" with JSON — not "Type mismatch, expected Text".
-  // Suppress the false Text warning so decision_confirmation / generated
-  // do not paint warning icons over the sheet tail.
-  const nestedObject =
-    value !== null && typeof value === "object" && !Array.isArray(value);
+  const unknown =
+    !options.custom &&
+    !options.editable &&
+    options.draft !== undefined &&
+    isUnknownPropertyValue(value);
+  // Obsidian unknown is not a Text mismatch warning — it is its own type.
   const warning = mismatchWarning(
     kind,
-    !nestedObject && !matchesPropertyKind(kind, value),
+    !unknown && !matchesPropertyKind(kind, value),
   );
   const body = propertyBody(key, value, options);
-  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("title", key)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
+  const typeLabel = unknown ? "Unknown" : propertyKindLabels[kind];
+  let typeName: string;
+  if (unknown) {
+    typeName = "unknown";
+  } else if (kind === "list") {
+    typeName = "multitext";
+  } else {
+    typeName = kind;
+  }
+  const icon = propertyIcon(key, value, unknown ? "unknown" : kind);
+  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${typeLabel}`)}><span class="metadata-property-icon">${icon}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("title", key)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", typeName)}>${body}</div>${warning}</div>`;
 }
 
 export function pendingPropertyRow(): string {
@@ -177,6 +192,16 @@ function propertyInputText(value: unknown): string {
       : (JSON.stringify(value) ?? "");
   }
   return String(value);
+}
+
+/** Nested maps / non-scalar collections Obsidian renders as type Unknown. */
+function isUnknownPropertyValue(value: unknown): boolean {
+  return value !== null && typeof value === "object";
+}
+
+/** Obsidian REA: `metadata-property-value-item mod-unknown` + JSON.stringify. */
+function unknownPropertyValue(value: unknown): string {
+  return `<span class="metadata-property-value-item mod-unknown" tabindex="0">${escape(JSON.stringify(value))}</span>`;
 }
 
 function complexEditable(

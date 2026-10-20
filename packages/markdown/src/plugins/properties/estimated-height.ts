@@ -88,6 +88,10 @@ function valueColumnHeight(row: string): number {
   if (sources > 0) {
     return sources + COMPLEX_GAP + YAML_FIELD;
   }
+  // Unknown JSON is one ellipsis line (Obsidian nowrap), not a YAML textarea.
+  if (row.includes("mod-unknown")) {
+    return VALUE_MIN;
+  }
   if (row.includes("metadata-input-yaml")) {
     return YAML_FIELD;
   }

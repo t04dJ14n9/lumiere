@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { renderProperties } from "./sheet-html";
 
-test("property sheet distinguishes editable scalars, list chips and editable nested YAML", () => {
+test("property sheet distinguishes editable scalars, list chips and Obsidian unknown JSON maps", () => {
   const html = renderProperties(
     '---\ncount: 3\nflag: true\ntags: ["#one/two", "bad tag"]\nlist: [false, null, "<script>"]\nobject: {child: "<b>"}\n---\n',
   );
@@ -12,40 +12,37 @@ test("property sheet distinguishes editable scalars, list chips and editable nes
   assert.match(html, /<span>bad tag<\/span>/);
   assert.match(html, /data-property-list="list"/);
   assert.match(html, /&lt;script&gt;/);
-  assert.match(html, /data-property-kind="yaml"/);
-  assert.match(html, /data-property-input="object"/);
+  assert.match(html, /mod-unknown/);
+  assert.match(html, /data-property-type="unknown"/);
+  assert.match(html, /data-lucide="file-question"/);
   assert.match(html, /&lt;b&gt;/);
+  assert.doesNotMatch(html, /data-property-kind="yaml"/);
   assert.doesNotMatch(html, /<script>|<b>/);
 });
 
-test("generated and sources complex values render as editable YAML drafts", () => {
+test("generated nested maps render as Obsidian unknown JSON; bare sources lists do too", () => {
   const html = renderProperties(
     '---\ngenerated:\n  by: agent\n  at: "2026-10-15T00:00:00Z"\nsources:\n  - resource: ../raw/a.pdf\n    id: a1\n---\n',
   );
-  assert.match(
-    html,
-    /data-property-input="generated"[^>]*data-property-kind="yaml"/,
-  );
-  assert.match(
-    html,
-    /data-property-input="sources"[^>]*data-property-kind="yaml"/,
-  );
-  assert.match(html, /by: agent/);
-  assert.match(html, /resource: \.\.\/raw\/a\.pdf/);
+  assert.match(html, /data-property-key="generated"[\s\S]*mod-unknown/);
+  assert.match(html, /&quot;by&quot;:&quot;agent&quot;/);
+  assert.match(html, /data-property-key="sources"[\s\S]*mod-unknown/);
+  assert.match(html, /&quot;resource&quot;:&quot;..\/raw\/a.pdf&quot;/);
+  assert.doesNotMatch(html, /data-property-kind="yaml"/);
 });
 
-test("decision confidence maps and lists of maps always have YAML editors", () => {
+test("decision confidence maps and lists of maps render as Obsidian unknown JSON", () => {
   const html = renderProperties(
     "---\ndecision_conf:\n  score: 0.82\n  rationale: Evidence supports this\n  factors: [evidence, risk]\ndecisions:\n  - score: 0.9\n    factors: [review]\n---\n",
   );
   for (const key of ["decision_conf", "decisions"]) {
     assert.match(
       html,
-      new RegExp(
-        `<textarea[^>]*data-property-input="${key}"[^>]*data-property-kind="yaml"`,
-      ),
+      new RegExp(`data-property-key="${key}"[\\s\\S]*mod-unknown`),
     );
   }
+  assert.match(html, /&quot;score&quot;:0\.82/);
+  assert.doesNotMatch(html, /data-property-kind="yaml"/);
   assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
 });
 
