@@ -36,3 +36,16 @@ test("short Mermaid fences reserve tall SVG height, not bare line count", () => 
     `mermaid=${mermaid} should exceed same-ish line callout=${plain}`,
   );
 });
+
+test("short display math reserves MathJax height beyond bare line count", () => {
+  // One source line can typeset a tall matrix / stacked fraction.
+  const source =
+    "$$\\begin{pmatrix}a\\\\b\\\\c\\\\d\\\\e\\\\f\\\\g\\\\h\\end{pmatrix}$$";
+  const height = markdownBlockEstimatedHeight(source);
+  const plainCallout = markdownBlockEstimatedHeight("> [!note]\n> x\n");
+  assert.ok(height >= 300, `got ${height}`); // 8 TeX rows × 48 + chrome
+  assert.ok(
+    height > plainCallout,
+    `math=${height} should exceed short callout=${plainCallout}`,
+  );
+});

@@ -1,5 +1,6 @@
 import { embedsImage } from "../../markdown/images";
 import { mediaKind } from "../../shared/media-kinds";
+import { parseVideoUrl } from "../onlineVideos/parse";
 import { embedsNote } from "./clicks";
 import { writtenHeight, writtenWidth } from "./image-size";
 
@@ -13,12 +14,21 @@ import { writtenHeight, writtenWidth } from "./image-size";
  *
  * Prefer an explicit `|WxH` height; otherwise reserve a stable default so
  * PageDown / click coordinates below the embed stay valid until measure runs.
+ *
+ * YouTube / Bilibili image links become `.mw-video` cards (16:9 thumb ≈200px
+ * wide). Without a dedicated reserve they fall through to CARD_DEFAULT (~64px).
  */
 const CHROME = 16;
 /** Portrait / unknown images without `|WxH` — better than one line. */
 const IMAGE_DEFAULT = 240;
 /** `<video>` / `<audio>` controls chrome before metadata. */
 const MEDIA_DEFAULT = 180;
+/**
+ * Online video card with cover: thumb flex-basis 200px at 16:9 (~112px) plus
+ * title/meta/actions. Stacked layout in a narrow pane is taller; 200 covers
+ * both until measure. Playing frames (Bilibili opt-in) grow further via measure.
+ */
+const ONLINE_VIDEO_DEFAULT = 200;
 /** PDF and other attachment cards. */
 const CARD_DEFAULT = 48;
 /** Note embeds: content unknown until resolve; keep a modest reserve. */
@@ -55,6 +65,10 @@ export function embedEstimatedHeight(source: string): number {
   }
   if (embedsNote(source)) {
     return NOTE_DEFAULT + CHROME;
+  }
+  // Online Videos replaces matching image URLs with tall cards.
+  if (parseVideoUrl(embedTarget(source))) {
+    return ONLINE_VIDEO_DEFAULT + CHROME;
   }
   const kind = mediaKind(embedTarget(source));
   if (kind === "audio" || kind === "video") {
