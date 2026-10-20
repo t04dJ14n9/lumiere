@@ -86,10 +86,18 @@ export function decorateListItem(node: SyntaxNodeRef, cx: InlineContext): void {
 
 /**
  * An item's indented continuation lines, as in Obsidian 1.14 (measured):
- * their text starts under the item's text, and indentation deeper than that
- * moves it further in. The spaces up to the item's text are hidden; a lazy
- * line, with none, stays where it is.
+ * spaces up to the item's text column hang under that text (hidden); a lazy
+ * line, with none, stays at the margin. Extra spaces beyond the content
+ * column are placed by Obsidian's indent-size steps alone (REA
+ * `HyperMD-list-line-nobullet` + `cm-indent` min-width `--list-indent`, last
+ * spacing `--list-indent-editing` + `--list-marker-space`), not by hanging
+ * under the parent and showing the leftover spaces.
  */
+/** Obsidian `--indent-size` (REA app.css). */
+const INDENT_SIZE = 4;
+/** Obsidian LP nobullet last-indent padding: 0.75em + 0.25em. */
+const CONTINUATION_SPACES_MARKER = "1em";
+
 function decorateContinuations(
   item: SyntaxNode,
   cx: InlineContext,
@@ -106,8 +114,17 @@ function decorateContinuations(
     while (line.from <= child.to) {
       const spaces = /^[ \t]*/.exec(line.text)![0].length;
       if (line.from !== first.from && spaces > 0) {
-        cx.line(line.from, "md-list-line md-list-continuation", { style });
-        cx.hide(line.from, line.from + Math.min(spaces, content));
+        if (spaces > content) {
+          const steps = Math.max(1, Math.floor(spaces / INDENT_SIZE));
+          const spaceStyle = `--list-depth: ${steps}; --list-marker: ${CONTINUATION_SPACES_MARKER}`;
+          cx.line(line.from, "md-list-line md-list-continuation", {
+            style: spaceStyle,
+          });
+          cx.hide(line.from, line.from + spaces);
+        } else {
+          cx.line(line.from, "md-list-line md-list-continuation", { style });
+          cx.hide(line.from, line.from + spaces);
+        }
       }
       if (line.number === cx.state.doc.lines) {
         break;
