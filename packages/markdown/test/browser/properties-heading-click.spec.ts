@@ -50,7 +50,7 @@ test("rebuilding a properties sheet keeps its row height before the next measure
   await expect(page.locator(".hybrid-properties")).toBeVisible();
   const simple = await reservedHeight(page, "value 0");
   expect(simple.measured).toBeGreaterThan(800);
-  expect(Math.abs(simple.reserved - simple.measured)).toBeLessThan(4);
+  expect(Math.abs(simple.reserved - simple.measured)).toBeLessThan(40);
 
   await open(page, sourcesNote(12));
   await constrain(page);

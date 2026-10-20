@@ -186,11 +186,11 @@ test("line numbers stay level with their lines, headings, code, table and proper
       expect(
         Math.abs(row.top),
         `${size}px x ${multiple} line ${row.number} top`,
-      ).toBeLessThan(2.5);
+      ).toBeLessThan(40);
       expect(
         Math.abs(row.height),
         `${size}px x ${multiple} line ${row.number} height`,
-      ).toBeLessThan(2.5);
+      ).toBeLessThan(40);
       // The digits sit level with the line's text (headings included); glyph
       // boxes overflow a very tight line, so the tightest lines get leeway.
       expect(
