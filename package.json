@@ -2048,32 +2048,62 @@
         {
           "command": "lumiere.markdown.toggleBold",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting"
+          "group": "formatting@1"
         },
         {
           "command": "lumiere.markdown.toggleItalics",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting"
+          "group": "formatting@1"
         },
         {
           "command": "lumiere.markdown.toggleStrikethrough",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting"
+          "group": "formatting@1"
         },
         {
           "command": "lumiere.markdown.toggleHighlight",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting"
+          "group": "formatting@1"
         },
         {
           "command": "lumiere.markdown.toggleCode",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting"
+          "group": "formatting@1"
         },
         {
           "command": "lumiere.markdown.insertLink",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting"
+          "group": "formatting@1"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightRed",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@1"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightOrange",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@2"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightYellow",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@3"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightGreen",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@4"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightBlue",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@5"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightPurple",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@6"
         },
         {
           "command": "lumiere.pdf.lookUp",

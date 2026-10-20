@@ -9,18 +9,30 @@ export default defineManifest({
   capabilities: ["editing", "commands", "keybindings"],
   contributes: {
     menus: [
-      "toggleBold",
-      "toggleItalics",
-      "toggleStrikethrough",
-      "toggleHighlight",
-      "toggleCode",
-      "insertLink",
-    ].map((command) => ({
-      command,
-      location: "webview/context" as const,
-      when: "webviewSection == 'markdownContent'",
-      group: "formatting",
-    })),
+      ...[
+        "toggleBold",
+        "toggleItalics",
+        "toggleStrikethrough",
+        "toggleHighlight",
+        "toggleCode",
+        "insertLink",
+      ].map((command) => ({
+        command,
+        location: "webview/context" as const,
+        when: "webviewSection == 'markdownContent'",
+        group: "formatting@1",
+      })),
+      // Obsidian offers coloured highlights from the editor menu / palette;
+      // surface the same toggles on the webview context menu.
+      ...(["Red", "Orange", "Yellow", "Green", "Blue", "Purple"] as const).map(
+        (colour, index) => ({
+          command: `toggleHighlight${colour}`,
+          location: "webview/context" as const,
+          when: "webviewSection == 'markdownContent'",
+          group: `formattingColour@${index + 1}`,
+        }),
+      ),
+    ],
     keybindings: [
       {
         id: "insertLink",
