@@ -66,7 +66,7 @@ test("mountImageEmbedActions tags host and wraps inspect in embed-actions", () =
     assert.ok(host.classList.contains(IMAGE_EMBED));
     assert.ok(inspect.classList.contains("embed-action"));
     assert.ok(inspect.classList.contains("inspect-image"));
-    assert.equal([...actions.names].join(" "), "embed-actions");
+    assert.equal(actions.className, "embed-actions");
     assert.equal(placed.length, 1);
     assert.equal(placed[0], actions);
     assert.deepEqual(actions.children, [inspect]);
