@@ -15,6 +15,7 @@ outside any link (same matcher as Backlinks), only when that section expands.
 
 - `host.ts`: the plugin: view, refresh and the open command.
 - `tree.ts`: the view's tree for one note.
+- Unlinked mention matching: `src/markdown/mentions.ts` (shared with Backlinks).
 - `manifest.ts`: the view contribution.
 
 ## Services, events and settings

@@ -1,6 +1,6 @@
-import { metadata } from "../../markdown/metadata";
-import { linkpathOf, vaultLinks } from "../../markdown/metadata/linkpaths";
-import type { Position } from "../../markdown/metadata";
+import { metadata } from "./metadata";
+import { linkpathOf, vaultLinks } from "./metadata/linkpaths";
+import type { Position } from "./metadata";
 
 /** One line of context for a mention, shown under its note. */
 export interface MentionLine {

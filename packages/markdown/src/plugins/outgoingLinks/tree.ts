@@ -2,8 +2,8 @@ import type { TreeNode, TreeSource } from "../../shared/host";
 import { folderOf, stemOf } from "../../shared/vault-path";
 import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
-import { unlinkedLines } from "../backlinks/mentions";
-import type { MentionLine } from "../backlinks/mentions";
+import { unlinkedLines } from "../../markdown/mentions";
+import type { MentionLine } from "../../markdown/mentions";
 
 export const VIEW_ID = contributionId("outgoingLinks");
 export const OPEN_COMMAND = contributionId("outgoingLinks.open");
@@ -78,7 +78,6 @@ export class OutgoingLinksTree implements TreeSource {
       return this.unlinkedFileNodes();
     }
     if (node.id.startsWith("unlinked:")) {
-      const path = node.id.slice("unlinked:".length);
       const lines = this.lines.get(node.id) ?? [];
       return lines.map((line) => ({
         id: `${node.id}:${line.offset}`,
