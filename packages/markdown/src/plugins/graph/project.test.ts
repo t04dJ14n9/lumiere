@@ -157,3 +157,33 @@ test("admission refuses over-cap graphs and stale generations are ignored", () =
   assert.equal(isCurrentGeneration(4, 4), false);
   assert.equal(isCurrentGeneration(4, 5), true);
 });
+
+test("frontmatter wikilinks count as concept edges like Obsidian", () => {
+  const graph = buildConceptGraph({
+    bundleRoot: "bundle",
+    notes: [
+      {
+        path: "bundle/notes/from.md",
+        metadata: metadata('---\nup: "[[plain]]"\n---\nNo body link.'),
+      },
+      {
+        path: "bundle/notes/plain.md",
+        metadata: metadata("plain body"),
+      },
+    ],
+    resolve: (linktext) =>
+      linktext === "plain"
+        ? { status: "file", path: "bundle/notes/plain.md" }
+        : { status: "missing" },
+  });
+  const edge = graph.edges.find(
+    (item) =>
+      item.source === "bundle/notes/from.md" &&
+      item.target === "bundle/notes/plain.md",
+  );
+  assert.ok(edge);
+  assert.equal(edge?.count, 1);
+  const from = graph.nodes.find((node) => node.id === "bundle/notes/from.md");
+  assert.equal(from?.degree, 1);
+  assert.equal(from?.orphan, false);
+});

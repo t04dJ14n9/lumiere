@@ -48,8 +48,8 @@ Settings: `lumiere.markdown.graph.maxNodes` (2000), `maxEdges` (20000),
 ## Limits and differences from Obsidian
 
 The graph is one bundle, not the whole vault. Edges are directed and come from
-body links and note embeds only; frontmatter links and sources rows are not
-edges. Caps are hard: 2000 notes, 20000 aggregated edges and 1.5 MB. A larger
+body links, note embeds, and frontmatter wikilinks; sources-property derivation
+rows are not edges. Caps are hard: 2000 notes, 20000 aggregated edges and 1.5 MB. A larger
 graph is refused, not sampled. There is no 3D view, saved layout, trust badge
 or sources-derivation edge. Layout is a bounded force pass in a worker that
 stops while the panel is hidden and when the panel closes.
