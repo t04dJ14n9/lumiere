@@ -1,3 +1,4 @@
+import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 /**
  * CodeMirror sizes a block widget from `estimatedHeight` until it measures
  * the widget, and again when a rebuilt decoration sits outside the viewport.
@@ -26,10 +27,12 @@
  * `height="N%"`) use a stable viewport/font fallback.
  *
  * Wrapping callouts (and other MarkdownBlocks) can paint far taller than
- * line×24 on a narrow pane. Count ceil(chars / CHARS_PER_LINE) per line so
+ * line×24 on a narrow pane. Count ceil(chars / charsPerLine) per line so
  * first paint off-viewport (no ResizeObserver sample yet) still reserves
- * near the eventual measured height. After measure, remember painted height
- * so remounts do not fall back to the formula and jump the map.
+ * near the eventual measured height. charsPerLine comes from the live
+ * `.cm-content` width when known; otherwise a 40-char fallback. After
+ * measure, remember painted height so remounts do not fall back to the
+ * formula and jump the map.
  */
 const LINE = 24;
 const CHROME = 12;
@@ -56,11 +59,57 @@ const CALLOUT_CHROME = 40;
 const VIEWPORT_FALLBACK = 640;
 /** Fallback font size for `em` CSS heights in HTML blocks. */
 const FONT_FALLBACK = 16;
+/** Fallback when no editor has reported content width yet (~480px pane). */
+const FALLBACK_CHARS_PER_LINE = 40;
+/** Floor so ultra-narrow panes still wrap aggressively. */
+const MIN_CHARS_PER_LINE = 12;
 /**
- * Conservative wrap width for a narrow Live Preview pane (~480px content).
- * Matches the spirit of inlineTitle's CHARS_PER_LINE; prefer slight overshoot.
+ * Average glyph width for Latin prose in the editor font. Slightly high so
+ * charsPerLine undershoots and we prefer over-reserve on the border cases.
  */
-const CHARS_PER_LINE = 40;
+const AVG_CHAR_PX = 9;
+/** Callout/content horizontal chrome inside `.cm-content`. */
+const CONTENT_PAD_PX = 24;
+
+let estimateContentWidthPx = 0;
+
+/** Remember live content width for wrap-aware first-paint estimates. */
+export function rememberMarkdownBlockContentWidth(widthPx: number): void {
+  if (widthPx > 0) {
+    estimateContentWidthPx = widthPx;
+  }
+}
+
+/** Test helper: reset to the fixed-40 fallback. */
+export function clearMarkdownBlockContentWidth(): void {
+  estimateContentWidthPx = 0;
+}
+
+/** Chars that fit one visual row at the last known content width. */
+export function charsPerLineForEstimate(): number {
+  if (estimateContentWidthPx <= 0) {
+    return FALLBACK_CHARS_PER_LINE;
+  }
+  const usable = Math.max(1, estimateContentWidthPx - CONTENT_PAD_PX);
+  return Math.max(MIN_CHARS_PER_LINE, Math.round(usable / AVG_CHAR_PX));
+}
+
+/**
+ * Keep `estimateContentWidthPx` in sync so off-viewport widgets (no toDOM yet)
+ * still wrap-estimate from the live pane width.
+ */
+export const markdownBlockWidthTracker = ViewPlugin.fromClass(
+  class {
+    constructor(view: EditorView) {
+      rememberMarkdownBlockContentWidth(view.contentDOM.clientWidth);
+    }
+    update(update: ViewUpdate) {
+      if (update.geometryChanged || update.docChanged) {
+        rememberMarkdownBlockContentWidth(update.view.contentDOM.clientWidth);
+      }
+    }
+  },
+);
 
 /** Painted heights for MarkdownBlock widgets, keyed by source. */
 const measuredBlockHeights = new Map<string, number>();
@@ -126,12 +175,16 @@ function mathRows(source: string): number {
  * Visual rows after soft-wrap. Strip leading `>` markers so quote chrome does
  * not inflate the character count; empty lines still reserve one row.
  */
-export function wrappedVisualRows(source: string): number {
+export function wrappedVisualRows(
+  source: string,
+  charsPerLine: number = charsPerLineForEstimate(),
+): number {
+  const cpl = Math.max(1, charsPerLine);
   let rows = 0;
   for (const line of source.split("\n")) {
     const text = line.replace(/^(?:>\s*)+/u, "");
     const len = Math.max(1, text.length);
-    rows += Math.max(1, Math.ceil(len / CHARS_PER_LINE));
+    rows += Math.max(1, Math.ceil(len / cpl));
   }
   return Math.max(1, rows);
 }

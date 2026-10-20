@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  charsPerLineForEstimate,
   clearHtmlBlockHeights,
+  clearMarkdownBlockContentWidth,
   clearMarkdownBlockHeights,
   markdownBlockEstimatedHeight,
   rememberHtmlBlockHeight,
+  rememberMarkdownBlockContentWidth,
   rememberMarkdownBlockHeight,
   wrappedVisualRows,
 } from "./markdown-block-height";
@@ -186,4 +189,24 @@ test("short callout lines stay near one visual row each", () => {
   assert.equal(rows, source.split("\n").length);
   const height = markdownBlockEstimatedHeight(source);
   assert.ok(height < 250, `got ${height}`);
+});
+
+test("live content width tightens charsPerLine vs fixed-40 fallback", () => {
+  clearMarkdownBlockContentWidth();
+  assert.equal(charsPerLineForEstimate(), 40);
+  const long =
+    "> Callout body line 0 with a very long run of words that should wrap more on a narrow pane than on a wide one for the live-width estimate.";
+  const source = `> [!note] Narrow\n${Array.from({ length: 20 }, () => long).join("\n")}`;
+  const wideFloor = markdownBlockEstimatedHeight(source);
+  rememberMarkdownBlockContentWidth(211); // ~280px viewport content
+  const narrowCpl = charsPerLineForEstimate();
+  assert.ok(narrowCpl < 40, `narrow cpl ${narrowCpl}`);
+  const narrowH = markdownBlockEstimatedHeight(source);
+  assert.ok(narrowH > wideFloor, `narrow ${narrowH} vs fallback ${wideFloor}`);
+  rememberMarkdownBlockContentWidth(1331);
+  const wideCpl = charsPerLineForEstimate();
+  assert.ok(wideCpl > 40, `wide cpl ${wideCpl}`);
+  const wideH = markdownBlockEstimatedHeight(source);
+  assert.ok(wideH <= wideFloor, `wide ${wideH} vs fallback ${wideFloor}`);
+  clearMarkdownBlockContentWidth();
 });
