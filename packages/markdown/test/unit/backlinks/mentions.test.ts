@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  linkedLines,
-  unlinkedLines,
-} from "../../../src/plugins/backlinks/mentions";
+import { linkedLines, unlinkedLines } from "../../../src/markdown/mentions";
 
 test("linked lines give one trimmed context line per link to the target", () => {
   const text = [

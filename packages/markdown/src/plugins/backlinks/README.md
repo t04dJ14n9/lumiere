@@ -17,7 +17,7 @@ note's basename and aliases as whole words, outside links and properties.
 
 - `host.ts`: the plugin: view, status bar, refresh and the open command.
 - `tree.ts`: the view's tree for one note.
-- `mentions.ts`: linked and unlinked mention lines in a note's text.
+- Linked/unlinked mention line matching lives in `src/markdown/mentions.ts` (shared with Outgoing links).
 - `manifest.ts`: the view contribution.
 
 ## Services, events and settings
