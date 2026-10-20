@@ -158,6 +158,16 @@ export class VideoDetailsSource {
     if (provider === "spotify") {
       return this.fetchSpotify(id, signal);
     }
+    if (provider === "soundcloud") {
+      const page = `https://soundcloud.com/${id}`;
+      const body = await this.json(
+        `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      await this.attachCover(details, soundcloudThumbnail(body), signal);
+      return details;
+    }
     return this.fetchBilibiliView(id, signal);
   }
 
@@ -274,6 +284,12 @@ const SPOTIFY_THUMB_HOSTS = new Set([
   "image-cdn-ak.spotifycdn.com",
   "image-cdn-fa.spotifycdn.com",
 ]);
+const SOUNDCLOUD_THUMB_HOSTS = new Set([
+  "i1.sndcdn.com",
+  "i2.sndcdn.com",
+  "i3.sndcdn.com",
+  "i4.sndcdn.com",
+]);
 
 /** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
 export function oEmbedThumbnail(body: unknown): string | undefined {
@@ -309,6 +325,11 @@ function thumbnailFromHosts(
     return undefined;
   }
   return url.href;
+}
+
+/** SoundCloud oEmbed thumbnail when it is a known sndcdn host. */
+export function soundcloudThumbnail(body: unknown): string | undefined {
+  return thumbnailFromHosts(body, SOUNDCLOUD_THUMB_HOSTS);
 }
 
 export function parseOEmbed(body: unknown): VideoDetails {

@@ -92,3 +92,10 @@ test("Spotify refuses an in-webview player", () => {
   );
   assert.equal(providers.spotify.embeddable, false);
 });
+
+test("SoundCloud refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(video("https://soundcloud.com/forss/flickermood")),
+  );
+  assert.equal(providers.soundcloud.embeddable, false);
+});

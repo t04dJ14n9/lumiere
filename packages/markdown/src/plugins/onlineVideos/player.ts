@@ -47,6 +47,13 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
       /^\/embed\/(?:track|album|playlist|episode|show)\/[A-Za-z0-9]{22}$/,
     embeddable: false,
   },
+  soundcloud: {
+    name: "SoundCloud",
+    origin: "https://w.soundcloud.com",
+    path: "/player/",
+    pathPattern: /^\/player\/$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -61,8 +68,8 @@ export function playerUrl(video: OnlineVideo): string {
   if (video.provider === "huggingface") {
     throw new Error("Hugging Face has no in-webview player");
   }
-  if (video.provider === "spotify") {
-    throw new Error("Spotify has no in-webview player");
+  if (video.provider === "spotify" || video.provider === "soundcloud") {
+    throw new Error(`${video.provider} has no in-webview player`);
   }
   if (video.provider === "youtube") {
     const url = new URL(`${provider.path}${video.id}`, provider.origin);

@@ -19,9 +19,13 @@ export const protocol = defineProtocol("onlineVideos", {
           "bilibili",
           "huggingface",
           "spotify",
+          "soundcloud",
         ]),
-        /** Hugging Face model ids are at most 200 chars. */
-        id: Schema.string().max(200),
+        /**
+         * SoundCloud ids are `user/sets/slug` (up to 256 chars). Hugging Face
+         * model ids are at most 200.
+         */
+        id: Schema.string().max(300),
         kind: Schema.union(["video", "playlist"]).default("video"),
       }),
       result: videoDetails,
