@@ -133,3 +133,19 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Coub view and embed permalinks", () => {
+  assert.deepEqual(parseVideoUrl("https://coub.com/view/d6rf"), {
+    provider: "coub",
+    id: "d6rf",
+    page: "https://coub.com/view/d6rf",
+  });
+  assert.deepEqual(parseVideoUrl("https://www.coub.com/embed/d6rflvbh5o/"), {
+    provider: "coub",
+    id: "d6rflvbh5o",
+    page: "https://coub.com/view/d6rflvbh5o",
+  });
+  assert.equal(parseVideoUrl("https://coub.com/view/D6RF"), undefined);
+  assert.equal(parseVideoUrl("https://coub.com/stories/d6rf"), undefined);
+  assert.equal(parseVideoUrl("https://coub.com/view/ab"), undefined);
+});

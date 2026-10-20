@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  coubThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +330,60 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("coubThumbnail accepts Coub CDN thumbnails only", () => {
+  assert.equal(
+    coubThumbnail({
+      thumbnail_url:
+        "https://attachments-cdn-s.coub.com/coub_storage/coub/simple/cw_image/abc/big_1.jpg",
+    }),
+    "https://attachments-cdn-s.coub.com/coub_storage/coub/simple/cw_image/abc/big_1.jpg",
+  );
+  assert.equal(
+    coubThumbnail({
+      thumbnail_url:
+        "https://media.coub.com/assets/01a158f7-db33-761f-a2cd-98cae8e89e92/g-54791d09/coub-poster.jpg?v=1",
+    }),
+    "https://media.coub.com/assets/01a158f7-db33-761f-a2cd-98cae8e89e92/g-54791d09/coub-poster.jpg",
+  );
+  for (const body of [
+    { thumbnail_url: "https://evil.test/coub_storage/x.jpg" },
+    {
+      thumbnail_url:
+        "https://attachments-cdn-s.coub.com/coub_storage/x.jpg?x=1",
+    },
+    { thumbnail_url: "https://media.coub.com/other/poster.jpg" },
+  ]) {
+    assert.equal(coubThumbnail(body), undefined);
+  }
+});
+
+test("a Coub lookup uses coub oEmbed and may fetch the cover", async () => {
+  const thumb =
+    "https://attachments-cdn-s.coub.com/coub_storage/coub/simple/cw_image/abc/big_1.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://coub.com/api/oembed.json": () =>
+      response({
+        title: "Under Clover Spell",
+        author_name: "Sergey Danilkin",
+        thumbnail_url: thumb,
+      }),
+    "https://attachments-cdn-s.coub.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get("coub", "d6rf");
+  assert.equal(details.title, "Under Clover Spell");
+  assert.equal(details.author, "Sergey Danilkin");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://coub.com/api/oembed.json?url=${encodeURIComponent("https://coub.com/view/d6rf")}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

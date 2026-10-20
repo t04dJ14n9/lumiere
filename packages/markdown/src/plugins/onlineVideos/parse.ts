@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "coub";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,24 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+/** Coub permalink (`/view/{id}` / `/embed/{id}`). */
+const COUB_ID = /^[a-z0-9]{4,16}$/;
+
+const COUB_PATH = /^\/(?:view|embed)\/([a-z0-9]{4,16})\/?$/;
+
+const COUB_HOSTS = new Set(["coub.com", "www.coub.com"]);
+
+function coub(id: string | undefined): OnlineVideo | undefined {
+  if (!id || !COUB_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "coub",
+    id,
+    page: `https://coub.com/view/${id}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +97,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return COUB_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +138,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (COUB_HOSTS.has(host)) {
+    return coub(COUB_PATH.exec(url.pathname)?.[1]);
   }
   return undefined;
 }

@@ -85,3 +85,9 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Coub refuses an in-webview player", () => {
+  assert.equal(providers.coub.embeddable, false);
+  assert.equal(thumbnailUrl(video("https://coub.com/view/d6rf")), undefined);
+  assert.throws(() => playerUrl(video("https://coub.com/view/d6rf")));
+});

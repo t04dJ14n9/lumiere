@@ -151,6 +151,22 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "coub") {
+      const page = `https://coub.com/view/${id}`;
+      const body = await this.json(
+        `https://coub.com/api/oembed.json?url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = coubThumbnail(body);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +223,48 @@ export class VideoDetailsSource {
   }
 }
 
+/** Coub CDN hosts that may serve oEmbed thumbnails. */
+const COUB_THUMB_HOSTS = new Set([
+  "attachments-cdn-s.coub.com",
+  "media.coub.com",
+]);
+
+export function coubThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.thumbnail_url);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !COUB_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  // media.coub.com posters sometimes carry a cache-buster `?v=`; drop it.
+  const path = url.pathname;
+  if (url.hostname === "attachments-cdn-s.coub.com") {
+    if (
+      url.search ||
+      !/^\/coub_storage\/[A-Za-z0-9_./-]+\.(?:jpe?g|png|gif|webp)$/i.test(path)
+    ) {
+      return undefined;
+    }
+    return `https://${url.hostname}${path}`;
+  }
+  if (!/^\/assets\/[A-Za-z0-9_./-]+\.(?:jpe?g|png|gif|webp)$/i.test(path)) {
+    return undefined;
+  }
+  return `https://${url.hostname}${path}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
