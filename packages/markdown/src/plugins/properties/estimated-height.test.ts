@@ -177,3 +177,28 @@ test("longtext estimate caps at three unfocused lines, as in Obsidian", () => {
   // Unclamped 80×"wrapping" used to reserve >200px; the 3-line cap stays under.
   assert.ok(height < 200, String(height));
 });
+
+test("Sources article estimate follows title vs meta CSS margins (G21)", () => {
+  const titleOnly = estimate("---\nsources:\n  - title: Solo\n---\n", {
+    renderValue: () =>
+      `<div class="source-rows"><article class="source-row" data-source-index="0"><p class="source-title">Solo</p></article></div>`,
+  });
+  const titleResource = estimate(
+    "---\nsources:\n  - title: Solo\n    resource: https://example.com/0\n---\n",
+    {
+      renderValue: () =>
+        `<div class="source-rows"><article class="source-row" data-source-index="0"><p class="source-title">Solo</p><p class="source-resource">https://example.com/0</p></article></div>`,
+    },
+  );
+  const withMeta = estimate(
+    "---\nsources:\n  - title: Solo\n    resource: https://example.com/0\n    id: abc\n---\n",
+    {
+      renderValue: () =>
+        `<div class="source-rows"><article class="source-row" data-source-index="0"><p class="source-title">Solo</p><p class="source-resource">https://example.com/0</p><p class="source-id">abc</p></article></div>`,
+    },
+  );
+  // Extra meta line adds LINE + ARTICLE_META_MARGIN (21 + 4 with TEXT=14).
+  assert.equal(withMeta - titleResource, 25);
+  assert.equal(titleResource - titleOnly, 25);
+  assert.ok(titleOnly > 0);
+});
