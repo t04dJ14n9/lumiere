@@ -190,3 +190,32 @@ test("IME Process Period repeats the last change", async ({ page }) => {
   await processKey(page, "Period", ".");
   await expect.poll(() => text(page)).toBe("yz");
 });
+
+test("IME Process Shift+Digit8 runs * search to the next word match", async ({
+  page,
+}) => {
+  const source = "alpha beta alpha";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Escape");
+  await processKey(page, "Digit8", "*", { shiftKey: true });
+  await expect.poll(() => head(page)).toBe(source.lastIndexOf("alpha"));
+  expect(await text(page)).toBe(source);
+});
+
+test("IME Process Shift+Digit3 runs # search to the previous word match", async ({
+  page,
+}) => {
+  const source = "alpha beta alpha";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  const at = source.lastIndexOf("alpha");
+  await page.evaluate((pos) => window.harness.reveal(pos), at);
+  await page.keyboard.press("Escape");
+  await processKey(page, "Digit3", "#", { shiftKey: true });
+  await expect.poll(() => head(page)).toBe(0);
+  expect(await text(page)).toBe(source);
+});

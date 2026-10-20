@@ -119,13 +119,31 @@ for (const [code, shift, expected] of [
   }
 }
 
-test("IME Process digits with Shift leave Chinese line keys to the dedicated mapper", () => {
+test("IME Process digits with Shift map to US shifted glyphs; line keys still win first", () => {
   assert.equal(
     imeVimCommandKey(event("Process", "Digit4", { shiftKey: true }), mode()),
-    undefined,
+    "$",
   );
   assert.equal(
     translatedVimKey(event("Process", "Digit4", { shiftKey: true }), mode()),
+    "$",
+  );
+  assert.equal(
+    imeVimCommandKey(event("Process", "Digit8", { shiftKey: true }), mode()),
+    "*",
+  );
+  assert.equal(
+    translatedVimKey(event("Process", "Digit3", { shiftKey: true }), mode()),
+    "#",
+  );
+});
+
+test("IME Process Shift+Digit4 still yields $ in visual mode where line-key mapping skips", () => {
+  const vim = mode();
+  vim.visualMode = true;
+  assert.equal(shiftedVimLineKey(event("Process", "Digit4"), vim), undefined);
+  assert.equal(
+    translatedVimKey(event("Process", "Digit4", { shiftKey: true }), vim),
     "$",
   );
 });

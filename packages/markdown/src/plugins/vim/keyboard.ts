@@ -22,6 +22,20 @@ const PUNCTUATION_CODES: Record<string, readonly [string, string]> = {
   Minus: ["-", "_"],
 };
 
+/** US-layout Shift+digit glyphs; Digit4/6 also cover `$`/`^` when line-key mapping skips (e.g. visual). */
+const SHIFTED_DIGITS: Record<string, string> = {
+  Digit1: "!",
+  Digit2: "@",
+  Digit3: "#",
+  Digit4: "$",
+  Digit5: "%",
+  Digit6: "^",
+  Digit7: "&",
+  Digit8: "*",
+  Digit9: "(",
+  Digit0: ")",
+};
+
 /** Chinese IME full-width glyphs for the same physical punctuation keys. */
 const CHINESE_PUNCTUATION: Record<string, string> = {
   "。": ".",
@@ -83,8 +97,11 @@ export function imeVimCommandKey(
     return event.shiftKey ? value : value.toLowerCase();
   }
   const digit = /^Digit([0-9])$/.exec(event.code);
-  if (digit && !event.shiftKey) {
-    return digit[1];
+  if (digit) {
+    if (!event.shiftKey) {
+      return digit[1];
+    }
+    return SHIFTED_DIGITS[event.code];
   }
   const punct = PUNCTUATION_CODES[event.code];
   if (punct) {
