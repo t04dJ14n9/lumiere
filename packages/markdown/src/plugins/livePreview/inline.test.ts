@@ -307,5 +307,9 @@ test("labelled links leaving the vault are marked external once rendered", () =>
     "md-link md-link-rendered md-link-external",
   );
   assert.equal(linkClass(true, "Target.md"), "md-link md-link-rendered");
+  assert.equal(
+    linkClass(true, "Missing.md", true),
+    "md-link md-link-rendered is-unresolved",
+  );
   assert.equal(linkClass(false, "https://example.com"), "md-link");
 });

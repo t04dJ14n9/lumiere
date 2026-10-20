@@ -149,3 +149,36 @@ test("the links host sends the note's unresolved set, then only its changes", as
   host.dispose();
   client.dispose();
 });
+
+test("rendered Markdown links to missing notes are styled unresolved; revealed ones are not", () => {
+  const doc = "See [Missing](Missing.md) and [Here](Here.md).\n\nend";
+  const classes = (cursor: number) => {
+    const state = EditorState.create({
+      doc,
+      selection: EditorSelection.cursor(cursor),
+      extensions: [
+        documentTree,
+        unresolvedLinks.init(() => new Set(["missing"])),
+      ],
+    });
+    const byHref: Record<string, string> = {};
+    inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+      0,
+      doc.length,
+      (_from, _to, value) => {
+        const href = value.spec.attributes?.["data-href"];
+        if (href && value.spec.class?.includes("md-link")) {
+          byHref[href] = value.spec.class;
+        }
+      },
+    );
+    return byHref;
+  };
+  assert.deepEqual(classes(doc.length), {
+    "Missing.md": "md-link md-link-rendered is-unresolved",
+    "Here.md": "md-link md-link-rendered",
+  });
+  // Caret inside the Missing link reveals source — no unresolved class.
+  const revealed = classes(doc.indexOf("Missing]"));
+  assert.equal(revealed["Missing.md"], "md-link");
+});

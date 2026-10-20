@@ -1,15 +1,14 @@
 import { linkSuggestion } from "./suggestions";
-import { Prec, StateEffect, StateField } from "@codemirror/state";
-import type { EditorState } from "@codemirror/state";
+import { Prec } from "@codemirror/state";
 import { EditorView, ViewPlugin, keymap } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type { InlineRenderer } from "../livePreview/api";
-import type {} from "./api";
+import { isUnresolved, setUnresolved, unresolvedLinks } from "./api";
+export { isUnresolved, unresolvedLinks } from "./api";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
-import { unresolvedKey } from "./target";
 import { linkAt, followCaretLink } from "./caret-link";
 import { linkClickHandlers, type OpenLink } from "./clicks";
 export { linkAt } from "./caret-link";
@@ -124,25 +123,6 @@ function registerNavigation(ctx: Context, navigate: Navigate): void {
     .catch((error) =>
       ctx.logger.warn("Link navigation readiness failed", error),
     );
-}
-
-const setUnresolved = StateEffect.define<ReadonlySet<string>>();
-/** The host's unresolved link paths for this note, as `unresolvedKey`s. */
-export const unresolvedLinks = StateField.define<ReadonlySet<string>>({
-  create: () => new Set(),
-  update(value, transaction) {
-    for (const effect of transaction.effects) {
-      if (effect.is(setUnresolved)) {
-        value = effect.value;
-      }
-    }
-    return value;
-  },
-});
-
-function isUnresolved(state: EditorState, href: string): boolean {
-  const key = unresolvedKey(href);
-  return key !== "" && !!state.field(unresolvedLinks, false)?.has(key);
 }
 
 /** Ask the host for the note's unresolved links, then follow its updates. */
