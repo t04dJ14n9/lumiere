@@ -156,3 +156,31 @@ test("typing after clicking a drawn horizontal rule replaces only the rule", asy
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("before\n\nxyz\n\nafter");
 });
+
+test("typing after clicking a footnote superscript inserts at the definition", async ({
+  page,
+}) => {
+  const source = [
+    "See the note.[^1]",
+    "",
+    "after",
+    "",
+    "[^1]: Footnote body.",
+  ].join("\n");
+  const defAt = source.indexOf("[^1]:");
+  await open(page, source);
+  await page.evaluate(() => window.harness.reveal(0));
+  const ref = page.getByRole("button", { name: "Footnote 1", exact: true });
+  await expect(ref).toBeVisible();
+  await ref.click();
+  await expect
+    .poll(async () => {
+      const cap = await page.evaluate(() => window.harness.capture());
+      return cap;
+    })
+    .toMatchObject({ from: defAt, to: defAt });
+  await page.keyboard.type("xyz");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("See the note.[^1]\n\nafter\n\nxyz[^1]: Footnote body.");
+});
