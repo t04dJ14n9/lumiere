@@ -118,6 +118,8 @@ markers reveal on their first line; math and HTML blocks reveal whole, and
 display math keeps its rendered formula below the source. A click on a
 rendered math block reveals it as in Obsidian, selecting the formula. Callout
 title/body clicks and Edit select the whole source; their fold buttons toggle disclosure.
+A click on a drawn horizontal rule selects its source (head at start) via the
+same `selectRenderedSource` handoff so typing replaces the rule.
 Rendered fenced code (diagrams,
 queries, processed code) only from its Edit button, selecting the code
 (`BlockEditing` in `src/webview/ui/markdown-widget.ts`).

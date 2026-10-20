@@ -1,4 +1,5 @@
 import { EditorView } from "@codemirror/view";
+import { selectRenderedSource } from "../../webview/ui/source-selection";
 
 /**
  * What a click on a drawn thematic break selects: its source, the head at
@@ -7,9 +8,9 @@ import { EditorView } from "@codemirror/view";
 export function ruleSelection(
   text: string,
   from: number,
-): { anchor: number; head: number } {
+): { from: number; to: number } {
   const indent = text.length - text.trimStart().length;
-  return { anchor: from + text.trimEnd().length, head: from + indent };
+  return { from: from + indent, to: from + text.trimEnd().length };
 }
 
 /** A click on a drawn rule selects its source; a revealed rule is text. */
@@ -31,8 +32,10 @@ export const ruleClick = EditorView.domEventHandlers({
     }
     const { text, from } = view.state.doc.lineAt(view.posAtDOM(line));
     event.preventDefault();
-    view.focus();
-    view.dispatch({ selection: ruleSelection(text, from) });
+    // Same handoff as math/callout (Host GUI A07/A08): CM + DOM selection and
+    // clear the pointer freeze so the first key replaces the rule, not a
+    // neighboring line while the drawn rule is still frozen.
+    selectRenderedSource(view, ruleSelection(text, from), { settled: true });
     return true;
   },
 });
