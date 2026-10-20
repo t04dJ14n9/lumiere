@@ -57,4 +57,4 @@ workspace trust from Render. YouTube/Bilibili image links share the EmbedBlock h
 Cycles and ancestry depth of twelve are refused. Local files remain host-contained;
 remote media requires a trusted workspace. PDF embeds open cards rather than an
 inline PDF viewer; a card opens the PDF in Lumière PDF at the embed's page. WebM recovery supports VP8/VP9 and Opus/Vorbis when the host
-MediaSource supports them. Visual and playback parity await owner comparison.
+MediaSource supports them. Visual and playback parity await owner comparison. Selected images paint Obsidian's `.image-resize-corner` chevron (CSS chrome; resize remains `+`/`-`/`0`).
