@@ -106,6 +106,13 @@
   font: inherit;
   line-height: inherit;
 }
+/* Obsidian --metadata-input-padding: 4px 8px (value editors, not the key). */
+.metadata-property-value input[data-property-input],
+.metadata-input-longtext,
+.multi-select-input,
+.property-chip-input {
+  padding: 4px 8px;
+}
 .metadata-property-value {
   min-width: 0;
   min-height: 1.75em;
@@ -416,7 +423,7 @@
   border: 1px solid var(--line, transparent);
   background: transparent;
   color: inherit;
-  padding: 4px 6px;
+  padding: 4px 8px; /* match --metadata-input-padding */
 }
 
 /* Obsidian unknown nested maps: JSON.stringify, single-line ellipsis. */
