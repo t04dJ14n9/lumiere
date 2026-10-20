@@ -12,13 +12,14 @@ video, PDFs, canvases and bases, as Obsidian's default "Show attachments"),
 notes' aliases and links whose note does not exist yet with Obsidian 1.14's
 fuzzy scoring (`src/shared/fuzzy.ts`): a file matches on its name, or on its
 path a point lower, and an excluded file ranks 10 points lower. An empty query
-lists recently modified notes. Choosing a missing note, or pressing Enter on
+lists recently opened notes (mtime fallback). Choosing a missing note, or pressing Enter on
 a name no note has, creates it in the new-note folder.
 
 ## Files
 
 - `host.ts`: the command, opening and creating.
 - `ranking.ts`: the ranked items for a query.
+- `recent.ts`: workspace-scoped recently opened note URIs.
 - `manifest.ts`: the command contribution.
 
 ## Services, events and settings
@@ -31,5 +32,5 @@ a name no note has, creates it in the new-note folder.
 
 - The command has no key binding: Cmd/Ctrl+O is VS Code's **Open File**. Bind
   one in Keyboard Shortcuts if you want Obsidian's.
-- An empty query lists recently modified notes rather than recently opened
-  ones. Bookmarks are not listed.
+- An empty query lists recently opened notes (workspace storage), then falls
+  back to recently modified for notes never opened here. Bookmarks are not listed.

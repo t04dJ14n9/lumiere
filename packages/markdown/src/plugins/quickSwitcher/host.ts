@@ -3,6 +3,7 @@ import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
 import { switcherItems } from "./ranking";
 import type { SwitcherTarget } from "./ranking";
+import { readRecent, rememberOpen } from "./recent";
 
 /** **Lumière: Quick Switcher**: open or create a note by name. */
 export const quickSwitcherHost: Plugin = {
@@ -15,6 +16,7 @@ export const quickSwitcherHost: Plugin = {
       "vaults",
       "hostCommands",
       "activeEditor",
+      "storage",
     ],
   },
   apply(ctx) {
@@ -45,6 +47,9 @@ export const quickSwitcherHost: Plugin = {
         );
       }
     };
+    ctx.on("editor/opened", (panel) => {
+      void rememberOpen(ctx.storage, panel.document.uri);
+    });
     ctx.effect(() =>
       ctx.hostCommands.register(contributionId("quickSwitcher"), async () => {
         const active = ctx.activeEditor.note();
@@ -56,9 +61,10 @@ export const quickSwitcherHost: Plugin = {
         // Keep the initiating note through the picker, even if focus changes.
         const source = active ?? `${vault.index.root}/`;
         await ctx.settings.effective.prepare(source);
+        const recent = readRecent(ctx.storage);
         const result = await ctx.dialogs.pick({
           placeholder: "Find or create a note…",
-          items: (query) => switcherItems(vault.index, query),
+          items: (query) => switcherItems(vault.index, query, 50, recent),
         });
         if (result?.item) {
           await open(vault, result.item.value, source);
