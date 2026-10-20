@@ -40,9 +40,50 @@ export function shiftedVimLineKey(
   return undefined;
 }
 
+/**
+ * Under an IME, letter and digit keydowns often arrive as `Process` /
+ * `Unidentified`. codemirror-vim then waits for a text input, but Lumière's
+ * normal-mode beforeinput guard suppresses that path, so `gg`, counts and
+ * motions never run. Map the physical code back to a Latin command key.
+ */
+export function imeVimCommandKey(
+  event: KeyEvent,
+  mode: VimMode,
+): string | undefined {
+  if (
+    !mode ||
+    mode.insertMode ||
+    event.defaultPrevented ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.metaKey ||
+    !["Process", "Unidentified"].includes(event.key)
+  ) {
+    return undefined;
+  }
+  const letter = /^Key([A-Z])$/.exec(event.code);
+  if (letter) {
+    const value = letter[1]!;
+    return event.shiftKey ? value : value.toLowerCase();
+  }
+  const digit = /^Digit([0-9])$/.exec(event.code);
+  if (digit && !event.shiftKey) {
+    return digit[1];
+  }
+  return undefined;
+}
+
+/** Resolve either the Chinese line-motion keys or an IME Process command key. */
+export function translatedVimKey(
+  event: KeyEvent,
+  mode: VimMode,
+): string | undefined {
+  return shiftedVimLineKey(event, mode) ?? imeVimCommandKey(event, mode);
+}
+
 /** The note and temporary cell buffers share the same keyboard translation. */
 export const vimLineKeyboard = ViewPlugin.define((view) => {
-  const keydown = (event: KeyboardEvent) => routeShiftedLineKey(view, event);
+  const keydown = (event: KeyboardEvent) => routeTranslatedKey(view, event);
   // Capture precedes CM's composition filter and Vim's Process/text fallback.
   view.contentDOM.addEventListener("keydown", keydown, true);
   return {
@@ -52,7 +93,7 @@ export const vimLineKeyboard = ViewPlugin.define((view) => {
   };
 });
 
-function routeShiftedLineKey(view: EditorView, event: KeyboardEvent): void {
+function routeTranslatedKey(view: EditorView, event: KeyboardEvent): void {
   const cm = getCM(view);
   // compositionStarted also covers the interval before the first IME edit.
   // A recorder notification is a dialog too, but only prompts contain input.
@@ -63,7 +104,7 @@ function routeShiftedLineKey(view: EditorView, event: KeyboardEvent): void {
   ) {
     return;
   }
-  const key = shiftedVimLineKey(event, cm?.state.vim);
+  const key = translatedVimKey(event, cm?.state.vim);
   if (!key) {
     return;
   }
@@ -76,11 +117,29 @@ function routeShiftedLineKey(view: EditorView, event: KeyboardEvent): void {
     new KeyboardEvent("keydown", {
       key,
       code: event.code,
-      keyCode: key === "$" ? 52 : 54,
-      shiftKey: true,
+      keyCode: commandKeyCode(key, event.code),
+      shiftKey: event.shiftKey,
       repeat: event.repeat,
       bubbles: true,
       cancelable: true,
     }),
   );
+}
+
+function commandKeyCode(key: string, code: string): number {
+  if (key === "$") {
+    return 52;
+  }
+  if (key === "^") {
+    return 54;
+  }
+  const letter = /^Key([A-Z])$/.exec(code);
+  if (letter) {
+    return letter[1]!.charCodeAt(0);
+  }
+  const digit = /^Digit([0-9])$/.exec(code);
+  if (digit) {
+    return 48 + Number(digit[1]);
+  }
+  return key.charCodeAt(0);
 }
