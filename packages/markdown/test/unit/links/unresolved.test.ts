@@ -7,7 +7,10 @@ import { createRoot } from "@workshop/core";
 import { metadata } from "../../../src/markdown/metadata";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
-import { unresolvedKey, knownNoteKeys } from "../../../src/plugins/links/target";
+import {
+  unresolvedKey,
+  knownNoteKeys,
+} from "../../../src/plugins/links/target";
 import {
   unresolvedLinks,
   knownNotes,
