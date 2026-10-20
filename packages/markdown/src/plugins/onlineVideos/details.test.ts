@@ -97,6 +97,44 @@ test("Bilibili view responses give title, author, length and an https hdslb cove
   );
 });
 
+test("Bilibili multi-part pages append the part title and prefer its duration", () => {
+  const multi = {
+    ...VIEW,
+    data: {
+      ...VIEW.data,
+      duration: 999,
+      pages: [
+        { page: 1, part: "开场", duration: 40 },
+        { page: 2, part: "主题曲完整版", duration: 210 },
+      ],
+    },
+  };
+  assert.deepEqual(parseBilibiliView(multi, 2).details, {
+    title: "2026英雄联盟全球总决赛主题曲 《KNOW MY NAME》 · 主题曲完整版",
+    author: "英雄联盟",
+    duration: 210,
+  });
+  assert.equal(
+    parseBilibiliView(multi, 1).details.title?.includes("开场"),
+    true,
+  );
+  // Single-page responses keep the series title only.
+  assert.deepEqual(
+    parseBilibiliView(
+      {
+        code: 0,
+        data: {
+          title: "Solo",
+          pages: [{ page: 1, part: "Solo", duration: 12 }],
+          owner: { name: "A" },
+        },
+      },
+      1,
+    ).details,
+    { title: "Solo", author: "A", duration: 12 },
+  );
+});
+
 test("covers are accepted only from i0–i2.hdslb.com image paths", () => {
   assert.equal(
     coverUrl("https://i2.hdslb.com/bfs/archive/a_b-1.png"),
