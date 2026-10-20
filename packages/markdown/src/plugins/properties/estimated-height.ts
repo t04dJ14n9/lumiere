@@ -172,10 +172,15 @@ function sourcesHeight(row: string): number {
 }
 
 function sourceArticleHeight(article: string): number {
-  const paragraphs = occurrences(article, "<p");
-  let height = ARTICLE_CHROME + paragraphs * LINE;
-  if (paragraphs > 1) {
-    height += paragraphs * 2;
+  // Titles and long resource URLs wrap in the value column (LIST_WIDTH).
+  // One-line-per-<p> underestimates WorkVault Sources and leaves the map
+  // short of painted height (tail overlap / Escape jump into the sheet).
+  let height = ARTICLE_CHROME;
+  for (const match of article.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)) {
+    const plain = match[1]!.replace(/<[^>]+>/g, "").trim();
+    const width = Math.max(plain.length, 1) * CHAR_WIDTH;
+    const rows = Math.max(1, Math.ceil(width / LIST_WIDTH));
+    height += rows * LINE + 2;
   }
   const raw = /<pre class="source-raw">([\s\S]*?)<\/pre>/.exec(article)?.[1];
   if (raw === undefined) {
@@ -192,18 +197,4 @@ function errorSheetHeight(markup: string): number {
   const pre = /<pre>([\s\S]*?)<\/pre>/.exec(markup)?.[1];
   const lines = pre === undefined ? 1 : pre.split("\n").length;
   return LINE + lines * LINE;
-}
-
-function occurrences(text: string, needle: string): number {
-  let count = 0;
-  let from = 0;
-  while (from < text.length) {
-    const at = text.indexOf(needle, from);
-    if (at < 0) {
-      return count;
-    }
-    count += 1;
-    from = at + needle.length;
-  }
-  return count;
 }

@@ -208,3 +208,32 @@ test("type grip is a button distinct from value data-property-type", () => {
   // Order/selection drag and multi-select must target button[data-property-type]
   // only — the value wrapper also carries data-property-type for Obsidian CSS.
 });
+
+test("nested maps do not show Type mismatch expected Text (Obsidian unknown, not text)", () => {
+  const html = renderProperties(
+    `---
+generated:
+  by: agent
+  at: "2026-10-15T00:00:00Z"
+decision_confirmation:
+  by: human
+  scope: cluster
+---
+`,
+  );
+  const generated =
+    /data-property-key="generated"[\s\S]*?(?=<div class="property-row|$)/.exec(
+      html,
+    )?.[0];
+  assert.ok(generated);
+  // Warning node stays in the DOM for type flips; nested maps keep it hidden
+  // (Obsidian uses unknown — not a visible Text mismatch flair).
+  assert.match(generated!, /metadata-property-warning-icon" hidden/);
+  assert.doesNotMatch(generated!, /metadata-property-warning-icon"(?! hidden)/);
+  const decision =
+    /data-property-key="decision_confirmation"[\s\S]*?(?=<div class="property-row|$)/.exec(
+      html,
+    )?.[0];
+  assert.ok(decision);
+  assert.match(decision!, /metadata-property-warning-icon" hidden/);
+});

@@ -90,7 +90,16 @@ function propertyRow(
   options: PropertyRowOptions,
 ): string {
   const { kind } = options;
-  const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
+  // Nested maps/lists use the YAML (or custom) complex path. Obsidian shows
+  // those as type "unknown" with JSON — not "Type mismatch, expected Text".
+  // Suppress the false Text warning so decision_confirmation / generated
+  // do not paint warning icons over the sheet tail.
+  const nestedObject =
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const warning = mismatchWarning(
+    kind,
+    !nestedObject && !matchesPropertyKind(kind, value),
+  );
   const body = propertyBody(key, value, options);
   return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("title", key)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
 }
