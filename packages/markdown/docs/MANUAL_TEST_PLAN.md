@@ -1198,6 +1198,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse` — ✓ File name (Z to A) | unbound | On a disposable fixture with Outgoing Links open, cycle the view title sort; confirm lists reorder, then undo where applicable. |
 | `lumiere.markdown.outgoingLinks.sortByModifiedTime` — ✓ Modified time (new to old) | unbound | On a disposable fixture with Outgoing Links open, cycle the view title sort; confirm lists reorder, then undo where applicable. |
 | `lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse` — ✓ Modified time (old to new) | unbound | On a disposable fixture with Outgoing Links open, cycle the view title sort; confirm lists reorder, then undo where applicable. |
+| `lumiere.markdown.outgoingLinks.enableExtraContext` — Show More Context | unbound | On a disposable fixture, run Show More Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outgoingLinks.disableExtraContext` — ✓ Show More Context | unbound | On a disposable fixture, run ✓ Show More Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1288,6 +1290,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.okfCore.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.outgoingLinks.sortOrder` | `alphabetical` | Outgoing Links view sort (Obsidian sortOrder); change and confirm title menu checkmark and list order. |
+| `lumiere.markdown.outgoingLinks.extraContext` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.outgoingLinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.outline.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.pagePreview.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
