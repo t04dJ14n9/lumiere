@@ -28,7 +28,10 @@ const ADD_BUTTON = 8 + 8 + LINE;
 const SHEET_PADDING = 8 + 32;
 const SHEET_CHROME = SHEET_PADDING + HEADING + ADD_BUTTON;
 const COLLAPSED = SHEET_PADDING + HEADING;
+/** `.source-row` padding 6+6 plus 1px border-top (`properties.css`). */
 const ARTICLE_CHROME = 12 + 1;
+/** Non-title `<p>` use `margin: 2px 0` → 4px; `.source-title` is `margin: 0`. */
+const ARTICLE_META_MARGIN = 4;
 const STACK_GAP = 8;
 const COMPLEX_GAP = 8;
 /** `textarea` rows=3 at 0.92em of the 0.875em sheet, plus padding/border. */
@@ -184,14 +187,23 @@ function sourceArticleHeight(article: string): number {
   // Titles and long resource URLs wrap in the value column (LIST_WIDTH).
   // One-line-per-<p> underestimates WorkVault Sources and leaves the map
   // short of painted height (tail overlap / Escape jump into the sheet).
+  // Paragraph vertical margins follow properties.css: title has none; meta
+  // lines (resource/id/usage/meta) contribute ARTICLE_META_MARGIN each so a
+  // typical title+resource article still lands on the measured 65px floor.
+  // Bound at </article>: the split remnant can include sheet chrome (SVG
+  // icons, `.property-message`) that must not count as article paragraphs.
+  const end = article.indexOf("</article>");
+  const body = end === -1 ? article : article.slice(0, end);
   let height = ARTICLE_CHROME;
-  for (const match of article.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)) {
+  for (const match of body.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/g)) {
     const plain = match[1]!.replace(/<[^>]+>/g, "").trim();
     const width = Math.max(plain.length, 1) * CHAR_WIDTH;
     const rows = Math.max(1, Math.ceil(width / LIST_WIDTH));
-    height += rows * LINE + 2;
+    const className = /class="([^"]*)"/.exec(match[0]!)?.[1] ?? "";
+    const margin = className.includes("source-title") ? 0 : ARTICLE_META_MARGIN;
+    height += rows * LINE + margin;
   }
-  const raw = /<pre class="source-raw">([\s\S]*?)<\/pre>/.exec(article)?.[1];
+  const raw = /<pre class="source-raw">([\s\S]*?)<\/pre>/.exec(body)?.[1];
   if (raw === undefined) {
     return height;
   }
