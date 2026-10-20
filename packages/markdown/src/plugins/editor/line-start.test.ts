@@ -41,6 +41,23 @@ test("hidden markup still counts as the first visual line", () => {
   assert.equal(lineStartTarget(state, 9, 2), 6);
 });
 
+test("Home stops at text start past LP-hidden leading openers", () => {
+  // CM's visual start skips hidden `**` / `[[` / `[` / `<kbd>` after the
+  // list markup; Obsidian still Homes to the item's text start first.
+  const homePast = (doc: string, visualStart: number) => {
+    const state = EditorState.create({ doc });
+    return lineStartTarget(state, doc.length, visualStart);
+  };
+  assert.equal(homePast("- **bold**", "- **".length), 2);
+  assert.equal(homePast("- [[Note]]", "- [[".length), 2);
+  assert.equal(homePast("- [t](u)", "- [".length), 2);
+  assert.equal(homePast("- <kbd>x</kbd>", "- <kbd>".length), 2);
+  assert.equal(homePast("- [ ] **hi**", "- [ ] **".length), 6);
+  assert.equal(homePast("> **q**", "> **".length), 2);
+  // Soft wrap with real text between text start and visual start: default.
+  assert.equal(homePast("- a long item", 8), undefined);
+});
+
 // Measured in Obsidian 1.14.4: End goes past the markers that end the line,
 // which Live Preview hides (the editor's own move stops before them).
 test("End goes to the line's true end, past the markers that end it", () => {
