@@ -18,6 +18,7 @@ import { frontmatter } from "../../src/markdown/properties";
 import type { PropertyTypes } from "../../src/markdown/properties/types";
 import { protocol as videoProtocol } from "../../src/plugins/onlineVideos/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
+import { setTitle } from "../../src/plugins/inlineTitle/widget";
 export class BrowserHost {
   text: string;
   saved: string;
@@ -52,6 +53,23 @@ export class BrowserHost {
   gitStaged = 0;
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
+
+  /** Push an inline-title value (browser remount / height probes). */
+  applyTitle(title: string, error?: string): void {
+    const fiber = [...this.views[0]!.plugins].find(
+      (plugin) => plugin.definition.name === "inlineTitle",
+    );
+    const view = fiber?.context?.editor.view;
+    if (!view) {
+      throw new Error("inlineTitle is not active");
+    }
+    view.dispatch({
+      effects: setTitle.of(
+        error === undefined ? { title } : { title, error },
+      ),
+    });
+  }
+
   /** Tell open editors the repository changed (a commit, a stage). */
   gitChanged(): void {
     this.endpoints.forEach((endpoint) =>
