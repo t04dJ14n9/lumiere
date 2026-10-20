@@ -29,7 +29,10 @@ function clipboardFixture() {
     model: parseTable(source)!,
     root: { isConnected: true, focus() {} },
     outer: { focus() {} },
-    replace() {},
+    replace(next: string) {
+      grid.block.source = next;
+      grid.model = parseTable(next)!;
+    },
   } as unknown as TableGrid;
   const projection = { inner, active: { row: 1, column: 0 } } as CellProjection;
   const selection = {
@@ -178,4 +181,67 @@ test("copy shortcut leaves cell text and unrelated shortcuts to their editors", 
   }
   fixture.clipboard.keyDown({ key: "c" } as unknown as KeyboardEvent);
   assert.deepEqual(fixture.copied, []);
+});
+
+test("ClipboardEvent copy sets plain TSV, markdown, HTML and obsidian/table", () => {
+  const fixture = clipboardFixture();
+  const range = {
+    anchor: { row: 1, column: 0 },
+    head: { row: 1, column: 1 },
+  };
+  fixture.selection.range = range;
+  const data = new Map<string, string>();
+  const event = {
+    preventDefault() {},
+    clipboardData: {
+      setData(type: string, value: string) {
+        data.set(type, value);
+      },
+      getData(type: string) {
+        return data.get(type) ?? "";
+      },
+    },
+  } as unknown as ClipboardEvent;
+  fixture.clipboard.copy(event, false);
+  assert.equal(data.get("text/plain"), "first\tsecond");
+  assert.match(data.get("text/markdown")!, /\| first/);
+  // Selection is treated as a mini-table: first selected row uses <th>.
+  assert.match(data.get("text/html")!, /<th>first<\/th><th>second<\/th>/);
+  const structured = JSON.parse(data.get("obsidian/table")!);
+  assert.deepEqual(structured.rows, [["first", "second"]]);
+  assert.deepEqual(structured.alignment, ["", "right"]);
+});
+
+test("paste prefers obsidian/table rows over plain text", () => {
+  const fixture = clipboardFixture();
+  const range = {
+    anchor: { row: 1, column: 0 },
+    head: { row: 1, column: 1 },
+  };
+  fixture.selection.range = range;
+  const event: {
+    defaultPrevented: boolean;
+    clipboardData: { getData(type: string): string };
+    preventDefault(): void;
+  } = {
+    defaultPrevented: false,
+    clipboardData: {
+      getData(type: string) {
+        if (type === "obsidian/table") {
+          return JSON.stringify({
+            rows: [["Zed", "99"]],
+            alignment: ["", "right"],
+          });
+        }
+        return "ignored\ttext";
+      },
+    },
+    preventDefault() {
+      event.defaultPrevented = true;
+    },
+  };
+  fixture.clipboard.paste(event as unknown as ClipboardEvent);
+  assert.match(fixture.grid.block.source, /Zed/);
+  assert.match(fixture.grid.block.source, /99/);
+  assert.doesNotMatch(fixture.grid.block.source, /ignored/);
 });

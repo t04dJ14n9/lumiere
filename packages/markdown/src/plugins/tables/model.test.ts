@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import {
   cellText,
   copyCells,
+  copyCellsHtml,
+  copyCellsMarkdown,
+  copyCellsObsidian,
   parseTable,
+  pastedMarkdownCells,
   serializeTable,
   writeCells,
 } from "../../markdown/tables/model";
@@ -123,4 +127,41 @@ test("rectangular clipboard serialization includes every column in either select
   ]) {
     assert.equal(copyCells(table, range), "1\t2\n4\t5");
   }
+});
+
+test("copy emits markdown, HTML and obsidian/table flavors like Obsidian", () => {
+  const table = parseTable(
+    ["| a | b | c |", "|---|--:|---|", "| 1 | 2 | 3 |", "| 4 | 5 | 6 |"].join(
+      "\n",
+    ),
+  )!;
+  const range = {
+    anchor: { row: 0, column: 0 },
+    head: { row: 2, column: 1 },
+  };
+  const markdown = copyCellsMarkdown(table, range);
+  assert.match(markdown, /^\| a +\|/);
+  assert.match(markdown, /\| --- \| --: \|/);
+  assert.match(markdown, /\| 1\s+\|\s+2 \|/);
+  const html = copyCellsHtml(table, range);
+  assert.match(html, /<!-- lumiere-table -->/);
+  assert.match(html, /<th>a<\/th><th>b<\/th>/);
+  assert.match(html, /<td>1<\/td><td>2<\/td>/);
+  const structured = copyCellsObsidian(table, range);
+  assert.deepEqual(structured.rows, [
+    ["a", "b"],
+    ["1", "2"],
+    ["4", "5"],
+  ]);
+  assert.deepEqual(structured.alignment, ["", "right"]);
+});
+
+test("pastedMarkdownCells skips the alignment row", () => {
+  assert.deepEqual(
+    pastedMarkdownCells(["| a | b |", "| --- | --- |", "| 1 | 2 |"].join("\n")),
+    [
+      ["a", "b"],
+      ["1", "2"],
+    ],
+  );
 });

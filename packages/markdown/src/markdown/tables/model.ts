@@ -233,6 +233,86 @@ export function copyCells(table: Table, range: CellRange): string {
     .join("\n");
 }
 
+/** Plain cell texts for a range (pipes unescaped), as Obsidian `obsidian/table` rows. */
+export function copyCellsRows(table: Table, range: CellRange): string[][] {
+  return rangeTexts(table, range).map((row) =>
+    row.map((text) => text.replace(/\\\|/g, "|")),
+  );
+}
+
+/**
+ * Markdown table fragment for the selection (first row as header + alignment
+ * line), matching Obsidian `getTableString` / `text/markdown` on copy.
+ */
+export function copyCellsMarkdown(table: Table, range: CellRange): string {
+  const area = rectangle(range);
+  const rows = copyCellsRows(table, range);
+  const alignments = table.alignments.slice(area.left, area.right + 1);
+  return serializeTable(rows, alignments);
+}
+
+/** Simple HTML table for `text/html` (Obsidian uses markdown→HTML; we emit a table). */
+export function copyCellsHtml(table: Table, range: CellRange): string {
+  const rows = copyCellsRows(table, range);
+  const escape = (value: string): string =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  const body = rows
+    .map((row, index) => {
+      const tag = index === 0 ? "th" : "td";
+      return (
+        "<tr>" +
+        row.map((cell) => `<${tag}>${escape(cell)}</${tag}>`).join("") +
+        "</tr>"
+      );
+    })
+    .join("");
+  return `<!-- lumiere-table -->\n<table>\n${body}\n</table>`;
+}
+
+/** Obsidian-compatible structured payload (`obsidian/table`). */
+export function copyCellsObsidian(
+  table: Table,
+  range: CellRange,
+): { rows: string[][]; alignment: string[] } {
+  const area = rectangle(range);
+  return {
+    rows: copyCellsRows(table, range),
+    alignment: table.alignments
+      .slice(area.left, area.right + 1)
+      .map((alignment) => alignment ?? ""),
+  };
+}
+
+/** Parse a markdown table fragment into cell rows (skips the alignment line). */
+export function pastedMarkdownCells(text: string): string[][] {
+  const lines = text
+    .replace(/\r\n?/g, "\n")
+    .replace(/^\n+|\n+$/g, "")
+    .split("\n")
+    .filter((line) => line.includes("|"));
+  const rows: string[][] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Alignment / divider row: only pipes, colons, dashes and spaces.
+    if (/^\|?[\s:-]+\|?[\s|:-]*$/.test(trimmed) && /-/.test(trimmed)) {
+      continue;
+    }
+    let body = trimmed;
+    if (body.startsWith("|")) {
+      body = body.slice(1);
+    }
+    if (body.endsWith("|")) {
+      body = body.slice(0, -1);
+    }
+    rows.push(body.split("|").map((cell) => cell.trim().replace(/\\\|/g, "|")));
+  }
+  return rows.length > 0 ? rows : [[text]];
+}
+
 /** Split tab-separated clipboard text into rows of cell values. */
 export function pastedCells(text: string): string[][] {
   return text

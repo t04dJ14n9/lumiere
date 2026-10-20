@@ -1,6 +1,10 @@
 import {
   copyCells,
+  copyCellsHtml,
+  copyCellsMarkdown,
+  copyCellsObsidian,
   pastedCells,
+  pastedMarkdownCells,
   rangeTexts,
   toggleMarker,
   writeCells,
@@ -70,14 +74,22 @@ export class TableClipboard {
       return;
     }
     event.preventDefault();
+    const range = this.selection.range;
+    const model = this.grid.model;
+    // Obsidian (REA app.js copySelection): text/plain, text/markdown, text/html,
+    // obsidian/table. Keep TSV as text/plain for spreadsheets; MD/HTML for notes.
+    event.clipboardData.setData("text/plain", copyCells(model, range));
     event.clipboardData.setData(
-      "text/plain",
-      copyCells(this.grid.model, this.selection.range),
+      "text/markdown",
+      copyCellsMarkdown(model, range),
+    );
+    event.clipboardData.setData("text/html", copyCellsHtml(model, range));
+    event.clipboardData.setData(
+      "obsidian/table",
+      JSON.stringify(copyCellsObsidian(model, range)),
     );
     if (cut) {
-      this.grid.replace(
-        writeCells(this.grid.model, this.selection.range, [[""]]),
-      );
+      this.grid.replace(writeCells(model, range, [[""]]));
     }
   }
 
@@ -85,18 +97,32 @@ export class TableClipboard {
     if (event.defaultPrevented) {
       return;
     }
-    const text = event.clipboardData?.getData("text/plain");
+    const data = event.clipboardData;
     const range =
       this.selection.range ??
       (this.projection.active && {
         anchor: this.projection.active,
         head: this.projection.active,
       });
-    if (
-      text === undefined ||
-      !range ||
-      (!this.selection.range && !/[\t\r\n]/.test(text))
-    ) {
+    if (!data || !range) {
+      return;
+    }
+    const structured = data.getData("obsidian/table");
+    if (structured) {
+      try {
+        const payload = JSON.parse(structured) as { rows?: string[][] };
+        if (Array.isArray(payload.rows) && payload.rows.length > 0) {
+          event.preventDefault();
+          this.grid.replace(writeCells(this.grid.model, range, payload.rows));
+          return;
+        }
+      } catch {
+        // Fall through to text flavors.
+      }
+    }
+    const text =
+      data.getData("text/plain") || data.getData("text/markdown") || "";
+    if (!this.selection.range && !/[\t\r\n|]/.test(text)) {
       return;
     }
     event.preventDefault();
@@ -104,9 +130,13 @@ export class TableClipboard {
   }
 
   pasteText(text: string, range: CellRange): void {
-    if (text) {
-      this.grid.replace(writeCells(this.grid.model, range, pastedCells(text)));
+    if (!text) {
+      return;
     }
+    const cells = looksLikeMarkdownTable(text)
+      ? pastedMarkdownCells(text)
+      : pastedCells(text);
+    this.grid.replace(writeCells(this.grid.model, range, cells));
   }
 
   copyFromMenu(range: CellRange, cut: boolean): void {
@@ -219,4 +249,13 @@ export class TableClipboard {
     this.grid.replace(writeCells(this.grid.model, range, values));
     this.grid.root.focus();
   }
+}
+
+function looksLikeMarkdownTable(text: string): boolean {
+  const lines = text.replace(/\r\n?/g, "\n").trim().split("\n");
+  return (
+    lines.length >= 2 &&
+    lines[0]!.includes("|") &&
+    /^\s*\|?\s*:?-{3,}/.test(lines[1]!)
+  );
 }
