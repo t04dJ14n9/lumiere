@@ -45,8 +45,9 @@ async function ensureBrowser(): Promise<void> {
       await import("@mathjax/src/cjs/adaptors/browserAdaptor.js");
     const { RegisterHTMLHandler } =
       await import("@mathjax/src/cjs/handlers/html.js");
-    adaptor = browserAdaptor();
-    RegisterHTMLHandler(adaptor);
+    const a = browserAdaptor();
+    RegisterHTMLHandler(a);
+    adaptor = a as { outerHTML(node: unknown): string };
     formulas = createFormulas(userMacros);
   })();
   await browserReady;
