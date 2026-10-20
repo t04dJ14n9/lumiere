@@ -35,8 +35,5 @@ test("image embeds get Obsidian embed-actions frosted chrome with VS Code tokens
   assert.match(selected, /opacity:\s*1/);
 
   // Legacy floating inspect opacity rules are gone — chrome owns visibility.
-  assert.doesNotMatch(
-    embedsCss,
-    /\.file-embed:hover \.inspect-image/,
-  );
+  assert.doesNotMatch(embedsCss, /\.file-embed:hover \.inspect-image/);
 });
