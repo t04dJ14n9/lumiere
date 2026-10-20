@@ -29,7 +29,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: false,
   surfaces: ["host"],
-  capabilities: ["vaultIndex", "views", "navigation"],
+  capabilities: ["vaultIndex", "views", "navigation", "commands"],
   config,
   contributes: {
     commands: [
