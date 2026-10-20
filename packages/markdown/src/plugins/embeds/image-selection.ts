@@ -8,6 +8,7 @@ import {
 } from "@codemirror/state";
 import { ViewPlugin, keymap, type EditorView } from "@codemirror/view";
 import { embedsNote } from "./clicks";
+import { IMAGE_EMBED } from "./embed-actions";
 import {
   aliasRange,
   steppedWidth,
@@ -250,6 +251,37 @@ function arrow(view: EditorView, forward: boolean): boolean {
   return true;
 }
 
+/**
+ * The inspect control Obsidian opens with Space on a selected image (REA
+ * showSelectedImage → lightbox). Lumière's frosted-bar ⤢ / inspector is the
+ * host equivalent.
+ */
+export function inspectButtonBesideImage(
+  image: HTMLImageElement,
+): HTMLButtonElement | null {
+  const host = image.closest(`.${IMAGE_EMBED}`) ?? image.parentElement ?? image;
+  // querySelector already requires button.inspect-image; cast for stubs/jsdom.
+  return host.querySelector("button.inspect-image") as HTMLButtonElement | null;
+}
+
+/** Space on a selected image opens its inspector, as Obsidian's Space does. */
+function inspectSelected(view: EditorView): boolean {
+  const range = view.state.field(selectedImage);
+  if (!range) {
+    return false;
+  }
+  const image = imagesOf(view, range)[0];
+  if (!image) {
+    return false;
+  }
+  const button = inspectButtonBesideImage(image);
+  if (!button) {
+    return false;
+  }
+  button.click();
+  return true;
+}
+
 function deselect(view: EditorView): boolean {
   if (!view.state.field(selectedImage)) {
     return false;
@@ -308,12 +340,12 @@ const selectedClass = ViewPlugin.define((view) => {
 /**
  * Selecting and editing images in Live Preview, as Obsidian 1.13 does
  * (measured): a click, or an arrow key from just beside it, selects an
- * image; then `+` and `-` resize it in steps
- * of 25 pixels, `0` resets its size, Enter selects its file name, Tab selects
- * its alias / size segment (Obsidian `editSelectedImageAlias`), Backspace or
- * Delete removes it and Escape lets it go. Selection also paints Obsidian's
- * `.image-resize-corner`
- * chevron chrome (CSS); drag-to-resize is still `+`/`-` only.
+ * image; then `+`/`=` and `-` resize it in steps of 25 pixels, `0` resets
+ * its size, Space opens the inspector (Obsidian lightbox), Enter selects
+ * its file name, Tab selects its alias / size segment (Obsidian
+ * `editSelectedImageAlias`), Backspace or Delete removes it and Escape lets
+ * it go. Selection also paints Obsidian's `.image-resize-corner` chevron
+ * chrome (CSS); drag-to-resize is still `+`/`-` only.
  */
 export function imageSelection(): Extension {
   return [
@@ -323,8 +355,11 @@ export function imageSelection(): Extension {
     Prec.highest(
       keymap.of([
         { key: "+", run: (view) => resize(view, 1) },
+        // Obsidian binds both + and = to grow (REA image keymap).
+        { key: "=", run: (view) => resize(view, 1) },
         { key: "-", run: (view) => resize(view, -1) },
         { key: "0", run: (view) => resize(view, 0) },
+        { key: "Space", run: inspectSelected },
         { key: "Enter", run: (view) => editSource(view, "target") },
         { key: "Tab", run: (view) => editSource(view, "alias") },
         { key: "Backspace", run: remove },

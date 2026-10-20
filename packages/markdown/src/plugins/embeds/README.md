@@ -14,13 +14,14 @@ stops. Original placeholders are restored and late resource results are ignored.
 As in Obsidian 1.13 and later, an image stays rendered whatever the caret or
 a selection does, and has no Edit button. A click selects it, and so does
 ArrowRight with the caret just before it or ArrowLeft just after it (the
-next press moves past): it stays outlined. Then `+` and `-`
+next press moves past): it stays outlined. Then `+`/`=` and `-`
 resize it in steps of 25 pixels, from the width it shows, up to the width of
 the note's text (written as `![[a.png|100]]`, or in a Markdown image's alt
-text, `![100](a.png)`); `0` removes the size; Enter shows its source with
-the file name selected, and Tab with the alias / size segment selected
-(as Obsidian's `editSelectedImageAlias`), until the caret leaves it; Backspace or Delete removes the embed; Escape, a
-click elsewhere or any edit lets it go
+text, `![100](a.png)`); `0` removes the size; Space opens the image
+inspector (Obsidian lightbox); Enter shows its source with the file name
+selected, and Tab with the alias / size segment selected (as Obsidian's
+`editSelectedImageAlias`), until the caret leaves it; Backspace or Delete
+removes the embed; Escape, a click elsewhere or any edit lets it go
 (`image-selection.ts`, `image-size.ts`).
 
 ## Files
