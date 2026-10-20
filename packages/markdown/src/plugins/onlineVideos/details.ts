@@ -151,6 +151,22 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "flickr") {
+      const page = flickrPage(id);
+      const body = await this.json(
+        `https://www.flickr.com/services/oembed/?format=json&url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = flickrThumbnail(body);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +223,71 @@ export class VideoDetailsSource {
   }
 }
 
+/** Flickr static CDN hosts that may serve oEmbed photo URLs. */
+const FLICKR_THUMB_HOSTS = new Set([
+  "live.staticflickr.com",
+  "farm1.staticflickr.com",
+  "farm2.staticflickr.com",
+  "farm3.staticflickr.com",
+  "farm4.staticflickr.com",
+  "farm5.staticflickr.com",
+  "farm6.staticflickr.com",
+  "farm7.staticflickr.com",
+  "farm8.staticflickr.com",
+  "farm9.staticflickr.com",
+]);
+
+/** Rebuild the page URL Flickr oEmbed expects from a parsed id. */
+export function flickrPage(id: string): string {
+  const photo = /^photo:([A-Za-z0-9@._-]{1,48}):([1-9][0-9]{0,15})$/.exec(id);
+  if (photo) {
+    return `https://www.flickr.com/photos/${photo[1]}/${photo[2]}/`;
+  }
+  const short = /^short:([A-Za-z0-9]{1,12})$/.exec(id);
+  if (short) {
+    return `https://flic.kr/p/${short[1]}`;
+  }
+  throw new Error("Invalid Flickr id");
+}
+
+export function flickrThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body)) {
+    return undefined;
+  }
+  for (const key of ["thumbnail_url", "url"] as const) {
+    const value = body[key];
+    if (typeof value !== "string") {
+      continue;
+    }
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      continue;
+    }
+    if (
+      !/^https?:$/.test(url.protocol) ||
+      !FLICKR_THUMB_HOSTS.has(url.hostname) ||
+      url.port ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    ) {
+      continue;
+    }
+    const match =
+      /^\/(\d+)\/(\d+)_([a-f0-9]+)_([a-z])\.(jpe?g|png|gif|webp)$/i.exec(
+        url.pathname,
+      );
+    if (!match) {
+      continue;
+    }
+    const [, server, photo, secret, size, ext] = match;
+    return `https://${url.hostname}/${server}/${photo}_${secret}_${size!.toLowerCase()}.${ext!.toLowerCase()}`;
+  }
+  return undefined;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

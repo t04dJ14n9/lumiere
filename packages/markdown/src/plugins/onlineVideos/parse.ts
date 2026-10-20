@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "flickr";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,51 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+/** Flickr photo page id: `photo:{user}:{digits}`. */
+const FLICKR_PHOTO_ID = /^photo:([A-Za-z0-9@._-]{1,48}):([1-9][0-9]{0,15})$/;
+
+/** Flickr short link id: `short:{base58}`. */
+const FLICKR_SHORT_ID = /^short:([A-Za-z0-9]{1,12})$/;
+
+/** `/photos/{user}/{id}` (optional trailing title slug / sizes ignored). */
+const FLICKR_PHOTO_PATH =
+  /^\/photos\/([A-Za-z0-9@._-]{1,48})\/([1-9][0-9]{0,15})(?:\/|$)/;
+
+/** `/p/{short}` on flic.kr. */
+const FLICKR_SHORT_PATH = /^\/p\/([A-Za-z0-9]{1,12})\/?$/;
+
+const FLICKR_HOSTS = new Set(["flickr.com", "www.flickr.com", "m.flickr.com"]);
+
+/** `/photos/{user}/{id}/…` → `photo:{user}:{id}`. Albums/sets stay images. */
+function flickrPhoto(pathname: string): OnlineVideo | undefined {
+  const match = FLICKR_PHOTO_PATH.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  const user = match[1]!;
+  const photo = match[2]!;
+  const id = `photo:${user}:${photo}`;
+  if (!FLICKR_PHOTO_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "flickr",
+    id,
+    page: `https://www.flickr.com/photos/${user}/${photo}/`,
+  };
+}
+
+function flickrShort(code: string | undefined): OnlineVideo | undefined {
+  if (!code || !FLICKR_SHORT_ID.test(`short:${code}`)) {
+    return undefined;
+  }
+  return {
+    provider: "flickr",
+    id: `short:${code}`,
+    page: `https://flic.kr/p/${code}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +124,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return FLICKR_PHOTO_ID.test(id) || FLICKR_SHORT_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +165,12 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (host === "flic.kr") {
+    return flickrShort(FLICKR_SHORT_PATH.exec(url.pathname)?.[1]);
+  }
+  if (FLICKR_HOSTS.has(host)) {
+    return flickrPhoto(url.pathname);
   }
   return undefined;
 }

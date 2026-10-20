@@ -85,3 +85,15 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Flickr refuses an in-webview player", () => {
+  assert.equal(providers.flickr.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://www.flickr.com/photos/bees/2341623661/")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://www.flickr.com/photos/bees/2341623661/")),
+  );
+  assert.throws(() => playerUrl(video("https://flic.kr/p/4yVr8K")));
+});

@@ -133,3 +133,32 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Flickr photo pages and flic.kr short links", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://www.flickr.com/photos/bees/2341623661/"),
+    {
+      provider: "flickr",
+      id: "photo:bees:2341623661",
+      page: "https://www.flickr.com/photos/bees/2341623661/",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://flickr.com/photos/andrew_maier/53904783477/in/dateposted/",
+    ),
+    {
+      provider: "flickr",
+      id: "photo:andrew_maier:53904783477",
+      page: "https://www.flickr.com/photos/andrew_maier/53904783477/",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://flic.kr/p/4yVr8K"), {
+    provider: "flickr",
+    id: "short:4yVr8K",
+    page: "https://flic.kr/p/4yVr8K",
+  });
+  assert.equal(parseVideoUrl("https://www.flickr.com/photos/bees/"), undefined);
+  assert.equal(parseVideoUrl("https://www.flickr.com/people/bees/"), undefined);
+  assert.equal(parseVideoUrl("https://flic.kr/s/aHsjXyZ"), undefined);
+});

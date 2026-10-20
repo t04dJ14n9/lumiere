@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  flickrPage,
+  flickrThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +331,73 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("flickrPage rebuilds photo and short URLs", () => {
+  assert.equal(
+    flickrPage("photo:bees:2341623661"),
+    "https://www.flickr.com/photos/bees/2341623661/",
+  );
+  assert.equal(flickrPage("short:4yVr8K"), "https://flic.kr/p/4yVr8K");
+  assert.throws(() => flickrPage("photo:bees"));
+});
+
+test("flickrThumbnail accepts live.staticflickr.com photo paths only", () => {
+  assert.equal(
+    flickrThumbnail({
+      thumbnail_url:
+        "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_q.jpg",
+      url: "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_b.jpg",
+    }),
+    "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_q.jpg",
+  );
+  assert.equal(
+    flickrThumbnail({
+      url: "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_b.jpg",
+    }),
+    "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_b.jpg",
+  );
+  for (const body of [
+    { thumbnail_url: "https://evil.test/3123/2341623661_7c99f48bbf_q.jpg" },
+    {
+      thumbnail_url:
+        "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_q.jpg?x=1",
+    },
+    { url: "https://live.staticflickr.com/not/a/photo.jpg" },
+  ]) {
+    assert.equal(flickrThumbnail(body), undefined);
+  }
+});
+
+test("a Flickr lookup uses flickr oEmbed and may fetch the cover", async () => {
+  const thumb =
+    "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_q.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://www.flickr.com/services/oembed/": () =>
+      response({
+        title: "ZB8T0193",
+        author_name: "bees",
+        thumbnail_url: thumb,
+        url: "https://live.staticflickr.com/3123/2341623661_7c99f48bbf_b.jpg",
+      }),
+    "https://live.staticflickr.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "flickr",
+    "photo:bees:2341623661",
+  );
+  assert.equal(details.title, "ZB8T0193");
+  assert.equal(details.author, "bees");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://www.flickr.com/services/oembed/?format=json&url=${encodeURIComponent("https://www.flickr.com/photos/bees/2341623661/")}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
