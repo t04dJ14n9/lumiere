@@ -234,3 +234,54 @@ test("native caret settings validate at the host/webview schema and fall back fo
   assert.equal(fallback.cursorSmoothCaretAnimation, "off");
   assert.equal(fallback.cursorWidth, 0);
 });
+
+test("obsidian profile uses accent fat block and 1.06s blink; no visual end caret", () => {
+  const appearance = caretAppearance(base, "normal", true, "obsidian");
+  assert.equal(appearance.style, "block");
+  assert.equal(appearance.endCaret, false);
+  assert.equal(appearance.variables["--caret-duration"], "1.06s");
+  assert.equal(appearance.variables["--caret-timing"], "step-end");
+  assert.match(
+    appearance.variables["--caret-foreground"] ?? "",
+    /button-background/,
+  );
+  const visual = caretAppearance(base, "visual", true, "obsidian");
+  assert.equal(visual.endCaret, false);
+  const pending = caretAppearance(base, "pending", true, "obsidian");
+  assert.equal(pending.style, "block");
+});
+
+test("vscodevim profile keeps half-block pending and visual end caret", () => {
+  const pending = caretAppearance(base, "pending", true, "vscodevim");
+  assert.equal(pending.style, "half-block");
+  const visual = caretAppearance(base, "visual", true, "vscodevim");
+  assert.equal(visual.endCaret, true);
+  assert.equal(visual.variables["--caret-foreground"], undefined);
+});
+
+test("codemirror profile uses inverse editor colours and fat pending", () => {
+  const appearance = caretAppearance(base, "normal", true, "codemirror");
+  assert.equal(appearance.style, "block");
+  assert.match(
+    appearance.variables["--caret-foreground"] ?? "",
+    /editor-foreground/,
+  );
+  assert.equal(appearance.variables["--caret-duration"], "1.06s");
+});
+
+test("insert mode ignores vim caret profile and follows native cursorStyle", () => {
+  for (const profile of ["obsidian", "vscodevim", "codemirror"] as const) {
+    const appearance = caretAppearance(
+      { ...base, cursorStyle: "underline" },
+      "insert",
+      true,
+      profile,
+    );
+    assert.equal(appearance.style, "underline", profile);
+    assert.equal(
+      appearance.variables["--caret-foreground"],
+      undefined,
+      profile,
+    );
+  }
+});

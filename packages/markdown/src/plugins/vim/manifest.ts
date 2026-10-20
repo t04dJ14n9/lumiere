@@ -1,6 +1,16 @@
 import { defineManifest } from "../../shared/manifest";
 import { Schema } from "@workshop/core";
-export const config = Schema.object({});
+
+export const config = Schema.object({
+  /**
+   * Obsidian 1.14.4 fat caret (default), VSCodeVim shapes, or stock CM-vim fat
+   * cursor with inverse editor colours.
+   */
+  caretStyle: Schema.union(["obsidian", "vscodevim", "codemirror"]).default(
+    "obsidian",
+  ),
+});
+
 export default defineManifest({
   id: "vim",
   title: "Vim",

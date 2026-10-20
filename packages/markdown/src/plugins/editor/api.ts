@@ -8,10 +8,12 @@ import type { DocumentSession } from "../document/api";
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { PanelPort } from "../../shared/host";
-import type { CaretMode } from "./caret";
-export type { CaretMode } from "./caret";
+import type { CaretMode, VimCaretProfile } from "./caret";
+export type { CaretMode, VimCaretProfile } from "./caret";
 export interface CaretModeSource {
   mode(view: EditorView): CaretMode;
+  /** Vim caret look; omit for VSCodeVim-shaped modes (legacy). */
+  profile?(view: EditorView): VimCaretProfile;
   watch?(view: EditorView, refresh: () => void): () => void;
 }
 export interface MenuItem {

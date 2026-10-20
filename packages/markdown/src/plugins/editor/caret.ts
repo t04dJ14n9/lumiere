@@ -16,6 +16,16 @@ export type CursorStyle =
 export type CursorBlinking = "blink" | "smooth" | "phase" | "expand" | "solid";
 export type CursorAnimation = "off" | "explicit" | "on";
 
+/**
+ * How Vim draws the caret when the Vim plugin is on.
+ * - `obsidian`: CM fat cursor themed like Obsidian 1.14.4 (REA `app.js` /
+ *   `app.css`: `--interactive-accent` fill, `--text-on-accent` glyph, 1.06s
+ *   step blink). Default.
+ * - `vscodevim`: measured VSCodeVim shapes (block / half-block / thin end).
+ * - `codemirror`: stock CM-vim fat cursor (inverse editor colours, same blink).
+ */
+export type VimCaretProfile = "obsidian" | "vscodevim" | "codemirror";
+
 export interface CaretSettings {
   cursorStyle: CursorStyle;
   cursorBlinking: CursorBlinking;
@@ -56,12 +66,28 @@ export function caretCharacterPosition(
   return line.from + findClusterBreak(line.text, head - line.from, false);
 }
 
-const vimStyles = {
+const vscodevimStyles = {
   normal: "block",
   visual: "block",
   replace: "underline",
   pending: "half-block",
   prompt: "underline-thin",
+} as const;
+
+/** Obsidian / CM-vim: fat block through overwrite and operator-pending. */
+const fatStyles = {
+  normal: "block",
+  visual: "block",
+  replace: "block",
+  pending: "block",
+  prompt: "underline-thin",
+} as const;
+
+const obsidianBlink = {
+  duration: "1.06s",
+  timing: "step-end",
+  count: "infinite",
+  direction: "normal",
 } as const;
 
 /**
@@ -142,17 +168,37 @@ export function caretAppearance(
   settings: CaretSettings,
   mode: CaretMode,
   isExplicitMove = true,
+  profile: VimCaretProfile = "vscodevim",
 ): CaretAppearance {
-  // VSCodeVim leaves insert mode to the editor's own cursor (`editor.cursorStyle`
-  // and `editor.cursorWidth`, any of the six styles); its other modes are fixed.
-  const style =
-    mode === "typing" || mode === "insert"
-      ? settings.cursorStyle
-      : vimStyles[mode];
+  // Insert / typing always follow the native editor caret (all profiles).
+  const modal = mode !== "typing" && mode !== "insert";
+  const styles = profile === "vscodevim" ? vscodevimStyles : fatStyles;
+  const style = modal ? styles[mode] : settings.cursorStyle;
+  const variables = animationVariables(settings, isExplicitMove);
+  if (modal && profile !== "vscodevim") {
+    // Obsidian REA: `.cm-animate-fat-cursor` / fat theme uses 1.06s steps(1).
+    variables["--caret-animation"] = "mw-caret-blink";
+    variables["--caret-duration"] = obsidianBlink.duration;
+    variables["--caret-timing"] = obsidianBlink.timing;
+    variables["--caret-count"] = obsidianBlink.count;
+    variables["--caret-direction"] = obsidianBlink.direction;
+  }
+  if (modal && profile === "obsidian") {
+    // Map Obsidian --interactive-accent / --text-on-accent onto VS Code tokens.
+    variables["--caret-foreground"] =
+      "var(--vscode-button-background, #0e639c)";
+    variables["--caret-background"] =
+      "var(--vscode-button-foreground, #ffffff)";
+  } else if (modal && profile === "codemirror") {
+    variables["--caret-foreground"] =
+      "var(--vscode-editor-foreground, var(--vscode-editorCursor-foreground, #222))";
+    variables["--caret-background"] = "var(--vscode-editor-background, #fff)";
+  }
   return {
     style,
-    endCaret: mode === "visual",
+    // VSCodeVim draws a thin end caret in visual; Obsidian/CM fat cursor does not.
+    endCaret: mode === "visual" && profile === "vscodevim",
     ...dimensions(style, settings.cursorWidth),
-    variables: animationVariables(settings, isExplicitMove),
+    variables,
   };
 }

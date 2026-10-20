@@ -102,13 +102,16 @@ class CaretView {
 
   private applyAppearance(): CaretAppearance {
     const mode = this.source.mode(this.view);
+    const profile = this.source.profile?.(this.view) ?? "vscodevim";
     const appearance = caretAppearance(
       this.source.settings(this.view),
       mode,
       this.isExplicitMove,
+      profile,
     );
     this.view.dom.dataset.caretMode = mode;
     this.view.dom.dataset.caretStyle = appearance.style;
+    this.view.dom.dataset.caretProfile = profile;
     for (const [property, value] of Object.entries(appearance.variables)) {
       this.layer.style.setProperty(property, value);
     }

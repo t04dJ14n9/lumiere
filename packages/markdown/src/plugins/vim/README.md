@@ -69,16 +69,26 @@ emissions. `lumiere.markdown.plugins.vim.enabled` defaults to false. Ex commands
 and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
 Vim mode chooses the caret shape in every mode but insert, regardless of
 `editor.cursorStyle`; insert mode is the editor's own caret, so `editor.cursorStyle`
-and `editor.cursorWidth` apply there, as in VSCodeVim. Native blinking and smooth
-movement settings apply in every mode (`explicit` smooth movement animates a
-click but not a Vim motion, as VSCodeVim moves the cursor from code). Colours use VS Code's cursor theme tokens.
+and `editor.cursorWidth` apply there. Setting `lumiere.markdown.vim.caretStyle`
+(default **`obsidian`**) selects the look:
 
+| Value        | Look                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| `obsidian`   | CodeMirror fat caret as in Obsidian 1.14.4 (REA): accent fill, on-accent glyph, 1.06s step blink |
+| `vscodevim`  | Measured VSCodeVim shapes (block, half-block operator-pending, thin visual end caret)            |
+| `codemirror` | Stock CM-vim fat caret with inverse editor colours                                               |
+
+Native blinking and smooth movement apply for `vscodevim`; Obsidian/CM profiles
+pin the fat-caret blink. `explicit` smooth movement animates a click but not a
+Vim motion. See `docs/vim-caret.md`.
 
 ## Limits and differences from Obsidian
 
-The dependency has no public `removeEx` API, so stopped callbacks are deactivated
-rather than removed. Text, save and undo remain VS Code's. Mode transfer preserves
-selection; exact Vim/IME interaction parity awaits the owner's manual testing.
+Default caret is Obsidian's fat cursor (`vim.caretStyle: obsidian`). Choose
+`vscodevim` or `codemirror` if preferred. The dependency has no public `removeEx`
+API, so stopped callbacks are deactivated rather than removed. Text, save and
+undo remain VS Code's. Mode transfer preserves selection; exact Vim/IME
+interaction parity awaits the owner's manual testing.
 
 The host-shortcut consumer is hidden from the command palette. Its collision
 bindings use Control on macOS as well as other platforms, leaving Command
