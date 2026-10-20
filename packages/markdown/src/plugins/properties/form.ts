@@ -47,7 +47,10 @@ export function bindPropertyForm(
  * ArrowDown / j / Tab / Escape → body. `j`/`k` are always live, not vim-gated.
  */
 export function addButtonDirection(
-  event: Pick<KeyboardEvent, "key" | "shiftKey" | "altKey" | "ctrlKey" | "metaKey" | "isComposing">,
+  event: Pick<
+    KeyboardEvent,
+    "key" | "shiftKey" | "altKey" | "ctrlKey" | "metaKey" | "isComposing"
+  >,
 ): "forward" | "backward" | undefined {
   if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) {
     return undefined;
