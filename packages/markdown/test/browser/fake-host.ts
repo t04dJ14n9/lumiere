@@ -17,6 +17,7 @@ import { protocol as propertiesProtocol } from "../../src/plugins/properties/pro
 import { frontmatter } from "../../src/markdown/properties";
 import type { PropertyTypes } from "../../src/markdown/properties/types";
 import { protocol as videoProtocol } from "../../src/plugins/onlineVideos/protocol";
+import { protocol as resourcesProtocol } from "../../src/plugins/resources/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 import { setTitle } from "../../src/plugins/inlineTitle/widget";
 export class BrowserHost {
@@ -46,6 +47,8 @@ export class BrowserHost {
   > = {};
   /** Online video details by `provider:id`; others fail as if offline. */
   videoDetails: Record<string, Record<string, unknown>> = {};
+  /** Sibling notes by basename (no `.md`) for embed resolve in remount probes. */
+  notes: Record<string, string> = {};
   readonly videoRequests: string[] = [];
   /** The git baseline the change bars compare with; undefined: no repository. */
   gitBaseline: string | undefined;
@@ -234,6 +237,16 @@ export class BrowserHost {
         throw new Error("offline");
       }
       return details;
+    });
+    host.handle(resourcesProtocol, "load", ({ target }) => {
+      const path = target.split("|")[0]!.split("#")[0]!.trim();
+      const name = path.replace(/\.md$/iu, "").split("/").at(-1) ?? path;
+      const body = this.notes[name] ?? this.notes[path];
+      if (body === undefined) {
+        throw new Error("Resource not found");
+      }
+      const uri = `file:///fixture/${name}.md`;
+      return { kind: "note" as const, source: uri, url: uri, text: body };
     });
     host.handle(propertiesProtocol, "types", () => this.propertyTypes);
     host.handle(propertiesProtocol, "names", () => [
