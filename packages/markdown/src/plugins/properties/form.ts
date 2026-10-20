@@ -200,12 +200,13 @@ function navigateHeading(
 ): boolean {
   const { panel, editor, collapse } = options;
   const key = event.key === "Tab" ? tabHeadingKey(event.shiftKey) : event.key;
+  // Obsidian's Properties heading toggles on click / ArrowLeft|Right only —
+  // Enter does not collapse (G16).
   const actions: Readonly<Record<string, () => void>> = {
     ArrowDown: () => focusFirstProperty(panel, editor, event.altKey),
     ArrowUp: () => editor?.focusTitle?.(),
     ArrowLeft: () => collapse(true),
     ArrowRight: () => collapse(false),
-    Enter: () => collapse(!panel.classList.contains("is-collapsed")),
     " ": () => editor?.pageHeading?.(event.shiftKey),
     Escape: () => editor?.focusBody?.(),
   };

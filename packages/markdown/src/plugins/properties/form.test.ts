@@ -104,3 +104,36 @@ test("pending rows survive Escape, reject duplicates quietly, and accept a vault
   assert.equal(list.children.length, 1);
   assert.deepEqual(focuses, [["status", true]]);
 });
+
+test("Enter on the Properties heading does not toggle collapse (Obsidian)", (t) => {
+  const document = installPropertyDOM(t);
+  const panel = new PropertyElement(document);
+  const heading = new PropertyElement(document);
+  const content = new PropertyElement(document);
+  const list = new PropertyElement(document);
+  const add = new PropertyElement(document);
+  const controls: Record<string, PropertyElement> = {
+    "[data-properties-heading]": heading,
+    ".metadata-content": content,
+    ".metadata-properties": list,
+    "[data-property-add]": add,
+  };
+  panel.find = (selector) => controls[selector] ?? null;
+  const collapsedCalls: boolean[] = [];
+  const editor = {
+    source: "current",
+    currentSource: () => "---\ntitle: A\n---\n",
+    set: () => true,
+    edit: () => true,
+    names: async () => [],
+    focusBody: () => {},
+    setCollapsed: (value: boolean) => {
+      collapsedCalls.push(value);
+    },
+  };
+  bindPropertyForm(panel as unknown as HTMLElement, editor, () => false);
+  heading.dispatchEvent(propertyKey("Enter"));
+  assert.deepEqual(collapsedCalls, []);
+  heading.dispatchEvent(propertyKey("ArrowLeft"));
+  assert.deepEqual(collapsedCalls, [true]);
+});
