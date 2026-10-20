@@ -163,7 +163,7 @@ function clipLine(
     return {
       text: line,
       offset,
-      mark: from < to ? { from, to } : undefined,
+      ...(from < to ? { mark: { from, to } } : {}),
     };
   }
   const width = Math.max(1, to - from);
@@ -179,9 +179,6 @@ function clipLine(
   return {
     text,
     offset: offset + start,
-    mark:
-      markFrom < markTo && markFrom >= 0 && markTo <= text.length
-        ? { from: markFrom, to: markTo }
-        : undefined,
+    ...(from < to ? { mark: { from: markFrom, to: markTo } } : {}),
   };
 }
