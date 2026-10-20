@@ -28,6 +28,7 @@ note's basename and aliases as whole words, outside links and properties.
 ## Limits and differences from Obsidian
 
 - The view is an Explorer section rather than a sidebar pane, and has no
-  "show more context" or sort options yet.
+  "show more context" toggle yet. File lists use Obsidian's default
+  alphabetical sort (basename, then path); other sort modes are not offered.
 - Unlinked mentions read every candidate note when expanded, which takes a
   moment in large vaults. Excluded files are skipped, as in Obsidian.

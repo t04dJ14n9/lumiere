@@ -109,7 +109,7 @@ export class BacklinksTree implements TreeSource {
       const text = await this.vaults.text(this.uriOf(path));
       this.lines.set(`linked:${path}`, linkedLines(text, isTarget(path)));
     }
-    return paths;
+    return sortBacklinkPaths(paths);
   }
 
   private async unlinkedFiles(): Promise<string[]> {
@@ -136,10 +136,19 @@ export class BacklinksTree implements TreeSource {
         paths.push(file.path);
       }
     }
-    return paths;
+    return sortBacklinkPaths(paths);
   }
 
   private uriOf(path: string): string {
     return this.note!.vault.index.file(path)?.uri ?? path;
   }
+}
+
+/** Obsidian backlinks default sortOrder="alphabetical" (file name, then path). */
+export function sortBacklinkPaths(paths: readonly string[]): string[] {
+  return [...paths].sort(
+    (a, b) =>
+      stemOf(a).localeCompare(stemOf(b), undefined, { sensitivity: "base" }) ||
+      a.localeCompare(b),
+  );
 }

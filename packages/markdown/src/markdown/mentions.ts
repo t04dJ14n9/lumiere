@@ -21,7 +21,8 @@ export function linkedLines(
   const lines = text.split("\n");
   return vaultLinks(metadata(text))
     .filter((link) => isTarget(linkpathOf(link)!))
-    .map((link) => contextLine(lines, link.position));
+    .map((link) => contextLine(lines, link.position))
+    .sort((a, b) => a.offset - b.offset);
 }
 
 /**
@@ -54,7 +55,7 @@ export function unlinkedLines(
       mentions.push(contextLine(lines, positionAt(lines, offset)));
     }
   }
-  return mentions;
+  return mentions.sort((a, b) => a.offset - b.offset);
 }
 
 function namePattern(names: readonly string[]): RegExp | undefined {
