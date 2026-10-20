@@ -50,7 +50,7 @@ test("showMermaidGuard builds Obsidian is-guarded chrome with source", () => {
     host as unknown as HTMLElement,
     new Error("Parse error on line 2"),
     "flowchart LR\nA -->",
-  );
+  ) as unknown as Stub;
 
   assert.equal(wrap.className, "mermaid-wrapper is-guarded");
   assert.equal(wrap.attrs.role, "status");
