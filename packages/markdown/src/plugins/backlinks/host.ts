@@ -1,7 +1,12 @@
 import type { Plugin } from "@workshop/core";
 import type {} from "../vault/api";
+import type { HostSettings } from "../../shared/host";
 import {
   BacklinksTree,
+  DISABLE_EXTRA_CONTEXT,
+  ENABLE_EXTRA_CONTEXT,
+  EXTRA_CONTEXT_CONTEXT,
+  EXTRA_CONTEXT_SETTING,
   NEXT_SORT,
   OPEN_COMMAND,
   SORT_ALPHABETICAL_CONTEXT,
@@ -20,6 +25,10 @@ import {
 
 /** Refreshes wait for a burst of file events to end. */
 const REFRESH_DELAY_MS = 300;
+
+function wantsExtraContext(settings: HostSettings): boolean {
+  return settings.get(EXTRA_CONTEXT_SETTING, false) === true;
+}
 
 type BacklinksCtx = Parameters<NonNullable<Plugin["apply"]>>[0];
 
@@ -108,6 +117,56 @@ function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
   void syncBacklinksSortContext(ctx).catch(() => undefined);
 }
 
+function wireExtraContext(
+  ctx: BacklinksCtx,
+  refresh: () => Promise<void>,
+  schedule: () => void,
+) {
+  const setExtraContext = async (enabled: boolean) => {
+    await ctx.settings.access.update(EXTRA_CONTEXT_SETTING, enabled);
+    await ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      enabled,
+    );
+    await refresh();
+  };
+  ctx.effect(() =>
+    ctx.hostCommands.register(ENABLE_EXTRA_CONTEXT, () =>
+      setExtraContext(true),
+    ),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(DISABLE_EXTRA_CONTEXT, () =>
+      setExtraContext(false),
+    ),
+  );
+  const syncContext = () => {
+    const enabled = wantsExtraContext(ctx.settings);
+    void ctx.hostCommands
+      .execute("setContext", EXTRA_CONTEXT_CONTEXT, enabled)
+      .catch((error) =>
+        ctx.logger.warn("Backlinks extraContext context failed", error),
+      );
+    schedule();
+  };
+  ctx.effect(() => ctx.settings.onChange(syncContext));
+  ctx.effect(() => async () => {
+    await ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      undefined,
+    );
+  });
+  void ctx.hostCommands
+    .execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      wantsExtraContext(ctx.settings),
+    )
+    .catch(() => undefined);
+}
+
 /** The Backlinks view and status bar count, following the active note. */
 export const backlinksHost: Plugin = {
   name: "backlinks",
@@ -117,13 +176,16 @@ export const backlinksHost: Plugin = {
   apply(ctx) {
     const sortOrder = (): BacklinkSortOrder =>
       parseSortOrder(ctx.settings.get(SORT_SETTING, "alphabetical"));
-    const source = new BacklinksTree(ctx.vaults, sortOrder);
+    const source = new BacklinksTree(ctx.vaults, sortOrder, () =>
+      wantsExtraContext(ctx.settings),
+    );
     const tree = ctx.views.tree(VIEW_ID, source);
     const status = ctx.views.status("lumiere.markdown.backlinks", 100);
     ctx.effect(() => () => tree.dispose());
     ctx.effect(() => () => status.dispose());
     const { refresh, schedule } = wireRefresh(ctx, source, tree, status);
     wireSortMenus(ctx, schedule);
+    wireExtraContext(ctx, refresh, schedule);
     void refresh();
   },
 };
