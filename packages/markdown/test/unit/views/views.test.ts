@@ -144,12 +144,13 @@ test("outgoing unlinked mentions skip notes already linked from here", async () 
   );
 });
 
-
 test("outgoing unresolved links create and open the missing note", async () => {
   const { vaults } = memoryVaults(notes);
   const tree = new OutgoingLinksTree(vaults);
   await tree.setNote(uriOf("Target.md"));
-  const unresolved = (await tree.roots()).find((node) => node.id === "unresolved")!;
+  const unresolved = (await tree.roots()).find(
+    (node) => node.id === "unresolved",
+  )!;
   const [missing] = await tree.children(unresolved);
   assert.equal(missing!.label, "Missing");
   assert.deepEqual(missing!.command, {
