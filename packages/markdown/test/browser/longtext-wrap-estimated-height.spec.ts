@@ -58,7 +58,7 @@ test("wrapping longtext keeps estimatedHeight near the measured sheet", async ({
       afterRebuild: view.lineBlockAt(0).height,
     };
   });
-  expect(result.drawn, JSON.stringify(result)).toBeGreaterThan(150);
+  expect(result.drawn, JSON.stringify(result)).toBeGreaterThan(120);
   expect(result.afterRebuild, JSON.stringify(result)).toBeGreaterThan(
     result.drawn * 0.7,
   );

@@ -12,26 +12,28 @@ import type { PropertyTypes } from "../../markdown/properties/types";
  * Obsidian's unfocused 3-line clamp — same class of bug as wrapping
  * tag chips when the reserve is too short.
  *
- * The numbers are the default 16px sheet in `properties.css` (row min
- * height plus its padding, heading, add button, source articles). Once the
- * sheet is drawn, measurement replaces this guess.
+ * The numbers match the Obsidian-parity sheet in `properties.css`:
+ * 0.875em metadata text (~14px at 16px root), 8px top padding,
+ * 2rem bottom margin, 3px row gap, heading, add button, source articles.
+ * Once the sheet is drawn, measurement replaces this guess.
  */
-const TEXT = 16;
+const TEXT = 14;
 const LINE = TEXT * 1.5;
-const ROW_PADDING = 4;
+const ROW_PADDING = 0;
+const ROW_GAP = 3;
 const VALUE_MIN = TEXT * 1.75;
 const ROW = ROW_PADDING + VALUE_MIN;
-const HEADING = TEXT * 0.875 * 1.5 + 8;
+const HEADING = TEXT * 1.5 + 8;
 const ADD_BUTTON = 8 + 8 + LINE;
-const SHEET_PADDING = 4 + 16;
+const SHEET_PADDING = 8 + 32;
 const SHEET_CHROME = SHEET_PADDING + HEADING + ADD_BUTTON;
-const COLLAPSED = SHEET_PADDING + TEXT * 0.875 * 1.5 + 8;
+const COLLAPSED = SHEET_PADDING + HEADING;
 const ARTICLE_CHROME = 12 + 1;
 const STACK_GAP = 8;
 const COMPLEX_GAP = 8;
-/** `textarea` rows=3 at 0.92em, plus its padding and border. */
+/** `textarea` rows=3 at 0.92em of the 0.875em sheet, plus padding/border. */
 const YAML_FIELD = 76;
-/** Flex-wrap chips in the value column (default ~16px sheet width). */
+/** Flex-wrap chips in the value column (default ~14px sheet width). */
 const LIST_WIDTH = 340;
 const CHIP_GAP = 6;
 const CHIP_CHROME = 30;
@@ -75,6 +77,9 @@ function markupHeight(markup: string): number {
   let height = SHEET_CHROME;
   for (const row of rows) {
     height += propertyRowHeight(row);
+  }
+  if (rows.length > 1) {
+    height += (rows.length - 1) * ROW_GAP;
   }
   return height;
 }

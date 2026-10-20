@@ -29,16 +29,16 @@ test("a hidden sheet reserves nothing", () => {
 
 test("a sheet without frontmatter reserves nothing unless an empty draft is open", () => {
   assert.equal(estimate("Just a note.\n"), 0);
-  assert.equal(estimate("Just a note.\n", { allowEmpty: true }), 89);
+  assert.equal(estimate("Just a note.\n", { allowEmpty: true }), 106);
 });
 
 test("each simple property row is one control, plus the heading and add button", () => {
-  assert.equal(estimate("---\nfield: value\n---\n"), 121);
+  assert.equal(estimate("---\nfield: value\n---\n"), 130.5);
   const rows = Array.from(
     { length: 28 },
     (_, index) => `field${index}: value ${index}`,
   ).join("\n");
-  assert.equal(estimate(`---\n${rows}\n---\n`), 985);
+  assert.equal(estimate(`---\n${rows}\n---\n`), 873);
 });
 
 test("a collapsed sheet reserves the heading, not the rows", () => {
@@ -46,11 +46,11 @@ test("a collapsed sheet reserves the heading, not the rows", () => {
     { length: 28 },
     (_, index) => `f${index}: ${index}`,
   ).join("\n");
-  assert.equal(estimate(`---\n${rows}\n---\n`, { collapsed: true }), 49);
+  assert.equal(estimate(`---\n${rows}\n---\n`, { collapsed: true }), 69);
 });
 
 test("a multiline value uses the fixed YAML field, not one row per source line", () => {
-  assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 169);
+  assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 182);
 });
 
 test("only the disclosed source rows count, and the YAML field under them does too", () => {
@@ -74,8 +74,8 @@ test("only the disclosed source rows count, and the YAML field under them does t
       return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 9</button></div>`;
     },
   });
-  // 8 articles × 65, 7 gaps × 8, disclosure 32, yaml field 84, row padding 4, chrome 89.
-  assert.equal(height, 785);
+  // 8 articles × ~57, 7 gaps × 8, disclosure 29, yaml 76, chrome 106 (0.875em + 2rem).
+  assert.equal(height, 747);
 });
 
 test("an unreadable frontmatter reserves the source it shows", () => {
