@@ -667,7 +667,8 @@ Both are off by default (owner decision). Turn on
 5. **Toggle Mermaid Diagrams**: With a mermaid block open, run it twice: the diagram turns to source and back, and `lumiere.markdown.plugins.diagrams.enabled` follows.
 6. **Toggle Inline Title**: Run it twice: the title above the note shows and hides, and `lumiere.markdown.plugins.inlineTitle.enabled` follows.
 7. **Toggle Vim Mode**: Run it twice: Vim mode and its caret turn on and off, and `lumiere.markdown.plugins.vim.enabled` follows.
-8. **Change Setting…**: run it and pick any setting; booleans flip, enums open a list, numbers and strings an input box (numbers are checked against the setting's range), lists open the Settings UI on that key.
+8. **Vim caret style**: With Vim on, set `lumiere.markdown.vim.caretStyle` to `obsidian`, `vscodevim`, and `codemirror`; the caret shape follows each choice (see `docs/vim-caret.md`).
+9. **Change Setting…**: run it and pick any setting; booleans flip, enums open a list, numbers and strings an input box (numbers are checked against the setting's range), lists open the Settings UI on that key.
 
 ### quickSwitcher
 
@@ -1279,6 +1280,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.tags.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.tasks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.vim.caretStyle` | `"obsidian"` | obsidian / vscodevim / codemirror; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

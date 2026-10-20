@@ -62,7 +62,9 @@ async function carets(page: Page) {
 test.describe("VSCodeVim caret parity", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "abcdefghij\n\nxyz", "obsidian", {
-      features: { vim: { enabled: true, config: {} } },
+      features: {
+        vim: { enabled: true, config: { caretStyle: "vscodevim" } },
+      },
     });
     await configure(page, {});
     await page.evaluate(() => window.harness.reveal(0));

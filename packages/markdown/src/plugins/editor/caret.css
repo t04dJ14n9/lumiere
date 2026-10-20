@@ -178,3 +178,5 @@
 #app .cm-editor[data-caret-style="half-block"] .mw-caret-shape::after {
   content: none;
 }
+
+/* Profile colours: --caret-foreground/background set inline for obsidian/codemirror (REA fat-cursor). */

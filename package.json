@@ -2963,6 +2963,15 @@
             "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
             "scope": "resource"
           },
+          "lumiere.markdown.vim.caretStyle": {
+            "enum": [
+              "obsidian",
+              "vscodevim",
+              "codemirror"
+            ],
+            "default": "obsidian",
+            "scope": "resource"
+          },
           "lumiere.markdown.copyLinkForAgent.target": {
             "type": "string",
             "enum": [

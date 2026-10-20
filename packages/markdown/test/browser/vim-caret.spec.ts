@@ -22,7 +22,9 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
   page,
 }) => {
   await open(page, "abcd\n\nTail", "obsidian", {
-    features: { vim: { enabled: true, config: {} } },
+    features: {
+      vim: { enabled: true, config: { caretStyle: "vscodevim" } },
+    },
   });
   await page.evaluate(() => {
     document.documentElement.style.setProperty(
