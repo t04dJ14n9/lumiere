@@ -2,6 +2,7 @@ import { Decoration } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import type { EditorState, Line, Range } from "@codemirror/state";
 import { parseMarkdown } from "../../markdown/dialect";
+import { listDepth } from "../livePreview/lists";
 
 export function indentation(text: string, tabSize: number): number {
   let width = 0;
@@ -18,12 +19,43 @@ export function indentation(text: string, tabSize: number): number {
 }
 
 /**
- * Indentation columns of the caret line (Obsidian cm-active-indent).
- * Zero when the caret line is flush left — no active guide.
+ * 0-based list guide column for the caret in Live Preview, matching Obsidian's
+ * active indent on nested lists. Top-level items (depth 0) paint no guides.
  */
-export function activeIndentWidth(state: EditorState): number {
-  const line = state.doc.lineAt(state.selection.main.head);
-  return indentation(line.text, state.tabSize);
+export function activeListGuideColumn(state: EditorState): number | undefined {
+  const head = state.selection.main.head;
+  const tree = parseMarkdown(state.doc);
+  let item = null;
+  for (let node = tree.resolveInner(head, 1); node; node = node.parent) {
+    if (["CodeBlock", "FencedCode"].includes(node.name)) {
+      return undefined;
+    }
+    if (node.name === "ListItem") {
+      item = node;
+      break;
+    }
+  }
+  if (!item) {
+    return undefined;
+  }
+  const depth = listDepth(item);
+  return depth >= 1 ? depth - 1 : undefined;
+}
+
+/** Apply / clear `--list-active-depth` on the editor root for LP list guides. */
+export function syncListActiveGuide(
+  dom: HTMLElement,
+  state: EditorState,
+  isLivePreview: boolean,
+): void {
+  const column = isLivePreview ? activeListGuideColumn(state) : undefined;
+  if (column === undefined) {
+    dom.style.removeProperty("--list-active-depth");
+    dom.classList.remove("mw-list-active-guide");
+    return;
+  }
+  dom.style.setProperty("--list-active-depth", String(column));
+  dom.classList.add("mw-list-active-guide");
 }
 
 /** List chrome replaces source whitespace; code and quotes keep their own layout. */
@@ -50,23 +82,16 @@ export function guideDecorations(
   isLivePreview: boolean,
 ): DecorationSet {
   const ranges: Range<Decoration>[] = [];
-  const active = activeIndentWidth(state);
   for (const visible of visibleRanges) {
     for (let at = visible.from; at <= visible.to;) {
       const line = state.doc.lineAt(at);
       const width = indentation(line.text, state.tabSize);
       if (width && !(isLivePreview && usesListLayout(state, line))) {
-        const isActive = active > 0 && width >= active;
-        const style =
-          `--indent-width:${width}ch;--indent-step:${state.tabSize}ch` +
-          (isActive ? `;--indent-active-at:${active}ch` : "");
         ranges.push(
           Decoration.line({
             attributes: {
-              style,
-              class: isActive
-                ? "mw-indent-guide mw-indent-guide-active"
-                : "mw-indent-guide",
+              style: `--indent-width:${width}ch;--indent-step:${state.tabSize}ch`,
+              class: "mw-indent-guide",
             },
           }).range(line.from),
         );

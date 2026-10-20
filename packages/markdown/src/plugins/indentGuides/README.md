@@ -38,3 +38,10 @@ highlight the caret line's indent column with
 per-depth active marker. Separate source continuation lines in list prose have
 no guides; their layout is not normalized by the list renderer. Quoted lists
 and code retain source-column guides.
+
+Guides use VS Code theme colors. Nested Live Preview list guides highlight the
+caret's depth with `--vscode-editorIndentGuide-activeBackground1` (Obsidian
+active indent). Source-mode active columns are tracked separately when that
+path is enabled. Separate source continuation lines in list prose that the list
+renderer does not normalize still lack guides. Quoted lists and code retain
+source-column guides.
