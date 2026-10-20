@@ -187,3 +187,89 @@ test("frontmatter wikilinks count as concept edges like Obsidian", () => {
   assert.equal(from?.degree, 1);
   assert.equal(from?.orphan, false);
 });
+
+test("OKF sources path resources count as concept edges", () => {
+  const graph = buildConceptGraph({
+    bundleRoot: "bundle",
+    notes: [
+      {
+        path: "bundle/notes/from.md",
+        metadata: metadata(
+          "---\nsources:\n  - resource: plain.md\n    title: Plain\n  - resource: https://example.com/paper\n---\nNo body link.",
+        ),
+      },
+      {
+        path: "bundle/notes/plain.md",
+        metadata: metadata("plain body"),
+      },
+    ],
+    resolve: () => ({ status: "missing" }),
+  });
+  const edge = graph.edges.find(
+    (item) =>
+      item.source === "bundle/notes/from.md" &&
+      item.target === "bundle/notes/plain.md",
+  );
+  assert.ok(edge);
+  assert.equal(edge?.count, 1);
+  const from = graph.nodes.find((node) => node.id === "bundle/notes/from.md");
+  assert.equal(from?.degree, 1);
+  assert.equal(from?.orphan, false);
+  // http(s) sources are not graph nodes / edges
+  assert.equal(from?.outOfScope ?? 0, 0);
+  assert.equal(from?.unresolved ?? 0, 0);
+});
+
+test("sources wiki resources stay on frontmatterLinks (no double edge)", () => {
+  const graph = buildConceptGraph({
+    bundleRoot: "bundle",
+    notes: [
+      {
+        path: "bundle/notes/from.md",
+        metadata: metadata(
+          '---\nsources:\n  - resource: "[[plain]]"\n---\nNo body link.',
+        ),
+      },
+      {
+        path: "bundle/notes/plain.md",
+        metadata: metadata("plain body"),
+      },
+    ],
+    resolve: (linktext) =>
+      linktext === "plain"
+        ? { status: "file", path: "bundle/notes/plain.md" }
+        : { status: "missing" },
+  });
+  const edges = graph.edges.filter(
+    (item) =>
+      item.source === "bundle/notes/from.md" &&
+      item.target === "bundle/notes/plain.md",
+  );
+  assert.equal(edges.length, 1);
+  assert.equal(edges[0]?.count, 1);
+});
+
+test("sources asset paths count as assets, not concept edges", () => {
+  const graph = buildConceptGraph({
+    bundleRoot: "bundle",
+    notes: [
+      {
+        path: "bundle/notes/from.md",
+        metadata: metadata(
+          "---\nsources:\n  - resource: ../assets/figure.png\n---\n",
+        ),
+      },
+      {
+        path: "bundle/notes/plain.md",
+        metadata: metadata("plain body"),
+      },
+    ],
+    resolve: () => ({ status: "missing" }),
+  });
+  const from = graph.nodes.find((node) => node.id === "bundle/notes/from.md");
+  assert.equal(from?.assets, 1);
+  assert.equal(
+    graph.edges.some((edge) => edge.source === "bundle/notes/from.md"),
+    false,
+  );
+});

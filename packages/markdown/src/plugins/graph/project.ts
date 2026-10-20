@@ -8,6 +8,8 @@ import {
   conceptType,
   isInsideBundle,
   isReservedNote,
+  planResourceOpen,
+  sourceRows,
 } from "../../markdown/okf";
 import {
   extensionOf,
@@ -88,6 +90,9 @@ export function buildConceptGraph(input: {
         recordHit(source, hit, counts, neighbours);
       }
     }
+    for (const hit of sourcesDerivationHits(input.bundleRoot, note, byPath)) {
+      recordHit(source, hit, counts, neighbours);
+    }
   }
   for (const node of nodes) {
     const degree = neighbours.get(node.id)?.size ?? 0;
@@ -139,6 +144,37 @@ function noteLinks(metadata: NoteMetadata) {
   return [...metadata.links, ...metadata.embeds, ...metadata.frontmatterLinks];
 }
 
+/**
+ * OKF `sources` rows whose `resource` is a vault path (not http(s)). Wikilink
+ * forms like `[[Note]]` stay on frontmatterLinks; path resources become edges.
+ */
+function sourcesDerivationHits(
+  bundleRoot: string,
+  note: GraphNote,
+  nodes: Map<string, ConceptNode>,
+): EdgeHit[] {
+  const frontmatter = note.metadata?.frontmatter;
+  if (!frontmatter || !Object.hasOwn(frontmatter, "sources")) {
+    return [];
+  }
+  const hits: EdgeHit[] = [];
+  for (const row of sourceRows(frontmatter.sources, frontmatter)) {
+    if (!row.navigable) {
+      continue;
+    }
+    const plan = planResourceOpen({
+      resource: row.resource,
+      documentPath: note.path,
+      bundleRoot,
+    });
+    if (plan.action !== "workspace" || !plan.path) {
+      continue;
+    }
+    hits.push(classifyResolvedPath(bundleRoot, note.path, plan.path, nodes));
+  }
+  return hits;
+}
+
 function classifyHit(
   input: {
     bundleRoot: string;
@@ -160,22 +196,31 @@ function classifyHit(
   if (target.status === "missing" || !target.path) {
     return { kind: "unresolved" };
   }
-  if (target.path === sourcePath) {
+  return classifyResolvedPath(input.bundleRoot, sourcePath, target.path, nodes);
+}
+
+function classifyResolvedPath(
+  bundleRoot: string,
+  sourcePath: string,
+  targetPath: string,
+  nodes: Map<string, ConceptNode>,
+): EdgeHit {
+  if (targetPath === sourcePath) {
     return { kind: "self" };
   }
-  if (!isInsideBundle(target.path, input.bundleRoot)) {
-    return { kind: "out-of-scope", path: target.path };
+  if (!isInsideBundle(targetPath, bundleRoot)) {
+    return { kind: "out-of-scope", path: targetPath };
   }
-  if (isReservedNote(target.path)) {
-    return { kind: "navigation", path: target.path };
+  if (isReservedNote(targetPath)) {
+    return { kind: "navigation", path: targetPath };
   }
-  if (!isMarkdownPath(target.path) || extensionOf(target.path) !== "md") {
-    return { kind: "asset", path: target.path };
+  if (!isMarkdownPath(targetPath) || extensionOf(targetPath) !== "md") {
+    return { kind: "asset", path: targetPath };
   }
-  if (!nodes.has(target.path)) {
-    return { kind: "out-of-scope", path: target.path };
+  if (!nodes.has(targetPath)) {
+    return { kind: "out-of-scope", path: targetPath };
   }
-  return { kind: "concept", path: target.path };
+  return { kind: "concept", path: targetPath };
 }
 
 function recordHit(
