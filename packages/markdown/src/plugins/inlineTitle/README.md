@@ -22,6 +22,7 @@ last. Properties focus uses typed events rather than another plugin's DOM intern
 - `title.ts`: filename display and safe same-folder target construction.
 - `webview.ts`: title registration, RPC and focus events.
 - `widget.ts`: title state field and widget reconciliation/lifetime.
+- `estimated-height.ts`: CodeMirror `estimatedHeight` reserve for wrapping titles.
 - `input.ts`: draft, IME, commit/cancel and keyboard behavior.
 - `host.ts`: per-panel RPC enablement and initialized-view restoration.
 - `rename.ts`: flush/capture/version checks and native rename orchestration.

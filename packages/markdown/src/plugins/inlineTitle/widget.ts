@@ -1,6 +1,7 @@
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import { TitleInput, type TitleActions, type TitleValue } from "./input";
+import { titleEstimatedHeight } from "./estimated-height";
 export const setTitle = StateEffect.define<TitleValue>();
 export function titleField(initial: string, actions: TitleActions) {
   const inputs = new WeakMap<HTMLElement, TitleInput>();
@@ -9,7 +10,10 @@ export function titleField(initial: string, actions: TitleActions) {
       super();
     }
     override eq(other: TitleWidget): boolean {
-      return this.value === other.value;
+      return (
+        this.value.title === other.value.title &&
+        this.value.error === other.value.error
+      );
     }
     override updateDOM(root: HTMLElement): boolean {
       const input = inputs.get(root);
@@ -30,6 +34,9 @@ export function titleField(initial: string, actions: TitleActions) {
     }
     override ignoreEvent(): boolean {
       return true;
+    }
+    override get estimatedHeight(): number {
+      return titleEstimatedHeight(this.value.title);
     }
   }
   return StateField.define<TitleValue>({
