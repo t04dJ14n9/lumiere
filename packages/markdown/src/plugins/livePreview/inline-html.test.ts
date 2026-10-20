@@ -44,3 +44,33 @@ test("the caret inside a pair reveals its tags", () => {
   const { hidden } = decorate(doc, doc.indexOf("Ctrl") + 1);
   assert.deepEqual(hidden, ["<u>", "</u>"]);
 });
+
+test("openers with attributes still style content and hide both tags", () => {
+  const attributed =
+    'Press <kbd class="chord">Ctrl</kbd> and <span style="color:red">hot</span>.';
+  const { marks, hidden } = decorate(attributed, attributed.length);
+  assert.deepEqual(marks, [
+    "md-html md-html-kbd:Ctrl",
+    "md-html md-html-span:hot",
+  ]);
+  assert.deepEqual(hidden, [
+    '<kbd class="chord">',
+    "</kbd>",
+    '<span style="color:red">',
+    "</span>",
+  ]);
+});
+
+test("self-closing and block tags stay undecorated", () => {
+  const doc = 'Break <br/> here and <div class="x">no</div>.';
+  const { marks, hidden } = decorate(doc, doc.length);
+  assert.deepEqual(marks, []);
+  assert.deepEqual(hidden, []);
+});
+
+test("a data-attribute mark pair hides its tags off the caret", () => {
+  const doc = "Hi <mark data-x>there</mark>.";
+  const { marks, hidden } = decorate(doc, doc.length);
+  assert.deepEqual(marks, ["md-html md-html-mark:there"]);
+  assert.deepEqual(hidden, ["<mark data-x>", "</mark>"]);
+});

@@ -104,7 +104,6 @@ left to the owner's manual comparison.
 The `visiblePosition` service query places external badges after replacement
 blocks without exposing renderer internals to marker providers.
 
-
 ### Reveal rules
 
 Follows the measured [Obsidian rules](../../../docs/OBSIDIAN_REVEAL_RULES.md).
@@ -115,7 +114,7 @@ on selected lines. Tasks reveal only through the checkbox end (columns 0–5
 for `- [ ]`). Both code fences reveal anywhere in the block. Callouts reveal
 source with quote marks per line and inline syntax per element. Definition
 markers reveal on their first line; math and HTML blocks reveal whole, and
-display math keeps its rendered formula below the source. A click on a
+display math keeps its rendered formula below the source. Styled inline HTML (`kbd`, `mark`, `span`, …) hides both tags and paints the content even when the opener carries attributes (`<kbd class="…">`); self-closing and block tags stay source. A click on a
 rendered math block reveals it as in Obsidian, selecting the formula. Callout
 title/body clicks and Edit select the whole source; their fold buttons toggle disclosure.
 A click on a drawn horizontal rule selects its source (head at start) via the
