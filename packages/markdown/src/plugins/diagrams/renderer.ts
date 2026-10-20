@@ -138,7 +138,10 @@ export function showMermaidGuard(
     const allow = doc.createElement("button");
     allow.type = "button";
     allow.textContent = "Allow";
-    allow.setAttribute("aria-label", "Allow Mermaid HTML labels for this vault");
+    allow.setAttribute(
+      "aria-label",
+      "Allow Mermaid HTML labels for this vault",
+    );
     allow.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();

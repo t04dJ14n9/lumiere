@@ -9,14 +9,20 @@ type Stub = {
   children: Stub[];
   textContent: string;
   type?: string;
-  listeners: Record<string, ((event: { preventDefault(): void; stopPropagation(): void }) => void)[]>;
+  listeners: Record<
+    string,
+    ((event: { preventDefault(): void; stopPropagation(): void }) => void)[]
+  >;
   append(...nodes: Stub[]): void;
   replaceChildren(...nodes: Stub[]): void;
   removeAttribute(name: string): void;
   setAttribute(name: string, value: string): void;
   addEventListener?(
     type: string,
-    listener: (event: { preventDefault(): void; stopPropagation(): void }) => void,
+    listener: (event: {
+      preventDefault(): void;
+      stopPropagation(): void;
+    }) => void,
   ): void;
   createElement?(tag: string): Stub;
 };
@@ -84,7 +90,9 @@ test("showMermaidGuard builds Obsidian is-guarded chrome with source", () => {
   assert.match(text.children[1]!.textContent, /Parse error on line 2/);
   // No Allow unless requested (trusted vault, or options omitted).
   assert.equal(
-    header.children.find((child) => child.className === "mermaid-guard-actions"),
+    header.children.find(
+      (child) => child.className === "mermaid-guard-actions",
+    ),
     undefined,
   );
 
