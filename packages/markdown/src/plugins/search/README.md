@@ -43,4 +43,5 @@ Uses the documented pure search grammar; no Dataview scripting. Worker startup
 has a 15-second deadline and each document has a 5-second evaluation deadline.
 A failed worker affects its query only. Results reflect the index's eligible files
 and unsaved text available through the host. Large vault searches may be slow;
-results arrive together rather than streaming. Excluded files are omitted.
+partial match snapshots stream over RPC (throttled) while the query runs, then the
+final sorted set replaces them. Excluded files are omitted. No Dataview.

@@ -22,6 +22,16 @@ export const searchHost: Plugin<{ panel: PanelShell }> = {
             worker,
             token,
             read: (uri) => ctx.vaults.text(uri),
+            ...(request.id
+              ? {
+                  onPartial: (snapshot) =>
+                    ctx.rpc.notify(protocol, "partial", {
+                      id: request.id!,
+                      results: snapshot.results,
+                      unreadable: snapshot.unreadable,
+                    }),
+                }
+              : {}),
           });
         } finally {
           await worker.dispose();

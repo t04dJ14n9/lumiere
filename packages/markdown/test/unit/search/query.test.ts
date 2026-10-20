@@ -113,3 +113,42 @@ test("indexed predicates avoid note reads while content scopes conservatively re
     false,
   );
 });
+
+test("searchVault emits partial snapshots as matches accumulate", async () => {
+  const worker: SearchEvaluator = {
+    ready: Promise.resolve(),
+    includesFiles: false,
+    requiresText: true,
+    requiresMetadata: false,
+    stopped: false,
+    matches: async (doc) => compileSearch("content:meeting")(doc),
+    dispose: async () => {},
+  };
+  const partials: { results: string[]; unreadable: number }[] = [];
+  const result = await searchVault({
+    vault: vault(),
+    source: "file:///vault/folder/Note.md",
+    worker,
+    token: new CancelToken(),
+    read: async (uri: string) => {
+      // Yield so the throttle window can elapse between documents.
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      return uri.endsWith("canvas") ? "{broken" : "Meeting";
+    },
+    onPartial: (snapshot) =>
+      partials.push({
+        results: snapshot.results.map((item) => item.path),
+        unreadable: snapshot.unreadable,
+      }),
+  });
+  assert.equal(result.unreadable, 1);
+  assert.ok(partials.length >= 1);
+  assert.deepEqual(partials.at(-1), {
+    results: ["folder/Note.md", "other/A #.md"],
+    unreadable: 1,
+  });
+  assert.deepEqual(
+    result.results.map((item) => item.path),
+    ["other/A #.md", "folder/Note.md"],
+  );
+});

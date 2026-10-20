@@ -55,7 +55,16 @@ function renderResults(
   const { status, results } = elements;
   results.replaceChildren();
   if (update.loading) {
-    status.textContent = "Searching…";
+    const matches = update.results ?? [];
+    if (matches.length === 0) {
+      status.textContent = "Searching…";
+      return;
+    }
+    const unreadable = update.unreadable
+      ? ` · ${update.unreadable} files could not be searched`
+      : "";
+    status.textContent = `Searching… ${matches.length} so far${unreadable}`;
+    paintMatches(results, matches);
     return;
   }
   if (update.error) {
@@ -67,6 +76,12 @@ function renderResults(
     ? ` · ${update.unreadable} files could not be searched`
     : "";
   status.textContent = `${matches.length} ${matches.length === 1 ? "result" : "results"}${unreadable}`;
+  paintMatches(results, matches);
+}
+function paintMatches(
+  results: HTMLElement,
+  matches: { path: string; href: string }[],
+): void {
   for (const result of matches) {
     const item = results.ownerDocument.createElement("li");
     const link = results.ownerDocument.createElement("a");
