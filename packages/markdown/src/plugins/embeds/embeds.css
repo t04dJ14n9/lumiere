@@ -162,3 +162,51 @@ img.md-image-selected {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+/* Obsidian image-embed host + resize-corner chevron (app.css ~11969–12070).
+   VS Code theme tokens; pointer-events none — resize stays on +/− keys. */
+.image-embed {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  width: fit-content;
+  vertical-align: bottom;
+}
+.image-embed .image-resize-corner {
+  display: block;
+  position: absolute;
+  z-index: 1;
+  cursor: nwse-resize;
+  bottom: 0;
+  inset-inline-end: 0;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+}
+.image-embed .image-resize-corner:dir(rtl) {
+  cursor: nesw-resize;
+}
+.image-embed .image-resize-corner::after {
+  position: absolute;
+  display: block;
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-bottom: 1.5px solid
+    var(--vscode-descriptionForeground, var(--muted, #888));
+  border-inline-end: 1.5px solid
+    var(--vscode-descriptionForeground, var(--muted, #888));
+  border-end-end-radius: 4px;
+  inset-inline-end: 6px;
+  bottom: 6px;
+  opacity: 0;
+}
+@media (hover: hover) {
+  .image-embed:hover .image-resize-corner::after {
+    opacity: 1;
+  }
+}
+.image-embed:has(img.md-image-selected) .image-resize-corner::after {
+  opacity: 1;
+  border-color: var(--vscode-focusBorder, var(--accent));
+}

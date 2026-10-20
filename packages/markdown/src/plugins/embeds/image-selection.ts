@@ -15,6 +15,7 @@ import {
   withWidth,
   writtenWidth,
 } from "./image-size";
+import { setImageSelectedChrome } from "./image-resize-corner";
 
 interface Range {
   from: number;
@@ -268,11 +269,11 @@ const selectedClass = ViewPlugin.define((view) => {
     const images = range ? imagesOf(view, range) : [];
     for (const image of marked) {
       if (!images.includes(image)) {
-        image.classList.remove("md-image-selected");
+        setImageSelectedChrome(image, false);
       }
     }
     for (const image of images) {
-      image.classList.add("md-image-selected");
+      setImageSelectedChrome(image, true);
     }
     marked = images;
   };
@@ -301,7 +302,7 @@ const selectedClass = ViewPlugin.define((view) => {
         capture: true,
       });
       for (const image of marked) {
-        image.classList.remove("md-image-selected");
+        setImageSelectedChrome(image, false);
       }
     },
   };
@@ -313,7 +314,8 @@ const selectedClass = ViewPlugin.define((view) => {
  * image; then `+` and `-` resize it in steps
  * of 25 pixels, `0` resets its size, Enter selects its file name, Tab puts
  * the caret where its size goes, Backspace or Delete removes it and Escape
- * lets it go.
+ * lets it go. Selection also paints Obsidian's `.image-resize-corner`
+ * chevron chrome (CSS); drag-to-resize is still `+`/`-` only.
  */
 export function imageSelection(): Extension {
   return [
