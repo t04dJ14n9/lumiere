@@ -105,6 +105,7 @@ function decorateContinuations(
 ): void {
   const first = cx.state.doc.lineAt(item.from);
   const content = contentColumn(cx.state.sliceDoc(first.from, first.to));
+  const itemDepth = listDepthFromStyle(style);
   for (let child = item.firstChild; child; child = child.nextSibling) {
     // A task item's paragraph is a Task node.
     if (child.name !== "Paragraph" && child.name !== "Task") {
@@ -116,13 +117,19 @@ function decorateContinuations(
       if (line.from !== first.from && spaces > 0) {
         if (spaces > content) {
           const steps = Math.max(1, Math.floor(spaces / INDENT_SIZE));
-          const spaceStyle = `--list-depth: ${steps}; --list-marker: ${CONTINUATION_SPACES_MARKER}`;
+          // Space-step continuations: guide count matches Obsidian cm-indent widgets.
+          const spaceStyle = `--list-depth: ${steps}; --list-marker: ${CONTINUATION_SPACES_MARKER}; --list-guide-depth: ${steps}`;
           cx.line(line.from, "md-list-line md-list-continuation", {
             style: spaceStyle,
           });
           cx.hide(line.from, line.from + spaces);
         } else {
-          cx.line(line.from, "md-list-line md-list-continuation", { style });
+          // Hang under item text: Obsidian still paints one cm-indent for the
+          // content column (plus ancestor guides). Keep --list-depth for hang.
+          const contStyle = `${style}; --list-guide-depth: ${itemDepth + 1}`;
+          cx.line(line.from, "md-list-line md-list-continuation", {
+            style: contStyle,
+          });
           cx.hide(line.from, line.from + spaces);
         }
       }
@@ -132,6 +139,12 @@ function decorateContinuations(
       line = cx.state.doc.line(line.number + 1);
     }
   }
+}
+
+/** Nesting depth encoded on a list line's `--list-depth` style. */
+function listDepthFromStyle(style: string): number {
+  const match = /--list-depth:\s*(\d+)/.exec(style);
+  return match ? Number(match[1]) : 0;
 }
 
 /** Where an item's text starts on its first line, in characters. */

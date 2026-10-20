@@ -93,23 +93,26 @@ test("an item's indented continuation lines hang under its text; a lazy line doe
     {
       line: "  [[Home]] here",
       hidden: "  ",
-      style: "--list-depth: 0; --list-marker: calc(1.25em + 3px)",
+      style:
+        "--list-depth: 0; --list-marker: calc(1.25em + 3px); --list-guide-depth: 1",
     },
     {
       // Extra spaces beyond "- " → Obsidian indent-size steps, not hang + leftover.
       line: "    four in",
       hidden: "    ",
-      style: "--list-depth: 1; --list-marker: 1em",
+      style: "--list-depth: 1; --list-marker: 1em; --list-guide-depth: 1",
     },
     {
       line: "   three in",
       hidden: "   ",
-      style: "--list-depth: 0; --list-marker: calc(1.5em + 6px)",
+      style:
+        "--list-depth: 0; --list-marker: calc(1.5em + 6px); --list-guide-depth: 1",
     },
     {
       line: "      under task",
       hidden: "      ",
-      style: "--list-depth: 0; --list-marker: calc(1.75em - 1px)",
+      style:
+        "--list-depth: 0; --list-marker: calc(1.75em - 1px); --list-guide-depth: 1",
     },
   ]);
 });
@@ -144,12 +147,34 @@ test("continuation spaces beyond the content column use indent-size steps", () =
     {
       line: "    four",
       hidden: "    ",
-      style: "--list-depth: 1; --list-marker: 1em",
+      style: "--list-depth: 1; --list-marker: 1em; --list-guide-depth: 1",
     },
     {
       line: "        eight",
       hidden: "        ",
-      style: "--list-depth: 2; --list-marker: 1em",
+      style: "--list-depth: 2; --list-marker: 1em; --list-guide-depth: 2",
     },
+  ]);
+});
+
+test("nested hang continuations set list-guide-depth to ancestors plus content column", () => {
+  const doc = "- parent\n  - child\n    under child\n\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const styles: string[] = [];
+  inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+    0,
+    doc.length,
+    (_from, _to, value) => {
+      if (value.spec.class === "md-list-line md-list-continuation") {
+        styles.push(value.spec.attributes.style);
+      }
+    },
+  );
+  assert.deepEqual(styles, [
+    "--list-depth: 1; --list-marker: calc(1.25em + 3px); --list-guide-depth: 2",
   ]);
 });
