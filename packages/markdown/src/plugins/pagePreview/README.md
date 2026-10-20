@@ -30,7 +30,7 @@ No kernel events are registered. The feature switch is
 
 ## Limits and differences from Obsidian
 
-External schemes are not fetched. Previews use this extension's renderers and
-VS Code theme colours, sized like Obsidian's hover-popover (450×400) with
-`.popover.hover-popover` class aliases. Attachments unsupported by the renderer show an Open prompt.
+External schemes are not fetched. Missing notes, resolve errors and unsupported
+attachments use Obsidian `.mod-empty` centred chrome. Previews use this
+extension's renderers and VS Code theme.
 All timers, listeners, popup DOM and render passes stop with the view/plugin.

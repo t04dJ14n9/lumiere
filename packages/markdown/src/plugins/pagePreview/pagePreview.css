@@ -59,3 +59,15 @@
 .popover.hover-popover video {
   max-width: 100%;
 }
+/* Obsidian `.popover.hover-popover > .mod-empty` (REA app.css ~9345). */
+.link-preview-body.mod-empty,
+.link-preview > .mod-empty,
+.popover.hover-popover > .mod-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 6em;
+  padding: 20px;
+  color: var(--vscode-descriptionForeground, var(--muted, #888));
+  text-align: center;
+}
