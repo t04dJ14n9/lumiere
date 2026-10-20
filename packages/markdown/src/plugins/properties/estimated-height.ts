@@ -46,6 +46,8 @@ export function propertiesEstimatedHeight(input: {
   collapsed: boolean;
   allowEmpty: boolean;
   types?: PropertyTypes;
+  listPreviewCount?: number;
+  expandedLists?: ReadonlySet<string>;
   renderValue?(
     key: string,
     value: unknown,
@@ -58,6 +60,8 @@ export function propertiesEstimatedHeight(input: {
   const markup = renderProperties(input.source, input.types ?? {}, {
     collapsed: input.collapsed,
     allowEmpty: input.allowEmpty,
+    listPreviewCount: input.listPreviewCount,
+    expandedLists: input.expandedLists,
     ...(input.renderValue ? { renderValue: input.renderValue } : {}),
   });
   return markupHeight(markup);
@@ -90,11 +94,12 @@ function propertyRowHeight(row: string): number {
 
 function valueColumnHeight(row: string): number {
   const sources = sourcesHeight(row);
+  // Sources stacked UI is typed OKF — no YAML draft under the rows.
   if (sources > 0) {
-    return sources + COMPLEX_GAP + YAML_FIELD;
+    return sources;
   }
-  // Unknown JSON is one ellipsis line (Obsidian nowrap), not a YAML textarea.
-  if (row.includes("mod-unknown")) {
+  // Unknown JSON / OKF provenance chips are one value line.
+  if (row.includes("mod-unknown") || row.includes("mod-okf-provenance")) {
     return VALUE_MIN;
   }
   if (row.includes("metadata-input-yaml")) {
@@ -112,9 +117,17 @@ function listHeight(row: string): number | undefined {
   if (!row.includes("multi-select-container")) {
     return undefined;
   }
-  const labels = [
-    ...row.matchAll(/multi-select-pill-content">([\s\S]*?)<\/span>/g),
-  ].map((match) => match[1]!.replace(/<[^>]+>/g, "").trim());
+  // Visible chips only — extras stay in markup with `hidden`.
+  const labels: string[] = [];
+  for (const chip of row.split('<span class="property-chip').slice(1)) {
+    if (/^[^>]*\bhidden\b/.test(chip)) {
+      continue;
+    }
+    const content = /multi-select-pill-content">([\s\S]*?)<\/span>/.exec(chip);
+    if (content) {
+      labels.push(content[1]!.replace(/<[^>]+>/g, "").trim());
+    }
+  }
   if (labels.length === 0) {
     return VALUE_MIN;
   }

@@ -47,4 +47,10 @@ export interface PropertyContext {
   ): string | undefined;
   /** Bind plugin renderers after a reconcile. Presentation only. */
   bindRenderedProperties?(root: HTMLElement): void;
+  /** `lumiere.markdown.properties.listPreviewCount` (default 3). */
+  listPreviewCount?(): number;
+  /** Session-expanded list property keys (tags/aliases/…). */
+  expandedLists?(): ReadonlySet<string>;
+  /** Remember that the user disclosed every chip for a list property. */
+  expandList?(key: string): void;
 }

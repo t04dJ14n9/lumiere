@@ -130,6 +130,8 @@ export class PropertyWidget extends WidgetType {
       hidden: this.hidden,
       collapsed: this.context.propertyEditor?.collapsed?.() ?? false,
       allowEmpty: this.allowEmpty,
+      listPreviewCount: this.context.listPreviewCount?.(),
+      expandedLists: this.context.expandedLists?.(),
       ...(this.context.propertyEditor?.types
         ? { types: this.context.propertyEditor.types() }
         : {}),

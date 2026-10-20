@@ -69,6 +69,8 @@ export function propertyMarkup(
   return renderProperties(source, context.propertyEditor?.types?.(), {
     collapsed: context.propertyEditor?.collapsed?.() ?? false,
     allowEmpty,
+    listPreviewCount: context.listPreviewCount?.(),
+    expandedLists: context.expandedLists?.(),
     ...(context.renderProperty ? { renderValue: context.renderProperty } : {}),
   });
 }
