@@ -109,12 +109,21 @@ test("npm refuses an in-webview player", () => {
   assert.throws(() => playerUrl(video("https://www.npmjs.com/package/lodash")));
 });
 
-test("bangumi and playlists refuse an in-webview player", () => {
+test("bangumi, playlists and channels refuse an in-webview player", () => {
   assert.throws(() =>
     playerUrl(video("https://www.bilibili.com/bangumi/play/ep409506")),
   );
+  assert.throws(() =>
+    playerUrl(video("https://www.youtube.com/@GoogleDevelopers")),
+  );
   assert.equal(
     thumbnailUrl(video("https://www.bilibili.com/bangumi/play/ep409506")),
+    undefined,
+  );
+  assert.equal(
+    thumbnailUrl(
+      video("https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw"),
+    ),
     undefined,
   );
   assert.throws(() =>

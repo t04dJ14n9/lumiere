@@ -171,6 +171,30 @@ test("Bilibili bangumi episode and season links", () => {
   );
 });
 
+test("YouTube channel UC and @handle links", () => {
+  const uc = "UC_x5XG1OV2P6uZZ5FSM9Ttw";
+  assert.deepEqual(parseVideoUrl(`https://www.youtube.com/channel/${uc}`), {
+    provider: "youtube",
+    kind: "channel",
+    id: uc,
+    page: `https://www.youtube.com/channel/${uc}`,
+  });
+  assert.deepEqual(parseVideoUrl("https://www.youtube.com/@GoogleDevelopers"), {
+    provider: "youtube",
+    kind: "channel",
+    id: "@GoogleDevelopers",
+    page: "https://www.youtube.com/@GoogleDevelopers",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://m.youtube.com/@GoogleDevelopers/videos"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.youtube.com/c/GoogleDevelopers"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
