@@ -585,3 +585,21 @@ test("a YouTube channel lookup skips the network", async () => {
   assert.deepEqual(details, {});
   assert.equal(hits, 0);
 });
+
+test("custom /c/ and /user/ channel ids skip the network", async () => {
+  let hits = 0;
+  const fetch: Fetch = async () => {
+    hits++;
+    return response({ title: "nope" });
+  };
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(
+    await source.get("youtube", "c:GoogleDevelopers", "channel"),
+    {},
+  );
+  assert.deepEqual(
+    await source.get("youtube", "user:GoogleDevelopers", "channel"),
+    {},
+  );
+  assert.equal(hits, 0);
+});

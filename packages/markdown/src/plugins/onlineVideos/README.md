@@ -4,9 +4,10 @@ YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm links written
 as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), YouTube playlists (`/playlist?list=` and
-`/embed/videoseries?list=`), YouTube channels (`/channel/UC…` or `/@handle`),
-`![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with `?p=` for
-a part, bangumi `…/bangumi/play/ep…` or `…/ss…`, Hugging Face
+`/embed/videoseries?list=`), YouTube channels (`/channel/UC…`, `/@handle`,
+`/c/…`, or `/user/…`), `![](https://www.bilibili.com/video/BV…)` or
+`…/video/av123`, with `?p=` for a part, bangumi `…/bangumi/play/ep…` or
+`…/ss…`, Hugging Face
 `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
 `/tree/…` normalised away), Spotify
 `open.spotify.com/{track|album|playlist|episode|show}/…`, SoundCloud
@@ -41,11 +42,11 @@ player.
 
 `parse.ts` accepts only the hosts and path shapes above and validated IDs
 (11 characters of `[A-Za-z0-9_-]` for YouTube videos, a `PL`/`UU`/`LL`/`FL`/
-`OL`/`RD` prefix plus 10–64 characters for playlists, `UC…` / `@handle` for
-channels, `BV` plus 10 alphanumerics or `av` digits for Bilibili, `ep…` /
-`ss…` for bangumi, Hugging Face model ids, Spotify `type:22-char` ids,
-SoundCloud `user/slug` paths, npm package names). `player.ts` builds the
-player URL from the parsed
+`OL`/`RD` prefix plus 10–64 characters for playlists, `UC…` / `@handle` /
+`c:…` / `user:…` for channels, `BV` plus 10 alphanumerics or `av` digits for
+Bilibili, `ep…` / `ss…` for bangumi, Hugging Face model ids, Spotify
+`type:22-char` ids, SoundCloud `user/slug` paths, npm package names).
+`player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
 `sandbox="allow-scripts allow-same-origin allow-presentation"`,
@@ -79,8 +80,8 @@ when a trusted card asks over the `onlineVideos.details` RPC:
   (`https://www.youtube.com/oembed`) for the title and channel; the video
   still stays the ID-derived `i.ytimg.com` image. Playlists may show that
   thumbnail as a cover. A watch URL that also has `list=` stays a single
-  video. Channels (`/channel/UC…`, `/@handle`) have no oEmbed — the card
-  keeps alt text or the channel id.
+  video. Channels (`/channel/UC…`, `/@handle`, `/c/…`, `/user/…`) have no
+  oEmbed — the card keeps alt text or the channel id.
 - Hugging Face: keyless `https://huggingface.co/api/models/{id}` for
   `pipeline_tag` / model id and `author` (else the owner segment). No cover.
   Datasets and Spaces stay images.
@@ -152,12 +153,12 @@ Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's,
 YouTube's, Hugging Face's, Spotify's, SoundCloud's and npm's public
 endpoints, which may change or rate-limit. YouTube playlists
 (`/playlist?list=` and embed videoseries), YouTube channels
-(`/channel/UC…`, `/@handle`), and Bilibili bangumi (`/bangumi/play/ep…` /
-`ss…`) render as cards. Custom `/c/` and `/user/` channel paths stay
-images. Channels, bangumi, Hugging Face, Spotify, SoundCloud and npm have
-no in-webview player (Open on provider only). Hub redirects (legacy
-single-segment model ids) fail the host lookup because redirects are
-refused; the card still opens the page. Spotify uses keyless oEmbed
-(`https://open.spotify.com/oembed`) for title and CDN cover. SoundCloud
-uses keyless oEmbed (`https://soundcloud.com/oembed`) for title and sndcdn
-cover. npm uses the keyless registry for description and author.
+(`/channel/UC…`, `/@handle`, `/c/…`, `/user/…`), and Bilibili bangumi
+(`/bangumi/play/ep…` / `ss…`) render as cards. Channels, bangumi, Hugging
+Face, Spotify, SoundCloud and npm have no in-webview player (Open on
+provider only). Hub redirects (legacy single-segment model ids) fail the
+host lookup because redirects are refused; the card still opens the page.
+Spotify uses keyless oEmbed (`https://open.spotify.com/oembed`) for title
+and CDN cover. SoundCloud uses keyless oEmbed
+(`https://soundcloud.com/oembed`) for title and sndcdn cover. npm uses
+the keyless registry for description and author.

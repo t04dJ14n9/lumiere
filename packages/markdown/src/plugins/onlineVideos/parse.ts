@@ -13,11 +13,11 @@ export interface OnlineVideo {
   readonly kind: MediaKind;
   /**
    * An 11-character YouTube video ID, a YouTube playlist ID, a channel
-   * `UC…` / `@handle`, a Bilibili `BV…` / `av` id, a bangumi `ep…` / `ss…`
-   * id, a Hugging Face model id (`name` or `owner/name`), a Spotify
-   * `track|album|playlist|episode|show:…` id, a SoundCloud `user/slug`
-   * (or `user/sets/slug`) path, or an npm package name (`lodash` or
-   * `@scope/name`).
+   * `UC…` / `@handle` / `c:…` / `user:…`, a Bilibili `BV…` / `av` id, a
+   * bangumi `ep…` / `ss…` id, a Hugging Face model id (`name` or
+   * `owner/name`), a Spotify `track|album|playlist|episode|show:…` id, a
+   * SoundCloud `user/slug` (or `user/sets/slug`) path, or an npm package
+   * name (`lodash` or `@scope/name`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -36,11 +36,12 @@ const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
 /** Bangumi episode (`ep409506`) or season (`ss40154`) ids. */
 const BANGUMI_ID = /^(?:ep|ss)([1-9][0-9]{0,9})$/;
-/** YouTube channel id (`UCxxxx…` 24 chars) or `@handle`. */
+/** YouTube channel id (`UCxxxx…` 24 chars), `@handle`, or `c:`/`user:` custom. */
 const YOUTUBE_CHANNEL_UC = /^UC[A-Za-z0-9_-]{22}$/;
 const YOUTUBE_CHANNEL_HANDLE = /^@[A-Za-z0-9._-]{3,30}$/;
+const YOUTUBE_CHANNEL_CUSTOM = /^(?:c|user):[A-Za-z0-9_-]{2,40}$/;
 const YOUTUBE_CHANNEL_PATH =
-  /^\/(?:channel\/(UC[A-Za-z0-9_-]{22})|(@[A-Za-z0-9._-]{3,30}))\/?$/;
+  /^\/(?:channel\/(UC[A-Za-z0-9_-]{22})|(@[A-Za-z0-9._-]{3,30})|c\/([A-Za-z0-9_-]{2,40})|user\/([A-Za-z0-9_-]{2,40}))\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -161,7 +162,9 @@ export function isVideoId(
   if (kind === "channel") {
     return (
       provider === "youtube" &&
-      (YOUTUBE_CHANNEL_UC.test(id) || YOUTUBE_CHANNEL_HANDLE.test(id))
+      (YOUTUBE_CHANNEL_UC.test(id) ||
+        YOUTUBE_CHANNEL_HANDLE.test(id) ||
+        YOUTUBE_CHANNEL_CUSTOM.test(id))
     );
   }
   return isProviderVideoId(provider, id);
@@ -261,18 +264,30 @@ function bilibiliFromHost(url: URL): OnlineVideo | undefined {
 }
 
 /**
- * Channel URLs (`/channel/UC…` or `/@handle`). Custom `/c/` and `/user/`
- * paths stay images — they need a network resolve we refuse.
+ * Channel URLs: `/channel/UC…`, `/@handle`, `/c/name`, `/user/name`.
+ * Custom paths keep `c:` / `user:` ids (no network resolve for canonical UC).
  */
 function youtubeChannel(url: URL): OnlineVideo | undefined {
   const match = YOUTUBE_CHANNEL_PATH.exec(url.pathname);
   if (!match) {
     return undefined;
   }
-  const id = match[1] ?? match[2]!;
-  const page = id.startsWith("@")
-    ? `https://www.youtube.com/${id}`
-    : `https://www.youtube.com/channel/${id}`;
+  const [, uc, handle, custom, user] = match;
+  let id: string;
+  let page: string;
+  if (uc) {
+    id = uc;
+    page = `https://www.youtube.com/channel/${uc}`;
+  } else if (handle) {
+    id = handle;
+    page = `https://www.youtube.com/${handle}`;
+  } else if (custom) {
+    id = `c:${custom}`;
+    page = `https://www.youtube.com/c/${custom}`;
+  } else {
+    id = `user:${user!}`;
+    page = `https://www.youtube.com/user/${user}`;
+  }
   return { provider: "youtube", kind: "channel", id, page };
 }
 
