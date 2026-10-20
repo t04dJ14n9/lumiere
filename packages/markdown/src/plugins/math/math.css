@@ -8,6 +8,10 @@
   max-width: 100%;
   vertical-align: middle;
   text-indent: 0;
+  /* Collapse the placeholder strut; mjx-container already uses line-height: 0.
+   * Without this, nested inline-blocks + SVG overflow made the CM line 1–2px
+   * taller than Obsidian's .hmd-fold-math (OBSIDIAN_LAYOUT). */
+  line-height: 0;
 }
 /* A line of space above and below a display formula, as in Obsidian. */
 .math-display {
@@ -15,6 +19,7 @@
   padding: 1em 0;
   overflow-x: auto;
   text-align: center;
+  line-height: normal;
 }
 .math-placeholder.render-error {
   padding: 0 4px;
@@ -26,15 +31,24 @@
   );
   font-family: var(--code-font);
   font-size: 0.875em;
+  line-height: normal;
 }
 mjx-container {
   display: inline-block;
+  vertical-align: middle;
   direction: ltr;
   line-height: 0;
   text-indent: 0;
 }
 mjx-container svg {
   max-width: 100%;
+}
+/* Inline: clip SVG ink that sat outside the glyph box and padded the line.
+   Display keeps visible overflow inside .math-display's horizontal scrollport. */
+.math-placeholder:not(.math-display) mjx-container svg {
+  overflow: hidden;
+}
+.math-display mjx-container svg {
   overflow: visible;
 }
 /*

@@ -29,7 +29,7 @@ Differences that remain:
 - Tables: Obsidian hangs the table's handle strip in the margin, so the table
   lines up with the text; Workshop's table sits 16px in, because there its
   row grips would fall under the line-number gutter.
-- Inline math can make its line 1–2px taller than Obsidian's.
+- Inline math line height: matched Obsidian `.hmd-fold-math` (placeholder `line-height: 0`, inline SVG `overflow: hidden`).
 - CodeMirror pads every line 2px at the start; all text sits 2px right of
   Obsidian's.
 - A paragraph line right after a quote is part of the quote (CommonMark's lazy
