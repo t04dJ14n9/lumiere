@@ -8,6 +8,12 @@
 
 ## Unreleased
 
+- **Toggle Text Editor** (Ctrl/Cmd+E): switch the active Markdown note between
+  Lumière and the host's built-in text editor. Deliberately not Obsidian's
+  Live Preview ↔ Source binding; that remains the unbound Toggle Live
+  Preview/Source Mode command. Selection/caret are not restored across the
+  switch.
+
 - Renamed to **Lumière: Markdown Editor and PDF Reader**, extension ID
   `t04dj14n9.lumiere`. Settings, commands, views, context keys and editors
   move from `markdownWorkshop.*` and `pdfWorkshop.*` to `lumiere.markdown.*`

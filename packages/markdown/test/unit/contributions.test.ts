@@ -193,7 +193,11 @@ test("a note's keybindings need the note to have focus, not only to be active", 
   const { keybindings } = await contributions();
   assert.ok(keybindings.length > 0);
   for (const binding of keybindings) {
-    if (!/activeCustomEditorId/.test(binding.when ?? "")) {
+    // Require editorFocus only when the binding targets our custom editor.
+    // A workbench binding that merely negates `activeCustomEditorId` (e.g.
+    // Toggle Text Editor while the built-in Markdown editor has focus) must
+    // not demand webview focus.
+    if (!/activeCustomEditorId\s*==/.test(binding.when ?? "")) {
       continue;
     }
     assert.match(
@@ -202,4 +206,46 @@ test("a note's keybindings need the note to have focus, not only to be active", 
       binding.command,
     );
   }
+});
+
+test("Ctrl/Cmd+E toggles Lumière and the host text editor, not Source mode", async () => {
+  const { keybindings, commands } = await contributions();
+  assert.ok(
+    commands.some(
+      (command) => command.command === "lumiere.markdown.toggleTextEditor",
+    ),
+  );
+  assert.ok(
+    !keybindings.some(
+      (binding) =>
+        binding.command === "lumiere.markdown.toggleSourceMode" &&
+        (/\bctrl\+e\b/i.test(binding.key ?? "") ||
+          (binding.mac !== undefined && /\bcmd\+e\b/i.test(binding.mac))),
+    ),
+    "toggleSourceMode must stay unbound from Ctrl/Cmd+E",
+  );
+  const bindings = keybindings.filter(
+    (binding) => binding.command === "lumiere.markdown.toggleTextEditor",
+  );
+  assert.equal(bindings.length, 2);
+  for (const binding of bindings) {
+    assert.equal(binding.key, "ctrl+e");
+    assert.equal(binding.mac, "cmd+e");
+  }
+  const inLumiere = bindings.find((binding) =>
+    /activeCustomEditorId == 'lumiere\.markdown\.editor'/.test(
+      binding.when ?? "",
+    ),
+  );
+  const inText = bindings.find((binding) =>
+    /editorLangId == 'markdown'/.test(binding.when ?? ""),
+  );
+  assert.ok(inLumiere, "one binding for Lumière focus");
+  assert.match(inLumiere!.when ?? "", /&& lumiere\.markdown\.editorFocus$/);
+  assert.ok(inText, "one binding for the built-in Markdown text editor");
+  assert.match(inText!.when ?? "", /editorTextFocus && !activeCustomEditorId/);
+  assert.doesNotMatch(
+    inText!.when ?? "",
+    /activeCustomEditorId == 'lumiere\.markdown\.editor'/,
+  );
 });

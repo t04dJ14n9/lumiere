@@ -177,6 +177,11 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.toggleTextEditor",
+        "title": "Toggle Text Editor",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.insertEmbed",
         "title": "Insert Embed",
         "category": "Lumière"
@@ -1043,6 +1048,18 @@
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
+        "command": "lumiere.markdown.toggleTextEditor",
+        "key": "ctrl+e",
+        "mac": "cmd+e",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.toggleTextEditor",
+        "key": "ctrl+e",
+        "mac": "cmd+e",
+        "when": "editorLangId == 'markdown' && editorTextFocus && !activeCustomEditorId"
+      },
+      {
         "command": "lumiere.markdown.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
@@ -1429,6 +1446,10 @@
         },
         {
           "command": "lumiere.markdown.useForMarkdownInWorkspace"
+        },
+        {
+          "command": "lumiere.markdown.toggleTextEditor",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' || (editorLangId == 'markdown' && !activeCustomEditorId)"
         },
         {
           "command": "lumiere.markdown.insertEmbed",
