@@ -24,6 +24,12 @@ export interface InlineContext {
 }
 export interface InlineRenderer {
   nodes: readonly string[];
+  /**
+   * Keep these widgets outside the viewport so `estimatedHeight` stays in
+   * CodeMirror's height map. Viewport-only inline decorations drop them as
+   * soon as they scroll away, which collapses tall `|WxH` embeds to one line.
+   */
+  persistent?: boolean;
   decorate(node: SyntaxNodeRef, context: InlineContext): void;
 }
 export interface BlockRenderer {

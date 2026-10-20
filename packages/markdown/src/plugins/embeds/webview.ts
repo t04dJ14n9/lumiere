@@ -15,6 +15,7 @@ import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
 import { embedEditing, embedsImage, inlineEmbedClick } from "./clicks";
 import { editingImageAt, imageSelection } from "./image-selection";
+import { writtenHeight } from "./image-size";
 export const embedsWebview: Plugin = {
   name: "embeds",
   inject: {
@@ -99,6 +100,9 @@ function registerEmbedRenderers(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.inline({
       nodes: ["WikiEmbed", "Image"],
+      // Viewport-only decorations drop the widget off-screen; estimatedHeight
+      // then never lands in the line map (mid-paragraph `|WxH` → ~one line).
+      persistent: true,
       decorate(node, cx) {
         const source = cx.state.sliceDoc(node.from, node.to);
         const shown = embedsImage(source)
@@ -121,23 +125,32 @@ function registerEmbedRenderers(ctx: Context): void {
  * same height reserve as EmbedBlock: a `|WxH` image mid-paragraph is still
  * hundreds of pixels tall, and an off-viewport decoration rebuild collapses
  * the line to ~24px without estimatedHeight.
+ *
+ * `toDOM` also applies minHeight so the first in-viewport measure does not
+ * overwrite the reserve with a short unresolved placeholder (~one line).
  */
 class EmbedInline extends MarkdownInline {
-  /**
-   * Missing `|WxH` images paint as short unresolved text (~100px). Without a
-   * min-height, lineBlockAt stays short even though estimatedHeight is 640+,
-   * and off-viewport remounts keep that measured height in the map.
-   */
-  override toDOM(view: EditorView): HTMLElement {
-    const dom = super.toDOM(view);
-    const reserve = embedEstimatedHeight(this.source);
-    if (reserve > 0) {
-      dom.style.minHeight = `${reserve}px`;
-    }
-    return dom;
-  }
   override get estimatedHeight(): number {
     return embedEstimatedHeight(this.source);
+  }
+  /**
+   * Explicit `|WxH` missing images paint as short unresolved text. A bare
+   * `span` ignores min-height; `inline-block` makes the reserve paint. Only
+   * apply when `|WxH` is written — unsized images (selection-inline) must
+   * stay in normal inline flow so drag geometry hits line start. Persistent
+   * decorations keep estimatedHeight off-viewport for remounts.
+   */
+  override toDOM(view: EditorView): HTMLElement {
+    const node = super.toDOM(view);
+    if (writtenHeight(this.source) !== undefined) {
+      const height = this.estimatedHeight;
+      if (height > 0) {
+        node.style.minHeight = `${height}px`;
+        node.style.display = "inline-block";
+        node.style.verticalAlign = "text-top";
+      }
+    }
+    return node;
   }
 }
 

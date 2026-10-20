@@ -32,7 +32,7 @@ click elsewhere or any edit lets it go
 - `image.ts`: zoom toolbar, fit/actual sizing, pan and resize controls.
 - `image-selection.ts`: selecting an image by a click, and its keys.
 - `image-size.ts`: an image's written size and the resize steps.
-- `estimated-height.ts`: CodeMirror height-map reserve for off-viewport remounts.
+- `estimated-height.ts`: CodeMirror height-map reserve for off-viewport remounts (inline embeds use `persistent` decorations so the reserve stays outside the viewport).
 - `image-dialog.ts`: inspector dialog, remembered scale and focus lifetime.
 - `webm.ts`: WebM parsing/recovery exports.
 - `webm-stream.ts`: EBML metadata, streaming boundaries and block time ordering.
