@@ -1,6 +1,6 @@
 # Online Videos
 
-YouTube, Bilibili and Hugging Face model links written as images show as
+YouTube, Bilibili and Hugging Face model and Spotify links written as images show as
 video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), YouTube playlists (`/playlist?list=` and
@@ -125,10 +125,11 @@ off, the links fall back to Embeds (a remote image).
 ## Limits
 
 Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's,
-YouTube's and Hugging Face's public endpoints, which may change or
+YouTube's, Hugging Face's and Spotify's public endpoints, which may change or
 rate-limit. YouTube playlists (`/playlist?list=` and embed videoseries)
 render as cards with an oEmbed title and optional cover. Channels, Bilibili
-bangumi and other providers stay images. Hugging Face has no in-webview
-player (Open on Hugging Face only). Hub redirects (legacy single-segment
-model ids) fail the host lookup because redirects are refused; the card
-still opens the page.
+bangumi and other providers stay images. Hugging Face and Spotify have no
+in-webview player (Open on provider only). Hub redirects (legacy
+single-segment model ids) fail the host lookup because redirects are
+refused; the card still opens the page. Spotify uses keyless oEmbed
+(`https://open.spotify.com/oembed`) for title and CDN cover.

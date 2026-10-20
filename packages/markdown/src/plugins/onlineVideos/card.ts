@@ -33,7 +33,12 @@ export function videoCard(
   const card = element("span", "mw-video");
   card.dataset.provider = video.provider;
   const label = options.label.trim();
-  const noun = video.kind === "playlist" ? "playlist" : "video";
+  const noun =
+    video.provider === "spotify"
+      ? video.id.split(":")[0]!
+      : video.kind === "playlist"
+        ? "playlist"
+        : "video";
   const title = element(
     "span",
     "mw-video-title",

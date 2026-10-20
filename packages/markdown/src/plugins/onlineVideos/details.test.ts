@@ -10,6 +10,7 @@ import {
   parseHuggingFaceModel,
   parseOEmbed,
   oEmbedThumbnail,
+  spotifyThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -343,5 +344,43 @@ test("oEmbedThumbnail accepts YouTube img hosts only", () => {
   assert.equal(
     oEmbedThumbnail({ thumbnail_url: "https://evil.test/x.jpg" }),
     undefined,
+  );
+});
+
+test("spotifyThumbnail accepts Spotify CDN hosts only", () => {
+  assert.equal(
+    spotifyThumbnail({
+      thumbnail_url:
+        "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e027359994525d219f64872d3b1",
+    }),
+    "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e027359994525d219f64872d3b1",
+  );
+  assert.equal(
+    spotifyThumbnail({ thumbnail_url: "https://evil.test/x.jpg" }),
+    undefined,
+  );
+});
+
+test("a Spotify lookup uses oEmbed and may fetch a CDN cover", async () => {
+  const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+  const { fetch, calls } = fakeFetch({
+    "https://open.spotify.com/oembed": () =>
+      response({
+        title: "Cut To The Feeling",
+        thumbnail_url:
+          "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e027359994525d219f64872d3b1",
+      }),
+    "https://image-cdn-ak.spotifycdn.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "spotify",
+    "track:11dFghVXANMlKmJXsNCbNl",
+  );
+  assert.equal(details.title, "Cut To The Feeling");
+  assert.match(details.cover ?? "", /^data:image\/jpeg;base64,/);
+  assert.equal(
+    calls[0]!.url,
+    "https://open.spotify.com/oembed?url=https%3A%2F%2Fopen.spotify.com%2Ftrack%2F11dFghVXANMlKmJXsNCbNl",
   );
 });

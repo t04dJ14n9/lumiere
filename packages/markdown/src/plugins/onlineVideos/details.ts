@@ -173,6 +173,25 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "spotify") {
+      const colon = id.indexOf(":");
+      const resourceKind = id.slice(0, colon);
+      const resource = id.slice(colon + 1);
+      const page = `https://open.spotify.com/${resourceKind}/${resource}`;
+      const body = await this.json(
+        `https://open.spotify.com/oembed?url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = spotifyThumbnail(body);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -229,8 +248,26 @@ export class VideoDetailsSource {
   }
 }
 
+const SPOTIFY_THUMB_HOSTS = new Set([
+  "i.scdn.co",
+  "image-cdn-ak.spotifycdn.com",
+  "image-cdn-fa.spotifycdn.com",
+]);
+
 /** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
 export function oEmbedThumbnail(body: unknown): string | undefined {
+  return thumbnailFromHosts(body, YOUTUBE_THUMB_HOSTS);
+}
+
+/** Spotify oEmbed thumbnail when it is a known CDN host. */
+export function spotifyThumbnail(body: unknown): string | undefined {
+  return thumbnailFromHosts(body, SPOTIFY_THUMB_HOSTS);
+}
+
+function thumbnailFromHosts(
+  body: unknown,
+  hosts: ReadonlySet<string>,
+): string | undefined {
   if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
     return undefined;
   }
@@ -242,7 +279,7 @@ export function oEmbedThumbnail(body: unknown): string | undefined {
   }
   if (
     !/^https?:$/.test(url.protocol) ||
-    !YOUTUBE_THUMB_HOSTS.has(url.hostname) ||
+    !hosts.has(url.hostname) ||
     url.port ||
     url.username ||
     url.password ||
