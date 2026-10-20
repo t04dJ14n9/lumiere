@@ -105,6 +105,33 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Internet Archive details pages", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://archive.org/details/electricsheep-flock-244-40000-1",
+    ),
+    {
+      provider: "archiveOrg",
+      id: "electricsheep-flock-244-40000-1",
+      page: "https://archive.org/details/electricsheep-flock-244-40000-1",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://www.archive.org/details/BigBuckBunny/"),
+    {
+      provider: "archiveOrg",
+      id: "BigBuckBunny",
+      page: "https://archive.org/details/BigBuckBunny",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://archive.org/stream/BigBuckBunny"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://archive.org/details/a"), undefined);
+  assert.equal(parseVideoUrl("https://archive.org/search?query=x"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +156,9 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://archive.org/details/a",
+    "https://archive.org.evil.test/details/BigBuckBunny",
+    "https://archive.org/stream/BigBuckBunny",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

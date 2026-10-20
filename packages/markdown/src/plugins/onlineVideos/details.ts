@@ -151,6 +151,21 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+
+    if (provider === "archiveOrg") {
+      const body = await this.json(
+        `https://archive.org/metadata/${encodeURIComponent(id)}`,
+        signal,
+      );
+      const { details, cover } = parseArchiveMetadata(body, id);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +261,60 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** Internet Archive metadata title/creator and a direct item-tile cover URL. */
+export function parseArchiveMetadata(
+  body: unknown,
+  id: string,
+): { details: VideoDetails; cover?: string } {
+  if (!isRecord(body) || !isRecord(body.metadata)) {
+    throw new Error("Unexpected Archive.org response");
+  }
+  const meta = body.metadata;
+  const creator = meta.creator;
+  const author = Array.isArray(creator)
+    ? text(
+        creator.find((value): value is string => typeof value === "string"),
+        100,
+      )
+    : text(creator, 100);
+  const cover = archiveCoverUrl(body.d1, body.dir, id);
+  return {
+    details: withoutUndefined({
+      title: text(meta.title, 300),
+      author,
+    }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/**
+ * Direct `__ia_thumb.jpg` on the item's storage host (`d1` + `dir` from
+ * metadata). `archive.org/download/…` 302s onto these hosts, so cards fetch
+ * here with `redirect: "error"`.
+ */
+export function archiveCoverUrl(
+  d1: unknown,
+  dir: unknown,
+  id: string,
+): string | undefined {
+  if (typeof d1 !== "string" || typeof dir !== "string") {
+    return undefined;
+  }
+  const host = d1.toLowerCase();
+  if (
+    !/^[a-z0-9][a-z0-9.-]*\.archive\.org$/i.test(d1) ||
+    host === "archive.org" ||
+    host === "www.archive.org"
+  ) {
+    return undefined;
+  }
+  const match = /^\/(\d+)\/items\/([A-Za-z0-9][A-Za-z0-9._-]{1,99})$/.exec(dir);
+  if (!match || match[2] !== id) {
+    return undefined;
+  }
+  return `https://${d1}${dir}/__ia_thumb.jpg`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Internet Archive refuses an in-webview player", () => {
+  assert.equal(providers.archiveOrg.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://archive.org/details/BigBuckBunny")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://archive.org/details/BigBuckBunny")),
+  );
+});

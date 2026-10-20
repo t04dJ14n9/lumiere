@@ -6,6 +6,8 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  archiveCoverUrl,
+  parseArchiveMetadata,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
@@ -307,6 +309,49 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("archiveCoverUrl accepts d1 item hosts with matching dir only", () => {
+  assert.equal(
+    archiveCoverUrl(
+      "dn800305.us.archive.org",
+      "/0/items/electricsheep-flock-244-40000-1",
+      "electricsheep-flock-244-40000-1",
+    ),
+    "https://dn800305.us.archive.org/0/items/electricsheep-flock-244-40000-1/__ia_thumb.jpg",
+  );
+  for (const [d1, dir, id] of [
+    ["archive.org", "/0/items/BigBuckBunny", "BigBuckBunny"],
+    ["evil.test", "/0/items/BigBuckBunny", "BigBuckBunny"],
+    ["dn800305.us.archive.org", "/0/items/other", "BigBuckBunny"],
+    ["dn800305.us.archive.org", "/items/BigBuckBunny", "BigBuckBunny"],
+  ] as const) {
+    assert.equal(archiveCoverUrl(d1, dir, id), undefined);
+  }
+});
+
+test("parseArchiveMetadata reads title, creator and cover", () => {
+  assert.deepEqual(
+    parseArchiveMetadata(
+      {
+        d1: "dn800305.us.archive.org",
+        dir: "/0/items/electricsheep-flock-244-40000-1",
+        metadata: {
+          title: "electricsheep-flock-244-40000-1",
+          creator: ["Scott Draves", "the Electric Sheep"],
+        },
+      },
+      "electricsheep-flock-244-40000-1",
+    ),
+    {
+      details: {
+        title: "electricsheep-flock-244-40000-1",
+        author: "Scott Draves",
+      },
+      cover:
+        "https://dn800305.us.archive.org/0/items/electricsheep-flock-244-40000-1/__ia_thumb.jpg",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +374,39 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("an Archive.org lookup uses metadata and may fetch the item tile", async () => {
+  const cover =
+    "https://dn800305.us.archive.org/0/items/electricsheep-flock-244-40000-1/__ia_thumb.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://archive.org/metadata/": () =>
+      response({
+        d1: "dn800305.us.archive.org",
+        dir: "/0/items/electricsheep-flock-244-40000-1",
+        metadata: {
+          title: "Electric Sheep",
+          creator: "Scott Draves and the Electric Sheep",
+        },
+      }),
+    "https://dn800305.us.archive.org/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "archiveOrg",
+    "electricsheep-flock-244-40000-1",
+  );
+  assert.equal(details.title, "Electric Sheep");
+  assert.equal(details.author, "Scott Draves and the Electric Sheep");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://archive.org/metadata/electricsheep-flock-244-40000-1",
+  );
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
