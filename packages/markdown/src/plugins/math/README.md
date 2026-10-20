@@ -39,4 +39,4 @@ Inline Math and Insert Math Block; neither has a default keybinding.
 ## Limits and differences from Obsidian
 
 Uses the configured MathJax TeX packages without user macros. Errors retain the
-placeholder and show a render error. Save and undo belong to VS Code. Display math shares MarkdownBlock `estimatedHeight` with a MathJax-aware floor so short matrices do not collapse the height map on remount. Exact visual parity with Obsidian awaits the owner's manual comparison.
+placeholder and show a render error. Save and undo belong to VS Code. Display math shares MarkdownBlock `estimatedHeight` with a MathJax-aware floor so short matrices do not collapse the height map on remount. Inline math line box matches Obsidian `.hmd-fold-math` (placeholder `line-height: 0`, inline SVG `overflow: hidden`). Exact glyph metrics still await the owner's manual comparison.

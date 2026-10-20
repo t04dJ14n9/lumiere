@@ -105,3 +105,25 @@ test("a formula on a list item's first line does not inherit the item's hanging 
   assert.match(formula, /display:\s*inline-block/);
   assert.match(formula, /text-indent:\s*0;/);
 });
+
+test("inline math CSS keeps the CM line from growing past Obsidian", () => {
+  const placeholder = cssRule(
+    new URL("./math.css", import.meta.url),
+    ".math-placeholder",
+  );
+  assert.match(placeholder, /vertical-align:\s*middle/);
+  assert.match(placeholder, /line-height:\s*0/);
+  const css = readFileSync(new URL("./math.css", import.meta.url), "utf8");
+  assert.match(
+    css,
+    /\.math-placeholder:not\(\.math-display\)\s+mjx-container\s+svg\s*\{[^}]*overflow:\s*hidden/s,
+  );
+  assert.match(
+    css,
+    /\.math-display\s+mjx-container\s+svg\s*\{[^}]*overflow:\s*visible/s,
+  );
+  assert.doesNotMatch(
+    css.replace(/\.math-display\s+mjx-container\s+svg\s*\{[^}]*\}/s, ""),
+    /mjx-container\s+svg\s*\{[^}]*overflow:\s*visible/s,
+  );
+});
