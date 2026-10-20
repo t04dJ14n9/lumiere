@@ -15,6 +15,7 @@ import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
 import { embedEditing, embedsImage, inlineEmbedClick } from "./clicks";
 import { editingImageAt, imageSelection } from "./image-selection";
+import { writtenHeight } from "./image-size";
 export const embedsWebview: Plugin = {
   name: "embeds",
   inject: {
@@ -133,18 +134,21 @@ class EmbedInline extends MarkdownInline {
     return embedEstimatedHeight(this.source);
   }
   /**
-   * Missing `|WxH` images paint as short unresolved text. A bare `span` ignores
-   * min-height (#126); `inline-block` makes the reserve paint. Persistent
-   * decorations keep the widget (and estimatedHeight) off-viewport so remounts
-   * do not fall back to one text line.
+   * Explicit `|WxH` missing images paint as short unresolved text. A bare
+   * `span` ignores min-height; `inline-block` makes the reserve paint. Only
+   * apply when `|WxH` is written — unsized images (selection-inline) must
+   * stay in normal inline flow so drag geometry hits line start. Persistent
+   * decorations keep estimatedHeight off-viewport for remounts.
    */
   override toDOM(view: EditorView): HTMLElement {
     const node = super.toDOM(view);
-    const height = this.estimatedHeight;
-    if (height > 0) {
-      node.style.minHeight = `${height}px`;
-      node.style.display = "inline-block";
-      node.style.verticalAlign = "text-top";
+    if (writtenHeight(this.source) !== undefined) {
+      const height = this.estimatedHeight;
+      if (height > 0) {
+        node.style.minHeight = `${height}px`;
+        node.style.display = "inline-block";
+        node.style.verticalAlign = "text-top";
+      }
     }
     return node;
   }
