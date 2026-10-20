@@ -2,7 +2,7 @@
   "name": "lumiere",
   "displayName": "Lumière: Markdown Editor and PDF Reader",
   "description": "Obsidian-style Live Preview for Markdown and a PDF reader, in VS Code and Cursor, with links your AI agent can follow.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "t04dj14n9",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -3211,7 +3211,8 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
     "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
     "notices": "node scripts/third-party-notices.mjs",
-    "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links"
+    "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --pre-release --no-dependencies --no-rewrite-relative-links",
+    "package:pre-release": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --pre-release --no-dependencies --no-rewrite-relative-links"
   },
   "dependencies": {
     "@workshop/agents": "workspace:*",
