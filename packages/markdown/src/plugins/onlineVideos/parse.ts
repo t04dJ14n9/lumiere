@@ -142,24 +142,11 @@ export function isVideoId(
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
-  let url: URL;
-  try {
-    url = new URL(raw.trim());
-  } catch {
+  const url = httpUrl(raw);
+  if (!url) {
     return undefined;
   }
-  if (
-    !/^https?:$/.test(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.port
-  ) {
-    return undefined;
-  }
-  return parseKnownHost(url.hostname.toLowerCase(), url);
-}
-
-function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
+  const host = url.hostname.toLowerCase();
   if (host === "youtu.be") {
     return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
   }
@@ -188,6 +175,24 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
     return soundcloud(url);
   }
   return undefined;
+}
+
+function httpUrl(raw: string): URL | undefined {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.port
+  ) {
+    return undefined;
+  }
+  return url;
 }
 
 /**

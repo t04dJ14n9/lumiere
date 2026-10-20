@@ -159,14 +159,7 @@ export class VideoDetailsSource {
       return this.fetchSpotify(id, signal);
     }
     if (provider === "soundcloud") {
-      const page = `https://soundcloud.com/${id}`;
-      const body = await this.json(
-        `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(page)}`,
-        signal,
-      );
-      const details = parseOEmbed(body);
-      await this.attachCover(details, soundcloudThumbnail(body), signal);
-      return details;
+      return this.fetchSoundcloud(id, signal);
     }
     return this.fetchBilibiliView(id, signal);
   }
@@ -205,6 +198,20 @@ export class VideoDetailsSource {
     );
     const details = parseOEmbed(body);
     await this.attachCover(details, spotifyThumbnail(body), signal);
+    return details;
+  }
+
+  private async fetchSoundcloud(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://soundcloud.com/${id}`;
+    const body = await this.json(
+      `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, soundcloudThumbnail(body), signal);
     return details;
   }
 
