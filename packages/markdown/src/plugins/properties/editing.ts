@@ -75,11 +75,15 @@ export class PropertyEditing {
       focusBody: () => {
         const view = this.options.view();
         if (view) {
+          // Place the caret after frontmatter (Obsidian: Escape → document)
+          // without scrollIntoView. On tall Sources sheets, scrollIntoView
+          // jumps from the key being edited (sheet top) to frontmatter end
+          // (sheet tail / decision_confirmation), which is the host Escape
+          // jump. Keep the current scroll; the user already sees the sheet.
           view.dispatch({
             selection: {
               anchor: frontmatter(view.state.doc.toString())?.end ?? 0,
             },
-            scrollIntoView: true,
           });
           view.focus();
         }

@@ -12,7 +12,9 @@ import { bindPropertyLists } from "./lists";
 import { bindPropertyControls } from "./controls";
 import { keepSelectAllInField } from "./select-all";
 import { propertiesEstimatedHeight } from "./estimated-height";
+
 const lifetimes = new WeakMap<HTMLElement, () => void>();
+
 export class PropertyWidget extends WidgetType {
   constructor(
     readonly source: string,
@@ -47,14 +49,32 @@ export class PropertyWidget extends WidgetType {
     const lists = bindPropertyLists(container, this.source, this.context);
     const controls = bindPropertyControls(container, this.source, this.context);
     const selectAll = keepSelectAllInField(wrapper);
+    // WorkVault Sources wrap after first paint; without a resize watch the
+    // height map stays at the short first measure and Escape/caret geometry
+    // land in the overflowing sheet tail (decision_confirmation overlap).
+    const resize =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(() => {
+            if (wrapper.isConnected) {
+              view.requestMeasure();
+            }
+          });
+    resize?.observe(wrapper);
     lifetimes.set(wrapper, () => {
+      resize?.disconnect();
       lists();
       controls();
       selectAll();
     });
     // Tall sheets (e.g. 100+ Sources) must enter the height map before the
     // first scroll/PageDown; otherwise the body paints blank under an
-    // overflowing one-line reserve.
+    // overflowing one-line reserve. minHeight keeps the estimate until
+    // measure / ResizeObserver see the finished wrap.
+    const reserve = this.estimatedHeight;
+    if (reserve > 0 && wrapper.style) {
+      wrapper.style.minHeight = `${reserve}px`;
+    }
     queueMicrotask(() => {
       if (wrapper.isConnected) {
         view.requestMeasure();
@@ -64,7 +84,7 @@ export class PropertyWidget extends WidgetType {
   }
   override updateDOM(
     dom: HTMLElement,
-    _view: EditorView,
+    view: EditorView,
     previous: this,
   ): boolean {
     if (this.context !== previous.context) {
@@ -73,14 +93,25 @@ export class PropertyWidget extends WidgetType {
     if (this.hidden || previous.hidden) {
       return this.hidden === previous.hidden;
     }
-    return (
+    const ok =
       !!dom.firstElementChild &&
       reconcileProperties(
         dom.firstElementChild as HTMLElement,
         this.source,
         this.context,
-      )
-    );
+      );
+    if (ok) {
+      const reserve = this.estimatedHeight;
+      if (reserve > 0 && dom.style) {
+        dom.style.minHeight = `${reserve}px`;
+      }
+      queueMicrotask(() => {
+        if (dom.isConnected) {
+          view.requestMeasure();
+        }
+      });
+    }
+    return ok;
   }
   override destroy(dom: HTMLElement): void {
     lifetimes.get(dom)?.();
