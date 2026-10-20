@@ -107,12 +107,24 @@ function registerEmbedRenderers(ctx: Context): void {
           cx.replace(
             node.from,
             node.to,
-            new MarkdownInline(source, ctx.render, inlineEmbedClick(source)),
+            new EmbedInline(source, ctx.render, inlineEmbedClick(source)),
           );
         }
       },
     }),
   );
+}
+
+/**
+ * Inline image/note/media embeds share MarkdownInline rendering but need the
+ * same height reserve as EmbedBlock: a `|WxH` image mid-paragraph is still
+ * hundreds of pixels tall, and an off-viewport decoration rebuild collapses
+ * the line to ~24px without estimatedHeight.
+ */
+class EmbedInline extends MarkdownInline {
+  override get estimatedHeight(): number {
+    return embedEstimatedHeight(this.source);
+  }
 }
 
 function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
