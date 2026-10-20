@@ -44,6 +44,8 @@ export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
+/** Same shape as parse.ts TikTok ids (`user:video` or bare video). */
+const TIKTOK_ID_PARSE = /^(?:([A-Za-z0-9._]{1,24}):)?([1-9][0-9]{5,19})$/;
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
   ["image/jpeg", (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff],
   ["image/png", (b) => ascii(b, 1, 4) === "PNG" && b[0] === 0x89],
@@ -151,6 +153,10 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+
+    if (provider === "tiktok") {
+      return this.tiktokDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -167,6 +173,39 @@ export class VideoDetailsSource {
       }
     }
     return details;
+  }
+
+  /**
+   * TikTok oEmbed often omits title/author/thumb; keep `@user` from the id
+   * when present so the card still shows an author.
+   */
+  private async tiktokDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const match = TIKTOK_ID_PARSE.exec(id);
+    if (!match) {
+      throw new Error("Invalid TikTok id");
+    }
+    const user = match[1];
+    const video = match[2]!;
+    const page = user
+      ? `https://www.tiktok.com/@${user}/video/${video}`
+      : `https://www.tiktok.com/video/${video}`;
+    const body = await this.json(
+      `https://www.tiktok.com/oembed?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    if (details.author || !user) {
+      return details;
+    }
+    return withoutUndefined({
+      title: details.title,
+      author: text(user, 100),
+      duration: details.duration,
+      cover: details.cover,
+    });
   }
 
   private async json(url: string, signal: AbortSignal): Promise<unknown> {

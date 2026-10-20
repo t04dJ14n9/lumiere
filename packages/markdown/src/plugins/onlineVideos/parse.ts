@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and TikTok links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "tiktok";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a TikTok snowflake (`digits` or
+   * `user:digits` when `@user` is in the path).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -23,6 +24,11 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** TikTok video id; optional `user:` prefix from `/@user/video/…`. */
+const TIKTOK_ID = /^(?:([A-Za-z0-9._]{1,24}):)?([1-9][0-9]{5,19})$/;
+const TIKTOK_AT_PATH =
+  /^\/@([A-Za-z0-9._]{1,24})\/video\/([1-9][0-9]{5,19})\/?$/;
+const TIKTOK_VIDEO_PATH = /^\/video\/([1-9][0-9]{5,19})\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -36,6 +42,7 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+const TIKTOK_HOSTS = new Set(["tiktok.com", "www.tiktok.com", "m.tiktok.com"]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
 
@@ -79,7 +86,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return TIKTOK_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +127,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+
+  if (TIKTOK_HOSTS.has(host)) {
+    return tiktok(url);
   }
   return undefined;
 }
@@ -158,6 +172,40 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+/**
+ * `/@user/video/{id}` or `/video/{id}` (vm.tiktok.com /t/ short links stay
+ * images — they need redirects the host fetch refuses).
+ */
+function tiktok(url: URL): OnlineVideo | undefined {
+  const at = TIKTOK_AT_PATH.exec(url.pathname);
+  if (at) {
+    const user = at[1]!;
+    const video = at[2]!;
+    const id = `${user}:${video}`;
+    if (!TIKTOK_ID.test(id)) {
+      return undefined;
+    }
+    return {
+      provider: "tiktok",
+      id,
+      page: `https://www.tiktok.com/@${user}/video/${video}`,
+    };
+  }
+  const bare = TIKTOK_VIDEO_PATH.exec(url.pathname);
+  if (!bare) {
+    return undefined;
+  }
+  const video = bare[1]!;
+  if (!TIKTOK_ID.test(video)) {
+    return undefined;
+  }
+  return {
+    provider: "tiktok",
+    id: video,
+    page: `https://www.tiktok.com/video/${video}`,
   };
 }
 

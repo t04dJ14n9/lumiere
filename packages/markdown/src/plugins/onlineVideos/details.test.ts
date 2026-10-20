@@ -331,3 +331,58 @@ test("a Hugging Face lookup fetches the models API", async () => {
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
+
+test("a TikTok lookup uses www.tiktok.com oEmbed and keeps @user as author", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://www.tiktok.com/oembed": () =>
+      response({
+        provider_name: "TikTok",
+        type: "video",
+        // Live oEmbed often omits title/author_name.
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "tiktok",
+    "scout2015:6718339390832963845",
+  );
+  assert.equal(details.author, "scout2015");
+  assert.equal(details.title, undefined);
+  assert.equal(details.cover, undefined);
+  assert.equal(
+    calls[0]?.url,
+    `https://www.tiktok.com/oembed?url=${encodeURIComponent("https://www.tiktok.com/@scout2015/video/6718339390832963845")}`,
+  );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a TikTok oEmbed title wins over the path user", async () => {
+  const { fetch } = fakeFetch({
+    "https://www.tiktok.com/oembed": () =>
+      response({
+        title: "hello from tiktok",
+        author_name: "Official Name",
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "tiktok",
+    "scout2015:6718339390832963845",
+  );
+  assert.equal(details.title, "hello from tiktok");
+  assert.equal(details.author, "Official Name");
+});
+
+test("a bare TikTok video id still requests oEmbed", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://www.tiktok.com/oembed": () => response({ title: "clip" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "tiktok",
+    "6718339390832963845",
+  );
+  assert.equal(details.title, "clip");
+  assert.equal(details.author, undefined);
+  assert.equal(
+    calls[0]?.url,
+    `https://www.tiktok.com/oembed?url=${encodeURIComponent("https://www.tiktok.com/video/6718339390832963845")}`,
+  );
+});

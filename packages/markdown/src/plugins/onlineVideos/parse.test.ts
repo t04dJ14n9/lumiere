@@ -105,6 +105,43 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("TikTok @user/video and /video links", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://www.tiktok.com/@scout2015/video/6718339390832963845",
+    ),
+    {
+      provider: "tiktok",
+      id: "scout2015:6718339390832963845",
+      page: "https://www.tiktok.com/@scout2015/video/6718339390832963845",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://m.tiktok.com/@a_b.c/video/1234567890123456789?utm=x",
+    ),
+    {
+      provider: "tiktok",
+      id: "a_b.c:1234567890123456789",
+      page: "https://www.tiktok.com/@a_b.c/video/1234567890123456789",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://www.tiktok.com/video/6718339390832963845"),
+    {
+      provider: "tiktok",
+      id: "6718339390832963845",
+      page: "https://www.tiktok.com/video/6718339390832963845",
+    },
+  );
+  assert.equal(parseVideoUrl("https://www.tiktok.com/@scout2015"), undefined);
+  assert.equal(
+    parseVideoUrl("https://www.tiktok.com/@scout2015/video/0123"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://vm.tiktok.com/ZMabcdef/"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +166,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://www.tiktok.com/@scout2015",
+    "https://www.tiktok.com/t/ZMabcdef/",
+    "https://vm.tiktok.com/ZMabcdef/",
+    "https://tiktok.com.evil.test/@x/video/6718339390832963845",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

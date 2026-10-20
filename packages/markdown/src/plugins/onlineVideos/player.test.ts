@@ -71,8 +71,23 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
     thumbnailUrl(video("https://www.bilibili.com/video/BV1DRHU6LELy")),
     undefined,
   );
+  assert.equal(
+    thumbnailUrl(
+      video("https://www.tiktok.com/@scout2015/video/6718339390832963845"),
+    ),
+    undefined,
+  );
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
+  assert.equal(providers.tiktok.embeddable, false);
+});
+
+test("TikTok refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(
+      video("https://www.tiktok.com/@scout2015/video/6718339390832963845"),
+    ),
+  );
 });
 
 test("Hugging Face refuses an in-webview player", () => {
