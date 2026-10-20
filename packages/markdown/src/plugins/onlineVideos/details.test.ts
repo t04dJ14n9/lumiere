@@ -4,10 +4,12 @@ import type { Fetch, FetchResponse } from "./details";
 import {
   USER_AGENT,
   VideoDetailsSource,
+  blueskyCdnUrl,
   coverUrl,
   imageDataUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
+  parseBlueskyPosts,
   parseOEmbed,
 } from "./details";
 
@@ -307,6 +309,61 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("blueskyCdnUrl accepts cdn.bsky.app avatar and feed paths only", () => {
+  assert.equal(
+    blueskyCdnUrl(
+      "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
+    ),
+    "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
+  );
+  assert.equal(
+    blueskyCdnUrl(
+      "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:of56nmyuqzvjta7qlf7gwht6/bafkreiebsxq6g2fth3ubftrtiu3u7fnqcjow3f6fx6kuxcppmk7vs5c63q",
+    ),
+    "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:of56nmyuqzvjta7qlf7gwht6/bafkreiebsxq6g2fth3ubftrtiu3u7fnqcjow3f6fx6kuxcppmk7vs5c63q",
+  );
+  for (const value of [
+    "https://evil.test/img/avatar/plain/did:plc:x/bafk",
+    "https://cdn.bsky.app/img/avatar/plain/did:plc:x/bafk?x=1",
+    "https://cdn.bsky.app/other/did:plc:x/bafk",
+    "http://cdn.bsky.app/img/avatar/plain/did:plc:x/bafk",
+  ]) {
+    assert.equal(blueskyCdnUrl(value), undefined);
+  }
+});
+
+test("parseBlueskyPosts prefers embed thumb then avatar", () => {
+  assert.deepEqual(
+    parseBlueskyPosts({
+      posts: [
+        {
+          record: { text: "hello from bluesky" },
+          author: {
+            handle: "bsky.app",
+            displayName: "Bluesky",
+            avatar:
+              "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
+          },
+          embed: {
+            $type: "app.bsky.embed.images#view",
+            images: [
+              {
+                thumb:
+                  "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:of56nmyuqzvjta7qlf7gwht6/bafkreiebsxq6g2fth3ubftrtiu3u7fnqcjow3f6fx6kuxcppmk7vs5c63q",
+              },
+            ],
+          },
+        },
+      ],
+    }),
+    {
+      details: { title: "hello from bluesky", author: "Bluesky" },
+      cover:
+        "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:of56nmyuqzvjta7qlf7gwht6/bafkreiebsxq6g2fth3ubftrtiu3u7fnqcjow3f6fx6kuxcppmk7vs5c63q",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +386,42 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a Bluesky lookup resolves the handle then getPosts", async () => {
+  const cover =
+    "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka";
+  const { fetch, calls } = fakeFetch({
+    "https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle": () =>
+      response({ did: "did:plc:z72i7hdynmk6r22z27h6tvur" }),
+    "https://public.api.bsky.app/xrpc/app.bsky.feed.getPosts": () =>
+      response({
+        posts: [
+          {
+            record: { text: "hello from bluesky" },
+            author: {
+              handle: "bsky.app",
+              displayName: "Bluesky",
+              avatar: cover,
+            },
+          },
+        ],
+      }),
+    "https://cdn.bsky.app/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "bluesky",
+    "bsky.app/post/3myaytlknus25",
+  );
+  assert.equal(details.title, "hello from bluesky");
+  assert.equal(details.author, "Bluesky");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.match(calls[0]?.url ?? "", /resolveHandle\?handle=bsky\.app$/);
+  assert.match(calls[1]?.url ?? "", /getPosts\?uris=/);
+  assert.equal(calls[2]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

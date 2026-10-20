@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Bluesky refuses an in-webview player", () => {
+  assert.equal(providers.bluesky.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://bsky.app/profile/bsky.app/post/3myaytlknus25")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://bsky.app/profile/bsky.app/post/3myaytlknus25")),
+  );
+});

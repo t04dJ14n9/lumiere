@@ -105,6 +105,36 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Bluesky post pages on bsky.app", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://bsky.app/profile/bsky.app/post/3myaytlknus25"),
+    {
+      provider: "bluesky",
+      id: "bsky.app/post/3myaytlknus25",
+      page: "https://bsky.app/profile/bsky.app/post/3myaytlknus25",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3myaytlknus25",
+    ),
+    {
+      provider: "bluesky",
+      id: "did:plc:z72i7hdynmk6r22z27h6tvur/post/3myaytlknus25",
+      page: "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3myaytlknus25",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://www.bsky.app/profile/bsky.app/post/3myaytlknus25"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://bsky.app/profile/bsky.app"), undefined);
+  assert.equal(
+    parseVideoUrl("https://bsky.app/profile/bsky.app/post/SHORT"),
+    undefined,
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +159,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://www.bsky.app/profile/bsky.app/post/3myaytlknus25",
+    "https://bsky.app.evil.test/profile/bsky.app/post/3myaytlknus25",
+    "https://bsky.app/profile/bsky.app",
+    "https://bsky.app/profile/bsky.app/post/SHORT",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

@@ -131,6 +131,40 @@ export class VideoDetailsSource {
     }
   }
 
+  private async fetchBluesky(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const marker = "/post/";
+    const at = id.indexOf(marker);
+    const actor = id.slice(0, at);
+    const rkey = id.slice(at + marker.length);
+    let did = actor;
+    if (!actor.startsWith("did:")) {
+      const resolved = await this.json(
+        `https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(actor)}`,
+        signal,
+      );
+      if (!isRecord(resolved) || typeof resolved.did !== "string") {
+        throw new Error("Unexpected Bluesky resolve response");
+      }
+      did = resolved.did;
+    }
+    const uri = `at://${did}/app.bsky.feed.post/${rkey}`;
+    const body = await this.json(
+      `https://public.api.bsky.app/xrpc/app.bsky.feed.getPosts?uris=${encodeURIComponent(uri)}`,
+      signal,
+    );
+    const { details, cover } = parseBlueskyPosts(body);
+    if (cover) {
+      const image = await this.image(cover, signal).catch(() => undefined);
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
   private async fetchDetails(
     provider: VideoProvider,
     id: string,
@@ -150,6 +184,9 @@ export class VideoDetailsSource {
         signal,
       );
       return parseHuggingFaceModel(body);
+    }
+    if (provider === "bluesky") {
+      return this.fetchBluesky(id, signal);
     }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
@@ -246,6 +283,84 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** Bluesky getPosts: post text, author display/handle, embed thumb or avatar. */
+export function parseBlueskyPosts(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (
+    !isRecord(body) ||
+    !Array.isArray(body.posts) ||
+    body.posts.length === 0
+  ) {
+    throw new Error("Unexpected Bluesky response");
+  }
+  const post = body.posts[0];
+  if (!isRecord(post)) {
+    throw new Error("Unexpected Bluesky response");
+  }
+  const record = isRecord(post.record) ? post.record : {};
+  const title = text(record.text, 300);
+  const authorRec = isRecord(post.author) ? post.author : {};
+  const author =
+    text(authorRec.displayName, 100) ?? text(authorRec.handle, 100);
+  const cover =
+    blueskyEmbedThumb(post.embed) ?? blueskyCdnUrl(authorRec.avatar);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+function blueskyEmbedThumb(embed: unknown): string | undefined {
+  if (!isRecord(embed)) {
+    return undefined;
+  }
+  // app.bsky.embed.images#view
+  if (Array.isArray(embed.images) && embed.images.length > 0) {
+    const image = embed.images[0];
+    if (isRecord(image)) {
+      return blueskyCdnUrl(image.thumb) ?? blueskyCdnUrl(image.fullsize);
+    }
+  }
+  // app.bsky.embed.recordWithMedia#view — media.images
+  if (isRecord(embed.media)) {
+    return blueskyEmbedThumb(embed.media);
+  }
+  return undefined;
+}
+
+/**
+ * Bluesky CDN images on `cdn.bsky.app` under `/img/{avatar|feed_*}/plain/…`
+ * (CIDs have no file extension; typed later by signature).
+ */
+export function blueskyCdnUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "cdn.bsky.app" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/img\/(?:avatar|feed_thumbnail|feed_fullsize)\/plain\/did:[a-z0-9]+:[a-zA-Z0-9._%-]+\/[a-z0-9]+$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://cdn.bsky.app${url.pathname}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

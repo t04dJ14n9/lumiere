@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
+ * Recognise YouTube, Bilibili, Hugging Face model and Bluesky links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "bluesky";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Bluesky `{actor}/post/{rkey}`
+   * (handle or did).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,6 +72,18 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/** Bluesky handle (`name.bsky.social`) or DID (`did:plc:…`). */
+const BSKY_HANDLE =
+  /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+)$/;
+const BSKY_DID = /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/;
+const BSKY_RKEY = /^[a-z0-9]{8,32}$/;
+const BSKY_PATH = /^\/profile\/([^/]+)\/post\/([a-z0-9]{8,32})\/?$/;
+const BSKY_HOSTS = new Set(["bsky.app"]);
+
+function isBlueskyActor(actor: string): boolean {
+  return BSKY_DID.test(actor) || BSKY_HANDLE.test(actor);
+}
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
@@ -79,7 +92,17 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  const marker = "/post/";
+  const at = id.indexOf(marker);
+  if (at < 1) {
+    return false;
+  }
+  const actor = id.slice(0, at);
+  const rkey = id.slice(at + marker.length);
+  return isBlueskyActor(actor) && BSKY_RKEY.test(rkey);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +140,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (BSKY_HOSTS.has(host)) {
+    return bluesky(url.pathname);
   }
   return undefined;
 }
@@ -158,6 +184,30 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function bluesky(pathname: string): OnlineVideo | undefined {
+  const match = BSKY_PATH.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  let actor: string;
+  try {
+    actor = decodeURIComponent(match[1]!);
+  } catch {
+    return undefined;
+  }
+  const rkey = match[2]!;
+  if (!isBlueskyActor(actor) || !BSKY_RKEY.test(rkey)) {
+    return undefined;
+  }
+  const id = `${actor}/post/${rkey}`;
+  const encodedActor = encodeURIComponent(actor).replace(/%3A/gi, ":");
+  return {
+    provider: "bluesky",
+    id,
+    page: `https://bsky.app/profile/${encodedActor}/post/${rkey}`,
   };
 }
 
