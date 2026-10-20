@@ -1,13 +1,15 @@
 # Online Videos
 
-YouTube, Bilibili and Hugging Face model links written as images show as
+YouTube, Bilibili and Hugging Face Hub links written as images show as
 video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), `![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with
 `?p=` for a part, and Hugging Face
-`![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
-`/tree/…` normalised away). Obsidian has no equivalent (it shows such links
-as broken images); local video (`![[clip.mp4]]`) stays with Embeds.
+`![](https://huggingface.co/{owner}/{model})`,
+`![](https://huggingface.co/datasets/…)`,
+`![](https://huggingface.co/spaces/…)` (single-segment ids; `/tree/…`
+normalised away). Obsidian has no equivalent (it shows such links as broken
+images); local video (`![[clip.mp4]]`) stays with Embeds.
 
 A card shows a title (the alt text, else the provider's title, else "YouTube
 video", "Bilibili video" or "Hugging Face video"), the provider with the
@@ -30,7 +32,8 @@ player.
 
 `parse.ts` accepts only the hosts and path shapes above and validated IDs
 (11 characters of `[A-Za-z0-9_-]` for YouTube, `BV` plus 10 alphanumerics or
-`av` digits for Bilibili, Hugging Face model ids). `player.ts` builds the player URL from the parsed
+`av` digits for Bilibili, Hugging Face model / `datasets/…` / `spaces/…`
+ids). `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
 `sandbox="allow-scripts allow-same-origin allow-presentation"`,
@@ -46,7 +49,7 @@ puts the image back when the pass is disposed.
 
 ### Titles and covers
 
-Bilibili covers and Hugging Face model metadata have no URL derived from the
+Bilibili covers and Hugging Face Hub metadata have no URL derived from the
 ID alone, and the webview CSP allows no network (`connect-src` is the
 webview only), so the extension host looks them up (`host.ts`, `details.ts`)
 when a trusted card asks over the `onlineVideos.details` RPC:
@@ -59,9 +62,10 @@ when a trusted card asks over the `onlineVideos.details` RPC:
   handed to the webview as a `data:` URL, so `img-src` is not loosened.
 - YouTube: keyless oEmbed (`https://www.youtube.com/oembed`) for the title
   and channel; the still stays the ID-derived `i.ytimg.com` image.
-- Hugging Face: keyless `https://huggingface.co/api/models/{id}` for
-  `pipeline_tag` / model id and `author` (else the owner segment). No cover.
-  Datasets and Spaces stay images.
+- Hugging Face: keyless Hub APIs — models `/api/models/{id}`
+  (`pipeline_tag` · id), datasets `/api/datasets/{id}` (first
+  `task_categories:` tag · id), spaces `/api/spaces/{id}` (`sdk` · card
+  title). Author from `author` or the owner segment. No cover.
 
 The host refuses the RPC in an untrusted workspace (and the webview does not
 ask), checks the ID again, sends `User-Agent: MarkdownWorkshop (VS Code
@@ -121,6 +125,6 @@ off, the links fall back to Embeds (a remote image).
 Lookups depend on Bilibili's, YouTube's and Hugging Face's public endpoints,
 which may change or rate-limit. Playlists, channels, Bilibili bangumi and
 other providers are left as images. Hugging Face has no in-webview player
-(Open on Hugging Face only). Hub redirects (legacy single-segment model
-ids) fail the host lookup because redirects are refused; the card still
-opens the page.
+(Open on Hugging Face only). Hub redirects (legacy single-segment model or
+dataset ids) fail the host lookup because redirects are refused; the card
+still opens the page.

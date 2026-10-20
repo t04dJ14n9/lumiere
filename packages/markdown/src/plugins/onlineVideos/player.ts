@@ -36,7 +36,7 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
     origin: "https://huggingface.co",
     path: "/",
     pathPattern:
-      /^\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,99})?)$/,
+      /^\/(?:(?:datasets|spaces)\/)?(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,99})?)$/,
     embeddable: false,
   },
 };

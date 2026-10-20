@@ -145,10 +145,17 @@ export class VideoDetailsSource {
       return parseOEmbed(body);
     }
     if (provider === "huggingface") {
+      const { api, repoId } = huggingfaceEndpoint(id);
       const body = await this.json(
-        `https://huggingface.co/api/models/${id}`,
+        `https://huggingface.co/api/${api}/${repoId}`,
         signal,
       );
+      if (api === "datasets") {
+        return parseHuggingFaceDataset(body);
+      }
+      if (api === "spaces") {
+        return parseHuggingFaceSpace(body);
+      }
       return parseHuggingFaceModel(body);
     }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
@@ -218,6 +225,23 @@ export function parseOEmbed(body: unknown): VideoDetails {
 }
 
 /**
+ * Route a Hugging Face card id to `/api/{models|datasets|spaces}/{repo}`.
+ * Dataset/space ids carry a `datasets/` or `spaces/` prefix from parse.ts.
+ */
+export function huggingfaceEndpoint(id: string): {
+  api: "models" | "datasets" | "spaces";
+  repoId: string;
+} {
+  if (id.startsWith("datasets/")) {
+    return { api: "datasets", repoId: id.slice("datasets/".length) };
+  }
+  if (id.startsWith("spaces/")) {
+    return { api: "spaces", repoId: id.slice("spaces/".length) };
+  }
+  return { api: "models", repoId: id };
+}
+
+/**
  * Hugging Face model API (`/api/models/{id}`): pipeline tag or model id as
  * title; author from `author` or the owner segment of the id. No cover.
  */
@@ -236,16 +260,67 @@ export function parseHuggingFaceModel(body: unknown): VideoDetails {
   });
 }
 
+/**
+ * Hugging Face dataset API (`/api/datasets/{id}`): first `task_categories:`
+ * tag or dataset id as title; author from `author` or the owner segment.
+ */
+export function parseHuggingFaceDataset(body: unknown): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Hugging Face response");
+  }
+  const datasetId = text(body.id, 200) ?? text(body._id, 200);
+  const task = huggingfaceTag(body.tags, "task_categories:");
+  const title =
+    task && datasetId ? `${task} · ${datasetId}` : (task ?? datasetId);
+  return withoutUndefined({
+    title,
+    author: huggingfaceAuthor(body, datasetId),
+  });
+}
+
+/**
+ * Hugging Face space API (`/api/spaces/{id}`): sdk · card title (or id);
+ * author from `author` or the owner segment. No cover.
+ */
+export function parseHuggingFaceSpace(body: unknown): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Hugging Face response");
+  }
+  const spaceId = text(body.id, 200) ?? text(body._id, 200);
+  const sdk = text(body.sdk, 40);
+  const card = isRecord(body.cardData) ? body.cardData : undefined;
+  const cardTitle = card ? text(card.title, 200) : undefined;
+  const label = cardTitle ?? spaceId;
+  const title = sdk && label ? `${sdk} · ${label}` : (sdk ?? label);
+  return withoutUndefined({
+    title,
+    author: huggingfaceAuthor(body, spaceId),
+  });
+}
+
 function huggingfaceAuthor(
   body: Record<string, unknown>,
-  modelId: string | undefined,
+  repoId: string | undefined,
 ): string | undefined {
   const direct = text(body.author, 100);
   if (direct) {
     return direct;
   }
-  const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
+  const owner = repoId?.includes("/") ? repoId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+function huggingfaceTag(tags: unknown, prefix: string): string | undefined {
+  if (!Array.isArray(tags)) {
+    return undefined;
+  }
+  for (const tag of tags) {
+    if (typeof tag !== "string" || !tag.startsWith(prefix)) {
+      continue;
+    }
+    return text(tag.slice(prefix.length), 100);
+  }
+  return undefined;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

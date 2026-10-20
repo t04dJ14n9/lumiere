@@ -1,14 +1,14 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili and Hugging Face model/dataset/space links.
+ * Only a fully parsed and validated ID leaves this module; players and cards
+ * are built from it, never from the link text.
  */
 export type VideoProvider = "youtube" | "bilibili" | "huggingface";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
    * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * Hub id: model (`name` or `owner/name`), `datasets/…`, or `spaces/…`.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -40,15 +40,22 @@ const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
 
 /**
- * Hugging Face model id: `name` or `owner/name` (letters, digits, `.`, `_`,
- * `-`); at most 200 chars. Hub marketing paths are rejected.
+ * Hugging Face repo id: `name` or `owner/name` (letters, digits, `.`, `_`,
+ * `-`); at most 200 chars. Models reject Hub marketing paths; datasets and
+ * spaces use a `datasets/` or `spaces/` prefix on the card id.
  */
 const HF_SEGMENT = "[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?";
-const HF_ID = new RegExp(`^(?:${HF_SEGMENT}|${HF_SEGMENT}/${HF_SEGMENT})$`);
-const HF_PATH = new RegExp(
-  `^\\/(${HF_SEGMENT}(?:\\/${HF_SEGMENT})?)(?:\\/(?:tree|blob|resolve|discussions|settings)(?:\\/.*)?)?\\/?$`,
+const HF_REPO = `(?:${HF_SEGMENT}|${HF_SEGMENT}/${HF_SEGMENT})`;
+const HF_ID = new RegExp(`^${HF_REPO}$`);
+const HF_FULL_ID = new RegExp(`^(?:(?:datasets|spaces)/)?${HF_REPO}$`);
+const HF_SUFFIX =
+  "(?:\\/(?:tree|blob|resolve|discussions|settings)(?:\\/.*)?)?\\/?";
+const HF_PATH = new RegExp(`^\\/(${HF_REPO})${HF_SUFFIX}$`);
+const HF_COLLECTION_PATH = new RegExp(
+  `^\\/(datasets|spaces)\\/(${HF_REPO})${HF_SUFFIX}$`,
 );
 const HF_HOSTS = new Set(["huggingface.co", "www.huggingface.co"]);
+const HF_MAX_ID = 220;
 const HF_RESERVED = new Set([
   "models",
   "datasets",
@@ -63,8 +70,6 @@ const HF_RESERVED = new Set([
   "settings",
   "api",
   "chat",
-  "spaces",
-  "datasets",
   "tasks",
   "metrics",
   "organizations",
@@ -79,7 +84,13 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (id.length > HF_MAX_ID || !HF_FULL_ID.test(id)) {
+    return false;
+  }
+  if (id.startsWith("datasets/") || id.startsWith("spaces/")) {
+    return true;
+  }
+  return !HF_RESERVED.has(id.split("/")[0]!.toLowerCase());
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -115,6 +126,13 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
     return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
   }
   if (HF_HOSTS.has(host)) {
+    const collection = HF_COLLECTION_PATH.exec(url.pathname);
+    if (collection) {
+      return huggingface(
+        collection[2]!,
+        collection[1] as "datasets" | "spaces",
+      );
+    }
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
   }
@@ -146,12 +164,21 @@ function bilibili(id: string | undefined, url: URL): OnlineVideo | undefined {
   return { provider: "bilibili", id: valid, part, page };
 }
 
-function huggingface(id: string): OnlineVideo | undefined {
-  if (!HF_ID.test(id) || id.length > 200) {
+function huggingface(
+  repoId: string,
+  kind?: "datasets" | "spaces",
+): OnlineVideo | undefined {
+  if (!HF_ID.test(repoId) || repoId.length > 200) {
     return undefined;
   }
-  const root = id.split("/")[0]!.toLowerCase();
-  if (HF_RESERVED.has(root)) {
+  if (!kind) {
+    const root = repoId.split("/")[0]!.toLowerCase();
+    if (HF_RESERVED.has(root)) {
+      return undefined;
+    }
+  }
+  const id = kind ? `${kind}/${repoId}` : repoId;
+  if (id.length > HF_MAX_ID) {
     return undefined;
   }
   return {

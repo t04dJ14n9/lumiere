@@ -94,15 +94,48 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
     id: "bert-base-uncased",
     page: "https://huggingface.co/bert-base-uncased",
   });
-  assert.equal(
-    parseVideoUrl("https://huggingface.co/datasets/squad"),
-    undefined,
-  );
-  assert.equal(
-    parseVideoUrl("https://huggingface.co/spaces/foo/bar"),
-    undefined,
-  );
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
+});
+
+test("Hugging Face dataset and space pages", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://huggingface.co/datasets/rajpurkar/squad"),
+    {
+      provider: "huggingface",
+      id: "datasets/rajpurkar/squad",
+      page: "https://huggingface.co/datasets/rajpurkar/squad",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://www.huggingface.co/datasets/squad/tree/main"),
+    {
+      provider: "huggingface",
+      id: "datasets/squad",
+      page: "https://huggingface.co/datasets/squad",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://huggingface.co/spaces/gradio/hello_world"),
+    {
+      provider: "huggingface",
+      id: "spaces/gradio/hello_world",
+      page: "https://huggingface.co/spaces/gradio/hello_world",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://huggingface.co/spaces/foo/bar/blob/main/app.py"),
+    {
+      provider: "huggingface",
+      id: "spaces/foo/bar",
+      page: "https://huggingface.co/spaces/foo/bar",
+    },
+  );
+  assert.equal(parseVideoUrl("https://huggingface.co/datasets/"), undefined);
+  assert.equal(parseVideoUrl("https://huggingface.co/spaces/"), undefined);
+  assert.equal(
+    parseVideoUrl("https://huggingface.co/datasets/a/b/c"),
+    undefined,
+  );
 });
 
 test("anything that is not a well-formed video link is left alone", () => {
@@ -126,9 +159,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://www.bilibili.com/bangumi/play/ep1",
     "https://space.bilibili.com/video/BV1DRHU6LELy",
     "https://huggingface.co.evil.test/google/gemma-2-2b",
-    "https://huggingface.co/datasets/squad",
-    "https://huggingface.co/spaces/foo/bar",
+    "https://huggingface.co/datasets/",
+    "https://huggingface.co/spaces/",
+    "https://huggingface.co/models/google/gemma-2-2b",
     "https://hf.co/google/gemma-2-2b",
+    "https://hf.co/datasets/squad",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

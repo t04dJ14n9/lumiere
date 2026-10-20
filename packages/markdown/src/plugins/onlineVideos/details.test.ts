@@ -7,7 +7,10 @@ import {
   coverUrl,
   imageDataUrl,
   parseBilibiliView,
+  huggingfaceEndpoint,
+  parseHuggingFaceDataset,
   parseHuggingFaceModel,
+  parseHuggingFaceSpace,
   parseOEmbed,
 } from "./details";
 
@@ -330,4 +333,103 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("huggingfaceEndpoint maps model, dataset and space ids", () => {
+  assert.deepEqual(huggingfaceEndpoint("google/gemma-2-2b"), {
+    api: "models",
+    repoId: "google/gemma-2-2b",
+  });
+  assert.deepEqual(huggingfaceEndpoint("datasets/rajpurkar/squad"), {
+    api: "datasets",
+    repoId: "rajpurkar/squad",
+  });
+  assert.deepEqual(huggingfaceEndpoint("spaces/gradio/hello_world"), {
+    api: "spaces",
+    repoId: "gradio/hello_world",
+  });
+});
+
+test("parseHuggingFaceDataset prefers task_categories · id", () => {
+  assert.deepEqual(
+    parseHuggingFaceDataset({
+      id: "rajpurkar/squad",
+      author: "rajpurkar",
+      tags: ["task_categories:question-answering", "language:en"],
+    }),
+    {
+      title: "question-answering · rajpurkar/squad",
+      author: "rajpurkar",
+    },
+  );
+  assert.deepEqual(parseHuggingFaceDataset({ id: "owner/data" }), {
+    title: "owner/data",
+    author: "owner",
+  });
+});
+
+test("parseHuggingFaceSpace prefers sdk · card title", () => {
+  assert.deepEqual(
+    parseHuggingFaceSpace({
+      id: "gradio/hello_world",
+      author: "gradio",
+      sdk: "gradio",
+      cardData: { title: "hello_world", emoji: "🔥" },
+    }),
+    {
+      title: "gradio · hello_world",
+      author: "gradio",
+    },
+  );
+  assert.deepEqual(parseHuggingFaceSpace({ id: "owner/space" }), {
+    title: "owner/space",
+    author: "owner",
+  });
+});
+
+test("a Hugging Face dataset lookup fetches the datasets API", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://huggingface.co/api/datasets/rajpurkar/squad": () =>
+      response({
+        id: "rajpurkar/squad",
+        author: "rajpurkar",
+        tags: ["task_categories:question-answering"],
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "huggingface",
+    "datasets/rajpurkar/squad",
+  );
+  assert.deepEqual(details, {
+    title: "question-answering · rajpurkar/squad",
+    author: "rajpurkar",
+  });
+  assert.equal(
+    calls[0]?.url,
+    "https://huggingface.co/api/datasets/rajpurkar/squad",
+  );
+});
+
+test("a Hugging Face space lookup fetches the spaces API", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://huggingface.co/api/spaces/gradio/hello_world": () =>
+      response({
+        id: "gradio/hello_world",
+        author: "gradio",
+        sdk: "gradio",
+        cardData: { title: "hello_world" },
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "huggingface",
+    "spaces/gradio/hello_world",
+  );
+  assert.deepEqual(details, {
+    title: "gradio · hello_world",
+    author: "gradio",
+  });
+  assert.equal(
+    calls[0]?.url,
+    "https://huggingface.co/api/spaces/gradio/hello_world",
+  );
 });

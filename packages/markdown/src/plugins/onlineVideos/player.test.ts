@@ -85,3 +85,13 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Hugging Face datasets and spaces refuse an in-webview player", () => {
+  assert.equal(
+    thumbnailUrl(video("https://huggingface.co/datasets/rajpurkar/squad")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://huggingface.co/spaces/gradio/hello_world")),
+  );
+});
