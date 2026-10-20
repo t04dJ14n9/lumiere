@@ -31,6 +31,10 @@ or keybindings; tab size belongs to Editor.
 
 ## Limits and differences from Obsidian
 
-Guides use VS Code theme colors, with no active-guide tracking. Separate source
-continuation lines in list prose have no guides; their layout is not normalized
-by the list renderer. Quoted lists and code retain source-column guides.
+Guides use VS Code theme colors. Source (and non-list Live Preview) guides
+highlight the caret line's indent column with
+`--vscode-editorIndentGuide-activeBackground1`, matching Obsidian's
+`cm-active-indent`. Live Preview list chrome still paints depth guides without a
+per-depth active marker. Separate source continuation lines in list prose have
+no guides; their layout is not normalized by the list renderer. Quoted lists
+and code retain source-column guides.
