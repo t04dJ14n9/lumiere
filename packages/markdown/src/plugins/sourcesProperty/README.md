@@ -14,7 +14,10 @@ or `http`/`https` resource in the rows is clickable; scope text is not. A click
 sends the resource string to the host. The host re-reads the owning document,
 refuses a resource that is no longer there, strips a `#fragment` before the file
 lookup, and allows only `http`/`https` or a path that stays inside the vault. Id
-text is plain selectable text; there is no Copy id control.
+text is plain selectable text; there is no Copy id control. Clicking
+"Showing 8 of N" reveals every row and remembers that disclosure for the
+panel session so a remount (and estimatedHeight while the sheet is off-screen)
+keeps the expanded height instead of jumping back to the first-eight reserve.
 
 ## Files
 
