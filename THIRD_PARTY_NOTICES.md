@@ -4135,7 +4135,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ```
 
-## dompurify 3.4.16
+## dompurify 3.4.17
 
 License: (MPL-2.0 OR Apache-2.0)  
 Source: https://github.com/cure53/DOMPurify
@@ -4948,7 +4948,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## katex 0.16.47
+## katex 0.18.10
 
 License: MIT  
 Source: https://katex.org
@@ -5149,7 +5149,7 @@ licenses; we recommend you read them, as their terms may differ from the
 terms above.
 ```
 
-## lucide 1.55.0
+## lucide 1.57.0
 
 License: ISC  
 Source: https://lucide.dev
@@ -5200,7 +5200,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## markdown-it 15.0.2
+## markdown-it 15.0.3
 
 License: MIT  
 Source: markdown-it/markdown-it
@@ -5395,7 +5395,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 ```
 
-## mermaid 12.1.0
+## mermaid 12.2.0
 
 License: MIT  
 Source: https://github.com/mermaid-js/mermaid
@@ -5489,7 +5489,7 @@ Source: https://mths.be/punycode
 
 The package ships no license file; its package.json declares the license above.
 
-## react 19.3.0
+## react 19.3.1
 
 License: MIT  
 Source: https://react.dev/
@@ -5518,7 +5518,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## react-dom 19.3.0
+## react-dom 19.3.1
 
 License: MIT  
 Source: https://react.dev/
