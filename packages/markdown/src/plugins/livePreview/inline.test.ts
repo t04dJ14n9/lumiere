@@ -96,6 +96,69 @@ test("custom inline renderers can retain detached context functions and replace 
   assert.deepEqual(classes, ["custom"]);
 });
 
+test("persistent inline renderers stay decorated outside the visible range", () => {
+  const doc =
+    "Before ![[missing.png|120x640]] after.\n\n" + "filler\n\n".repeat(40);
+  const embedFrom = doc.indexOf("![[");
+  const embedTo = doc.indexOf("]]") + 2;
+  const state = EditorState.create({
+    doc,
+    extensions: [
+      documentTree,
+      inlineRenderers.of({
+        nodes: ["WikiEmbed"],
+        persistent: true,
+        decorate(node, { mark }) {
+          mark(node.from, node.to, "persist-embed");
+        },
+      }),
+    ],
+  });
+  // Visible range is only the filler at the end — embed is off-viewport.
+  const decorations = inlineDecorations(state, [
+    { from: doc.length - 20, to: doc.length },
+  ]);
+  const marked: { from: number; to: number; cls?: string }[] = [];
+  decorations.between(0, doc.length, (from, to, value) => {
+    marked.push({ from, to, cls: value.spec.class });
+  });
+  assert.ok(
+    marked.some(
+      (d) =>
+        d.from === embedFrom && d.to === embedTo && d.cls === "persist-embed",
+    ),
+    JSON.stringify(marked),
+  );
+});
+
+test("non-persistent custom renderers stay viewport-scoped", () => {
+  const doc =
+    "Before ![[missing.png|120x640]] after.\n\n" + "filler\n\n".repeat(40);
+  const embedFrom = doc.indexOf("![[");
+  const state = EditorState.create({
+    doc,
+    extensions: [
+      documentTree,
+      inlineRenderers.of({
+        nodes: ["WikiEmbed"],
+        decorate(node, { mark }) {
+          mark(node.from, node.to, "ephemeral-embed");
+        },
+      }),
+    ],
+  });
+  const decorations = inlineDecorations(state, [
+    { from: doc.length - 20, to: doc.length },
+  ]);
+  let found = false;
+  decorations.between(0, doc.length, (from, _to, value) => {
+    if (from === embedFrom && value.spec.class === "ephemeral-embed") {
+      found = true;
+    }
+  });
+  assert.equal(found, false);
+});
+
 test("bare URLs, www addresses and angle-bracket links are rendered links", () => {
   const doc =
     "See https://example.com, www.example.org and <https://x.test>.\n\nend";

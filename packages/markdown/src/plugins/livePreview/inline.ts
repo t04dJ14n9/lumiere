@@ -49,7 +49,46 @@ export function inlineDecorations(
       enter: (node) => builder.decorate(node, visible),
     });
   }
+  // Persistent inline widgets (tall embeds) must stay in the decoration set
+  // off-viewport: otherwise estimatedHeight never reaches the height map and
+  // a remount collapses the line to ~one text line (#117 gap).
+  decoratePersistentOffViewport(state, builder, visibleRanges);
   return Decoration.set(builder.ranges, true);
+}
+
+function decoratePersistentOffViewport(
+  state: EditorState,
+  builder: InlineDecorations,
+  visibleRanges: readonly { from: number; to: number }[],
+): void {
+  const persistent = new Set(
+    state
+      .facet(inlineRenderers)
+      .filter((renderer) => renderer.persistent)
+      .flatMap((renderer) => renderer.nodes),
+  );
+  if (persistent.size === 0) {
+    return;
+  }
+  state.field(documentTree).iterate({
+    enter: (node) => {
+      if (!persistent.has(node.name)) {
+        return;
+      }
+      if (
+        visibleRanges.some(
+          (visible) => node.from < visible.to && node.to > visible.from,
+        )
+      ) {
+        return false;
+      }
+      const custom = state
+        .facet(inlineRenderers)
+        .find((renderer) => renderer.nodes.includes(node.name));
+      custom?.decorate(node, builder);
+      return false;
+    },
+  });
 }
 
 class InlineDecorations implements InlineContext {
