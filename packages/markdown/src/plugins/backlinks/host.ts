@@ -27,7 +27,7 @@ import {
 const REFRESH_DELAY_MS = 300;
 
 function wantsExtraContext(settings: HostSettings): boolean {
-  return settings.get(EXTRA_CONTEXT_SETTING, false) === true;
+  return settings.get<boolean>(EXTRA_CONTEXT_SETTING, false);
 }
 
 type BacklinksCtx = Parameters<NonNullable<Plugin["apply"]>>[0];
