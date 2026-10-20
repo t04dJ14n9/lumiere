@@ -115,3 +115,41 @@ test("a WorkVault-scale Sources list still reserves far more than one line", () 
   assert.ok(height > 600, String(height));
   assert.ok(height < 2000, String(height));
 });
+
+test("an expanded Sources list reserves every article, not only the first eight", () => {
+  const entries = Array.from({ length: 12 }, (_, index) => ({
+    title: `Source ${index}`,
+    resource: `https://example.com/${index}`,
+  }));
+  const source = `---\nsources:\n${entries
+    .map(
+      (entry) => `  - title: ${entry.title}\n    resource: ${entry.resource}`,
+    )
+    .join("\n")}\n---\n`;
+  const disclosed = estimate(source, {
+    renderValue: (_key, value) => {
+      const rows = (value as { title: string; resource: string }[])
+        .map((entry, index) => {
+          const hidden = index >= 8 ? " hidden" : "";
+          return `<article class="source-row"${hidden} data-source-index="${index}"><p class="source-title">${entry.title}</p><p class="source-resource">${entry.resource}</p></article>`;
+        })
+        .join("");
+      return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 12</button></div>`;
+    },
+  });
+  const expanded = estimate(source, {
+    renderValue: (_key, value) => {
+      const rows = (value as { title: string; resource: string }[])
+        .map(
+          (entry, index) =>
+            `<article class="source-row" data-source-index="${index}"><p class="source-title">${entry.title}</p><p class="source-resource">${entry.resource}</p></article>`,
+        )
+        .join("");
+      return `<div class="source-rows">${rows}</div>`;
+    },
+  });
+  assert.ok(expanded > disclosed, `${expanded} vs ${disclosed}`);
+  // Four extra articles at 65px plus gaps — enough that falling back to the
+  // disclosed estimate after expand would jump the body by >200px.
+  assert.ok(expanded - disclosed > 200, String(expanded - disclosed));
+});

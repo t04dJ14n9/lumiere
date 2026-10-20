@@ -43,13 +43,20 @@ test("Showing more sources asks CodeMirror to remeasure the block widget", (t) =
   } as unknown as EditorView;
   t.mock.method(EditorView, "findFromDOM", () => view);
 
+  let expanded = 0;
   bindSources(
     root as unknown as ParentNode,
     new AbortController().signal,
     () => {},
+    {
+      onExpand: () => {
+        expanded += 1;
+      },
+    },
   );
   button.dispatchEvent(new Event("click"));
   assert.equal(measured, 1);
+  assert.equal(expanded, 1);
   assert.equal(extra.hidden, false);
   assert.equal(button.isConnected, false);
 });
