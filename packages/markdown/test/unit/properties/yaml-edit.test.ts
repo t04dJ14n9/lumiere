@@ -5,6 +5,7 @@ import {
   propertyChanges,
   propertyYamlInput,
 } from "../../../src/markdown/properties";
+import { propertyYamlDraft } from "../../../src/markdown/properties/yaml-draft";
 import { renderProperties } from "../../../src/plugins/properties/sheet-html";
 
 function edit(
@@ -29,11 +30,32 @@ function decodeEntities(text: string): string {
 }
 
 function yamlDraft(source: string, key: string): string {
-  const textarea = renderProperties(source).match(
-    new RegExp(`data-property-input="${key}"[^>]*>([\\s\\S]*?)</textarea>`),
+  // Nested maps/lists no longer render YAML textareas (#141 Unknown JSON).
+  // Commit-path tests still need the raw draft from the YAML AST.
+  const properties = frontmatter(source);
+  assert.ok(properties?.yaml && properties.values, `Missing frontmatter`);
+  const draft = propertyYamlDraft(
+    properties.yaml.body,
+    properties.yaml.document.get(key, true),
+    properties.values[key],
+    properties.yaml.document,
   );
-  assert.ok(textarea, `Missing YAML editor for ${key}`);
-  return decodeEntities(textarea[1]!);
+  assert.ok(draft !== undefined, `Missing YAML draft for ${key}`);
+  return draft;
+}
+
+/** Nested maps/lists render as Obsidian Unknown JSON (#141), not YAML drafts. */
+function assertUnknownProperty(source: string, key: string): void {
+  const html = renderProperties(source);
+  const keyAttr = `data-property-key="${key}"`;
+  const keyAt = html.indexOf(keyAttr);
+  assert.ok(keyAt >= 0, `Missing property key ${key}`);
+  const slice = html.slice(keyAt, keyAt + 4000);
+  assert.ok(slice.includes("mod-unknown"), `Expected Unknown UI for ${key}`);
+  assert.doesNotMatch(
+    html,
+    new RegExp(`data-property-input="${key}"[^>]*data-property-kind="yaml"`),
+  );
 }
 
 function editYaml(source: string, key: string, yaml: string): string {
@@ -48,12 +70,8 @@ for (const eol of ["\n", "\r\n"]) {
       "generated:\n  by: old\n  # checksum is generated externally; keep this\n  checksum: abc\n  serial: 9007199254740993\n  id: !!str '01' # keep quoting and tag\n  notes: |+\n    a\n\n";
     const source =
       `---\n# Header\n${body}title: 'Note'\n---\nBody\n`.replaceAll("\n", eol);
-    const draft = yamlDraft(source, "generated");
-    assert.equal(
-      draft,
-      body.slice("generated:\n  ".length).replaceAll("\n  ", "\n"),
-    );
-    const yaml = draft
+    assertUnknownProperty(source, "generated");
+    const yaml = yamlDraft(source, "generated")
       .replace("by: old", "by: new")
       .replace("checksum: abc", "# typed in the draft\nchecksum: abc");
     const next = editYaml(source, "generated", yaml);
@@ -70,9 +88,10 @@ for (const eol of ["\n", "\r\n"]) {
   });
 }
 
-test("Sources YAML drafts retain comments inside lists of mappings", () => {
+test("Sources nested mappings render as Unknown; set-via-YAML still preserves comments", () => {
   const source =
     "---\nsources:\n  - resource: ../raw/old.pdf\n    # stable id\n    id: '01'\nkeep: yes\n---\n";
+  assertUnknownProperty(source, "sources");
   const yaml = yamlDraft(source, "sources").replace("old.pdf", "new.pdf");
   assert.equal(
     editYaml(source, "sources", yaml),
@@ -92,9 +111,10 @@ test("external-alias properties stay Source-mode instead of a lossy stringify dr
   assert.match(html, /data-property-key="keep"/);
 });
 
-test("anchored YAML drafts preserve leading comments and prior external alias values", () => {
+test("anchored YAML set preserves leading comments and prior external alias values", () => {
   const source =
     "---\ngenerated: &a # generated comment\n  # before the first child\n  by: old\n  # checksum is external\n  checksum: 'abc'\nmirror: *a\n---\n";
+  assertUnknownProperty(source, "generated");
   const yaml = yamlDraft(source, "generated").replace("by: old", "by: new");
   const next = editYaml(source, "generated", yaml);
   assert.match(next, /# generated comment/);
@@ -125,9 +145,10 @@ test("aliases to tagged pairs cannot bypass the draft and set guards", () => {
   );
 });
 
-test("flow YAML drafts retain inline comments and property-adjacent bytes", () => {
+test("flow YAML set retains inline comments and property-adjacent bytes", () => {
   const source =
     "---\ngenerated: {by: old, # keep the child comment\n  checksum: 'abc'} # property comment\ntitle: Note\n---\n";
+  assertUnknownProperty(source, "generated");
   const yaml = yamlDraft(source, "generated")
     .replace("by: old", "by: new")
     .replace("checksum:", "# typed inside flow YAML\n  checksum:");
@@ -285,22 +306,16 @@ test("YAML drafts keep significant trailing newlines on nested block scalars", (
   });
 });
 
-test("YAML draft HTML round-trips nested trailing newlines and leading spaces", () => {
+test("Unknown JSON shows nested maps; text longtext still round-trips spaces", () => {
   const source =
     '---\ngenerated:\n  by: old\n  notes: |+\n    a\n\ntext: " one\\n two"\n---\n';
   const html = renderProperties(source);
-  const generated = html.match(
-    /data-property-input="generated"[^>]*>([\s\S]*?)<\/textarea>/,
-  )?.[1];
+  assert.match(html, /data-property-key="generated"[\s\S]*mod-unknown/);
+  assert.match(html, /&quot;by&quot;:&quot;old&quot;/);
   const text = html.match(
     /data-property-input="text"[^>]*>([\s\S]*?)<\/textarea>/,
   )?.[1];
-  assert.ok(generated);
   assert.ok(text);
-  assert.deepEqual(propertyYamlInput(decodeEntities(generated!)), {
-    by: "old",
-    notes: "a\n\n",
-  });
   assert.equal(propertyYamlInput(decodeEntities(text!)), " one\n two");
 });
 
