@@ -30,7 +30,6 @@ const SHEET_CHROME = SHEET_PADDING + HEADING + ADD_BUTTON;
 const COLLAPSED = SHEET_PADDING + HEADING;
 const ARTICLE_CHROME = 12 + 1;
 const STACK_GAP = 8;
-const COMPLEX_GAP = 8;
 /** `textarea` rows=3 at 0.92em of the 0.875em sheet, plus padding/border. */
 const YAML_FIELD = 76;
 /** Flex-wrap chips in the value column (default ~14px sheet width). */
