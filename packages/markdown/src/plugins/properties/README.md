@@ -56,7 +56,7 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 - `row-click.test.ts`: pointer focus, field/link actions and modifier selection units.
 - `field-bindings.test.ts`: current-source editing and embedded-source read-only controls.
 - `controls.test.ts`: removal focus and key-routing unit tests.
-- `form.ts`: inline pending rows, suggestion acceptance and shared heading collapse.
+- `form.ts`: inline pending rows, suggestion acceptance and shared heading collapse; Obsidian heading `j` / add-button `j`/`k`.
 - `form.test.ts`: retained drafts, quiet rejection and deferred YAML creation.
 - `heading.ts`: sheet heading focus and paging.
 - `lists.ts`: list reconciliation and add/remove transactions.
