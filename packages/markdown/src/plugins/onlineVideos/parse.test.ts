@@ -133,3 +133,30 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("NuGet package pages", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://www.nuget.org/packages/Newtonsoft.Json"),
+    {
+      provider: "nuget",
+      id: "Newtonsoft.Json",
+      page: "https://www.nuget.org/packages/Newtonsoft.Json",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://nuget.org/packages/Serilog/4.0.0/"), {
+    provider: "nuget",
+    id: "Serilog",
+    page: "https://www.nuget.org/packages/Serilog",
+  });
+  assert.equal(parseVideoUrl("https://www.nuget.org/packages/"), undefined);
+  assert.equal(
+    parseVideoUrl("https://www.nuget.org/profiles/jamesnk"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl(
+      "https://api.nuget.org/v3/registration5-semver1/newtonsoft.json/index.json",
+    ),
+    undefined,
+  );
+});

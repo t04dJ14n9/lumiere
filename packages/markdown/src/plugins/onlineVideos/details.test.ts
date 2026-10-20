@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseNugetRegistration,
+  nugetRegistrationLeafUrl,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -330,4 +332,144 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("parseNugetRegistration prefers description and stable authors", () => {
+  assert.deepEqual(
+    parseNugetRegistration(
+      {
+        items: [
+          {
+            items: [
+              {
+                catalogEntry: {
+                  id: "Newtonsoft.Json",
+                  version: "13.0.3",
+                  description:
+                    "Json.NET is a popular high-performance JSON framework for .NET",
+                  authors: "James Newton-King",
+                  title: "Json.NET",
+                },
+              },
+              {
+                catalogEntry: {
+                  id: "Newtonsoft.Json",
+                  version: "14.0.1-beta2",
+                  description: "prerelease only",
+                  authors: "Beta Author",
+                },
+              },
+            ],
+          },
+        ],
+      },
+      "Newtonsoft.Json",
+    ),
+    {
+      title: "Json.NET is a popular high-performance JSON framework for .NET",
+      author: "James Newton-King",
+    },
+  );
+  assert.deepEqual(
+    parseNugetRegistration(
+      {
+        items: [
+          {
+            catalogEntry: {
+              id: "Serilog",
+              version: "4.0.0",
+              description: "",
+              title: "",
+              authors: "Serilog Contributors",
+            },
+          },
+        ],
+      },
+      "Serilog",
+    ),
+    { title: "Serilog", author: "Serilog Contributors" },
+  );
+});
+
+test("nugetRegistrationLeafUrl only returns api.nuget.org registration URLs", () => {
+  assert.equal(
+    nugetRegistrationLeafUrl({
+      items: [
+        {
+          "@id":
+            "https://api.nuget.org/v3/registration5-semver1/serilog/page/0.1.0/1.0.0.json",
+        },
+      ],
+    }),
+    "https://api.nuget.org/v3/registration5-semver1/serilog/page/0.1.0/1.0.0.json",
+  );
+  assert.equal(
+    nugetRegistrationLeafUrl({
+      items: [{ items: [{ catalogEntry: { id: "X" } }] }],
+    }),
+    undefined,
+  );
+  assert.equal(
+    nugetRegistrationLeafUrl({
+      items: [{ "@id": "https://evil.test/v3/registration5-semver1/x.json" }],
+    }),
+    undefined,
+  );
+});
+
+test("a NuGet lookup fetches registration metadata", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://api.nuget.org/v3/registration5-semver1/newtonsoft.json/index.json":
+      () =>
+        response({
+          items: [
+            {
+              items: [
+                {
+                  catalogEntry: {
+                    id: "Newtonsoft.Json",
+                    version: "13.0.3",
+                    description:
+                      "Json.NET is a popular high-performance JSON framework for .NET",
+                    authors: "James Newton-King",
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+    "https://api.nuget.org/v3/registration5-semver1/serilog/index.json": () =>
+      response({
+        items: [
+          {
+            "@id":
+              "https://api.nuget.org/v3/registration5-semver1/serilog/page/0.json",
+          },
+        ],
+      }),
+    "https://api.nuget.org/v3/registration5-semver1/serilog/page/0.json": () =>
+      response({
+        items: [
+          {
+            catalogEntry: {
+              id: "Serilog",
+              version: "4.0.0",
+              description: "Simple .NET logging with fully-structured events",
+              authors: "Serilog Contributors",
+            },
+          },
+        ],
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("nuget", "Newtonsoft.Json"), {
+    title: "Json.NET is a popular high-performance JSON framework for .NET",
+    author: "James Newton-King",
+  });
+  assert.deepEqual(await source.get("nuget", "Serilog"), {
+    title: "Simple .NET logging with fully-structured events",
+    author: "Serilog Contributors",
+  });
+  assert.deepEqual(await source.get("nuget", "../evil"), {});
+  assert.equal(calls.length, 3);
 });

@@ -151,6 +151,15 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "nuget") {
+      const index = await this.json(
+        `https://api.nuget.org/v3/registration5-semver1/${encodeURIComponent(id.toLowerCase())}/index.json`,
+        signal,
+      );
+      const leaf = nugetRegistrationLeafUrl(index);
+      const registration = leaf ? await this.json(leaf, signal) : index;
+      return parseNugetRegistration(registration, id);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +216,105 @@ export class VideoDetailsSource {
   }
 }
 
+export function parseNugetRegistration(
+  body: unknown,
+  packageId: string,
+): VideoDetails {
+  const entry = nugetLatestCatalogEntry(body);
+  if (!entry) {
+    throw new Error("Unexpected NuGet response");
+  }
+  return withoutUndefined({
+    title:
+      text(entry.description, 300) ??
+      text(entry.title, 300) ??
+      text(packageId, 300),
+    author: text(entry.authors, 100),
+  });
+}
+
+export function nugetRegistrationLeafUrl(body: unknown): string | undefined {
+  if (
+    !isRecord(body) ||
+    !Array.isArray(body.items) ||
+    body.items.length === 0
+  ) {
+    return undefined;
+  }
+  const last = body.items[body.items.length - 1];
+  if (!isRecord(last) || Array.isArray(last.items)) {
+    return undefined;
+  }
+  return nugetApiUrl(last["@id"]);
+}
+
+function nugetLatestCatalogEntry(
+  body: unknown,
+): Record<string, unknown> | undefined {
+  if (!isRecord(body) || !Array.isArray(body.items)) {
+    return undefined;
+  }
+  const leaves = nugetRegistrationLeaves(body.items);
+  return leaves ? nugetPreferStable(leaves) : undefined;
+}
+
+/** Leaf-page items, or the last inlined index page's items. */
+function nugetRegistrationLeaves(items: unknown[]): unknown[] | undefined {
+  if (items.some((item) => isRecord(item) && "catalogEntry" in item)) {
+    return items;
+  }
+  for (let i = items.length - 1; i >= 0; i--) {
+    const page = items[i];
+    if (isRecord(page) && Array.isArray(page.items) && page.items.length > 0) {
+      return page.items;
+    }
+  }
+  return undefined;
+}
+
+function nugetPreferStable(
+  leaves: unknown[],
+): Record<string, unknown> | undefined {
+  const entries = leaves.flatMap((leaf) => {
+    if (!isRecord(leaf) || !isRecord(leaf.catalogEntry)) {
+      return [];
+    }
+    return [leaf.catalogEntry];
+  });
+  if (entries.length === 0) {
+    return undefined;
+  }
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const version = entries[i]!.version;
+    if (typeof version === "string" && !version.includes("-")) {
+      return entries[i];
+    }
+  }
+  return entries[entries.length - 1];
+}
+
+function nugetApiUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "api.nuget.org" ||
+    url.username ||
+    url.password ||
+    url.port ||
+    !url.pathname.startsWith("/v3/registration")
+  ) {
+    return undefined;
+  }
+  return url.href;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("NuGet refuses an in-webview player", () => {
+  assert.equal(providers.nuget.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://www.nuget.org/packages/Newtonsoft.Json")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://www.nuget.org/packages/Newtonsoft.Json")),
+  );
+});
