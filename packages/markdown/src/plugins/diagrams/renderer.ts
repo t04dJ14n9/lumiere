@@ -2,6 +2,7 @@ import type { Logger } from "@workshop/core";
 import type { Fence, RenderPass } from "../render/api";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";
+import { createMermaidTrust, type MermaidTrust } from "./trust";
 
 interface DiagramRender {
   fence: Fence;
@@ -14,8 +15,14 @@ export class DiagramRenderer {
   private sequence = 0;
   private queue = Promise.resolve();
   private readonly cleanups = new Set<() => void>();
+  private readonly trust: MermaidTrust;
 
-  constructor(private readonly logger: Logger) {}
+  constructor(
+    private readonly logger: Logger,
+    trust: MermaidTrust = createMermaidTrust(),
+  ) {
+    this.trust = trust;
+  }
 
   render(fence: Fence, pass: RenderPass): void {
     const request = { fence, pass, isActive: true };
@@ -34,8 +41,16 @@ export class DiagramRenderer {
       .then(() => this.renderQueued(request))
       .catch((error) => {
         if (request.isActive) {
-          // Obsidian-style guarded chrome: title, error, and source.
-          failure = showMermaidGuard(fence.element, error, fence.source);
+          // Obsidian-style guarded chrome: title, error, Allow, and source.
+          failure = showMermaidGuard(fence.element, error, fence.source, {
+            showAllow: !this.trust.isTrusted(),
+            onAllow: () => {
+              this.trust.allow();
+              failure?.remove();
+              failure = undefined;
+              this.render(fence, pass);
+            },
+          });
           pass.measure();
           this.logger.warn("Diagram rendering failed", error);
         }
@@ -57,11 +72,14 @@ export class DiagramRenderer {
     if (!request.isActive) {
       return;
     }
+    // Obsidian Allow (`mermaid-vault-trust`) enables HTML labels; Lumière still
+    // sanitizes SVG output. Untrusted stays strict with htmlLabels off.
+    const trusted = this.trust.isTrusted();
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: "strict",
-      htmlLabels: false,
-      flowchart: { htmlLabels: false },
+      htmlLabels: trusted,
+      flowchart: { htmlLabels: trusted },
       suppressErrorRendering: true,
       theme: document.body.classList.contains("vscode-light")
         ? "default"
@@ -80,15 +98,21 @@ export class DiagramRenderer {
   }
 }
 
+export interface MermaidGuardOptions {
+  /** Obsidian shows Allow until the vault is trusted. */
+  showAllow?: boolean;
+  onAllow?: () => void;
+}
+
 /**
  * Obsidian `mermaid-wrapper.is-guarded` chrome when a diagram cannot render
- * (REA app.css ~11494). Lumière keeps htmlLabels off, so there is no Allow
- * button — only the header + source panel with VS Code theme tokens.
+ * (REA app.css ~11494). Allow mirrors `mermaid-vault-trust` + post-processor refresh.
  */
 export function showMermaidGuard(
   element: HTMLElement,
   error: unknown,
   source: string,
+  options: MermaidGuardOptions = {},
 ): HTMLElement {
   const doc = element.ownerDocument;
   const wrap = doc.createElement("div");
@@ -107,6 +131,25 @@ export function showMermaidGuard(
   description.textContent = errorMessage(error);
   text.append(title, description);
   header.append(text);
+
+  if (options.showAllow && options.onAllow) {
+    const actions = doc.createElement("div");
+    actions.className = "mermaid-guard-actions";
+    const allow = doc.createElement("button");
+    allow.type = "button";
+    allow.textContent = "Allow";
+    allow.setAttribute(
+      "aria-label",
+      "Allow Mermaid HTML labels for this vault",
+    );
+    allow.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      options.onAllow?.();
+    });
+    actions.append(allow);
+    header.append(actions);
+  }
 
   const sourceBox = doc.createElement("div");
   sourceBox.className = "mermaid-guard-source";

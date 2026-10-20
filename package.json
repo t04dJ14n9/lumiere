@@ -2426,7 +2426,7 @@
             "type": "boolean",
             "default": true,
             "scope": "resource",
-            "description": "Render Mermaid diagrams in strict mode."
+            "description": "Render Mermaid diagrams; Allow enables HTML labels after a failed guard."
           },
           "lumiere.markdown.plugins.embeds.enabled": {
             "type": "boolean",
