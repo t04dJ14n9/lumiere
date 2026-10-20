@@ -151,6 +151,23 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "discogs") {
+      const colon = id.indexOf(":");
+      const kind = id.slice(0, colon); // release | master
+      const releaseId = id.slice(colon + 1);
+      const body = await this.json(
+        `https://api.discogs.com/${kind}s/${encodeURIComponent(releaseId)}`,
+        signal,
+      );
+      const { details, cover } = parseDiscogsItem(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +224,73 @@ export class VideoDetailsSource {
   }
 }
 
+/** Discogs release/master API: title, first artist, primary cover on i.discogs.com. */
+export function parseDiscogsItem(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Discogs response");
+  }
+  const title = text(body.title, 300);
+  const artists = Array.isArray(body.artists) ? body.artists : [];
+  let author: string | undefined;
+  for (const artist of artists) {
+    if (isRecord(artist)) {
+      author = text(artist.name, 100);
+      if (author) {
+        break;
+      }
+    }
+  }
+  const images = Array.isArray(body.images) ? body.images : [];
+  let cover: string | undefined;
+  // Prefer primary, then any; prefer uri150 (card-sized) over full uri.
+  const ordered = [
+    ...images.filter((img) => isRecord(img) && img.type === "primary"),
+    ...images,
+  ];
+  for (const img of ordered) {
+    if (!isRecord(img)) {
+      continue;
+    }
+    cover = discogsCoverUrl(img.uri150) ?? discogsCoverUrl(img.uri);
+    if (cover) {
+      break;
+    }
+  }
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+export function discogsCoverUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "i.discogs.com" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/[A-Za-z0-9_-]+\/rs:fit\/.+\.(?:jpe?g|png|webp|gif)$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://i.discogs.com${url.pathname}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

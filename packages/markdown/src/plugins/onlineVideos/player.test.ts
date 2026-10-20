@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Discogs refuses an in-webview player", () => {
+  assert.equal(providers.discogs.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://www.discogs.com/release/249504")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://www.discogs.com/release/249504")),
+  );
+});

@@ -133,3 +133,35 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Discogs release and master pages on www.discogs.com", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://www.discogs.com/release/249504-Rick-Astley-Never-Gonna-Give-You-Up",
+    ),
+    {
+      provider: "discogs",
+      id: "release:249504",
+      page: "https://www.discogs.com/release/249504",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://www.discogs.com/release/249504"), {
+    provider: "discogs",
+    id: "release:249504",
+    page: "https://www.discogs.com/release/249504",
+  });
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://www.discogs.com/master/96559-Rick-Astley-Never-Gonna-Give-You-Up/",
+    ),
+    {
+      provider: "discogs",
+      id: "master:96559",
+      page: "https://www.discogs.com/master/96559",
+    },
+  );
+  // Apex host 301s to www; artists are out of scope.
+  assert.equal(parseVideoUrl("https://discogs.com/release/249504"), undefined);
+  assert.equal(parseVideoUrl("https://www.discogs.com/artist/123"), undefined);
+  assert.equal(parseVideoUrl("https://www.discogs.com/release/0"), undefined);
+});

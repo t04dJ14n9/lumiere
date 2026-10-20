@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  discogsCoverUrl,
+  parseDiscogsItem,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -330,4 +332,99 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("discogsCoverUrl accepts i.discogs.com rs:fit image paths only", () => {
+  assert.equal(
+    discogsCoverUrl(
+      "https://i.discogs.com/HG2xChKN-rIHHSfgL53W9z2vJWeFknfevpOMwSHtIaM/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg",
+    ),
+    "https://i.discogs.com/HG2xChKN-rIHHSfgL53W9z2vJWeFknfevpOMwSHtIaM/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg",
+  );
+  for (const value of [
+    "https://evil.test/HG2x/rs:fit/g:sm/q:40/h:150/w:150/x.jpeg",
+    "https://i.discogs.com/HG2x/rs:fit/g:sm/x.jpeg?x=1",
+    "https://i.discogs.com/other/x.jpeg",
+    "http://i.discogs.com/HG2x/rs:fit/g:sm/x.jpeg",
+  ]) {
+    assert.equal(discogsCoverUrl(value), undefined);
+  }
+});
+
+test("parseDiscogsItem prefers primary uri150 and first artist", () => {
+  assert.deepEqual(
+    parseDiscogsItem({
+      title: "Never Gonna Give You Up",
+      artists: [{ name: "Rick Astley" }],
+      images: [
+        {
+          type: "secondary",
+          uri: "https://i.discogs.com/sec/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9zZWMuanBlZw.jpeg",
+          uri150:
+            "https://i.discogs.com/sec/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9zZWMuanBlZw.jpeg",
+        },
+        {
+          type: "primary",
+          uri: "https://i.discogs.com/-DPFA5hKT8i91jnjn4rLB1zSiuUBFTrGWspu1TpLV30/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg",
+          uri150:
+            "https://i.discogs.com/HG2xChKN-rIHHSfgL53W9z2vJWeFknfevpOMwSHtIaM/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg",
+        },
+      ],
+    }),
+    {
+      details: { title: "Never Gonna Give You Up", author: "Rick Astley" },
+      cover:
+        "https://i.discogs.com/HG2xChKN-rIHHSfgL53W9z2vJWeFknfevpOMwSHtIaM/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg",
+    },
+  );
+});
+
+test("a Discogs lookup uses api.discogs.com and may fetch the cover", async () => {
+  const cover =
+    "https://i.discogs.com/HG2xChKN-rIHHSfgL53W9z2vJWeFknfevpOMwSHtIaM/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg";
+  const { fetch, calls } = fakeFetch({
+    "https://api.discogs.com/": () =>
+      response({
+        title: "Never Gonna Give You Up",
+        artists: [{ name: "Rick Astley" }],
+        images: [
+          {
+            type: "primary",
+            uri: "https://i.discogs.com/-DPFA5hKT8i91jnjn4rLB1zSiuUBFTrGWspu1TpLV30/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTUw/NC0xMzM0NTkyMjEy/LmpwZWc.jpeg",
+            uri150: cover,
+          },
+        ],
+      }),
+    "https://i.discogs.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "discogs",
+    "release:249504",
+  );
+  assert.equal(details.title, "Never Gonna Give You Up");
+  assert.equal(details.author, "Rick Astley");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://api.discogs.com/releases/249504");
+  assert.equal(calls[1]?.url, cover);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a Discogs master lookup hits /masters/", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://api.discogs.com/": () =>
+      response({
+        title: "Never Gonna Give You Up",
+        artists: [{ name: "Rick Astley" }],
+        images: [],
+      }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "discogs",
+    "master:96559",
+  );
+  assert.equal(details.title, "Never Gonna Give You Up");
+  assert.equal(calls[0]?.url, "https://api.discogs.com/masters/96559");
 });

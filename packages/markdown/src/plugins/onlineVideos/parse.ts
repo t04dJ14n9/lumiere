@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "discogs";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,27 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+/** Discogs release/master id. */
+const DISCOGS_ID = /^(?:release|master):[1-9][0-9]{0,9}$/;
+
+/** Optional slug after the numeric id (`/release/249504-Rick-Astley-…`). */
+const DISCOGS_PATH =
+  /^\/(release|master)\/([1-9][0-9]{0,9})(?:-[A-Za-z0-9_-]+)?\/?$/;
+
+const DISCOGS_HOSTS = new Set(["www.discogs.com"]);
+
+function discogs(kind: string, releaseId: string): OnlineVideo | undefined {
+  const id = `${kind}:${releaseId}`;
+  if (!DISCOGS_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "discogs",
+    id,
+    page: `https://www.discogs.com/${kind}/${releaseId}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +100,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return DISCOGS_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +141,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (DISCOGS_HOSTS.has(host)) {
+    const match = DISCOGS_PATH.exec(url.pathname);
+    return match ? discogs(match[1]!, match[2]!) : undefined;
   }
   return undefined;
 }
