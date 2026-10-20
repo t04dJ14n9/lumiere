@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Stack Overflow refuses an in-webview player", () => {
+  assert.equal(providers.stackOverflow.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://stackoverflow.com/questions/4")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://stackoverflow.com/questions/4")),
+  );
+});

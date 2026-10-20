@@ -151,6 +151,20 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "stackOverflow") {
+      const body = await this.json(
+        `https://api.stackexchange.com/2.3/questions/${encodeURIComponent(id)}?site=stackoverflow`,
+        signal,
+      );
+      const { details, cover } = parseStackOverflowQuestion(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +221,65 @@ export class VideoDetailsSource {
   }
 }
 
+/** Stack Exchange questions API: title, owner display name, profile image. */
+export function parseStackOverflowQuestion(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (
+    !isRecord(body) ||
+    !Array.isArray(body.items) ||
+    body.items.length === 0
+  ) {
+    throw new Error("Unexpected Stack Overflow response");
+  }
+  const item = body.items[0];
+  if (!isRecord(item)) {
+    throw new Error("Unexpected Stack Overflow response");
+  }
+  const title = text(item.title, 300);
+  const owner = isRecord(item.owner) ? item.owner : {};
+  const author = text(owner.display_name, 100);
+  const cover = stackOverflowAvatarUrl(owner.profile_image);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+export function stackOverflowAvatarUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  if (
+    (url.hostname === "www.gravatar.com" || url.hostname === "gravatar.com") &&
+    /^\/avatar\/[a-f0-9]{32}$/i.test(url.pathname)
+  ) {
+    return `https://www.gravatar.com${url.pathname}`;
+  }
+  if (
+    url.hostname === "i.sstatic.net" &&
+    /^\/[A-Za-z0-9_-]+\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname)
+  ) {
+    return `https://i.sstatic.net${url.pathname}`;
+  }
+  return undefined;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

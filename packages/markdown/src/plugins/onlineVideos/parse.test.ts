@@ -133,3 +133,32 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Stack Overflow question pages on stackoverflow.com", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://stackoverflow.com/questions/4/how-to-convert-decimal-to-double-in-c",
+    ),
+    {
+      provider: "stackOverflow",
+      id: "4",
+      page: "https://stackoverflow.com/questions/4",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://stackoverflow.com/questions/4"), {
+    provider: "stackOverflow",
+    id: "4",
+    page: "https://stackoverflow.com/questions/4",
+  });
+  // /q/ and /a/ 302; www 302 — reject.
+  assert.equal(parseVideoUrl("https://stackoverflow.com/q/4"), undefined);
+  assert.equal(parseVideoUrl("https://stackoverflow.com/a/7"), undefined);
+  assert.equal(
+    parseVideoUrl("https://www.stackoverflow.com/questions/4"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://stackoverflow.com/questions/0"),
+    undefined,
+  );
+});

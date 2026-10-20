@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseStackOverflowQuestion,
+  stackOverflowAvatarUrl,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +331,87 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("stackOverflowAvatarUrl accepts gravatar and i.sstatic.net only", () => {
+  assert.equal(
+    stackOverflowAvatarUrl(
+      "https://www.gravatar.com/avatar/c7ec7dec48168d2a7d792e2b0acc78d1?s=256&d=identicon",
+    ),
+    "https://www.gravatar.com/avatar/c7ec7dec48168d2a7d792e2b0acc78d1",
+  );
+  assert.equal(
+    stackOverflowAvatarUrl("https://i.sstatic.net/FkjBe.png?s=256"),
+    "https://i.sstatic.net/FkjBe.png",
+  );
+  for (const value of [
+    "https://evil.test/avatar/c7ec7dec48168d2a7d792e2b0acc78d1",
+    "https://www.gravatar.com/avatar/short",
+    "http://www.gravatar.com/avatar/c7ec7dec48168d2a7d792e2b0acc78d1",
+    "https://i.stack.imgur.com/FkjBe.png",
+  ]) {
+    assert.equal(stackOverflowAvatarUrl(value), undefined);
+  }
+});
+
+test("parseStackOverflowQuestion uses title and owner display name", () => {
+  assert.deepEqual(
+    parseStackOverflowQuestion({
+      items: [
+        {
+          title: "How to convert Decimal to Double in C#?",
+          owner: {
+            display_name: "Eggs McLaren",
+            profile_image:
+              "https://www.gravatar.com/avatar/c7ec7dec48168d2a7d792e2b0acc78d1?s=256",
+          },
+        },
+      ],
+    }),
+    {
+      details: {
+        title: "How to convert Decimal to Double in C#?",
+        author: "Eggs McLaren",
+      },
+      cover: "https://www.gravatar.com/avatar/c7ec7dec48168d2a7d792e2b0acc78d1",
+    },
+  );
+  assert.throws(() => parseStackOverflowQuestion({ items: [] }));
+});
+
+test("a Stack Overflow lookup uses the Stack Exchange API and may fetch the avatar", async () => {
+  const cover =
+    "https://www.gravatar.com/avatar/c7ec7dec48168d2a7d792e2b0acc78d1";
+  const { fetch, calls } = fakeFetch({
+    "https://api.stackexchange.com/": () =>
+      response({
+        items: [
+          {
+            title: "How to convert Decimal to Double in C#?",
+            owner: {
+              display_name: "Eggs McLaren",
+              profile_image: `${cover}?s=256`,
+            },
+          },
+        ],
+      }),
+    "https://www.gravatar.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "stackOverflow",
+    "4",
+  );
+  assert.equal(details.title, "How to convert Decimal to Double in C#?");
+  assert.equal(details.author, "Eggs McLaren");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://api.stackexchange.com/2.3/questions/4?site=stackoverflow",
+  );
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

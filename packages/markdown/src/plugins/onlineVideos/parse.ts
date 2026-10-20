@@ -3,7 +3,8 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "stackOverflow";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +73,26 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+/** Stack Overflow question id. */
+const STACKOVERFLOW_ID = /^[1-9][0-9]{0,12}$/;
+
+/** Optional title slug after the id (`/questions/4/how-to-…`). */
+const STACKOVERFLOW_PATH =
+  /^\/questions\/([1-9][0-9]{0,12})(?:\/[A-Za-z0-9_-]+)?\/?$/;
+
+const STACKOVERFLOW_HOSTS = new Set(["stackoverflow.com"]);
+
+function stackOverflow(id: string): OnlineVideo | undefined {
+  if (!STACKOVERFLOW_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "stackOverflow",
+    id,
+    page: `https://stackoverflow.com/questions/${id}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +100,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return STACKOVERFLOW_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +141,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (STACKOVERFLOW_HOSTS.has(host)) {
+    const match = STACKOVERFLOW_PATH.exec(url.pathname);
+    return match ? stackOverflow(match[1]!) : undefined;
   }
   return undefined;
 }
