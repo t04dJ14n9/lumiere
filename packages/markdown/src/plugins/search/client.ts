@@ -20,14 +20,11 @@ export class QueryClient {
   private readonly subscriptions = new Set<Subscription>();
   private disposed = false;
   private nextId = 0;
-  private readonly stopPartial: () => void;
+  private readonly stopPartial: () => void | Promise<void>;
   constructor(private readonly rpc: Endpoint) {
     this.stopPartial = rpc.on(protocol, "partial", (message) => {
       for (const subscription of this.subscriptions) {
-        if (
-          subscription.id === message.id &&
-          !subscription.token?.cancelled
-        ) {
+        if (subscription.id === message.id && !subscription.token?.cancelled) {
           subscription.update({
             loading: true,
             results: message.results,
@@ -90,7 +87,7 @@ export class QueryClient {
   }
   dispose(): void {
     this.disposed = true;
-    this.stopPartial();
+    void this.stopPartial();
     for (const subscription of this.subscriptions) {
       subscription.token?.cancel();
     }

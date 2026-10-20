@@ -95,12 +95,15 @@ function createPartialEmitter(onPartial?: (snapshot: SearchResponse) => void) {
       }
       pending = snapshot;
       if (!timer) {
-        timer = setTimeout(() => {
-          timer = undefined;
-          if (pending) {
-            send(pending);
-          }
-        }, PARTIAL_INTERVAL_MS - (now - last));
+        timer = setTimeout(
+          () => {
+            timer = undefined;
+            if (pending) {
+              send(pending);
+            }
+          },
+          PARTIAL_INTERVAL_MS - (now - last),
+        );
       }
     },
     flush() {
