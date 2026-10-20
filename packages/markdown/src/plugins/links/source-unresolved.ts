@@ -49,7 +49,7 @@ export function unresolvedSourceMarks(
     from,
     to,
     enter(node) {
-      const href = linkHref(state, node.name, node.from, node.to, node.node);
+      const href = linkHref(state, node);
       if (href !== undefined && isUnresolved(state, href)) {
         found.push({ from: node.from, to: node.to, href });
       }
@@ -65,7 +65,7 @@ function build(view: EditorView): DecorationSet {
     from: view.viewport.from,
     to: view.viewport.to,
     enter(node) {
-      const href = linkHref(state, node.name, node.from, node.to, node.node);
+      const href = linkHref(state, node);
       if (href !== undefined && isUnresolved(state, href)) {
         builder.add(node.from, node.to, unresolvedMark);
       }
@@ -76,11 +76,14 @@ function build(view: EditorView): DecorationSet {
 
 function linkHref(
   state: EditorView["state"],
-  name: string,
-  from: number,
-  to: number,
-  node: { getChild(name: string): { from: number; to: number } | null },
+  node: {
+    name: string;
+    from: number;
+    to: number;
+    node: { getChild(name: string): { from: number; to: number } | null };
+  },
 ): string | undefined {
+  const { name, from, to } = node;
   if (name === "WikiLink" || name === "WikiEmbed") {
     const open = name === "WikiEmbed" ? 3 : 2;
     if (to - from < open + 2) {
@@ -91,7 +94,7 @@ function linkHref(
   if (name !== "Link") {
     return undefined;
   }
-  const url = node.getChild("URL");
+  const url = node.node.getChild("URL");
   if (!url) {
     return undefined;
   }

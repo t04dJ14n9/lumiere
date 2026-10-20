@@ -10,7 +10,9 @@ function marks(doc: string, unresolved: string[]) {
     doc,
     extensions: [
       markdownLanguageSupport(),
-      unresolvedLinks.init(() => new Set(unresolved.map((s) => s.toLowerCase()))),
+      unresolvedLinks.init(
+        () => new Set(unresolved.map((s) => s.toLowerCase())),
+      ),
     ],
   });
   return unresolvedSourceMarks(state, 0, doc.length);
