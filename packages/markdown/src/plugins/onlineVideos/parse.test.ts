@@ -105,6 +105,29 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Codeberg repository pages on codeberg.org", () => {
+  assert.deepEqual(parseVideoUrl("https://codeberg.org/forgejo/forgejo"), {
+    provider: "codeberg",
+    id: "forgejo/forgejo",
+    page: "https://codeberg.org/forgejo/forgejo",
+  });
+  assert.deepEqual(parseVideoUrl("https://codeberg.org/forgejo/forgejo/"), {
+    provider: "codeberg",
+    id: "forgejo/forgejo",
+    page: "https://codeberg.org/forgejo/forgejo",
+  });
+  assert.equal(
+    parseVideoUrl("https://www.codeberg.org/forgejo/forgejo"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://codeberg.org/forgejo/forgejo/issues/1"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://codeberg.org/explore/repos"), undefined);
+  assert.equal(parseVideoUrl("https://codeberg.org/forgejo/."), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +152,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://www.codeberg.org/forgejo/forgejo",
+    "https://codeberg.org.evil.test/forgejo/forgejo",
+    "https://codeberg.org/forgejo/forgejo/issues/1",
+    "https://codeberg.org/explore/repos",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

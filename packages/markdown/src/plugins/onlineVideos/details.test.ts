@@ -4,10 +4,12 @@ import type { Fetch, FetchResponse } from "./details";
 import {
   USER_AGENT,
   VideoDetailsSource,
+  codebergAvatarUrl,
   coverUrl,
   imageDataUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
+  parseCodebergRepo,
   parseOEmbed,
 } from "./details";
 
@@ -307,6 +309,41 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("codebergAvatarUrl accepts codeberg.org /avatars/ hex only", () => {
+  assert.equal(
+    codebergAvatarUrl(
+      "https://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382",
+    ),
+    "https://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382",
+  );
+  for (const value of [
+    "https://evil.test/avatars/dae8ab126a96f6fbd6942cf08ab92382",
+    "https://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382?x=1",
+    "https://codeberg.org/avatars/not-hex",
+    "http://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382",
+  ]) {
+    assert.equal(codebergAvatarUrl(value), undefined);
+  }
+});
+
+test("parseCodebergRepo uses full_name and owner login", () => {
+  assert.deepEqual(
+    parseCodebergRepo({
+      full_name: "forgejo/forgejo",
+      name: "forgejo",
+      owner: {
+        login: "forgejo",
+        avatar_url:
+          "https://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382",
+      },
+    }),
+    {
+      details: { title: "forgejo/forgejo", author: "forgejo" },
+      cover: "https://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +366,34 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a Codeberg lookup uses api/v1/repos and may fetch the avatar", async () => {
+  const cover = "https://codeberg.org/avatars/dae8ab126a96f6fbd6942cf08ab92382";
+  const { fetch, calls } = fakeFetch({
+    "https://codeberg.org/api/v1/repos/": () =>
+      response({
+        full_name: "forgejo/forgejo",
+        name: "forgejo",
+        owner: { login: "forgejo", avatar_url: cover },
+      }),
+    "https://codeberg.org/avatars/": () => response(PNG, { type: "image/png" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "codeberg",
+    "forgejo/forgejo",
+  );
+  assert.equal(details.title, "forgejo/forgejo");
+  assert.equal(details.author, "forgejo");
+  assert.equal(
+    details.cover,
+    `data:image/png;base64,${Buffer.from(PNG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://codeberg.org/api/v1/repos/forgejo/forgejo",
+  );
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

@@ -85,3 +85,12 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Codeberg refuses an in-webview player", () => {
+  assert.equal(providers.codeberg.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://codeberg.org/forgejo/forgejo")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://codeberg.org/forgejo/forgejo")));
+});

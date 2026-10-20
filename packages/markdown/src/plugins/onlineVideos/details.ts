@@ -151,6 +151,23 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "codeberg") {
+      const slash = id.indexOf("/");
+      const owner = id.slice(0, slash);
+      const repo = id.slice(slash + 1);
+      const body = await this.json(
+        `https://codeberg.org/api/v1/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
+        signal,
+      );
+      const { details, cover } = parseCodebergRepo(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +263,52 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** Codeberg (Forgejo) repo API: full_name, owner login, avatar. */
+export function parseCodebergRepo(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected Codeberg response");
+  }
+  const title = text(body.full_name, 300) ?? text(body.name, 300);
+  const owner = isRecord(body.owner) ? body.owner : {};
+  const author = text(owner.login, 100) ?? text(owner.username, 100);
+  const cover = codebergAvatarUrl(owner.avatar_url);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/**
+ * Codeberg avatars on `codeberg.org` under `/avatars/{hex}` (no extension).
+ */
+export function codebergAvatarUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "codeberg.org" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/avatars\/[a-f0-9]{16,128}$/i.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  return `https://codeberg.org${url.pathname}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

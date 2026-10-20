@@ -1,14 +1,14 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Codeberg repository
+ * links. Only a fully parsed and validated ID leaves this module; players and
+ * cards are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "codeberg";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Codeberg `owner/repo` path.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,6 +71,40 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/**
+ * Codeberg owner/repo. Names are 1–100 chars of `[A-Za-z0-9._-]` (not `.` / `..`).
+ */
+const CODEBERG_NAME = /^[A-Za-z0-9._-]{1,100}$/;
+const CODEBERG_PATH = /^\/([A-Za-z0-9._-]{1,100})\/([A-Za-z0-9._-]{1,100})\/?$/;
+const CODEBERG_HOSTS = new Set(["codeberg.org"]);
+const CODEBERG_RESERVED = new Set([
+  "explore",
+  "issues",
+  "pulls",
+  "milestones",
+  "notifications",
+  "user",
+  "login",
+  "register",
+  "assets",
+  "api",
+  "org",
+  "organizations",
+  "stars",
+  "search",
+  "favicon.ico",
+  "avatar",
+  "avatars",
+  "attachments",
+  "raw",
+  "git",
+  "sw.js",
+]);
+
+function isCodebergName(value: string): boolean {
+  return CODEBERG_NAME.test(value) && value !== "." && value !== "..";
+}
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
@@ -79,7 +113,16 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  const slash = id.indexOf("/");
+  if (slash < 1 || id.indexOf("/", slash + 1) !== -1) {
+    return false;
+  }
+  return (
+    isCodebergName(id.slice(0, slash)) && isCodebergName(id.slice(slash + 1))
+  );
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +160,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (CODEBERG_HOSTS.has(host)) {
+    return codeberg(url.pathname);
   }
   return undefined;
 }
@@ -158,6 +204,27 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function codeberg(pathname: string): OnlineVideo | undefined {
+  const match = CODEBERG_PATH.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  const owner = match[1]!;
+  const repo = match[2]!;
+  if (
+    !isCodebergName(owner) ||
+    !isCodebergName(repo) ||
+    CODEBERG_RESERVED.has(owner.toLowerCase())
+  ) {
+    return undefined;
+  }
+  return {
+    provider: "codeberg",
+    id: `${owner}/${repo}`,
+    page: `https://codeberg.org/${owner}/${repo}`,
   };
 }
 
