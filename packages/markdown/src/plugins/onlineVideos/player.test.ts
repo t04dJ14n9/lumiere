@@ -85,3 +85,9 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("AniList refuses an in-webview player", () => {
+  assert.equal(providers.anilist.embeddable, false);
+  assert.equal(thumbnailUrl(video("https://anilist.co/anime/1")), undefined);
+  assert.throws(() => playerUrl(video("https://anilist.co/anime/1")));
+});

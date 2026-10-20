@@ -3,6 +3,7 @@
  * fetched by the extension host (the webview CSP allows no network). Every
  * failure resolves to `{}`, so the card simply stays as it is.
  */
+import { parseAnilistMedia } from "./anilist";
 import type { VideoProvider } from "./parse";
 import { isVideoId } from "./parse";
 
@@ -16,6 +17,9 @@ export type Fetch = (
     headers: Record<string, string>;
     signal: AbortSignal;
     redirect: "error";
+    /** Optional; AniList GraphQL uses POST. Defaults to GET. */
+    method?: string;
+    body?: string;
   },
 ) => Promise<FetchResponse>;
 export interface FetchResponse {
@@ -131,6 +135,35 @@ export class VideoDetailsSource {
     }
   }
 
+  private async fetchAnilist(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const colon = id.indexOf(":");
+    const kind = id.slice(0, colon);
+    const mediaId = Number(id.slice(colon + 1));
+    const body = await this.jsonPost(
+      "https://graphql.anilist.co",
+      {
+        query:
+          "query($id:Int,$type:MediaType){Media(id:$id,type:$type){title{english romaji native}coverImage{extraLarge large medium}studios(isMain:true){nodes{name}}staff(sort:RELEVANCE,perPage:8){edges{role node{name{full}}}}}}",
+        variables: {
+          id: mediaId,
+          type: kind === "manga" ? "MANGA" : "ANIME",
+        },
+      },
+      signal,
+    );
+    const { details, cover } = parseAnilistMedia(body);
+    if (cover) {
+      const image = await this.image(cover, signal).catch(() => undefined);
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
   private async fetchDetails(
     provider: VideoProvider,
     id: string,
@@ -150,6 +183,9 @@ export class VideoDetailsSource {
         signal,
       );
       return parseHuggingFaceModel(body);
+    }
+    if (provider === "anilist") {
+      return this.fetchAnilist(id, signal);
     }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
@@ -174,6 +210,22 @@ export class VideoDetailsSource {
     return response.json();
   }
 
+  private async jsonPost(
+    url: string,
+    body: unknown,
+    signal: AbortSignal,
+  ): Promise<unknown> {
+    const response = await this.request(url, signal, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    return response.json();
+  }
+
   private async image(url: string, signal: AbortSignal): Promise<string> {
     const response = await this.request(url, signal);
     const declared = Number(response.headers.get("content-length") ?? 0);
@@ -194,11 +246,22 @@ export class VideoDetailsSource {
   private async request(
     url: string,
     signal: AbortSignal,
+    extra?: {
+      method?: string;
+      headers?: Record<string, string>;
+      body?: string;
+    },
   ): Promise<FetchResponse> {
     const response = await this.options.fetch(url, {
-      headers: { "User-Agent": USER_AGENT, Accept: "*/*" },
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "*/*",
+        ...extra?.headers,
+      },
       signal,
       redirect: "error",
+      ...(extra?.method ? { method: extra.method } : {}),
+      ...(extra?.body !== undefined ? { body: extra.body } : {}),
     });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -247,6 +310,8 @@ function huggingfaceAuthor(
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
 }
+
+export { anilistCoverUrl, parseAnilistMedia } from "./anilist";
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */
 export function parseBilibiliView(body: unknown): {

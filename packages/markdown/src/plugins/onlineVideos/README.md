@@ -1,25 +1,8 @@
 # Online Videos
 
-YouTube, Bilibili and Hugging Face model links written as images show as
-video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
-`https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
-`start=`), `![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with
-`?p=` for a part, and Hugging Face
-`![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
-`/tree/…` normalised away). Obsidian has no equivalent (it shows such links
-as broken images); local video (`![[clip.mp4]]`) stays with Embeds.
+YouTube, Bilibili, Hugging Face model and AniList links written as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`, `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or `start=`), `![](https://www.bilibili.com/video/BV…)` or `…/video/av123`, with `?p=` for a part, and Hugging Face `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id; `/tree/…` normalised away), and AniList `![](https://anilist.co/anime/{id})` (or `/manga/{id}`, optional slug). Obsidian has no equivalent (it shows such links as broken images); local video (`![[clip.mp4]]`) stays with Embeds.
 
-A card shows a title (the alt text, else the provider's title, else "YouTube
-video", "Bilibili video" or "Hugging Face video"), the provider with the
-author and length (or the ID), and **Open on YouTube/Bilibili/Hugging Face**,
-which asks the host (Links RPC `open`) to open the page in the external
-browser. The card uses buttons rather than `<a href>`: VS Code's webview
-opens every clicked anchor itself as well, which would open the page twice.
-In a trusted workspace a YouTube card shows the video's still (`i.ytimg.com`,
-derived from the ID) and a Bilibili card the video's cover. Hugging Face
-cards have no cover. In an untrusted workspace nothing is fetched: no title,
-cover, still or player, and the card says so. The caret on the link reveals
-its Markdown, as for images.
+A card shows a title (the alt text, else the provider's title, else "YouTube video", "Bilibili video", "Hugging Face video" or "AniList video"), the provider with the author and length (or the ID), and **Open on YouTube/Bilibili/Hugging Face/AniList**, which asks the host (Links RPC `open`) to open the page in the external browser. The card uses buttons rather than `<a href>`: VS Code's webview opens every clicked anchor itself as well, which would open the page twice. In a trusted workspace a YouTube card shows the video's still (`i.ytimg.com`, derived from the ID) and a Bilibili or AniList card the cover from the host lookup. Hugging Face cards have no cover. In an untrusted workspace nothing is fetched: no title, cover, still or player, and the card says so. The caret on the link reveals its Markdown, as for images.
 
 **Play here** (Bilibili only) is off by default because Bilibili's player
 does not play in VS Code (below). `lumiere.markdown.onlineVideos.bilibiliPlayer`
@@ -30,7 +13,7 @@ player.
 
 `parse.ts` accepts only the hosts and path shapes above and validated IDs
 (11 characters of `[A-Za-z0-9_-]` for YouTube, `BV` plus 10 alphanumerics or
-`av` digits for Bilibili, Hugging Face model ids). `player.ts` builds the player URL from the parsed
+`av` digits for Bilibili, Hugging Face model ids, AniList `anime|manga` digits). `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
 `sandbox="allow-scripts allow-same-origin allow-presentation"`,
@@ -46,10 +29,7 @@ puts the image back when the pass is disposed.
 
 ### Titles and covers
 
-Bilibili covers and Hugging Face model metadata have no URL derived from the
-ID alone, and the webview CSP allows no network (`connect-src` is the
-webview only), so the extension host looks them up (`host.ts`, `details.ts`)
-when a trusted card asks over the `onlineVideos.details` RPC:
+Bilibili and AniList covers and Hugging Face model metadata have no URL derived from the ID alone, and the webview CSP allows no network (`connect-src` is the webview only), so the extension host looks them up (`host.ts`, `details.ts`) when a trusted card asks over the `onlineVideos.details` RPC:
 
 - Bilibili: `https://api.bilibili.com/x/web-interface/view?bvid=…` (or
   `aid=`), reading `data.title`, `data.owner.name`, `data.duration` and
@@ -94,6 +74,7 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 - `host.ts`: the trusted-only `details` RPC handler.
 - `details.ts`: provider lookups, response parsing, cover checks, timeout,
   concurrency and cache.
+- `anilist.ts`: AniList Media parsing and cover checks.
 - `protocol.ts`: the `details` request.
 - `meta.ts`: the card's author and length line.
 - `parse.ts`: link recognition and ID validation.
@@ -118,9 +99,4 @@ off, the links fall back to Embeds (a remote image).
 
 ## Limits
 
-Lookups depend on Bilibili's, YouTube's and Hugging Face's public endpoints,
-which may change or rate-limit. Playlists, channels, Bilibili bangumi and
-other providers are left as images. Hugging Face has no in-webview player
-(Open on Hugging Face only). Hub redirects (legacy single-segment model
-ids) fail the host lookup because redirects are refused; the card still
-opens the page.
+Lookups depend on Bilibili's, YouTube's, Hugging Face's and AniList's public endpoints, which may change or rate-limit. Playlists, channels, Bilibili bangumi and other providers are left as images. Hugging Face has no in-webview player (Open on Hugging Face only). AniList has no in-webview player (Open on AniList only). Hub redirects (legacy single-segment model ids) fail the host lookup because redirects are refused; the card still opens the page.

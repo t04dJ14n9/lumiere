@@ -4,8 +4,10 @@ import type { Fetch, FetchResponse } from "./details";
 import {
   USER_AGENT,
   VideoDetailsSource,
+  anilistCoverUrl,
   coverUrl,
   imageDataUrl,
+  parseAnilistMedia,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
@@ -62,9 +64,13 @@ function response(
 function fakeFetch(
   routes: Record<string, () => FetchResponse | Promise<FetchResponse>>,
 ) {
-  const calls: { url: string; headers: Record<string, string> }[] = [];
+  const calls: {
+    url: string;
+    headers: Record<string, string>;
+    method?: string;
+  }[] = [];
   const fetch: Fetch = async (url, init) => {
-    calls.push({ url, headers: init.headers });
+    calls.push({ url, headers: init.headers, method: init.method });
     const route = Object.keys(routes).find((prefix) => url.startsWith(prefix));
     if (!route) {
       throw new TypeError("fetch failed");
@@ -307,6 +313,60 @@ test("parseHuggingFaceModel prefers pipeline · id and author", () => {
   );
 });
 
+test("anilistCoverUrl accepts s4.anilist.co anilistcdn paths only", () => {
+  assert.equal(
+    anilistCoverUrl(
+      "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-GCsPm7waJ4kS.png",
+    ),
+    "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-GCsPm7waJ4kS.png",
+  );
+  for (const value of [
+    "https://evil.test/file/anilistcdn/media/anime/cover/large/bx1.png",
+    "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1.png?x=1",
+    "https://s4.anilist.co/other/bx1.png",
+    "http://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1.png",
+  ]) {
+    assert.equal(anilistCoverUrl(value), undefined);
+  }
+});
+
+test("parseAnilistMedia prefers English title and main studio", () => {
+  assert.deepEqual(
+    parseAnilistMedia({
+      data: {
+        Media: {
+          type: "ANIME",
+          title: {
+            english: "Cowboy Bebop",
+            romaji: "Cowboy Bebop",
+            native: "カウボーイビバップ",
+          },
+          coverImage: {
+            extraLarge:
+              "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-GCsPm7waJ4kS.png",
+            large:
+              "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx1-GCsPm7waJ4kS.png",
+          },
+          studios: { nodes: [{ name: "Sunrise" }] },
+          staff: {
+            edges: [
+              {
+                role: "Director",
+                node: { name: { full: "Shinichirou Watanabe" } },
+              },
+            ],
+          },
+        },
+      },
+    }),
+    {
+      details: { title: "Cowboy Bebop", author: "Sunrise" },
+      cover:
+        "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-GCsPm7waJ4kS.png",
+    },
+  );
+});
+
 test("a Hugging Face lookup fetches the models API", async () => {
   const { fetch, calls } = fakeFetch({
     "https://huggingface.co/api/models/google/gemma-2-2b": () =>
@@ -329,5 +389,70 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("parseAnilistMedia uses Story & Art staff when studios are empty", () => {
+  assert.deepEqual(
+    parseAnilistMedia({
+      data: {
+        Media: {
+          type: "MANGA",
+          title: { romaji: "Berserk" },
+          coverImage: {
+            large:
+              "https://s4.anilist.co/file/anilistcdn/media/manga/cover/medium/bx30002-Cul4OeN7bYtn.jpg",
+          },
+          studios: { nodes: [] },
+          staff: {
+            edges: [
+              {
+                role: "Story & Art (vols 1-41)",
+                node: { name: { full: "Kentarou Miura" } },
+              },
+            ],
+          },
+        },
+      },
+    }),
+    {
+      details: { title: "Berserk", author: "Kentarou Miura" },
+      cover:
+        "https://s4.anilist.co/file/anilistcdn/media/manga/cover/medium/bx30002-Cul4OeN7bYtn.jpg",
+    },
+  );
+});
+
+test("an AniList lookup POSTs GraphQL and may fetch the cover", async () => {
+  const cover =
+    "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-GCsPm7waJ4kS.png";
+  const { fetch, calls } = fakeFetch({
+    "https://graphql.anilist.co": () =>
+      response({
+        data: {
+          Media: {
+            type: "ANIME",
+            title: { english: "Cowboy Bebop", romaji: "Cowboy Bebop" },
+            coverImage: { extraLarge: cover },
+            studios: { nodes: [{ name: "Sunrise" }] },
+            staff: { edges: [] },
+          },
+        },
+      }),
+    "https://s4.anilist.co/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "anilist",
+    "anime:1",
+  );
+  assert.equal(details.title, "Cowboy Bebop");
+  assert.equal(details.author, "Sunrise");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://graphql.anilist.co");
+  assert.equal(calls[0]?.method, "POST");
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

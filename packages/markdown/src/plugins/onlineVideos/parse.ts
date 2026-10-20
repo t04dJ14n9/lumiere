@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
+ * Recognise YouTube, Bilibili, Hugging Face model and AniList links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "anilist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or an AniList `anime:{id}` /
+   * `manga:{id}`.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,6 +72,12 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/** AniList media id (`anime:1`, `manga:30002`). */
+const ANILIST_ID = /^(?:anime|manga):[1-9][0-9]{0,8}$/;
+const ANILIST_PATH =
+  /^\/(anime|manga)\/([1-9][0-9]{0,8})(?:\/[A-Za-z0-9_-]+)?\/?$/;
+const ANILIST_HOSTS = new Set(["anilist.co"]);
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
@@ -79,7 +86,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return ANILIST_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +127,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (ANILIST_HOSTS.has(host)) {
+    const match = ANILIST_PATH.exec(url.pathname);
+    return match ? anilist(match[1]!, match[2]!) : undefined;
   }
   return undefined;
 }
@@ -158,6 +172,18 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function anilist(kind: string, mediaId: string): OnlineVideo | undefined {
+  const id = `${kind}:${mediaId}`;
+  if (!ANILIST_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "anilist",
+    id,
+    page: `https://anilist.co/${kind}/${mediaId}`,
   };
 }
 

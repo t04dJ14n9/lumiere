@@ -105,6 +105,27 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("AniList anime and manga pages on anilist.co", () => {
+  assert.deepEqual(parseVideoUrl("https://anilist.co/anime/1"), {
+    provider: "anilist",
+    id: "anime:1",
+    page: "https://anilist.co/anime/1",
+  });
+  assert.deepEqual(parseVideoUrl("https://anilist.co/anime/1/Cowboy-Bebop"), {
+    provider: "anilist",
+    id: "anime:1",
+    page: "https://anilist.co/anime/1",
+  });
+  assert.deepEqual(parseVideoUrl("https://anilist.co/manga/30002/"), {
+    provider: "anilist",
+    id: "manga:30002",
+    page: "https://anilist.co/manga/30002",
+  });
+  assert.equal(parseVideoUrl("https://anilist.co/anime/0"), undefined);
+  assert.equal(parseVideoUrl("https://www.anilist.co/anime/1"), undefined);
+  assert.equal(parseVideoUrl("https://anilist.co/character/1"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +150,11 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://anilist.co/anime/0",
+    "https://anilist.co.evil.test/anime/1",
+    "https://www.anilist.co/anime/1",
+    "https://anilist.co/character/1",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
