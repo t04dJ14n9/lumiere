@@ -87,13 +87,15 @@ function wireTagViewMenus(ctx: TagsViewCtx, schedule: () => void) {
     );
   };
   ctx.effect(() => ctx.settings.onChange(syncContext));
-  ctx.effect(() => async () => {
-    await ctx.hostCommands.execute(
-      "setContext",
-      SORT_FREQUENCY_CONTEXT,
-      undefined,
-    );
-    await ctx.hostCommands.execute("setContext", NESTED_CONTEXT, undefined);
+  ctx.effect(() => () => {
+    void (async () => {
+      await ctx.hostCommands.execute(
+        "setContext",
+        SORT_FREQUENCY_CONTEXT,
+        undefined,
+      );
+      await ctx.hostCommands.execute("setContext", NESTED_CONTEXT, undefined);
+    })().catch(() => undefined);
   });
   syncContext();
 }

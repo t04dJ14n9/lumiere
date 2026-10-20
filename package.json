@@ -708,6 +708,26 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.tags.sortByFrequency",
+        "title": "✓ Sort by Frequency",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.tags.sortByName",
+        "title": "✓ Sort by Name",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.tags.enableNested",
+        "title": "Show Nested Tags",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.tags.disableNested",
+        "title": "✓ Show Nested Tags",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.toggleChecklist",
         "title": "Toggle Checklist Status",
         "category": "Lumière"
@@ -1836,6 +1856,22 @@
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
         },
         {
+          "command": "lumiere.markdown.tags.sortByFrequency",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.tags.sortByName",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.tags.enableNested",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.tags.disableNested",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.toggleChecklist",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tasks"
         },
@@ -2165,6 +2201,26 @@
           "command": "lumiere.markdown.outline.disableFollowCursor",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && view == lumiere.markdown.outline && lumiere.markdown.outline.followCursor",
           "group": "outline@1"
+        },
+        {
+          "command": "lumiere.markdown.tags.sortByFrequency",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && view == lumiere.markdown.tags && lumiere.markdown.tags.sortFrequency",
+          "group": "tagsSort@1"
+        },
+        {
+          "command": "lumiere.markdown.tags.sortByName",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && view == lumiere.markdown.tags && !lumiere.markdown.tags.sortFrequency",
+          "group": "tagsSort@1"
+        },
+        {
+          "command": "lumiere.markdown.tags.enableNested",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && view == lumiere.markdown.tags && !lumiere.markdown.tags.nested",
+          "group": "tagsNest@1"
+        },
+        {
+          "command": "lumiere.markdown.tags.disableNested",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && view == lumiere.markdown.tags && lumiere.markdown.tags.nested",
+          "group": "tagsNest@1"
         },
         {
           "command": "lumiere.pdf.expandOutline",
