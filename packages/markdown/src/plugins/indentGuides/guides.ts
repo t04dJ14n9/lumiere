@@ -2,7 +2,6 @@ import { Decoration } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import type { EditorState, Line, Range } from "@codemirror/state";
 import { parseMarkdown } from "../../markdown/dialect";
-import { listDepth } from "../livePreview/lists";
 
 export function indentation(text: string, tabSize: number): number {
   let width = 0;
@@ -22,6 +21,21 @@ export function indentation(text: string, tabSize: number): number {
  * 0-based list guide column for the caret in Live Preview, matching Obsidian's
  * active indent on nested lists. Top-level items (depth 0) paint no guides.
  */
+/** Nesting depth of a list item (0 = top-level). Kept local to respect plugin boundaries. */
+function listDepth(item: { name?: string; parent: unknown }): number {
+  let depth = -1;
+  for (
+    let node: { name?: string; parent: unknown } | null = item;
+    node;
+    node = node.parent as { name?: string; parent: unknown } | null
+  ) {
+    if (node.name === "BulletList" || node.name === "OrderedList") {
+      depth++;
+    }
+  }
+  return Math.max(0, depth);
+}
+
 export function activeListGuideColumn(state: EditorState): number | undefined {
   const head = state.selection.main.head;
   const tree = parseMarkdown(state.doc);
