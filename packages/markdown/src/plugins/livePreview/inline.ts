@@ -18,6 +18,7 @@ import { decorateHighlightColour, highlightClass } from "./highlight-colour";
 import { decorateCodeLines } from "./code-lines";
 import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
+import { isUnresolved } from "../links/api";
 const inlineClasses: Readonly<Record<string, string>> = {
   Highlight: "md-highlight",
   StrongEmphasis: "md-strong",
@@ -267,7 +268,11 @@ class InlineDecorations implements InlineContext {
     this.mark(
       from + 1,
       closingLabel?.from ?? to,
-      linkClass(isRendered, href ?? ""),
+      linkClass(
+        isRendered,
+        href ?? "",
+        !!href && isUnresolved(this.state, href),
+      ),
       href ? { "data-href": href } : undefined,
     );
     if (isRendered) {
@@ -386,14 +391,22 @@ export const hybridInline = ViewPlugin.fromClass(HybridInline, {
 
 /**
  * A Markdown link's classes. A rendered label pointing outside the vault
- * (any `scheme:` address) carries Obsidian's external-link mark.
+ * (any `scheme:` address) carries Obsidian's external-link mark. Internal
+ * misses get `is-unresolved`, same as rendered wikilinks.
  */
-export function linkClass(isRendered: boolean, href: string): string {
+export function linkClass(
+  isRendered: boolean,
+  href: string,
+  unresolved = false,
+): string {
   if (!isRendered) {
     return "md-link";
   }
-  return /^[a-z][a-z\d+.-]*:/i.test(href)
-    ? "md-link md-link-rendered md-link-external"
+  if (/^[a-z][a-z\d+.-]*:/i.test(href)) {
+    return "md-link md-link-rendered md-link-external";
+  }
+  return unresolved
+    ? "md-link md-link-rendered is-unresolved"
     : "md-link md-link-rendered";
 }
 

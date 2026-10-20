@@ -1,4 +1,4 @@
-/* Wikilinks that do not resolve to a file are dimmed, as in Obsidian. */
+/* Wikilinks and Markdown links that do not resolve are dimmed, as in Obsidian. */
 .md-link-rendered.is-unresolved,
 .markdown-rendered a.is-unresolved {
   opacity: 0.7;
