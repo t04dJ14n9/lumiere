@@ -3,6 +3,14 @@ import type { EditorView, KeyBinding } from "@codemirror/view";
 import { textStart } from "../../markdown/list-markup";
 
 /**
+ * Live Preview–hidden openers that can sit after list/quote markup on the
+ * first visual line (`**`, `[[`, `[`, `<kbd>`, …). When CodeMirror's visual
+ * line start skips them, Home must still stop at the item's text start first
+ * (Obsidian 1.14), the same class of skip End applies to trailing closers.
+ */
+const LEADING_OPENERS = /^(?:[*_~=`$%]+|!?\[\[|\[|%%|<[^>\n]+>)+$/u;
+
+/**
  * Where Home (Cmd+Left on macOS) goes first, as in Obsidian: from inside a
  * list item, task or quote, to the start of its text, after the markup.
  * Returns undefined where the default applies: at or before the text start,
@@ -10,7 +18,8 @@ import { textStart } from "../../markdown/list-markup";
  *
  * `visualStart` is where the caret's visual line starts: within the markup
  * on the first visual line (Live Preview hides some of it), after the text
- * start on later ones.
+ * start on later ones — or, still on the first visual line, past LP-hidden
+ * leading openers that follow the markup.
  */
 export function lineStartTarget(
   state: EditorState,
@@ -19,8 +28,14 @@ export function lineStartTarget(
 ): number | undefined {
   const line = state.doc.lineAt(head);
   const start = line.from + textStart(line.text);
-  if (start === line.from || head <= start || visualStart > start) {
+  if (start === line.from || head <= start) {
     return undefined;
+  }
+  if (visualStart > start) {
+    const between = state.sliceDoc(start, visualStart);
+    if (!between || !LEADING_OPENERS.test(between)) {
+      return undefined;
+    }
   }
   return start;
 }
