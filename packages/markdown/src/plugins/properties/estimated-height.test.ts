@@ -164,11 +164,16 @@ test("a wrapping tags list reserves more than one control row", () => {
   assert.ok(height > estimate("---\ntags:\n  - a\n---\n") * 2, String(height));
 });
 
-test("a wrapping longtext value reserves more than one control row", () => {
-  // pre-wrap + overflow-wrap:anywhere — one YAML line still paints many rows.
+test("longtext estimate caps at three unfocused lines, as in Obsidian", () => {
+  // Obsidian clamps unfocused .metadata-input-longtext to 3 lines; more text
+  // must not grow the remount reserve past that paint.
   const summary = Array.from({ length: 80 }, () => "wrapping").join(" ");
+  const longer = Array.from({ length: 200 }, () => "wrapping").join(" ");
   const height = estimate(`---\nsummary: ${summary}\n---\n`);
+  const taller = estimate(`---\nsummary: ${longer}\n---\n`);
   const short = estimate("---\nsummary: hi\n---\n");
-  assert.ok(height > 200, String(height));
-  assert.ok(height > short * 2, `${height} vs short ${short}`);
+  assert.equal(height, taller);
+  assert.ok(height > short, `${height} vs short ${short}`);
+  // Unclamped 80×"wrapping" used to reserve >200px; the 3-line cap stays under.
+  assert.ok(height < 200, String(height));
 });
