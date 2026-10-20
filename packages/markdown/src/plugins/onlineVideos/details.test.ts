@@ -6,9 +6,13 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  niconicoLength,
+  niconicoThumbnail,
   parseBilibiliView,
   parseHuggingFaceModel,
+  parseNiconicoThumb,
   parseOEmbed,
+  xmlTag,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -26,6 +30,9 @@ const VIEW = {
   },
 };
 
+const NICO_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<nicovideo_thumb_response status="ok"><thumb><video_id>sm9</video_id><title>新・豪血寺一族 -煩悩解放 - レッツゴー！陰陽師</title><thumbnail_url>https://nicovideo.cdn.nimg.jp/thumbnails/9/9</thumbnail_url><length>5:20</length><user_nickname>中の</user_nickname></thumb></nicovideo_thumb_response>`;
+
 function response(
   body: unknown,
   {
@@ -41,7 +48,9 @@ function response(
   const bytes =
     body instanceof Uint8Array
       ? body
-      : new TextEncoder().encode(JSON.stringify(body));
+      : typeof body === "string"
+        ? new TextEncoder().encode(body)
+        : new TextEncoder().encode(JSON.stringify(body));
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -124,6 +133,75 @@ test("oEmbed responses give the YouTube title and channel", () => {
   );
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
+});
+
+test("Niconico getthumbinfo XML gives title, author, length and nimg cover", () => {
+  assert.deepEqual(parseNiconicoThumb(NICO_XML), {
+    details: {
+      title: "新・豪血寺一族 -煩悩解放 - レッツゴー！陰陽師",
+      author: "中の",
+      duration: 320,
+    },
+    cover: "https://nicovideo.cdn.nimg.jp/thumbnails/9/9",
+  });
+  assert.throws(() =>
+    parseNiconicoThumb(
+      `<nicovideo_thumb_response status="fail"><error><code>NOT_FOUND</code></error></nicovideo_thumb_response>`,
+    ),
+  );
+  assert.throws(() => parseNiconicoThumb("<html>"));
+  assert.equal(xmlTag(NICO_XML, "title")?.startsWith("新・"), true);
+  assert.equal(niconicoLength("5:20"), 320);
+  assert.equal(niconicoLength("1:05:01"), 3901);
+  assert.equal(niconicoLength("99"), undefined);
+});
+
+test("Niconico thumbnails are accepted only from nicovideo.cdn.nimg.jp /thumbnails/", () => {
+  assert.equal(
+    niconicoThumbnail("https://nicovideo.cdn.nimg.jp/thumbnails/9/9"),
+    "https://nicovideo.cdn.nimg.jp/thumbnails/9/9",
+  );
+  assert.equal(
+    niconicoThumbnail("https://nicovideo.cdn.nimg.jp/thumbnails/9/9.L"),
+    "https://nicovideo.cdn.nimg.jp/thumbnails/9/9.L",
+  );
+  for (const value of [
+    "https://img.nicoprofile.nimg.jp/usericon/defaults/blank.jpg",
+    "https://evil.test/thumbnails/9/9",
+    "https://nicovideo.cdn.nimg.jp.evil.test/thumbnails/9/9",
+    "https://nicovideo.cdn.nimg.jp/other/9/9",
+    "https://nicovideo.cdn.nimg.jp/thumbnails/9/9?x=1",
+    "https://nicovideo.cdn.nimg.jp:8080/thumbnails/9/9",
+    "javascript:alert(1)",
+    "",
+    undefined,
+  ]) {
+    assert.equal(niconicoThumbnail(value), undefined, String(value));
+  }
+});
+
+test("a Niconico lookup fetches getthumbinfo and a CDN thumbnail", async () => {
+  const thumb = "https://nicovideo.cdn.nimg.jp/thumbnails/9/9";
+  const { fetch, calls } = fakeFetch({
+    "https://ext.nicovideo.jp/api/getthumbinfo/sm9": () =>
+      response(NICO_XML, { type: "application/xml" }),
+    "https://nicovideo.cdn.nimg.jp/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "niconico",
+    "sm9",
+  );
+  assert.equal(details.title, "新・豪血寺一族 -煩悩解放 - レッツゴー！陰陽師");
+  assert.equal(details.author, "中の");
+  assert.equal(details.duration, 320);
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://ext.nicovideo.jp/api/getthumbinfo/sm9");
+  assert.equal(calls[1]?.url, thumb);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
 
 test("data URLs are typed by the image's signature", () => {
@@ -276,6 +354,7 @@ test("invalid IDs never reach the network, and at most four lookups run at once"
   const source = new VideoDetailsSource({ fetch, maxEntries: 3 });
   assert.deepEqual(await source.get("youtube", "../../evil?"), {});
   assert.deepEqual(await source.get("bilibili", "BV1/../x"), {});
+  assert.deepEqual(await source.get("niconico", "sm0"), {});
   assert.equal(peak, 0);
   const ids = Array.from({ length: 10 }, (_, i) => `dQw4w9WgXc${i}`);
   await Promise.all(ids.map((id) => source.get("youtube", id)));

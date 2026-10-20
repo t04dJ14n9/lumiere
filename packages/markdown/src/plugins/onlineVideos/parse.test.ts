@@ -45,6 +45,32 @@ test("YouTube start times in seconds or h/m/s", () => {
   assert.equal(parseVideoUrl(`https://youtu.be/${ID}?t=0`)?.start, undefined);
 });
 
+test("Niconico watch and nico.ms links give the sm/nm/so id", () => {
+  assert.deepEqual(parseVideoUrl("https://www.nicovideo.jp/watch/sm9"), {
+    provider: "niconico",
+    id: "sm9",
+    page: "https://www.nicovideo.jp/watch/sm9",
+  });
+  assert.deepEqual(parseVideoUrl("https://nico.ms/sm2057168"), {
+    provider: "niconico",
+    id: "sm2057168",
+    page: "https://www.nicovideo.jp/watch/sm2057168",
+  });
+  assert.deepEqual(parseVideoUrl("https://sp.nicovideo.jp/watch/nm14232"), {
+    provider: "niconico",
+    id: "nm14232",
+    page: "https://www.nicovideo.jp/watch/nm14232",
+  });
+  assert.equal(
+    parseVideoUrl("https://www.nicovideo.jp/watch/sm9?from=90")?.start,
+    90,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.nicovideo.jp/watch/sm9?from=90")?.page,
+    "https://www.nicovideo.jp/watch/sm9?from=90",
+  );
+});
+
 test("Bilibili BV and av links keep the part number", () => {
   assert.deepEqual(
     parseVideoUrl("https://www.bilibili.com/video/BV1DRHU6LELy/?spm_id_from=x"),
@@ -129,6 +155,12 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://www.nicovideo.jp/watch/",
+    "https://www.nicovideo.jp/watch/sm0",
+    "https://www.nicovideo.jp/watch/sm9/extra",
+    "https://evil.nicovideo.jp.evil.test/watch/sm9",
+    "https://nico.ms/sm",
+    "https://www.nicovideo.jp/tag/sm9",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

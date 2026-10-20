@@ -42,6 +42,8 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
+/** Niconico getthumbinfo thumbnails. */
+const NICONICO_THUMB_HOSTS = new Set(["nicovideo.cdn.nimg.jp"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -151,6 +153,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "niconico") {
+      return this.niconicoDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -172,6 +177,30 @@ export class VideoDetailsSource {
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
     const response = await this.request(url, signal);
     return response.json();
+  }
+
+  /** getthumbinfo XML, plus an nimg cover when the thumbnail is allowed. */
+  private async niconicoDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const xml = await this.text(
+      `https://ext.nicovideo.jp/api/getthumbinfo/${id}`,
+      signal,
+    );
+    const { details, cover } = parseNiconicoThumb(xml);
+    if (cover) {
+      const image = await this.image(cover, signal).catch(() => undefined);
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
+  private async text(url: string, signal: AbortSignal): Promise<string> {
+    const response = await this.request(url, signal);
+    return new TextDecoder().decode(await response.arrayBuffer());
   }
 
   private async image(url: string, signal: AbortSignal): Promise<string> {
@@ -205,6 +234,91 @@ export class VideoDetailsSource {
     }
     return response;
   }
+}
+
+/** Niconico getthumbinfo XML → details + allowlisted thumbnail. */
+export function parseNiconicoThumb(xml: string): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (
+    typeof xml !== "string" ||
+    !/<nicovideo_thumb_response\b[^>]*\bstatus="ok"/i.test(xml)
+  ) {
+    throw new Error("Unexpected Niconico response");
+  }
+  const duration = niconicoLength(xmlTag(xml, "length"));
+  const cover = niconicoThumbnail(xmlTag(xml, "thumbnail_url"));
+  return {
+    details: withoutUndefined({
+      title: text(xmlTag(xml, "title"), 300),
+      author: text(xmlTag(xml, "user_nickname"), 100),
+      duration,
+    }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/** First matching XML element body (no nested tags); entities decoded. */
+export function xmlTag(xml: string, name: string): string | undefined {
+  const match = new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, "i").exec(
+    xml,
+  );
+  return match ? decodeXml(match[1]!) : undefined;
+}
+
+/** Niconico `m:ss` or `h:mm:ss` length → whole seconds. */
+export function niconicoLength(value: string | undefined): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const match = /^(?:(\d+):)?(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) {
+    return undefined;
+  }
+  const hours = match[1] ? Number(match[1]) : 0;
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3]);
+  if (minutes > 59 || seconds > 59) {
+    return undefined;
+  }
+  const total = hours * 3600 + minutes * 60 + seconds;
+  return total > 0 && total < 1_000_000 ? total : undefined;
+}
+
+/** Niconico CDN thumbnail when it is on `nicovideo.cdn.nimg.jp`. */
+export function niconicoThumbnail(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !NICONICO_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/thumbnails\/[0-9]+\/[0-9]+(?:\.[A-Za-z0-9]+)?$/.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  return `https://${url.hostname}${url.pathname}`;
+}
+
+function decodeXml(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 export function parseOEmbed(body: unknown): VideoDetails {

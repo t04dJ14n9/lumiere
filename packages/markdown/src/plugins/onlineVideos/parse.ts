@@ -1,17 +1,17 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Niconico links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "niconico";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Niconico `sm…` / `nm…` / `so…` id.
    */
   readonly id: string;
-  /** YouTube start time in whole seconds. */
+  /** YouTube or Niconico start time in whole seconds. */
   readonly start?: number;
   /** Bilibili part number (`?p=`), 1 for the first part. */
   readonly part?: number;
@@ -35,6 +35,13 @@ const BILIBILI_HOSTS = new Set([
   "bilibili.com",
   "www.bilibili.com",
   "m.bilibili.com",
+]);
+/** Niconico watch ids (`sm9`, `nm123`, `so456`). */
+const NICONICO_ID = /^(?:sm|nm|so)[1-9][0-9]{0,11}$/;
+const NICONICO_HOSTS = new Set([
+  "nicovideo.jp",
+  "www.nicovideo.jp",
+  "sp.nicovideo.jp",
 ]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
@@ -79,7 +86,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return NICONICO_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +127,18 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (host === "nico.ms") {
+    return niconico(
+      /^\/((?:sm|nm|so)[1-9][0-9]{0,11})\/?$/.exec(url.pathname)?.[1],
+      url,
+    );
+  }
+  if (NICONICO_HOSTS.has(host)) {
+    return niconico(
+      /^\/watch\/((?:sm|nm|so)[1-9][0-9]{0,11})\/?$/.exec(url.pathname)?.[1],
+      url,
+    );
   }
   return undefined;
 }
@@ -159,6 +181,18 @@ function huggingface(id: string): OnlineVideo | undefined {
     id,
     page: `https://huggingface.co/${id}`,
   };
+}
+
+function niconico(id: string | undefined, url: URL): OnlineVideo | undefined {
+  if (!id || !NICONICO_ID.test(id)) {
+    return undefined;
+  }
+  // Niconico uses `from=` (seconds) for the start offset.
+  const start = positive(url.searchParams.get("from"));
+  const page = `https://www.nicovideo.jp/watch/${id}${start ? `?from=${start}` : ""}`;
+  return start
+    ? { provider: "niconico", id, start, page }
+    : { provider: "niconico", id, page };
 }
 
 /** `90`, `90s`, `1m30s` or `1h2m3s`; anything else is ignored. */
