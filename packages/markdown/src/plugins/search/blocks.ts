@@ -10,13 +10,14 @@ export type OpenSearchResult = (target: {
 }) => void;
 
 /** Each rendered block owns one subscription, including manual refresh and teardown. */
-export function bindSearchBlock(
-  fence: Fence,
-  pass: RenderPass,
-  client: QueryClient,
-  source: string,
-  open?: OpenSearchResult,
-): () => void {
+export function bindSearchBlock(input: {
+  fence: Fence;
+  pass: RenderPass;
+  client: QueryClient;
+  source: string;
+  open?: OpenSearchResult;
+}): () => void {
+  const { fence, pass, client, source, open } = input;
   const document = fence.element.ownerDocument;
   fence.element.classList.add("embedded-search");
   const header = document.createElement("div");
