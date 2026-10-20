@@ -112,3 +112,55 @@ test("native text drag onto a column grip does not start grid selection", async 
   await expect(editor).toBeFocused();
   await expect(page.locator(".table-cell-selected")).toHaveCount(1);
 });
+
+test("left cell padding opens at the start of the text, not the end", async ({
+  page,
+}) => {
+  await open(
+    page,
+    "| Fruit | Colour |\n| --- | --- |\n| Banana | Yellow |\n",
+    "obsidian",
+    { features: { vim: { enabled: false, config: {} } } },
+  );
+  const banana = page.locator(".hybrid-table .table-cell-content").nth(2);
+  const cell = page.locator(".hybrid-table td[data-row='1'][data-column='0']");
+  const cellBox = (await cell.boundingBox())!;
+  const textBox = (await banana.boundingBox())!;
+  // 4px into the cell's left padding (td padding is 8px), left of the glyphs.
+  await page.mouse.click(cellBox.x + 3, textBox.y + textBox.height / 2);
+  const editor = page.getByRole("textbox", {
+    name: "Table cell 2, 1",
+    exact: true,
+  });
+  await expect(editor).toBeFocused();
+  await page.keyboard.type("z");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("| zBanana |");
+});
+
+test("right cell padding opens at the end of the text", async ({ page }) => {
+  await open(
+    page,
+    "| Fruit | Colour |\n| --- | --- |\n| Banana | Yellow |\n",
+    "obsidian",
+    { features: { vim: { enabled: false, config: {} } } },
+  );
+  const banana = page.locator(".hybrid-table .table-cell-content").nth(2);
+  const cell = page.locator(".hybrid-table td[data-row='1'][data-column='0']");
+  const cellBox = (await cell.boundingBox())!;
+  const textBox = (await banana.boundingBox())!;
+  await page.mouse.click(
+    cellBox.x + cellBox.width - 3,
+    textBox.y + textBox.height / 2,
+  );
+  const editor = page.getByRole("textbox", {
+    name: "Table cell 2, 1",
+    exact: true,
+  });
+  await expect(editor).toBeFocused();
+  await page.keyboard.type("z");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("| Bananaz |");
+});

@@ -103,7 +103,10 @@ is `lumiere.markdown.plugins.tables.enabled`; it has no separate configuration.
 
 Save, undo and redo belong to VS Code's TextDocument. Cell selections map to
 Markdown offsets for consumers of the editor selection API. Live Preview always
-keeps tables rendered; only the focused cell reveals raw Markdown. Source mode
+keeps tables rendered; only the focused cell reveals raw Markdown. A click on
+the cell's padding (outside the rendered glyphs) opens the editor at the
+nearest edge of the cell text, as in Obsidian; on-glyph clicks still map
+through the rendered source. Source mode
 shows the full table source. HTML conversion is delegated
 to the paste pipeline rather than implemented by the table widget.
 An external programmatic viewport jump in the same direction as an unfinished
