@@ -105,6 +105,37 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("pub.dev package pages keep the name; version paths normalise", () => {
+  assert.deepEqual(parseVideoUrl("https://pub.dev/packages/http"), {
+    provider: "pubdev",
+    id: "http",
+    page: "https://pub.dev/packages/http",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.pub.dev/packages/flutter_bloc/"),
+    {
+      provider: "pubdev",
+      id: "flutter_bloc",
+      page: "https://pub.dev/packages/flutter_bloc",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://pub.dev/packages/http/versions/1.6.0"),
+    {
+      provider: "pubdev",
+      id: "http",
+      page: "https://pub.dev/packages/http",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://pub.dartlang.org/packages/http"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://pub.dev/packages/"), undefined);
+  assert.equal(parseVideoUrl("https://pub.dev/publishers/dart.dev"), undefined);
+  assert.equal(parseVideoUrl("https://pub.dev/packages/Bad_Case"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +160,13 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+
+    "https://pub.dartlang.org/packages/http",
+    "https://pub.dev.evil.test/packages/http",
+    "https://pub.dev/packages/Bad_Case",
+    "https://pub.dev/packages/-bad",
+    "https://pub.dev/packages/",
+    "https://pub.dev/publishers/dart.dev",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

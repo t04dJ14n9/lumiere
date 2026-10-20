@@ -151,6 +151,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "pubdev") {
+      return this.pubDevDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -167,6 +170,22 @@ export class VideoDetailsSource {
       }
     }
     return details;
+  }
+
+  /**
+   * pub.dev package metadata: description from `/api/packages/{name}`,
+   * publisher from `/api/packages/{name}/publisher`. No package cover.
+   */
+  private async pubDevDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const encoded = encodeURIComponent(id);
+    const [body, publisher] = await Promise.all([
+      this.json(`https://pub.dev/api/packages/${encoded}`, signal),
+      this.json(`https://pub.dev/api/packages/${encoded}/publisher`, signal),
+    ]);
+    return parsePubDevPackage(body, publisher);
   }
 
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
@@ -246,6 +265,36 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+/**
+ * pub.dev package + publisher JSON: description as title; publisherId as
+ * author when present. Falls back to the package name.
+ */
+export function parsePubDevPackage(
+  body: unknown,
+  publisher: unknown = undefined,
+): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected pub.dev response");
+  }
+  const latest = isRecord(body.latest) ? body.latest : undefined;
+  const pubspec = latest && isRecord(latest.pubspec) ? latest.pubspec : {};
+  const title =
+    text(pubspec.description, 300) ??
+    text(body.name, 300) ??
+    text(pubspec.name, 300);
+  return withoutUndefined({
+    title,
+    author: pubDevPublisher(publisher),
+  });
+}
+
+/** `publisherId` from `/api/packages/{name}/publisher`, when set. */
+export function pubDevPublisher(body: unknown): string | undefined {
+  if (!isRecord(body)) {
+    return undefined;
+  }
+  return text(body.publisherId, 100);
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and pub.dev package links.
+ * Only a fully parsed and validated ID leaves this module; players and cards
+ * are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "pubdev";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a pub.dev package name (e.g. `http`,
+   * `flutter_bloc`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -70,6 +71,13 @@ const HF_RESERVED = new Set([
   "organizations",
   "collections",
 ]);
+/**
+ * pub.dev package name: lowercase letters, digits, `_`; starts with a letter;
+ * at most 64 chars (Dart pub limit).
+ */
+const PUBDEV_NAME = /^[a-z][a-z0-9_]{0,63}$/;
+const PUBDEV_PATH = /^\/packages\/([a-z][a-z0-9_]{0,63})(?:\/|$)/;
+const PUBDEV_HOSTS = new Set(["pub.dev", "www.pub.dev"]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
@@ -79,7 +87,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return PUBDEV_NAME.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +128,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (PUBDEV_HOSTS.has(host)) {
+    const match = PUBDEV_PATH.exec(url.pathname);
+    return match ? pubdev(match[1]!) : undefined;
   }
   return undefined;
 }
@@ -158,6 +173,17 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+function pubdev(name: string): OnlineVideo | undefined {
+  if (!PUBDEV_NAME.test(name)) {
+    return undefined;
+  }
+  return {
+    provider: "pubdev",
+    id: name,
+    page: `https://pub.dev/packages/${name}`,
   };
 }
 

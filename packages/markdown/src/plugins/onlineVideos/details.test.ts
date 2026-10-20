@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parsePubDevPackage,
+  pubDevPublisher,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -124,6 +126,78 @@ test("oEmbed responses give the YouTube title and channel", () => {
   );
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
+});
+
+test("pub.dev package JSON gives description as title and publisher as author", () => {
+  assert.deepEqual(
+    parsePubDevPackage(
+      {
+        name: "http",
+        latest: {
+          version: "1.6.0",
+          pubspec: {
+            name: "http",
+            description: "  A composable HTTP client. ",
+          },
+        },
+      },
+      { publisherId: "dart.dev" },
+    ),
+    { title: "A composable HTTP client.", author: "dart.dev" },
+  );
+  assert.deepEqual(
+    parsePubDevPackage({
+      name: "lonely",
+      latest: { pubspec: { description: "" } },
+    }),
+    { title: "lonely" },
+  );
+  assert.deepEqual(
+    parsePubDevPackage(
+      { name: "x", latest: { pubspec: { description: "hi" } } },
+      { publisherId: null },
+    ),
+    { title: "hi" },
+  );
+  assert.throws(() => parsePubDevPackage("<html>"));
+  assert.throws(() => parsePubDevPackage(null));
+});
+
+test("pubDevPublisher reads publisherId when present", () => {
+  assert.equal(pubDevPublisher({ publisherId: "dart.dev" }), "dart.dev");
+  assert.equal(pubDevPublisher({ publisherId: null }), undefined);
+  assert.equal(pubDevPublisher({}), undefined);
+  assert.equal(pubDevPublisher(null), undefined);
+});
+
+test("pub.dev details are fetched from the packages and publisher APIs", async () => {
+  const { fetch, calls } = fakeFetch({
+    // Longer prefix first: fakeFetch matches by startsWith.
+    "https://pub.dev/api/packages/http/publisher": () =>
+      response({ publisherId: "dart.dev" }),
+    "https://pub.dev/api/packages/http": () =>
+      response({
+        name: "http",
+        latest: {
+          version: "1.6.0",
+          pubspec: {
+            name: "http",
+            description: "A composable HTTP client.",
+          },
+        },
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("pubdev", "http"), {
+    title: "A composable HTTP client.",
+    author: "dart.dev",
+  });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0]!.url, "https://pub.dev/api/packages/http");
+  assert.equal(calls[0]!.headers["User-Agent"], USER_AGENT);
+  assert.equal(calls[1]!.url, "https://pub.dev/api/packages/http/publisher");
+  assert.deepEqual(await source.get("pubdev", "Bad-Name"), {});
+  assert.deepEqual(await source.get("pubdev", "../evil"), {});
 });
 
 test("data URLs are typed by the image's signature", () => {
