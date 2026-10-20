@@ -53,7 +53,6 @@ function wireRefresh(
   };
   ctx.effect(() => () => clearTimeout(timer));
   ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
-  ctx.effect(() => ctx.settings.onChange(schedule));
   ctx.on("vault/resolved", schedule);
   ctx.effect(() =>
     ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
