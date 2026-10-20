@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { openedVaultTarget } from "./target";
+import { mayCreateNote, openedVaultTarget } from "./target";
 import type { VaultFile, VaultIndex } from "../vault/api";
 
 const file = {
@@ -72,4 +72,16 @@ test("unclaimed markdown does not use wikilink lookup outside OKF", () => {
   );
   assert.deepEqual(target, { uri: undefined, passthrough: true });
   assert.equal(resolved, false);
+});
+
+test("mayCreateNote allows basename notes only", () => {
+  assert.equal(mayCreateNote("Missing"), true);
+  assert.equal(mayCreateNote("Missing.md"), true);
+  assert.equal(mayCreateNote("Missing.markdown"), true);
+  assert.equal(mayCreateNote("folder/Missing"), false);
+  assert.equal(mayCreateNote("./Missing"), false);
+  assert.equal(mayCreateNote("../Missing"), false);
+  assert.equal(mayCreateNote("photo.png"), false);
+  assert.equal(mayCreateNote(""), false);
+  assert.equal(mayCreateNote("."), false);
 });

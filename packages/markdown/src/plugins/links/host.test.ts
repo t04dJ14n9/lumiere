@@ -134,6 +134,22 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     });
     assert.equal((opens.at(-1) as unknown[])[3], place);
   }
+  // Basename Markdown destinations create like wikilinks; relative stay open-only.
+  opens.length = 0;
+  await client.call(protocol, "open", {
+    href: "Missing.md",
+    wiki: false,
+    side: false,
+  });
+  assert.equal((opens[0] as { create: boolean; path: string }).create, true);
+  assert.equal((opens[0] as { path: string }).path, "Missing.md");
+  opens.length = 0;
+  await client.call(protocol, "open", {
+    href: "folder/Missing",
+    wiki: false,
+    side: false,
+  });
+  assert.equal((opens[0] as { create: boolean }).create, false);
   await fiber.dispose();
   await assert.rejects(
     client.call(protocol, "open", { href: "x", wiki: true, side: false }),
