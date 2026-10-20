@@ -108,6 +108,16 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.backlinks.enableExtraContext",
+        "title": "Show More Context",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.backlinks.disableExtraContext",
+        "title": "✓ Show More Context",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.bridge.copyEnvelope",
         "title": "Copy Bridge Envelope",
         "category": "Lumière"
@@ -1437,6 +1447,14 @@
           "when": "false"
         },
         {
+          "command": "lumiere.markdown.backlinks.enableExtraContext",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.disableExtraContext",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.bridge.copyEnvelope",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.bridge.enabled"
         },
@@ -2295,6 +2313,16 @@
           "group": "backlinksSort@1"
         },
         {
+          "command": "lumiere.markdown.backlinks.enableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && !lumiere.markdown.backlinks.extraContext",
+          "group": "backlinks@1"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.disableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.extraContext",
+          "group": "backlinks@1"
+        },
+        {
           "command": "lumiere.markdown.outline.expandAll",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && view == lumiere.markdown.outline",
           "group": "navigation@1"
@@ -2850,6 +2878,12 @@
             ],
             "default": "alphabetical",
             "description": "Order of Linked and Unlinked mentions in the Backlinks view (Obsidian sortOrder). Created-time sorts are omitted: the vault index has mtime only.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.backlinks.extraContext": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show the lines above and below each backlink match (Obsidian “Show more context”). Off by default.",
             "scope": "resource"
           },
           "lumiere.markdown.editor.defaultMode": {
