@@ -1,4 +1,4 @@
-import { type EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
 /**
  * CodeMirror sizes a block widget from `estimatedHeight` until it measures
  * the widget, and again when a rebuilt decoration sits outside the viewport.
