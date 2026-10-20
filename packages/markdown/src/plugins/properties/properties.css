@@ -213,44 +213,79 @@
 .property-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 6px; /* Obsidian --size-2-3 on multi-select-container */
   align-items: center;
 }
-.property-list .property-chip {
+/* Obsidian .multi-select-pill (REA app.css): transparent fill, border, 2em radius. */
+.property-list .multi-select-pill {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 0;
+  position: relative;
+  max-width: calc(100% - 6px - 1ch);
   margin: 0;
-  background: transparent;
+  padding: 0.25em 0; /* --pill-padding-y */
+  border: 1px solid var(--vscode-widget-border, var(--line));
+  border-radius: 2em; /* --pill-radius */
+  line-height: 1;
+  color: var(--muted); /* --pill-color */
+  background: transparent; /* --pill-background */
+  box-sizing: border-box;
+  cursor: default;
 }
-[data-property-type="tags"] .property-chip {
-  padding: 0 8px;
-  border-radius: 12px;
-  color: var(--vscode-editor-foreground, inherit);
-  background: color-mix(in srgb, var(--muted) 10%, transparent);
+@media (hover: hover) {
+  .property-list .multi-select-pill:hover {
+    border-color: var(--vscode-focusBorder, var(--accent));
+    color: var(--vscode-editor-foreground, inherit);
+  }
+}
+.property-list .multi-select-pill:focus-visible {
+  outline: none;
+}
+.property-list .multi-select-pill:focus-visible::after {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: -2px;
+  border-radius: 2em;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px var(--vscode-focusBorder, var(--accent)),
+    inset 0 0 0 1px var(--vscode-focusBorder, var(--accent));
+}
+.property-list .multi-select-pill-content {
+  margin-inline-start: 0.65em; /* --pill-padding-x */
+  overflow: hidden;
+  word-break: break-word;
 }
 .property-list .md-tag {
   background: transparent;
   font-size: inherit;
   padding: 0;
 }
-.property-chip:focus-visible {
-  outline: 1px solid var(--accent);
-  border-radius: 3px;
-}
 .property-list input.property-chip-input {
   flex: 0 1 auto;
   width: auto;
   min-width: 80px;
 }
+.property-list .multi-select-pill-remove-button,
 .property-list button[data-property-remove] {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 0.65em;
   padding: 0 2px;
   border: 0;
+  border-radius: 3px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
   font: inherit;
+}
+@media (hover: hover) {
+  .property-list .multi-select-pill-remove-button:hover,
+  .property-list button[data-property-remove]:hover {
+    color: var(--vscode-editor-foreground, inherit);
+  }
 }
 .property-list .multi-select-input {
   flex: 1;
@@ -305,12 +340,9 @@
 .property-object dd {
   margin-left: 8px;
 }
+/* List/tags/aliases pills use .multi-select-pill above; bare chip is unused in sheet HTML. */
 .property-chip {
   display: inline-block;
-  padding: 0 7px;
-  border-radius: 4px;
-  background: var(--code);
-  margin: 2px 3px 2px 0;
 }
 .property-drag-placeholder {
   opacity: 0.2;
