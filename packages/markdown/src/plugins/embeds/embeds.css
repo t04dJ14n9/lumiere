@@ -73,22 +73,64 @@
 .image-inspector > p {
   margin: 8px 16px;
 }
-.inspect-image {
-  margin-left: 4px;
+/* Obsidian image-embed host + embed-actions frosted bar (REA app.css). */
+.image-embed {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  width: fit-content;
+  vertical-align: bottom;
+}
+.image-embed .embed-actions {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
   opacity: 0;
-  transition: opacity 120ms;
-  vertical-align: top;
+  transition: opacity 70ms ease-out;
+  border-radius: 6px;
+  color: var(--vscode-editor-foreground, inherit);
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-editor-background, #1e1e1e) 80%,
+    transparent
+  );
+  box-shadow:
+    0 1px 2px 0 rgba(0, 0, 0, 0.05),
+    0 0 6px 0 rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(4px);
+}
+.image-embed .embed-action {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
   border: 0;
   border-radius: 4px;
-  color: var(--accent);
+  color: var(--vscode-editor-foreground, var(--accent));
   background: transparent;
   cursor: pointer;
-  padding: 3px;
+  font: inherit;
+  line-height: 1;
 }
-.file-embed:hover .inspect-image,
-.markdown-rendered p:hover > .inspect-image,
-.inspect-image:focus-visible {
+@media (hover: hover) {
+  .image-embed:hover .embed-actions {
+    opacity: 1;
+  }
+  .image-embed .embed-action:hover {
+    background-color: var(--vscode-toolbar-hoverBackground, var(--hover));
+  }
+}
+.image-embed:has(img.md-image-selected) .embed-actions,
+.image-embed .embed-action:focus-visible,
+.markdown-rendered .image-embed:hover .embed-actions {
   opacity: 1;
+}
+.image-embed .embed-action:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, #7799ff);
+  outline-offset: -2px;
 }
 
 /* Note embeds: a bordered excerpt with a link to the note. */

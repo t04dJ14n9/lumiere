@@ -3,6 +3,7 @@ import type { Resource, Resources } from "../resources/api";
 import { mediaKind } from "../../shared/media-kinds";
 import { mediaRecovery } from "./webm";
 import { inspectImage } from "./image-dialog";
+import { mountImageEmbedActions } from "./embed-actions";
 import { embeddedNote, MissingSection } from "./note";
 
 interface EmbedOptions {
@@ -179,14 +180,24 @@ class EmbedPass {
     if (image !== node) {
       node.replaceChildren(image);
     }
+    // Markdown <img data-resource> has no embed span; wrap so .image-embed
+    // chrome never tags the line/paragraph (that split selection into bands).
+    let host: HTMLElement;
+    if (image !== node) {
+      host = node;
+    } else {
+      host = document.createElement("span");
+      image.replaceWith(host);
+      host.append(image);
+    }
     const inspect = document.createElement("button");
     inspect.type = "button";
     inspect.className = "inspect-image";
     inspect.textContent = "⤢";
     inspect.setAttribute("aria-label", `Inspect image: ${image.alt}`);
-    image.after(inspect);
+    const actions = mountImageEmbedActions(image, host, inspect);
     this.disposers.push(
-      () => inspect.remove(),
+      () => actions.remove(),
       inspectImage(inspect, resource.url, image.alt, () =>
         this.options.open(target, wiki),
       ),
