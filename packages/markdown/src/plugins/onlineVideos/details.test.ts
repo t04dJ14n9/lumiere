@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  streamableThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -130,6 +131,53 @@ test("data URLs are typed by the image's signature", () => {
   assert.match(imageDataUrl(JPEG), /^data:image\/jpeg;base64,/);
   assert.match(imageDataUrl(PNG), /^data:image\/png;base64,/);
   assert.throws(() => imageDataUrl(new TextEncoder().encode("<svg onload=x>")));
+});
+
+test("Streamable oEmbed thumbnails are accepted only from streamable CDN hosts", () => {
+  const thumb =
+    "https://cdn-cf-west.streamable.com/image/abc.jpg?Expires=1&Signature=x";
+  assert.equal(streamableThumbnail({ thumbnail_url: thumb }), thumb);
+  assert.equal(
+    streamableThumbnail({
+      thumbnail_url: "//cdn-cf-west.streamable.com/image/ifjh.jpg?Expires=1",
+    }),
+    "https://cdn-cf-west.streamable.com/image/ifjh.jpg?Expires=1",
+  );
+  assert.equal(
+    streamableThumbnail({ thumbnail_url: "https://evil.test/image/a.jpg" }),
+    undefined,
+  );
+  assert.equal(streamableThumbnail({ title: "x" }), undefined);
+});
+
+test("a Streamable lookup fetches oEmbed and a CDN thumbnail", async () => {
+  const page = "https://streamable.com/moo";
+  const thumb =
+    "https://cdn-cf-west.streamable.com/image/abc.jpg?Expires=1&Signature=x";
+  const { fetch, calls } = fakeFetch({
+    "https://api.streamable.com/oembed.json": () =>
+      response({
+        title: "Please don't eat me!",
+        thumbnail_url: thumb,
+      }),
+    "https://cdn-cf-west.streamable.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "streamable",
+    "moo",
+  );
+  assert.equal(details.title, "Please don't eat me!");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://api.streamable.com/oembed.json?url=${encodeURIComponent(page)}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
 
 test("a Bilibili lookup fetches the view and a scaled cover with the extension's agent", async () => {

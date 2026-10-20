@@ -151,6 +151,22 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "streamable") {
+      const page = `https://streamable.com/${id}`;
+      const body = await this.json(
+        `https://api.streamable.com/oembed.json?url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = streamableThumbnail(body);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +223,39 @@ export class VideoDetailsSource {
   }
 }
 
+/** Streamable oEmbed thumbnails (query/signature params allowed). */
+const STREAMABLE_THUMB_HOSTS = new Set([
+  "cdn-cf-west.streamable.com",
+  "cdn-cf-east.streamable.com",
+  "cdn.streamable.com",
+]);
+
+/** Streamable oEmbed thumbnail when it is a known CDN host. */
+export function streamableThumbnail(body: unknown): string | undefined {
+  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
+    return undefined;
+  }
+  const raw = body.thumbnail_url.startsWith("//")
+    ? `https:${body.thumbnail_url}`
+    : body.thumbnail_url;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !STREAMABLE_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  return url.href;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

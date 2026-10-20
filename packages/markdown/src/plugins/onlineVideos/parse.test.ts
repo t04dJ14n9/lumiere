@@ -133,3 +133,17 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Streamable links give the short code id", () => {
+  assert.deepEqual(parseVideoUrl("https://streamable.com/moo"), {
+    provider: "streamable",
+    id: "moo",
+    page: "https://streamable.com/moo",
+  });
+  assert.deepEqual(parseVideoUrl("https://www.streamable.com/e/ifjh/"), {
+    provider: "streamable",
+    id: "ifjh",
+    page: "https://streamable.com/ifjh",
+  });
+  assert.equal(parseVideoUrl("https://streamable.com/o/moo")?.id, "moo");
+});
