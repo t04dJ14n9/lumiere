@@ -60,8 +60,10 @@ export function propertiesEstimatedHeight(input: {
   const markup = renderProperties(input.source, input.types ?? {}, {
     collapsed: input.collapsed,
     allowEmpty: input.allowEmpty,
-    listPreviewCount: input.listPreviewCount,
-    expandedLists: input.expandedLists,
+    ...(input.listPreviewCount !== undefined
+      ? { listPreviewCount: input.listPreviewCount }
+      : {}),
+    ...(input.expandedLists ? { expandedLists: input.expandedLists } : {}),
     ...(input.renderValue ? { renderValue: input.renderValue } : {}),
   });
   return markupHeight(markup);

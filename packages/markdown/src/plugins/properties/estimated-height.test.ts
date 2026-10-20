@@ -22,8 +22,10 @@ const estimate = (
     hidden: options.hidden ?? false,
     collapsed: options.collapsed ?? false,
     allowEmpty: options.allowEmpty ?? false,
-    listPreviewCount: options.listPreviewCount,
-    expandedLists: options.expandedLists,
+    ...(options.listPreviewCount !== undefined
+      ? { listPreviewCount: options.listPreviewCount }
+      : {}),
+    ...(options.expandedLists ? { expandedLists: options.expandedLists } : {}),
     ...(options.renderValue ? { renderValue: options.renderValue } : {}),
   });
 

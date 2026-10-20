@@ -125,13 +125,15 @@ export class PropertyWidget extends WidgetType {
    * Without this the height map treats the whole frontmatter as one line.
    */
   override get estimatedHeight(): number {
+    const listPreviewCount = this.context.listPreviewCount?.();
+    const expandedLists = this.context.expandedLists?.();
     return propertiesEstimatedHeight({
       source: this.source,
       hidden: this.hidden,
       collapsed: this.context.propertyEditor?.collapsed?.() ?? false,
       allowEmpty: this.allowEmpty,
-      listPreviewCount: this.context.listPreviewCount?.(),
-      expandedLists: this.context.expandedLists?.(),
+      ...(listPreviewCount !== undefined ? { listPreviewCount } : {}),
+      ...(expandedLists ? { expandedLists } : {}),
       ...(this.context.propertyEditor?.types
         ? { types: this.context.propertyEditor.types() }
         : {}),

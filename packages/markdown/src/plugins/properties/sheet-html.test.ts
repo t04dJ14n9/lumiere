@@ -230,7 +230,6 @@ decision_confirmation:
   assert.match(decision!, /metadata-property-warning-icon" hidden/);
 });
 
-
 test("listPreviewCount shows top chips with disclosure (default 3)", () => {
   const html = renderProperties(
     "---\ntags: [a, b, c, d, e]\n---\n",
@@ -269,3 +268,4 @@ test("verified map and list use OKF typed provenance UI", () => {
   );
   assert.match(list, /mod-okf-verified-list/);
   assert.match(list, /okf-provenance-by[^>]*>human:a</);
+});
