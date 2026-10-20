@@ -8,7 +8,8 @@ import { parseTable } from "../../markdown/tables/model";
  * rebuild (scroll/PageDown then lands in empty mapped space).
  *
  * Numbers match the default sheet in `tables.css`: 16px font, 1.3 line-height,
- * 4px vertical cell padding, and the table wrapper's 16px top padding.
+ * 4px vertical cell padding, and the table wrapper's 16px top padding. Cell
+ * markdown must not add paragraph margins (see tables.css) or this under-reserves.
  */
 const TEXT = 16;
 const LINE = TEXT * 1.3;

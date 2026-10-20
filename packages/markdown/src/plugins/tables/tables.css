@@ -85,6 +85,18 @@
 .table-cell-content {
   min-height: 1.3em;
 }
+/*
+ * Cell bodies go through markdown-rendered, whose `p { margin: 0.6em 0 }`
+ * (and siblings) inflate every row to ~85px. estimatedHeight assumes tight
+ * Obsidian-like cells (~ROW 29px); without collapsing those margins a 41-row
+ * remount keeps ~1205px while measured is ~3605 and fails the 0.7 guard.
+ * Zero block margins in cells; rare multi-block cells stay readable via
+ * line-height / padding only.
+ */
+.hybrid-table .markdown-rendered > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 /* Cells set like Obsidian's: tighter lines, 4px by 8px of padding. */
 .hybrid-table table {
   grid-area: 1 / 1;
