@@ -13,20 +13,20 @@ outside any link (same matcher as Backlinks), only when that section expands.
 
 ## Files
 
-- `host.ts`: the plugin: view, refresh and the open command.
+- `host.ts`: the plugin: view, refresh, open, and create-unresolved commands.
 - `tree.ts`: the view's tree for one note.
 - Unlinked mention matching: `src/markdown/mentions.ts` (shared with Backlinks).
 - `manifest.ts`: the view contribution.
 
 ## Services, events and settings
 
-- Injects the host services `hostCommands`, `views` and `activeEditor`, plus `vaults`. Listens to `vault/resolved`.
+- Injects the host services `hostCommands`, `views`, `activeEditor` and `navigation`, plus `vaults`. Listens to `vault/resolved`.
 - Setting: `lumiere.markdown.plugins.outgoingLinks.enabled`.
 
 ## Limits and differences from Obsidian
 
-- Clicking a link not created yet does nothing; follow it in the note to
-  create it.
+- Clicking a link not created yet creates and opens the note (same
+  `navigation.resolve` path as Quick Switcher / in-note wiki create).
 - File lists use Obsidian's default alphabetical sort (basename, then path);
   other sort modes are not offered.
 - Unlinked mentions read the active note once per expand; very large vaults

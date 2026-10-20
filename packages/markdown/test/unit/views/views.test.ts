@@ -11,6 +11,7 @@ import {
 import backlinks from "../../../src/plugins/backlinks/manifest";
 import { outgoingLinksHost } from "../../../src/plugins/outgoingLinks/host";
 import {
+  CREATE_COMMAND,
   OutgoingLinksTree,
   VIEW_ID as outgoingLinksViewId,
 } from "../../../src/plugins/outgoingLinks/tree";
@@ -141,6 +142,43 @@ test("outgoing unlinked mentions skip notes already linked from here", async () 
     [],
     "Target is already a resolved outbound link",
   );
+});
+
+
+test("outgoing unresolved links create and open the missing note", async () => {
+  const { vaults } = memoryVaults(notes);
+  const tree = new OutgoingLinksTree(vaults);
+  await tree.setNote(uriOf("Target.md"));
+  const unresolved = (await tree.roots()).find((node) => node.id === "unresolved")!;
+  const [missing] = await tree.children(unresolved);
+  assert.equal(missing!.label, "Missing");
+  assert.deepEqual(missing!.command, {
+    id: CREATE_COMMAND,
+    args: [uriOf("Target.md"), "Missing"],
+  });
+});
+
+test("CREATE_COMMAND resolves a new note then opens it", async () => {
+  const { vaults, opened } = memoryVaults(notes);
+  const fake = fakeViews({ "plugins.outgoingLinks.enabled": true });
+  const root = createRoot();
+  root.provide("vaults", vaults);
+  const host = hostWith(fake);
+  const created: string[] = [];
+  host.navigation.resolve = async (request) => {
+    created.push(`${request.path}@${request.create}`);
+    return uriOf("Missing.md");
+  };
+  provideHostServices(root, host);
+  workbenchFeatures(root, host.settings, [
+    { manifest: outgoingLinks, plugin: outgoingLinksHost },
+  ]);
+  await root.settled();
+  await wait();
+  await fake.commands.get(CREATE_COMMAND)!(uriOf("Target.md"), "Missing");
+  assert.deepEqual(created, ["Missing@true"]);
+  assert.deepEqual(opened, [{ uri: uriOf("Missing.md") }]);
+  await root.dispose();
 });
 
 test("Backlinks and Outgoing Links are off until turned on", async () => {

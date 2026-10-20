@@ -1,13 +1,20 @@
 import type { Plugin } from "@workshop/core";
 import type {} from "../vault/api";
-import { OPEN_COMMAND, OutgoingLinksTree, VIEW_ID } from "./tree";
+import {
+  CREATE_COMMAND,
+  OPEN_COMMAND,
+  OutgoingLinksTree,
+  VIEW_ID,
+} from "./tree";
 
 const REFRESH_DELAY_MS = 300;
 
 /** The Outgoing links view, following the active note. */
 export const outgoingLinksHost: Plugin = {
   name: "outgoingLinks",
-  inject: { required: ["vaults", "hostCommands", "views", "activeEditor"] },
+  inject: {
+    required: ["vaults", "hostCommands", "views", "activeEditor", "navigation"],
+  },
   apply(ctx) {
     const source = new OutgoingLinksTree(ctx.vaults);
     const tree = ctx.views.tree(VIEW_ID, source);
@@ -35,6 +42,24 @@ export const outgoingLinksHost: Plugin = {
           offset === undefined ? {} : { offset: Number(offset) },
         ),
       ),
+    );
+    ctx.effect(() =>
+      ctx.hostCommands.register(CREATE_COMMAND, async (sourceUri, linkpath) => {
+        const located = await ctx.vaults.locate(String(sourceUri));
+        if (!located) {
+          return;
+        }
+        const uri = await ctx.navigation.resolve({
+          root: located.vault.index.root,
+          source: String(sourceUri),
+          path: String(linkpath),
+          create: true,
+          folderNote: "",
+        });
+        if (uri) {
+          await ctx.vaults.open(uri);
+        }
+      }),
     );
     void refresh();
   },
