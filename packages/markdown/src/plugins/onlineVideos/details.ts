@@ -412,11 +412,9 @@ export function parseBilibiliSeason(
   const episodes = Array.isArray(result.episodes) ? result.episodes : [];
   if (id.startsWith("ep")) {
     const epId = Number(id.slice(2));
-    const episode = episodes.find(
-      (row) => isRecord(row) && row.id === epId,
-    ) as Record<string, unknown> | undefined;
-    const epLabel =
-      text(episode?.long_title, 200) ?? text(episode?.title, 100);
+    const episode = episodes.find((row) => isRecord(row) && row.id === epId) as
+      Record<string, unknown> | undefined;
+    const epLabel = text(episode?.long_title, 200) ?? text(episode?.title, 100);
     const title =
       seasonTitle && epLabel
         ? `${seasonTitle} · ${epLabel}`.slice(0, 300)

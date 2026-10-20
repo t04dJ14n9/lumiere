@@ -499,7 +499,8 @@ const SEASON = {
   result: {
     title: "现实主义勇者的王国再建记",
     season_title: "现实主义勇者的王国再建记",
-    cover: "http://i0.hdslb.com/bfs/bangumi/image/ddfeb0782515b3af39fb12818273b9ced5850f34.jpg",
+    cover:
+      "http://i0.hdslb.com/bfs/bangumi/image/ddfeb0782515b3af39fb12818273b9ced5850f34.jpg",
     square_cover: "http://i0.hdslb.com/bfs/bangumi/image/square.jpg",
     up_info: { uname: "哔哩哔哩番剧" },
     episodes: [
@@ -515,7 +516,8 @@ const SEASON = {
         title: "2",
         long_title: "唯才是举",
         duration: 1441000,
-        cover: "http://i0.hdslb.com/bfs/archive/78fbc05a9552e8032496801cba031a19b5f0478a.png",
+        cover:
+          "http://i0.hdslb.com/bfs/archive/78fbc05a9552e8032496801cba031a19b5f0478a.png",
       },
     ],
   },

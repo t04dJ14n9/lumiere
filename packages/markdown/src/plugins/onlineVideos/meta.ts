@@ -18,7 +18,11 @@ export function videoMeta(
   kind: MediaKind = "video",
 ): string {
   const kindLabel =
-    kind === "playlist" ? "Playlist" : kind === "bangumi" ? "Bangumi" : undefined;
+    kind === "playlist"
+      ? "Playlist"
+      : kind === "bangumi"
+        ? "Bangumi"
+        : undefined;
   const known = [
     kindLabel,
     details.author,

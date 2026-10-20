@@ -142,7 +142,6 @@ test("YouTube playlist links give the playlist ID", () => {
   );
 });
 
-
 test("Bilibili bangumi episode and season links", () => {
   assert.deepEqual(
     parseVideoUrl("https://www.bilibili.com/bangumi/play/ep409506"),
