@@ -8,8 +8,9 @@ import type { PropertyTypes } from "../../markdown/properties/types";
  * frontmatter, so that one-line reserve shifts every coordinate below the
  * sheet by about the sheet's real height.
  *
- * Wrapping longtext values count visual rows (pre-wrap), not only
- * source newlines — same class of bug as wrapping tag chips.
+ * Wrapping longtext values count visual rows (pre-wrap), capped at
+ * Obsidian's unfocused 3-line clamp — same class of bug as wrapping
+ * tag chips when the reserve is too short.
  *
  * The numbers are the default 16px sheet in `properties.css` (row min
  * height plus its padding, heading, add button, source articles). Once the
@@ -122,10 +123,12 @@ function listHeight(row: string): number | undefined {
 }
 
 /**
- * Longtext uses pre-wrap + overflow-wrap:anywhere. A single YAML line can
- * paint many visual rows; newline-only counting blanks the body the same way
- * one-row tag chips did before wrap-aware listHeight.
+ * Longtext uses pre-wrap + overflow-wrap:anywhere. Obsidian clamps unfocused
+ * text to 3 lines (`--metadata-input-longtext-lines`); the estimate matches
+ * that unfocused paint so remounts do not reserve a full unclamped essay.
  */
+const LONGTEXT_CLAMP_LINES = 3;
+
 function longTextHeight(row: string): number {
   const field =
     /<div ([^>]*metadata-input-longtext[^>]*)>([\s\S]*?)<\/div>/.exec(row);
@@ -140,7 +143,7 @@ function longTextHeight(row: string): number {
     const width = Math.max(line.length, 1) * CHAR_WIDTH;
     rows += Math.max(1, Math.ceil(width / LIST_WIDTH));
   }
-  return Math.max(VALUE_MIN, rows * LINE);
+  return Math.max(VALUE_MIN, Math.min(rows, LONGTEXT_CLAMP_LINES) * LINE);
 }
 
 /** Visible source articles only. Rows past the disclosure stay in the markup with `hidden`. */

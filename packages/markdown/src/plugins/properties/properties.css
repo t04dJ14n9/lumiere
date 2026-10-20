@@ -102,6 +102,22 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* Obsidian 1.14.4 (rea recovered app.css): unfocused text clamps to 3 lines;
+ * focus clears the clamp and scrolls inside max-height. YAML drafts keep rows. */
+.metadata-properties .metadata-input-longtext:not(.metadata-input-yaml) {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  max-height: 300px;
+}
+.metadata-properties
+  .metadata-input-longtext:not(.metadata-input-yaml):not(:empty) {
+  display: -webkit-box;
+  overflow: hidden;
+}
+.metadata-properties .metadata-input-longtext:not(.metadata-input-yaml):focus {
+  -webkit-line-clamp: unset;
+  overflow-y: auto;
+}
 .metadata-input-longtext:empty::before,
 .multi-select-input:empty::before {
   content: attr(data-placeholder);
