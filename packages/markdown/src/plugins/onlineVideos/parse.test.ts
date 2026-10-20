@@ -133,3 +133,41 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("MetaCPAN dist/release/pod pages keep the name; author releases stay out", () => {
+  assert.deepEqual(parseVideoUrl("https://metacpan.org/dist/Moose"), {
+    provider: "metacpan",
+    id: "Moose",
+    page: "https://metacpan.org/dist/Moose",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.metacpan.org/release/HTTP-Tiny/"),
+    {
+      provider: "metacpan",
+      id: "HTTP-Tiny",
+      page: "https://metacpan.org/dist/HTTP-Tiny",
+    },
+  );
+  assert.deepEqual(parseVideoUrl("https://metacpan.org/pod/HTTP::Tiny"), {
+    provider: "metacpan",
+    id: "HTTP::Tiny",
+    page: "https://metacpan.org/pod/HTTP::Tiny",
+  });
+  assert.deepEqual(parseVideoUrl("https://metacpan.org/pod/HTTP%3A%3ATiny"), {
+    provider: "metacpan",
+    id: "HTTP::Tiny",
+    page: "https://metacpan.org/pod/HTTP::Tiny",
+  });
+  assert.deepEqual(parseVideoUrl("https://metacpan.org/pod/Moose"), {
+    provider: "metacpan",
+    id: "Moose",
+    page: "https://metacpan.org/pod/Moose",
+  });
+  assert.equal(
+    parseVideoUrl("https://metacpan.org/release/ETHER/Moose-2.4001"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://metacpan.org/author/ETHER"), undefined);
+  assert.equal(parseVideoUrl("https://metacpan.org/dist/"), undefined);
+  assert.equal(parseVideoUrl("https://cpan.org/dist/Moose"), undefined);
+});

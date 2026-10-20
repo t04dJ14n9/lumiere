@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "metacpan";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,67 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+const METACPAN_DIST = /^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/;
+
+const METACPAN_MODULE =
+  /^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*){0,20}$/;
+
+/** `/dist/{name}`, `/release/{name}` (latest only), `/pod/{module}`. */
+const METACPAN_PATH = /^\/(dist|release|pod)\/([^/]+)\/?$/;
+
+const METACPAN_HOSTS = new Set(["metacpan.org", "www.metacpan.org"]);
+
+function metacpan(pathname: string): OnlineVideo | undefined {
+  const match = METACPAN_PATH.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  const kind = match[1]!;
+  const raw = decodePathSegment(match[2]!);
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (kind === "pod") {
+    if (!isMetacpanModule(raw)) {
+      return undefined;
+    }
+    return {
+      provider: "metacpan",
+      id: raw,
+      page: `https://metacpan.org/pod/${raw}`,
+    };
+  }
+  // `/dist/{name}` and single-segment `/release/{name}` (not author/release).
+  if (!isMetacpanDist(raw)) {
+    return undefined;
+  }
+  return {
+    provider: "metacpan",
+    id: raw,
+    page: `https://metacpan.org/dist/${raw}`,
+  };
+}
+
+function isMetacpanId(id: string): boolean {
+  return isMetacpanDist(id) || isMetacpanModule(id);
+}
+
+function isMetacpanDist(id: string): boolean {
+  return id.length <= 200 && METACPAN_DIST.test(id);
+}
+
+function isMetacpanModule(id: string): boolean {
+  return id.length <= 200 && METACPAN_MODULE.test(id);
+}
+
+function decodePathSegment(raw: string): string | undefined {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return undefined;
+  }
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +140,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return isMetacpanId(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +181,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (METACPAN_HOSTS.has(host)) {
+    return metacpan(url.pathname);
   }
   return undefined;
 }

@@ -85,3 +85,13 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("MetaCPAN refuses an in-webview player", () => {
+  assert.equal(providers.metacpan.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://metacpan.org/dist/Moose")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://metacpan.org/dist/Moose")));
+  assert.throws(() => playerUrl(video("https://metacpan.org/pod/HTTP::Tiny")));
+});

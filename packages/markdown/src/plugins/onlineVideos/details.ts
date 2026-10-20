@@ -151,6 +151,9 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "metacpan") {
+      return this.metacpanDetails(id, signal);
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -167,6 +170,18 @@ export class VideoDetailsSource {
       }
     }
     return details;
+  }
+
+  private async metacpanDetails(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const kind = id.includes("::") ? "module" : "release";
+    const body = await this.json(
+      `https://fastapi.metacpan.org/v1/${kind}/${encodeURIComponent(id)}`,
+      signal,
+    );
+    return parseMetacpan(body, id);
   }
 
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
@@ -207,6 +222,15 @@ export class VideoDetailsSource {
   }
 }
 
+export function parseMetacpan(body: unknown, fallback: string): VideoDetails {
+  if (!isRecord(body)) {
+    throw new Error("Unexpected MetaCPAN response");
+  }
+  return withoutUndefined({
+    title: text(body.abstract, 300) ?? text(fallback, 300),
+    author: text(body.author, 100),
+  });
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

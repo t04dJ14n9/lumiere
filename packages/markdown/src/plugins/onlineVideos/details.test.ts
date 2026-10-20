@@ -9,6 +9,7 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseMetacpan,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -330,4 +331,70 @@ test("a Hugging Face lookup fetches the models API", async () => {
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("MetaCPAN release/module JSON gives abstract as title and PAUSE author", () => {
+  assert.deepEqual(
+    parseMetacpan(
+      {
+        abstract: "  A postmodern object system for Perl 5 ",
+        author: "ETHER",
+        distribution: "Moose",
+        version: "2.4001",
+      },
+      "Moose",
+    ),
+    { title: "A postmodern object system for Perl 5", author: "ETHER" },
+  );
+  assert.deepEqual(
+    parseMetacpan(
+      { abstract: "", author: "HAARG", distribution: "HTTP-Tiny" },
+      "HTTP-Tiny",
+    ),
+    { title: "HTTP-Tiny", author: "HAARG" },
+  );
+  assert.deepEqual(
+    parseMetacpan(
+      { abstract: "A small HTTP client", author: null },
+      "HTTP::Tiny",
+    ),
+    { title: "A small HTTP client" },
+  );
+  assert.throws(() => parseMetacpan("<html>", "Moose"));
+  assert.throws(() => parseMetacpan(null, "Moose"));
+});
+
+test("MetaCPAN details hit release for dists and module when id has ::", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://fastapi.metacpan.org/v1/release/Moose": () =>
+      response({
+        abstract: "A postmodern object system for Perl 5",
+        author: "ETHER",
+        distribution: "Moose",
+      }),
+    "https://fastapi.metacpan.org/v1/module/HTTP%3A%3ATiny": () =>
+      response({
+        abstract: "A small, simple, correct HTTP/1.1 client",
+        author: "HAARG",
+        documentation: "HTTP::Tiny",
+      }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  assert.deepEqual(await source.get("metacpan", "Moose"), {
+    title: "A postmodern object system for Perl 5",
+    author: "ETHER",
+  });
+  assert.deepEqual(await source.get("metacpan", "HTTP::Tiny"), {
+    title: "A small, simple, correct HTTP/1.1 client",
+    author: "HAARG",
+  });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0]!.url, "https://fastapi.metacpan.org/v1/release/Moose");
+  assert.equal(calls[0]!.headers["User-Agent"], USER_AGENT);
+  assert.equal(
+    calls[1]!.url,
+    "https://fastapi.metacpan.org/v1/module/HTTP%3A%3ATiny",
+  );
+  assert.deepEqual(await source.get("metacpan", "Bad::"), {});
+  assert.deepEqual(await source.get("metacpan", "../evil"), {});
 });
