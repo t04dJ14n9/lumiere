@@ -26,7 +26,7 @@ records it in `docs/PARITY.md`.
 | --- | --- | --- |
 | properties | The properties sheet: every type, chips, type menu, sort, drag, structured copy and paste | Type choices are stored per vault by this extension |
 | inlineTitle | Off by default. The file name above the note; edit it to rename | Off so line 1 starts at the top, as in VS Code (Obsidian shows it by default). Only saved local files can be renamed |
-| links | Click to follow, Mod-click in source, open to side, create missing notes, unresolved links dimmed | Note-embed anchors dimmed; MD LP + source-mode text not yet |
+| links | Click to follow, Mod-click in source, open to side, create missing notes, unresolved links dimmed | Source-mode wiki/MD/embed source dimmed; MD links in LP and links inside embeds not yet |
 | embeds | Notes, sections, blocks, images (with an inspector), audio, video, PDF cards | PDFs open in their own editor rather than inline; remote media needs a trusted workspace |
 | onlineVideos | YouTube (watch, youtu.be, Shorts) and Bilibili (BV, av, `?p=`) links written as images show as cards with a button that opens the browser; in trusted workspaces the title, author, length and cover (Bilibili via its public API, YouTube via oEmbed, looked up by the extension host) | Not in Obsidian. No player by default: YouTube refuses to play in VS Code webviews (error 153) and Bilibili's player does not buffer there (`onlineVideos.bilibiliPlayer` brings back **Play here**); nothing is fetched in an untrusted workspace |
 | pagePreview | Mod-hover preview of notes, headings, blocks and attachments | External links are not previewed |

@@ -6,6 +6,7 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type { InlineRenderer } from "../livePreview/api";
 import { isUnresolved, setUnresolved, unresolvedLinks } from "./api";
+import { sourceUnresolved } from "./source-unresolved";
 export { isUnresolved, unresolvedLinks } from "./api";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
@@ -24,6 +25,7 @@ export const linksWebview: Plugin = {
     return true;
   },
   apply(ctx) {
+    ctx.effect(() => ctx.editor.extend(sourceUnresolved()));
     ctx.on("suggest/trigger", linkSuggestion);
     const navigate = navigator(ctx);
     const open = linkOpener(ctx, navigate);
