@@ -7,6 +7,7 @@ import {
   isReclaimableNote,
   reclaimEnabled,
   shouldReclaim,
+  shouldHoldNativeAfterReclaim,
   shouldWarmBeforeReclaim,
   TabSwaps,
 } from "../../../src/host/reclaim-policy";
@@ -152,6 +153,26 @@ test("notes opened as text on purpose, or just reclaimed, keep the text editor",
   assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), false);
   now = 10_001;
   assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), true);
+});
+
+test("a tab landing during the post-reclaim hold stays native", () => {
+  // Host GUI S6: second Reopen With Text Editor within 10s → hold, and promote
+  // textBypass so selection reclaim does not steal the tab.
+  assert.equal(
+    shouldHoldNativeAfterReclaim({ recentTransfer: true, reclaimable: true }),
+    true,
+  );
+  assert.equal(
+    shouldHoldNativeAfterReclaim({ recentTransfer: false, reclaimable: true }),
+    false,
+  );
+  assert.equal(
+    shouldHoldNativeAfterReclaim({
+      recentTransfer: true,
+      reclaimable: false,
+    }),
+    false,
+  );
 });
 
 test("a pending handoff lease suppresses reclaim until released", () => {
