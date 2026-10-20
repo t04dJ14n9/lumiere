@@ -263,3 +263,25 @@ test("known note keys include path, basename and aliases", () => {
   );
   assert.deepEqual(knownNoteKeys(index), ["big map", "folder/note", "note"]);
 });
+
+test("a missing link dims from vault known-keys before the unresolved set updates", () => {
+  const doc = "[[Missing]] [[Here]] end";
+  // Authoritative unresolved set still empty (overlay lag); known notes loaded.
+  assert.deepEqual(wikiLinkClasses(doc, doc.length, [], ["here"]), {
+    Missing: "md-link md-link-rendered is-unresolved",
+    Here: "md-link md-link-rendered",
+  });
+  // Without known notes, keep prior behaviour (looks resolved until re-index).
+  assert.deepEqual(wikiLinkClasses(doc, doc.length, [], []), {
+    Missing: "md-link md-link-rendered",
+    Here: "md-link md-link-rendered",
+  });
+});
+
+test("the path basename matches known notes for folder/Note keys", () => {
+  const doc = "[[Folder/Note]] end";
+  assert.equal(
+    wikiLinkClasses(doc, doc.length, [], ["note"])["Folder/Note"],
+    "md-link md-link-rendered",
+  );
+});
