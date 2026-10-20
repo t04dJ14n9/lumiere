@@ -43,25 +43,31 @@ export function contentNeedles(
     case "or":
       return query.terms.flatMap((term) => contentNeedles(term, sensitive));
     case "not":
-      return [];
     case "property":
       return [];
     case "scope":
-      if (
-        query.scope === "file" ||
-        query.scope === "path" ||
-        query.scope === "tag"
-      ) {
-        return [];
-      }
-      if (query.scope === "match-case") {
-        return contentNeedles(query.term, true);
-      }
-      if (query.scope === "ignore-case") {
-        return contentNeedles(query.term, false);
-      }
-      return contentNeedles(query.term, sensitive);
+      return scopeNeedles(query, sensitive);
   }
+}
+
+function scopeNeedles(
+  query: { scope: string; term: SearchQuery },
+  sensitive: boolean,
+): Needle[] {
+  if (
+    query.scope === "file" ||
+    query.scope === "path" ||
+    query.scope === "tag"
+  ) {
+    return [];
+  }
+  if (query.scope === "match-case") {
+    return contentNeedles(query.term, true);
+  }
+  if (query.scope === "ignore-case") {
+    return contentNeedles(query.term, false);
+  }
+  return contentNeedles(query.term, sensitive);
 }
 
 /** Scan note text for lines matching content needles of `querySource`. */
@@ -163,7 +169,7 @@ function clipLine(
   const width = Math.max(1, to - from);
   const pad = Math.max(0, Math.floor((MAX_LINE - width) / 2));
   let start = Math.max(0, from - pad);
-  let end = Math.min(line.length, start + MAX_LINE);
+  const end = Math.min(line.length, start + MAX_LINE);
   start = Math.max(0, end - MAX_LINE);
   const prefix = start > 0 ? "…" : "";
   const suffix = end < line.length ? "…" : "";

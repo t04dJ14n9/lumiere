@@ -20,7 +20,7 @@ export interface SearchInput {
 /** Minimum gap between partial snapshots; final sort still arrives via the RPC result. */
 const PARTIAL_INTERVAL_MS = 32;
 export async function searchVault(input: SearchInput): Promise<SearchResponse> {
-  const { vault, source, worker, token, read, query } = input;
+  const { vault, source, worker, token } = input;
   const origin = vault.files().find((file) => file.uri === source);
   if (!origin) {
     throw new Error("Unknown search source");
@@ -38,38 +38,15 @@ export async function searchVault(input: SearchInput): Promise<SearchResponse> {
       emit.flush();
       throw new RpcError("Cancelled", "Search cancelled");
     }
-    const kind = documentKind(file.extension);
-    if (kind === "file" && !worker.includesFiles) {
-      continue;
+    const outcome = await searchOneFile(input, origin, file, results);
+    if (outcome === "cancel") {
+      emit.flush();
+      throw new RpcError("Cancelled", "Search cancelled");
     }
-    try {
-      const document = await searchDocument({ vault, worker, read }, file);
-      if (token.cancelled) {
-        emit.flush();
-        throw new RpcError("Cancelled", "Search cancelled");
-      }
-      if (await worker.matches(document)) {
-        const href = relativeVaultPath(folderOf(origin.path), file.path)
-          .split("/")
-          .map(encodeURIComponent)
-          .join("/");
-        const matches =
-          document.text.length > 0
-            ? extractMatchLines(document.text, query)
-            : [];
-        results.push({
-          path: file.path,
-          href,
-          ...(matches.length > 0 ? { matches } : {}),
-        });
-        emit.push({ results: [...results], unreadable });
-      }
-    } catch (error) {
-      if (worker.stopped || token.cancelled) {
-        emit.flush();
-        throw error;
-      }
+    if (outcome === "unreadable") {
       unreadable++;
+      emit.push({ results: [...results], unreadable });
+    } else if (outcome === "hit") {
       emit.push({ results: [...results], unreadable });
     }
   }
@@ -81,6 +58,46 @@ export async function searchVault(input: SearchInput): Promise<SearchResponse> {
   );
   return { results, unreadable };
 }
+
+async function searchOneFile(
+  input: SearchInput,
+  origin: { path: string },
+  file: VaultFile,
+  results: SearchResponse["results"],
+): Promise<"skip" | "hit" | "unreadable" | "cancel"> {
+  const { vault, worker, token, read, query } = input;
+  const kind = documentKind(file.extension);
+  if (kind === "file" && !worker.includesFiles) {
+    return "skip";
+  }
+  try {
+    const document = await searchDocument({ vault, worker, read }, file);
+    if (token.cancelled) {
+      return "cancel";
+    }
+    if (!(await worker.matches(document))) {
+      return "skip";
+    }
+    const href = relativeVaultPath(folderOf(origin.path), file.path)
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/");
+    const matches =
+      document.text.length > 0 ? extractMatchLines(document.text, query) : [];
+    results.push({
+      path: file.path,
+      href,
+      ...(matches.length > 0 ? { matches } : {}),
+    });
+    return "hit";
+  } catch (error) {
+    if (worker.stopped || token.cancelled) {
+      throw error;
+    }
+    return "unreadable";
+  }
+}
+
 function createPartialEmitter(onPartial?: (snapshot: SearchResponse) => void) {
   if (!onPartial) {
     return { push() {}, flush() {} };
