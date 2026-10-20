@@ -219,7 +219,11 @@ test("paste prefers obsidian/table rows over plain text", () => {
     head: { row: 1, column: 1 },
   };
   fixture.selection.range = range;
-  const event = {
+  const event: {
+    defaultPrevented: boolean;
+    clipboardData: { getData(type: string): string };
+    preventDefault(): void;
+  } = {
     defaultPrevented: false,
     clipboardData: {
       getData(type: string) {
@@ -233,10 +237,10 @@ test("paste prefers obsidian/table rows over plain text", () => {
       },
     },
     preventDefault() {
-      this.defaultPrevented = true;
+      event.defaultPrevented = true;
     },
-  } as unknown as ClipboardEvent & { defaultPrevented: boolean };
-  fixture.clipboard.paste(event);
+  };
+  fixture.clipboard.paste(event as unknown as ClipboardEvent);
   assert.match(fixture.grid.block.source, /Zed/);
   assert.match(fixture.grid.block.source, /99/);
   assert.doesNotMatch(fixture.grid.block.source, /ignored/);
