@@ -141,15 +141,16 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     wiki: false,
     side: false,
   });
-  assert.equal((opens[0] as { create: boolean; path: string }).create, true);
-  assert.equal((opens[0] as { path: string }).path, "Missing.md");
+  const created = opens[0] as unknown as { create: boolean; path: string };
+  assert.equal(created.create, true);
+  assert.equal(created.path, "Missing.md");
   opens.length = 0;
   await client.call(protocol, "open", {
     href: "folder/Missing",
     wiki: false,
     side: false,
   });
-  assert.equal((opens[0] as { create: boolean }).create, false);
+  assert.equal((opens[0] as unknown as { create: boolean }).create, false);
   await fiber.dispose();
   await assert.rejects(
     client.call(protocol, "open", { href: "x", wiki: true, side: false }),
