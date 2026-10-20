@@ -10,7 +10,7 @@ A shared keyboard adapter translates Chinese Shift+4 (`￥`/`¥`) and Shift+6
 (`……`/`…`), including `Process` events with those physical codes, to `$` and `^`
 in normal mode. The same capture path also maps IME `Process`/`Unidentified`
 keydowns on `KeyA`–`KeyZ`, `Digit0`–`Digit9` (Shift for `*`/`#`/`$`/…), and punctuation codes
-(`.`, `,`, `;`, `/`, `?`, `-`, …) to the matching Latin command keys in normal
+(`.`, `,`, `;`, `/`, `?`, `-`, `[]`, `'`, backticks, …) to the matching Latin command keys in normal
 and visual mode (so `gg`, `G`, word motions, counts, `dd`/`yy`, `f`/`t` and
 `.`-repeat still run when the host's beforeinput guard blocks Vim's text-input
 fallback). Chinese punctuation glyphs `。`/`，`/`；` map to `.`/`,`/`;` except

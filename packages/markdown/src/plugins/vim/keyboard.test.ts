@@ -199,6 +199,12 @@ for (const [code, shift, expected] of [
   ["Slash", false, "/"],
   ["Slash", true, "?"],
   ["Minus", false, "-"],
+  ["Equal", false, "="],
+  ["BracketLeft", false, "["],
+  ["BracketRight", true, "}"],
+  ["Quote", false, "'"],
+  ["Backquote", false, "`"],
+  ["Backslash", true, "|"],
 ] as const) {
   for (const key of ["Process", "Unidentified"] as const) {
     test(`${key} on ${code} becomes ${expected} for Vim punctuation`, () => {

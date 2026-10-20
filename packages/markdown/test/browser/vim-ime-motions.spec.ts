@@ -219,3 +219,37 @@ test("IME Process Shift+Digit3 runs # search to the previous word match", async 
   await expect.poll(() => head(page)).toBe(0);
   expect(await text(page)).toBe(source);
 });
+
+test("IME Process BracketLeft finds [ via f", async ({ page }) => {
+  const source = "before [target] after";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Escape");
+  await processKey(page, "KeyF", "f");
+  await processKey(page, "BracketLeft", "[");
+  await expect.poll(() => head(page)).toBe(source.indexOf("["));
+  expect(await text(page)).toBe(source);
+});
+
+test("IME Process Quote sets and jumps a mark without insert leaks", async ({
+  page,
+}) => {
+  const source = "first line\nsecond line\nthird line";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Escape");
+  await processKey(page, "KeyM", "m");
+  await processKey(page, "KeyA", "a");
+  await processKey(page, "KeyG", "g");
+  await processKey(page, "KeyG", "g"); // stay; then go to end and jump back
+  await processKey(page, "KeyG", "G", { shiftKey: true });
+  await expect.poll(() => head(page)).toBe(source.indexOf("third"));
+  await processKey(page, "Quote", "'");
+  await processKey(page, "KeyA", "a");
+  await expect.poll(() => head(page)).toBe(0);
+  expect(await text(page)).toBe(source);
+});
