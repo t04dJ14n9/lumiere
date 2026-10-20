@@ -19,6 +19,85 @@ import {
 /** Refreshes wait for a burst of file events to end. */
 const REFRESH_DELAY_MS = 300;
 
+type TagsViewCtx = Parameters<NonNullable<Plugin["apply"]>>[0];
+
+function wireTagRefresh(
+  ctx: TagsViewCtx,
+  source: TagsTree,
+  tree: ReturnType<TagsViewCtx["views"]["tree"]>,
+) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const refresh = async () => {
+    const vault = await currentVault(ctx.activeEditor, ctx.vaults);
+    const sort = ctx.settings.get(SORT_SETTING, "frequency");
+    source.update(vault?.index, {
+      sort: sort === "name" ? "name" : "frequency",
+      nested: ctx.settings.get<boolean>(NESTED_SETTING, true),
+    });
+    tree.setMessage(message(vault, source.isEmpty));
+    tree.refresh();
+  };
+  const schedule = () => {
+    clearTimeout(timer);
+    if (tree.visible) {
+      timer = setTimeout(() => void refresh(), REFRESH_DELAY_MS);
+    }
+  };
+  ctx.effect(() => () => clearTimeout(timer));
+  ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
+  ctx.effect(() => ctx.settings.onChange(schedule));
+  ctx.effect(() =>
+    tree.onVisibilityChanged((visible) => visible && void refresh()),
+  );
+  ctx.on("vault/resolved", schedule);
+  ctx.effect(() =>
+    ctx.hostCommands.register(SEARCH_COMMAND, (root, tag) =>
+      searchTag(ctx.dialogs, ctx.vaults, String(root), String(tag)),
+    ),
+  );
+  return { refresh, schedule };
+}
+
+function wireTagViewMenus(ctx: TagsViewCtx, schedule: () => void) {
+  const setSort = async (sort: "frequency" | "name") => {
+    await ctx.settings.access.update(SORT_SETTING, sort);
+    await syncTagViewContext(ctx);
+    schedule();
+  };
+  const setNested = async (nested: boolean) => {
+    await ctx.settings.access.update(NESTED_SETTING, nested);
+    await syncTagViewContext(ctx);
+    schedule();
+  };
+  ctx.effect(() =>
+    ctx.hostCommands.register(SORT_BY_FREQUENCY, () => setSort("name")),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(SORT_BY_NAME, () => setSort("frequency")),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(ENABLE_NESTED, () => setNested(true)),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(DISABLE_NESTED, () => setNested(false)),
+  );
+  const syncContext = () => {
+    void syncTagViewContext(ctx).catch((error) =>
+      ctx.logger.warn("Tags view context failed", error),
+    );
+  };
+  ctx.effect(() => ctx.settings.onChange(syncContext));
+  ctx.effect(() => async () => {
+    await ctx.hostCommands.execute(
+      "setContext",
+      SORT_FREQUENCY_CONTEXT,
+      undefined,
+    );
+    await ctx.hostCommands.execute("setContext", NESTED_CONTEXT, undefined);
+  });
+  syncContext();
+}
+
 /**
  * The window half of `tags`: the Explorer's Tags view for the active note's
  * vault (or the workspace's when no note is open). The editor half in
@@ -40,76 +119,8 @@ export const tagsViewHost: Plugin = {
     const source = new TagsTree();
     const tree = ctx.views.tree(VIEW_ID, source);
     ctx.effect(() => () => tree.dispose());
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const refresh = async () => {
-      const vault = await currentVault(ctx.activeEditor, ctx.vaults);
-      const sort = ctx.settings.get(SORT_SETTING, "frequency");
-      source.update(vault?.index, {
-        sort: sort === "name" ? "name" : "frequency",
-        nested: ctx.settings.get(NESTED_SETTING, true) === true,
-      });
-      tree.setMessage(message(vault, source.isEmpty));
-      tree.refresh();
-    };
-    // A hidden view is rebuilt when it is shown again, not on every change.
-    const schedule = () => {
-      clearTimeout(timer);
-      if (tree.visible) {
-        timer = setTimeout(() => void refresh(), REFRESH_DELAY_MS);
-      }
-    };
-    ctx.effect(() => () => clearTimeout(timer));
-    ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
-    ctx.effect(() => ctx.settings.onChange(schedule));
-    ctx.effect(() =>
-      tree.onVisibilityChanged((visible) => visible && void refresh()),
-    );
-    ctx.on("vault/resolved", schedule);
-    ctx.effect(() =>
-      ctx.hostCommands.register(SEARCH_COMMAND, (root, tag) =>
-        searchTag(ctx.dialogs, ctx.vaults, String(root), String(tag)),
-      ),
-    );
-
-    const setSort = async (sort: "frequency" | "name") => {
-      await ctx.settings.access.update(SORT_SETTING, sort);
-      await syncTagViewContext(ctx);
-      schedule();
-    };
-    const setNested = async (nested: boolean) => {
-      await ctx.settings.access.update(NESTED_SETTING, nested);
-      await syncTagViewContext(ctx);
-      schedule();
-    };
-    // Checked sort label cycles to the other order (Obsidian tag-pane sort).
-    ctx.effect(() =>
-      ctx.hostCommands.register(SORT_BY_FREQUENCY, () => setSort("name")),
-    );
-    ctx.effect(() =>
-      ctx.hostCommands.register(SORT_BY_NAME, () => setSort("frequency")),
-    );
-    ctx.effect(() =>
-      ctx.hostCommands.register(ENABLE_NESTED, () => setNested(true)),
-    );
-    ctx.effect(() =>
-      ctx.hostCommands.register(DISABLE_NESTED, () => setNested(false)),
-    );
-    const syncContext = () => {
-      void syncTagViewContext(ctx).catch((error) =>
-        ctx.logger.warn("Tags view context failed", error),
-      );
-    };
-    ctx.effect(() => ctx.settings.onChange(syncContext));
-    ctx.effect(() => async () => {
-      await ctx.hostCommands.execute(
-        "setContext",
-        SORT_FREQUENCY_CONTEXT,
-        undefined,
-      );
-      await ctx.hostCommands.execute("setContext", NESTED_CONTEXT, undefined);
-    });
-    syncContext();
+    const { refresh, schedule } = wireTagRefresh(ctx, source, tree);
+    wireTagViewMenus(ctx, schedule);
     void refresh();
   },
 };
