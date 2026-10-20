@@ -3,7 +3,8 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "wikipedia";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +73,40 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+const WIKI_LANG = /^[a-z]{2,12}$/;
+
+const WIKI_TITLE = /^[^/#?\s]{1,200}$/;
+
+const WIKI_NS =
+  /^(Special|File|Media|User|Wikipedia|Template|Help|Category|Portal|Draft|Module|MediaWiki)(_talk)?:/i;
+
+function wikipedia(lang: string, pathname: string): OnlineVideo | undefined {
+  const match = /^\/wiki\/([^/]+)\/?$/.exec(pathname);
+  if (!match) {
+    return undefined;
+  }
+  // Pathname may be percent-encoded for non-ASCII titles; store decoded.
+  let title: string;
+  try {
+    title = decodeURIComponent(match[1]!);
+  } catch {
+    return undefined;
+  }
+  const id = `${lang}:${title}`;
+  if (!isVideoId("wikipedia", id)) {
+    return undefined;
+  }
+  // Rebuild with encodeURIComponent so the Open link stays a valid URI.
+  const encoded = encodeURIComponent(title).replace(/%20/g, "_");
+  return {
+    provider: "wikipedia",
+    id,
+    page: `https://${lang}.wikipedia.org/wiki/${encoded}`,
+  };
+}
+
+/** Whether `id` is an ID `parseVideoUrl` could have produced. */
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +114,16 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  const colon = id.indexOf(":");
+  if (colon < 2) {
+    return false;
+  }
+  const lang = id.slice(0, colon);
+  const title = id.slice(colon + 1);
+  return WIKI_LANG.test(lang) && WIKI_TITLE.test(title) && !WIKI_NS.test(title);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +161,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  const wiki = /^([a-z]{2,12})\.wikipedia\.org$/i.exec(host);
+  if (wiki && wiki[1]!.toLowerCase() !== "www") {
+    return wikipedia(wiki[1]!.toLowerCase(), url.pathname);
   }
   return undefined;
 }

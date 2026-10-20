@@ -11,7 +11,7 @@ interface Provider {
    * Whether the card may offer "Play here" (Bilibili, behind the
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
-   * gets no referrer to check. Hugging Face has no in-webview player.
+   * gets no referrer to check. Hugging Face and Wikipedia have no in-webview player.
    */
   readonly embeddable: boolean;
 }
@@ -39,6 +39,13 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
       /^\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,99})?)$/,
     embeddable: false,
   },
+  wikipedia: {
+    name: "Wikipedia",
+    origin: "https://en.wikipedia.org",
+    path: "/wiki/",
+    pathPattern: /^\/wiki\/[^/]+$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -49,6 +56,9 @@ export function playerUrl(video: OnlineVideo): string {
   const provider = providers[video.provider];
   if (video.provider === "huggingface") {
     throw new Error("Hugging Face has no in-webview player");
+  }
+  if (video.provider === "wikipedia") {
+    throw new Error("Wikipedia has no in-webview player");
   }
   if (video.provider === "youtube") {
     const url = new URL(`${provider.path}${video.id}`, provider.origin);

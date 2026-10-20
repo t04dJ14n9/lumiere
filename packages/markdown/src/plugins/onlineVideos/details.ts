@@ -151,6 +151,23 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "wikipedia") {
+      const colon = id.indexOf(":");
+      const lang = id.slice(0, colon);
+      const title = id.slice(colon + 1);
+      const body = await this.json(
+        `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
+        signal,
+      );
+      const { details, cover } = parseWikipediaSummary(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +224,54 @@ export class VideoDetailsSource {
   }
 }
 
+/** Wikipedia REST summary: article title, short description, lead image. */
+export function parseWikipediaSummary(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body) || typeof body.title !== "string") {
+    throw new Error("Unexpected Wikipedia response");
+  }
+  // Missing pages use type "https://mediawiki.org/wiki/HyperSwitch/errors/not_found"
+  // or lack a usable title; disambiguation pages are still fine as cards.
+  if (typeof body.type === "string" && body.type.includes("errors/not_found")) {
+    throw new Error("Wikipedia page not found");
+  }
+  const title = text(body.title, 300);
+  const author = text(body.description, 100);
+  const thumb = isRecord(body.thumbnail) ? body.thumbnail : {};
+  const cover = wikipediaCoverUrl(thumb.source);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+export function wikipediaCoverUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    (url.hostname !== "upload.wikimedia.org" &&
+      url.hostname !== "thumb.wikimedia.org") ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    !/^\/wikipedia\/.+\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  // Summary API appends utm_* query; never forward it.
+  return `https://${url.hostname}${url.pathname}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

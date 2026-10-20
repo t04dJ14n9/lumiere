@@ -133,3 +133,40 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Wikipedia article pages on {lang}.wikipedia.org", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://en.wikipedia.org/wiki/Cowboy_Bebop"),
+    {
+      provider: "wikipedia",
+      id: "en:Cowboy_Bebop",
+      page: "https://en.wikipedia.org/wiki/Cowboy_Bebop",
+    },
+  );
+  const ja = parseVideoUrl("https://ja.wikipedia.org/wiki/カウボーイビバップ");
+  assert.equal(ja?.provider, "wikipedia");
+  assert.equal(ja?.id, "ja:カウボーイビバップ");
+  assert.equal(
+    ja?.page,
+    "https://ja.wikipedia.org/wiki/" + encodeURIComponent("カウボーイビバップ"),
+  );
+  assert.deepEqual(parseVideoUrl("https://en.wikipedia.org/wiki/C++"), {
+    provider: "wikipedia",
+    id: "en:C++",
+    page: "https://en.wikipedia.org/wiki/C%2B%2B",
+  });
+  // Mobile and www redirect; namespaces and empty titles rejected.
+  assert.equal(
+    parseVideoUrl("https://en.m.wikipedia.org/wiki/Cowboy_Bebop"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.wikipedia.org/wiki/Cowboy_Bebop"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://en.wikipedia.org/wiki/File:Example.jpg"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://en.wikipedia.org/wiki/"), undefined);
+});

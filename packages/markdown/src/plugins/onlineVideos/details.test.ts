@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  parseWikipediaSummary,
+  wikipediaCoverUrl,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +331,87 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("wikipediaCoverUrl accepts wikimedia upload/thumb paths and strips utm", () => {
+  assert.equal(
+    wikipediaCoverUrl(
+      "https://upload.wikimedia.org/wikipedia/en/a/a9/Cowboy_Bebop_key_visual.jpg?utm_source=en.wikipedia.org",
+    ),
+    "https://upload.wikimedia.org/wikipedia/en/a/a9/Cowboy_Bebop_key_visual.jpg",
+  );
+  assert.equal(
+    wikipediaCoverUrl(
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Paris.jpg/330px-Paris.jpg",
+    ),
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Paris.jpg/330px-Paris.jpg",
+  );
+  for (const value of [
+    "https://evil.test/wikipedia/en/a/a9/x.jpg",
+    "https://upload.wikimedia.org/other/x.jpg",
+    "http://upload.wikimedia.org/wikipedia/en/a/a9/x.jpg",
+  ]) {
+    assert.equal(wikipediaCoverUrl(value), undefined);
+  }
+});
+
+test("parseWikipediaSummary uses title, description and thumbnail", () => {
+  assert.deepEqual(
+    parseWikipediaSummary({
+      type: "standard",
+      title: "Cowboy Bebop",
+      description: "1998 space western anime television series",
+      thumbnail: {
+        source:
+          "https://upload.wikimedia.org/wikipedia/en/a/a9/Cowboy_Bebop_key_visual.jpg?utm_source=en.wikipedia.org",
+      },
+    }),
+    {
+      details: {
+        title: "Cowboy Bebop",
+        author: "1998 space western anime television series",
+      },
+      cover:
+        "https://upload.wikimedia.org/wikipedia/en/a/a9/Cowboy_Bebop_key_visual.jpg",
+    },
+  );
+  assert.throws(() =>
+    parseWikipediaSummary({
+      type: "https://mediawiki.org/wiki/HyperSwitch/errors/not_found",
+      title: "Not found",
+    }),
+  );
+});
+
+test("a Wikipedia lookup uses the REST summary API and may fetch the cover", async () => {
+  const cover =
+    "https://upload.wikimedia.org/wikipedia/en/a/a9/Cowboy_Bebop_key_visual.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://en.wikipedia.org/api/rest_v1/page/summary/": () =>
+      response({
+        type: "standard",
+        title: "Cowboy Bebop",
+        description: "1998 space western anime television series",
+        thumbnail: { source: `${cover}?utm_source=en.wikipedia.org` },
+      }),
+    "https://upload.wikimedia.org/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "wikipedia",
+    "en:Cowboy_Bebop",
+  );
+  assert.equal(details.title, "Cowboy Bebop");
+  assert.equal(details.author, "1998 space western anime television series");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://en.wikipedia.org/api/rest_v1/page/summary/Cowboy_Bebop",
+  );
+  assert.equal(calls[1]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

@@ -85,3 +85,14 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Wikipedia refuses an in-webview player", () => {
+  assert.equal(providers.wikipedia.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://en.wikipedia.org/wiki/Cowboy_Bebop")),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://en.wikipedia.org/wiki/Cowboy_Bebop")),
+  );
+});
