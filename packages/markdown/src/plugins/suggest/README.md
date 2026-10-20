@@ -6,7 +6,8 @@ corresponding to Obsidian's EditorSuggest lists.
 ## How it works
 
 Links and Tags own trigger handlers on a typed bail event. The framework skips
-literal code/frontmatter, requests ranked candidates over validated RPC, and
+literal code/frontmatter for links (tags still open there, as in Obsidian),
+requests ranked candidates over validated RPC, and
 installs CodeMirror completion keys in the suggestion priority slot. The host
 caches candidates by file, invalidates on index changes, materializes only 50
 link texts and honors source feature switches. Accepting a link reuses closing
@@ -45,7 +46,7 @@ nothing typed, notes come most recently changed first.
 - `insertion.ts`: deferred wiki/Markdown insertion and destination encoding.
 - `rank.ts`: Obsidian's scoring and bounded best-50 selection.
 - `host.ts`: per-panel RPC and source enablement checks.
-- `completion.ts`: code exclusion and insertion transaction.
+- `completion.ts`: code/frontmatter gating (tags allowed) and insertion transaction.
 - `webview.ts`: source service, asynchronous completion and key priority.
 - `suggest.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
@@ -69,3 +70,8 @@ With `links.useWikilinks` off, accepting a link/head/block completion replaces
 the entire partial wiki token with a Markdown link. Existing `]]` are consumed.
 Unresolved Markdown destinations follow normal Markdown-link opening; unlike
 unresolved wikilinks, they do not create missing notes on click.
+
+Tag suggestions open inside fenced/inline code and source-mode frontmatter
+(Obsidian). Link, heading, block and local (highlight) lists stay blocked in
+those regions.
+

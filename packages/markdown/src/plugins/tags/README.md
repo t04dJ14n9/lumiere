@@ -83,5 +83,6 @@ vault's policy. Full visual interaction parity remains for owner comparison.
 The markup a tag may follow is read from the text around the `#`, not from
 the syntax tree, so it can differ where the block structure does: a lone `*`
 on the next line closes `*#a` here, not in Obsidian. Inline footnotes
-(`^[#a]`) are indexed like Obsidian. Obsidian also offers tags inside code and its
-source-mode frontmatter; suggestions here skip both, as they do for links.
+(`^[#a]`) are indexed like Obsidian. Tag suggestions also open inside
+fenced/inline code and source-mode frontmatter, as in Obsidian 1.14.4; link
+suggestions stay blocked there.

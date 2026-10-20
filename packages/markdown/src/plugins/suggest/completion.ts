@@ -1,7 +1,12 @@
 import { syntaxTree } from "@codemirror/language";
 import type { EditorState, TransactionSpec } from "@codemirror/state";
-/** Completion must not interpret literal code or frontmatter as prose. */
-export function allowsSuggestions(state: EditorState, pos: number): boolean {
+import type { Query } from "./protocol";
+
+/** True when `pos` sits inside literal code or YAML frontmatter. */
+export function inLiteralCodeOrFrontmatter(
+  state: EditorState,
+  pos: number,
+): boolean {
   let node = syntaxTree(state).resolveInner(pos, -1);
   for (;;) {
     if (
@@ -13,13 +18,29 @@ export function allowsSuggestions(state: EditorState, pos: number): boolean {
         "Frontmatter",
       ].includes(node.name)
     ) {
-      return false;
+      return true;
     }
     if (!node.parent) {
-      return true;
+      return false;
     }
     node = node.parent;
   }
+}
+
+/**
+ * Whether completions may open at `pos`. Link/heading/block stay out of
+ * literal code and frontmatter; tags are allowed there (Obsidian 1.14.4).
+ * Local lists (highlight colours) omit `kind` and stay blocked in literals.
+ */
+export function allowsSuggestions(
+  state: EditorState,
+  pos: number,
+  kind?: Query["kind"],
+): boolean {
+  if (!inLiteralCodeOrFrontmatter(state, pos)) {
+    return true;
+  }
+  return kind === "tag";
 }
 /**
  * The edit that accepts a suggestion: `insert` over `range`, then `]]` when
