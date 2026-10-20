@@ -8,9 +8,11 @@
   white-space: nowrap;
 }
 .properties {
-  padding: 4px 0 16px;
+  /* Obsidian: --metadata-padding size-4-2 0 + margin-block-end 2rem; --font-smaller */
+  padding: 8px 0 0;
+  margin-block-end: 2rem;
   font-family: var(--ui-font);
-  font-size: var(--text-size);
+  font-size: 0.875em;
   line-height: 1.5;
 }
 .property-pending-sheet {
@@ -27,7 +29,8 @@
   gap: 6px;
   position: relative;
   margin-bottom: 8px;
-  font-size: 0.875em;
+  /* Parent is already 0.875em; keep title at that size (not 0.875²). */
+  font-size: 1em;
   font-weight: 600;
   cursor: pointer;
 }
@@ -48,6 +51,11 @@
   outline-offset: 3px;
   border-radius: 3px;
 }
+.metadata-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 3px; /* Obsidian --metadata-gap */
+}
 .property-row {
   display: grid;
   /* Long names get room without squeezing values out of a narrow editor. */
@@ -55,12 +63,13 @@
   gap: 8px;
   align-items: start;
   min-height: 1.75em;
-  padding: 2px 0;
+  padding: 0;
   box-sizing: border-box;
+  border-radius: 6px; /* Obsidian --metadata-property-radius */
 }
 .property-row[data-property-selected] {
   background: var(--vscode-editor-selectionBackground, #65529266);
-  border-radius: 3px;
+  border-radius: 6px;
 }
 .metadata-property-key {
   position: relative;
@@ -70,9 +79,17 @@
   color: var(--muted);
   min-width: 0;
 }
+/* Obsidian hover 1px ring / focus-within 2px ring (VS Code theme tokens). */
+@media (hover: hover) {
+  .property-row:hover {
+    box-shadow: 0 0 0 1px var(--vscode-widget-border, rgba(127, 127, 127, 0.35));
+  }
+}
+.property-row:focus-within,
 .property-row:focus-visible {
-  outline: 1px solid var(--accent);
-  border-radius: 3px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vscode-focusBorder, var(--accent));
+  border-radius: 6px;
 }
 .property-key,
 .metadata-property-value input[data-property-input],
