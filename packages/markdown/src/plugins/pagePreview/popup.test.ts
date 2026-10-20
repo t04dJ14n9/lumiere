@@ -34,6 +34,7 @@ test("the link preview is a card with icon actions in its corner", async () => {
     body: FakeElement;
     open: FakeElement;
   };
+  assert.equal(popup.className, "link-preview popover hover-popover");
   const [toolbar] = popup.children;
   assert.equal(toolbar?.className, "link-preview-actions");
   assert.deepEqual(
