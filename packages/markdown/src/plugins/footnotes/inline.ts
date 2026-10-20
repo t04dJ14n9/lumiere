@@ -103,6 +103,15 @@ function decorateDefinition(cx: InlineContext, note: Footnote): void {
         : "mw-footnote-def is-continued",
     );
   }
+  // Obsidian keeps the blank line after a footnote definition at footnote
+  // size (0.875em). Lumière used to leave it at body size (OBSIDIAN_LAYOUT).
+  const trailing = last.number + 1;
+  if (trailing <= doc.lines) {
+    const blank = doc.line(trailing);
+    if (blank.length === 0) {
+      cx.line(blank.from, "mw-footnote-def is-continued");
+    }
+  }
 }
 
 /** The superscript number that leads a rendered definition. */

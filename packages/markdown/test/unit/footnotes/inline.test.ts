@@ -121,8 +121,11 @@ test("definitions lead with their number; the caret on the marker shows its fain
   assert.deepEqual(markers, []);
   assert.deepEqual(lines, [
     { line: 4, cls: "mw-footnote-def" },
+    // Blank after [^1] is not empty — next def starts immediately.
     { line: 5, cls: "mw-footnote-def" },
     { line: 6, cls: "mw-footnote-def is-continued" },
+    // Obsidian: empty line after the last def stays at footnote size.
+    { line: 7, cls: "mw-footnote-def is-continued" },
   ]);
   const atNote = decorate(caret(source.indexOf("[^note]:") + 3));
   assert.deepEqual(atNote.markers, ["[^note]:"]);
@@ -168,4 +171,39 @@ test("definitions whose body is only a markdown or wiki link still lead with the
   );
   assert.deepEqual(numbers, ["1", "2"]);
   assert.deepEqual(replaced, ["[^overview]: ", "[^w]: "]);
+});
+
+test("an empty line after a footnote definition stays at footnote size", () => {
+  const lone = [
+    "Body.[^a]",
+    "",
+    "[^a]: Note text.",
+    "",
+    "Next paragraph.",
+  ].join("\n");
+  const state = EditorState.create({
+    doc: lone,
+    selection: EditorSelection.single(0),
+    extensions: [
+      documentTree,
+      inlineRenderers.of(footnoteInline({} as RenderService)),
+    ],
+  });
+  const lines: { line: number; cls: string }[] = [];
+  inlineDecorations(state, [{ from: 0, to: lone.length }]).between(
+    0,
+    lone.length,
+    (from, _to, value) => {
+      if (String(value.spec.class).startsWith("mw-footnote-def")) {
+        lines.push({
+          line: state.doc.lineAt(from).number,
+          cls: value.spec.class,
+        });
+      }
+    },
+  );
+  assert.deepEqual(lines, [
+    { line: 3, cls: "mw-footnote-def" },
+    { line: 4, cls: "mw-footnote-def is-continued" },
+  ]);
 });

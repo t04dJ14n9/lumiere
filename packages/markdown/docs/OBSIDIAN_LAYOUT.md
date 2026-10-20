@@ -32,8 +32,6 @@ Differences that remain:
 - Inline math can make its line 1–2px taller than Obsidian's.
 - CodeMirror pads every line 2px at the start; all text sits 2px right of
   Obsidian's.
-- An empty line after a footnote definition is a normal line (Obsidian sets
-  it in the footnote's smaller size).
 - A paragraph line right after a quote is part of the quote (CommonMark's lazy
   continuation, as in Obsidian's reading view); Obsidian's Live Preview shows
   it as a paragraph.

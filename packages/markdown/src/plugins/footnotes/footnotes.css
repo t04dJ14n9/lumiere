@@ -77,7 +77,8 @@
 .mw-footnote-number {
   margin-right: 0.5em;
 }
-/* The definition block is set a little smaller than the note, like a paper's footnotes. */
+/* Definition lines (and Obsidian's trailing blank after a def) are a little
+ * smaller than the note, like a paper's footnotes. */
 .cm-line.mw-footnote-def {
   font-size: 0.875em;
 }
