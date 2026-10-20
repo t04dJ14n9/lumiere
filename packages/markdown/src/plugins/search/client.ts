@@ -3,18 +3,40 @@ import { CancelToken } from "../../shared/rpc/lifecycle";
 import { protocol, type SearchResponse } from "./protocol";
 import { errorMessage } from "../../shared/errors";
 export type SearchUpdate =
-  | { loading: true }
+  | {
+      loading: true;
+      results?: SearchResponse["results"];
+      unreadable?: number;
+    }
   | ({ loading: false; error?: string } & Partial<SearchResponse>);
 interface Subscription {
   query: string;
   source: string;
+  id?: string;
   update(value: SearchUpdate): void;
   token?: CancelToken;
 }
 export class QueryClient {
   private readonly subscriptions = new Set<Subscription>();
   private disposed = false;
-  constructor(private readonly rpc: Endpoint) {}
+  private nextId = 0;
+  private readonly stopPartial: () => void;
+  constructor(private readonly rpc: Endpoint) {
+    this.stopPartial = rpc.on(protocol, "partial", (message) => {
+      for (const subscription of this.subscriptions) {
+        if (
+          subscription.id === message.id &&
+          !subscription.token?.cancelled
+        ) {
+          subscription.update({
+            loading: true,
+            results: message.results,
+            unreadable: message.unreadable,
+          });
+        }
+      }
+    });
+  }
   watch(
     query: string,
     source: string,
@@ -40,12 +62,14 @@ export class QueryClient {
     subscription.token?.cancel();
     const token = new CancelToken();
     subscription.token = token;
+    const id = `q${++this.nextId}`;
+    subscription.id = id;
     subscription.update({ loading: true });
     void this.rpc
       .call(
         protocol,
         "query",
-        { query: subscription.query, source: subscription.source },
+        { query: subscription.query, source: subscription.source, id },
         { token },
       )
       .then(
@@ -66,6 +90,7 @@ export class QueryClient {
   }
   dispose(): void {
     this.disposed = true;
+    this.stopPartial();
     for (const subscription of this.subscriptions) {
       subscription.token?.cancel();
     }
