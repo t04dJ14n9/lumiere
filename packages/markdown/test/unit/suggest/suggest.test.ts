@@ -76,15 +76,43 @@ test("completion preserves suffix text and reuses auto-paired brackets", () => {
     "#project",
   );
 });
-test("completion excludes literal code and frontmatter", () => {
+test("completion excludes link suggestions in literal code and frontmatter", () => {
   for (const doc of ["`[[No`", "```\n[[No\n```", "---\nkey: '[[No'\n---"]) {
     const state = EditorState.create({
       doc,
       extensions: markdownLanguageSupport(),
     });
-    assert.equal(allowsSuggestions(state, doc.indexOf("No") + 2), false, doc);
+    const at = doc.indexOf("No") + 2;
+    assert.equal(allowsSuggestions(state, at), false, doc);
+    assert.equal(allowsSuggestions(state, at, "link"), false, doc);
   }
   assert.equal(allowsSuggestions(context("[[No").state, 4), true);
+});
+
+test("tag suggestions open inside code and source-mode frontmatter (Obsidian)", () => {
+  // Caret sits on the tag body (not on a closing mark) so the syntax node is
+  // literal code/frontmatter and the `#` still follows whitespace.
+  const cases: [doc: string, at: number][] = [
+    ["` #pro`", 6],
+    ["```\n#pro\n```", 8],
+    ["---\ntags:\n  - #pro\n---", 18],
+  ];
+  for (const [doc, at] of cases) {
+    const state = EditorState.create({
+      doc,
+      extensions: markdownLanguageSupport(),
+    });
+    assert.equal(allowsSuggestions(state, at, "tag"), true, doc);
+    assert.equal(allowsSuggestions(state, at, "link"), false, doc);
+    assert.equal(allowsSuggestions(state, at), false, doc);
+    assert.deepEqual(tagSuggestion({ state, pos: at }), {
+      kind: "tag",
+      query: "pro",
+      from: at - 3,
+      closeLink: false,
+      spaceAfter: true,
+    });
+  }
 });
 function index() {
   const vault = new MemoryVaultIndex({

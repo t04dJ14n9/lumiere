@@ -54,11 +54,14 @@ function registerCompletions(ctx: Context): void {
     pending.clear();
   });
   const source = (context: CompletionContext) => {
-    if (!allowsSuggestions(context.state, context.pos)) {
-      return null;
-    }
     const trigger = ctx.bail("suggest/trigger", context);
     if (!trigger) {
+      return null;
+    }
+    // Resolve the kind first so tags may open inside code / frontmatter
+    // (Obsidian); links and local lists stay blocked there.
+    const kind = "options" in trigger ? undefined : trigger.kind;
+    if (!allowsSuggestions(context.state, context.pos, kind)) {
       return null;
     }
     return "options" in trigger
