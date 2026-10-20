@@ -164,8 +164,13 @@
 }
 .metadata-link {
   display: flex;
+  flex: 1 1 auto;
   gap: 8px;
   align-items: center;
+  /* Obsidian REA: padding: var(--input-padding) → --metadata-input-padding 4px 8px */
+  padding: 4px 8px;
+  box-sizing: border-box;
+  cursor: text;
 }
 .metadata-property-link-flair {
   color: var(--muted);

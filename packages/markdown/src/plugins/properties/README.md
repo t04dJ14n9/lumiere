@@ -100,7 +100,7 @@ service; structured clipboard uses the `obsidian/properties` payload. Type
 preferences follow the root supplied by the vault service. Source mode shows YAML;
 Add File Property can temporarily show the sheet when properties are hidden.
 Disclosure is shared within the VS Code workspace, rather than across unrelated
-workspaces. Native picker appearance depends on Chromium, OS and locale. Unfocused text values clamp to three lines with a 300px max height, as in Obsidian 1.14.4; focus expands them with scroll. The sheet uses 0.875em metadata type, 8px top padding, 2rem bottom margin, 3px row gap, and 6px hover/focus rings matching Obsidian's metadata tokens (VS Code colours). Daily
+workspaces. Native picker appearance depends on Chromium, OS and locale. Unfocused text values clamp to three lines with a 300px max height, as in Obsidian 1.14.4; focus expands them with scroll. The sheet uses 0.875em metadata type, 8px top padding, 2rem bottom margin, 3px row gap, 6px hover/focus rings, and link values (`metadata-link`) padded 4px 8px like Obsidian's `--metadata-input-padding` (VS Code colours). Editable input padding is tracked separately. Daily
 note links are not provided because the editor has no daily-note capability.
 YAML drafts must parse independently; external references use serialized copies,
 which may lose original formatting or precision when committed. Recursive aliases,
