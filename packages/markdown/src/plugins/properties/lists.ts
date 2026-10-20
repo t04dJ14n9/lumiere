@@ -1,3 +1,4 @@
+import { EditorView } from "@codemirror/view";
 import { bindPropertyChips, itemOccurrence } from "./chips";
 import { frontmatter, type PropertyScalar } from "../../markdown/properties";
 import type { PropertyContext } from "./context";
@@ -23,6 +24,7 @@ interface ListOptions {
   editor?: PropertyEditor;
   openMenu: PropertyContext["openMenu"];
   copy: PropertyContext["copy"];
+  expandList?: (key: string) => void;
 }
 
 export function bindPropertyLists(
@@ -57,6 +59,7 @@ export function bindPropertyLists(
         ...(editor && { editor }),
         openMenu: context.openMenu,
         copy: context.copy,
+        ...(context.expandList ? { expandList: context.expandList } : {}),
       });
       cleanups.set(list, binding.bind());
     });
@@ -104,6 +107,7 @@ class PropertyList {
     const { container, list, key, original, editor, openMenu, copy } =
       this.options;
     this.bindRemoveButtons();
+    this.bindListMore();
     const close = bindPropertyChips({
       container,
       list,
@@ -226,6 +230,28 @@ class PropertyList {
     (
       chip ?? current?.querySelector<HTMLElement>("[data-property-list-input]")
     )?.focus();
+  }
+
+  private bindListMore(): void {
+    const button = this.options.list.querySelector<HTMLButtonElement>(
+      "[data-property-list-more]",
+    );
+    if (!button || button.dataset.listMoreBound) {
+      return;
+    }
+    button.dataset.listMoreBound = "1";
+    button.addEventListener("click", () => {
+      const view = EditorView.findFromDOM(button);
+      this.options.list
+        .querySelectorAll<HTMLElement>("[data-property-chip-extra]")
+        .forEach((chip) => {
+          chip.hidden = false;
+          chip.removeAttribute("data-property-chip-extra");
+        });
+      button.remove();
+      this.options.expandList?.(this.options.key);
+      view?.requestMeasure();
+    });
   }
 
   private bindRemoveButtons(): void {

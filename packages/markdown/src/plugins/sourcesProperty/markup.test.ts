@@ -13,7 +13,7 @@ test("sources markup is stacked, keeps every row, and has no Copy id", () => {
     title: `Source ${index}`,
   }));
   const html = renderSources(entries, {});
-  assert.match(html, /Showing 8 of 9/);
+  assert.match(html, /Showing 3 of 9/);
   assert.match(html, /data-source-extra/);
   assert.equal(html.match(/data-source-index=/g)?.length, 9);
   assert.doesNotMatch(html, /contenteditable|Add source|data-property-list/);

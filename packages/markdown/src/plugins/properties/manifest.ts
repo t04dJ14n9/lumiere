@@ -2,6 +2,13 @@ import { Schema } from "@workshop/core";
 import { defineManifest } from "../../shared/manifest";
 export const config = Schema.object({
   display: Schema.union(["visible", "hidden", "source"]).default("visible"),
+  listPreviewCount: Schema.number()
+    .min(1)
+    .max(50)
+    .default(3)
+    .description(
+      "How many list chips or Sources rows to show before a disclosure control. Applies to tags, aliases, cssclasses, other lists, and OKF sources.",
+    ),
 });
 export default defineManifest({
   id: "properties",

@@ -1,21 +1,19 @@
 # Sources
 
-Shows an OKF `sources` property as stacked rows with open links for navigable
-resources, and edits the same property as YAML in the Properties sheet like any
-other nested frontmatter value.
+Shows an OKF `sources` property as stacked rows with open links. Treated as a
+known OKF type in Properties (not Obsidian Unknown JSON, not a YAML draft under
+the rows). Edit complex values in Source mode.
 
 ## How it works
 
 The properties sheet asks `propertyRenderers` for `sources` on the first paint
-and again when a renderer is registered or removed. The custom rows sit above an
-editable YAML draft for the whole `sources` value. Changing that draft writes
-back into the note frontmatter through the normal Properties edit path. A path
+and again when a renderer is registered or removed. The custom rows are the typed UI. A path
 or `http`/`https` resource in the rows is clickable; scope text is not. A click
 sends the resource string to the host. The host re-reads the owning document,
 refuses a resource that is no longer there, strips a `#fragment` before the file
 lookup, and allows only `http`/`https` or a path that stays inside the vault. Id
 text is plain selectable text; there is no Copy id control. Clicking
-"Showing 8 of N" reveals every row and remembers that disclosure for the
+"Showing N of M (default preview 3; `properties.listPreviewCount`)" reveals every row and remembers that disclosure for the
 panel session so a remount (and estimatedHeight while the sheet is off-screen)
 keeps the expanded height instead of jumping back to the first-eight reserve.
 

@@ -294,6 +294,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.files.newNoteFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.files.attachmentFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.properties.display | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.properties.listPreviewCount | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.onlineVideos.bilibiliPlayer | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.tags.viewSort | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.tags.viewNested | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

@@ -20,14 +20,14 @@ test("property sheet distinguishes editable scalars, list chips and Obsidian unk
   assert.doesNotMatch(html, /<script>|<b>/);
 });
 
-test("generated nested maps render as Obsidian unknown JSON; bare sources lists do too", () => {
+test("generated is OKF typed provenance; bare sources (no plugin) stay Unknown JSON", () => {
   const html = renderProperties(
     '---\ngenerated:\n  by: agent\n  at: "2026-10-15T00:00:00Z"\nsources:\n  - resource: ../raw/a.pdf\n    id: a1\n---\n',
   );
-  assert.match(html, /data-property-key="generated"[\s\S]*mod-unknown/);
-  assert.match(html, /&quot;by&quot;:&quot;agent&quot;/);
+  assert.match(html, /data-property-key="generated"[\s\S]*mod-okf-provenance/);
+  assert.match(html, /data-property-type="generated"/);
+  assert.match(html, /okf-provenance-by[^>]*>agent</);
   assert.match(html, /data-property-key="sources"[\s\S]*mod-unknown/);
-  assert.match(html, /&quot;resource&quot;:&quot;..\/raw\/a.pdf&quot;/);
   assert.doesNotMatch(html, /data-property-kind="yaml"/);
 });
 
@@ -125,7 +125,7 @@ test("property rendering bounds recursive aliases and leaves absent frontmatter 
   assert.match(empty, /data-placeholder="Empty"/);
 });
 
-test("empty sources keeps custom renderer and YAML draft instead of scalar chips", () => {
+test("empty sources keeps custom stacked UI without YAML draft", () => {
   const html = renderProperties(
     "---\nsources: []\n---\n",
     {},
@@ -137,14 +137,12 @@ test("empty sources keeps custom renderer and YAML draft instead of scalar chips
     },
   );
   assert.match(html, /data-sources/);
-  assert.match(
-    html,
-    /data-property-input="sources"[^>]*data-property-kind="yaml"/,
-  );
+  assert.match(html, /data-property-type="sources"/);
+  assert.doesNotMatch(html, /data-property-kind="yaml"/);
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });
 
-test("Sources custom rows stay above Source-mode when entries reference external anchors", () => {
+test("Sources custom rows stay typed UI without YAML even when entries alias", () => {
   const html = renderProperties(
     "---\nreference: &r {resource: ../raw/a.pdf, id: a1}\nsources: [*r]\n---\n",
     {},
@@ -157,12 +155,9 @@ test("Sources custom rows stay above Source-mode when entries reference external
   );
   assert.match(
     html,
-    /class="property-complex"><div class="source-rows">[\s\S]*data-source-open[\s\S]*Source mode/,
+    /class="property-complex"><div class="source-rows">[\s\S]*data-source-open/,
   );
-  assert.doesNotMatch(
-    html,
-    /data-property-input="sources"[^>]*data-property-kind="yaml"/,
-  );
+  assert.doesNotMatch(html, /data-property-kind="yaml"|Source mode/);
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });
 
@@ -233,4 +228,44 @@ decision_confirmation:
     )?.[0];
   assert.ok(decision);
   assert.match(decision!, /metadata-property-warning-icon" hidden/);
+});
+
+test("listPreviewCount shows top chips with disclosure (default 3)", () => {
+  const html = renderProperties(
+    "---\ntags: [a, b, c, d, e]\n---\n",
+    {},
+    { listPreviewCount: 3 },
+  );
+  assert.match(html, /Showing 3 of 5/);
+  assert.match(html, /data-property-chip-extra/);
+  const all = renderProperties(
+    "---\ntags: [a, b, c, d, e]\n---\n",
+    {},
+    { listPreviewCount: 3, expandedLists: new Set(["tags"]) },
+  );
+  assert.doesNotMatch(all, /Showing 3 of 5|data-property-chip-extra/);
+});
+
+test("decision_confirmation stays Obsidian Unknown JSON (not OKF typed)", () => {
+  const html = renderProperties(
+    "---\ndecision_confirmation: {by: human:x, at: '2026-01-01T00:00:00Z', scope: cluster}\n---\n",
+  );
+  assert.match(
+    html,
+    /data-property-key="decision_confirmation"[\s\S]*mod-unknown/,
+  );
+  assert.doesNotMatch(html, /mod-okf-provenance/);
+});
+
+test("verified map and list use OKF typed provenance UI", () => {
+  const single = renderProperties(
+    "---\nverified: {by: human:a, at: '2026-01-01T00:00:00Z'}\n---\n",
+  );
+  assert.match(single, /data-property-type="verified"/);
+  assert.match(single, /mod-okf-provenance/);
+  const list = renderProperties(
+    "---\nverified:\n  - {by: human:a, at: '2026-01-01T00:00:00Z'}\n  - {by: human:b}\n---\n",
+  );
+  assert.match(list, /mod-okf-verified-list/);
+  assert.match(list, /okf-provenance-by[^>]*>human:a</);
 });

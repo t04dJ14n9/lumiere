@@ -1,22 +1,30 @@
 import { sourceRows } from "../../markdown/okf";
 import { escape } from "../../markdown/html/helpers";
+import {
+  DEFAULT_LIST_PREVIEW_COUNT,
+  listPreviewCount as clampPreview,
+} from "../../markdown/properties/list-preview";
 
-export const FIRST_SOURCE_ROWS = 8;
+/** @deprecated Prefer options.previewCount (default properties.listPreviewCount = 3). */
+export const FIRST_SOURCE_ROWS = DEFAULT_LIST_PREVIEW_COUNT;
 
 /** Stacked Sources rows with open links. Disclosure never drops a row from the markup. */
 export function renderSources(
   value: unknown,
   values: Record<string, unknown>,
-  options: { expanded?: boolean } = {},
+  options: { expanded?: boolean; previewCount?: number } = {},
 ): string {
   const rows = sourceRows(value, values);
   const expanded = options.expanded === true;
+  const preview = clampPreview(
+    options.previewCount ?? DEFAULT_LIST_PREVIEW_COUNT,
+  );
   const body = rows
-    .map((row) => sourceRow(row, !expanded && row.index >= FIRST_SOURCE_ROWS))
+    .map((row) => sourceRow(row, !expanded && row.index >= preview))
     .join("");
   const more =
-    !expanded && rows.length > FIRST_SOURCE_ROWS
-      ? `<button type="button" data-source-more>Showing ${FIRST_SOURCE_ROWS} of ${rows.length}</button>`
+    !expanded && rows.length > preview
+      ? `<button type="button" data-source-more>Showing ${preview} of ${rows.length}</button>`
       : "";
   return `<div class="source-rows" data-source-rows>${body}${more}</div>`;
 }

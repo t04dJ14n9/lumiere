@@ -5,6 +5,10 @@ import {
 } from "../../markdown/properties";
 import { propertyYamlDraft } from "../../markdown/properties/yaml-draft";
 import {
+  DEFAULT_LIST_PREVIEW_COUNT,
+  listPreviewCount as clampPreview,
+} from "../../markdown/properties/list-preview";
+import {
   inferPropertyKind,
   propertyKindLabels,
 } from "../../markdown/properties/types";
@@ -23,6 +27,8 @@ interface PropertyRowOptions {
   editable: boolean;
   custom: string | undefined;
   draft: string | undefined;
+  listPreviewCount: number;
+  listExpanded: boolean;
 }
 
 export function renderProperties(
@@ -31,6 +37,8 @@ export function renderProperties(
   options: {
     collapsed?: boolean;
     allowEmpty?: boolean;
+    listPreviewCount?: number;
+    expandedLists?: ReadonlySet<string>;
     renderValue?(
       key: string,
       value: unknown,
@@ -45,6 +53,10 @@ export function renderProperties(
   if (properties?.error) {
     return `<div class="render-error">${escape(properties.error)}</div><pre>${escape(properties.raw)}</pre>`;
   }
+  const preview = clampPreview(
+    options.listPreviewCount ?? DEFAULT_LIST_PREVIEW_COUNT,
+  );
+  const expandedLists = options.expandedLists ?? new Set<string>();
   const values = properties?.values ?? {};
   const rows = Object.entries(values)
     .map(([key, value]) =>
@@ -63,6 +75,8 @@ export function renderProperties(
           value,
           properties?.yaml?.document,
         ),
+        listPreviewCount: preview,
+        listExpanded: expandedLists.has(key),
       }),
     )
     .join("");
@@ -74,19 +88,62 @@ function propertyBody(
   value: unknown,
   options: PropertyRowOptions,
 ): string {
-  // Custom renderers (e.g. Sources / OKF) keep stacked UI + YAML draft.
+  // OKF Sources (and other custom renderers): typed stacked UI only — no YAML.
   if (options.custom) {
-    return complexEditable(key, options);
+    return `<div class="property-complex">${options.custom}</div>`;
   }
   if (options.editable) {
-    return editableValue(key, value, options.kind);
+    return editableValue(key, value, options);
   }
-  // Nested maps/lists Obsidian cannot type: Unknown widget = JSON.stringify
-  // (REA MetadataEditor `mod-unknown` + lucide-file-question). Not YAML drafts.
+  // OKF generated / verified (map or list of {by,at}) — typed actor+time.
+  if (options.draft !== undefined && isOkfProvenance(key, value)) {
+    return Array.isArray(value)
+      ? okfVerifiedListValue(value)
+      : okfProvenanceValue(value);
+  }
+  // Nested non-OKF (incl. decision_confirmation): Obsidian Unknown + JSON.
   if (options.draft !== undefined && isUnknownPropertyValue(value)) {
     return unknownPropertyValue(value);
   }
-  return complexEditable(key, options);
+  // Draftable scalars/collections that are not Unknown still use YAML editors
+  // (e.g. block-scalar text that is not in editableKeys).
+  if (options.draft !== undefined) {
+    return editableYaml(key, options.draft);
+  }
+  return complexFallback(options.draft);
+}
+
+function propertyTypeMeta(
+  key: string,
+  value: unknown,
+  options: PropertyRowOptions,
+): { okf: boolean; unknown: boolean; typeLabel: string; typeName: string } {
+  const { kind } = options;
+  const okf =
+    !options.custom &&
+    !options.editable &&
+    options.draft !== undefined &&
+    isOkfProvenance(key, value);
+  const unknown =
+    !options.custom &&
+    !options.editable &&
+    !okf &&
+    options.draft !== undefined &&
+    isUnknownPropertyValue(value);
+  let typeLabel = propertyKindLabels[kind];
+  let typeName: string = kind === "list" ? "multitext" : kind;
+  if (options.custom && key.toLowerCase() === "sources") {
+    typeLabel = "Sources";
+    typeName = "sources";
+  } else if (okf) {
+    const name = key.toLowerCase();
+    typeLabel = name === "verified" ? "Verified" : "Generated";
+    typeName = name === "verified" ? "verified" : "generated";
+  } else if (unknown) {
+    typeLabel = "Unknown";
+    typeName = "unknown";
+  }
+  return { okf, unknown, typeLabel, typeName };
 }
 
 function propertyRow(
@@ -95,26 +152,16 @@ function propertyRow(
   options: PropertyRowOptions,
 ): string {
   const { kind } = options;
-  const unknown =
-    !options.custom &&
-    !options.editable &&
-    options.draft !== undefined &&
-    isUnknownPropertyValue(value);
-  // Obsidian unknown is not a Text mismatch warning — it is its own type.
+  const { okf, unknown, typeLabel, typeName } = propertyTypeMeta(
+    key,
+    value,
+    options,
+  );
   const warning = mismatchWarning(
     kind,
-    !unknown && !matchesPropertyKind(kind, value),
+    !unknown && !okf && !matchesPropertyKind(kind, value),
   );
   const body = propertyBody(key, value, options);
-  const typeLabel = unknown ? "Unknown" : propertyKindLabels[kind];
-  let typeName: string;
-  if (unknown) {
-    typeName = "unknown";
-  } else if (kind === "list") {
-    typeName = "multitext";
-  } else {
-    typeName = kind;
-  }
   const icon = propertyIcon(key, value, unknown ? "unknown" : kind);
   return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${typeLabel}`)}><span class="metadata-property-icon">${icon}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("title", key)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", typeName)}>${body}</div>${warning}</div>`;
 }
@@ -131,10 +178,16 @@ function mismatchWarning(kind: PropertyKind, hasMismatch: boolean): string {
 function editableValue(
   key: string,
   value: unknown,
-  kind: PropertyKind,
+  options: PropertyRowOptions,
 ): string {
+  const { kind } = options;
   if (kind === "list" || kind === "tags" || kind === "aliases") {
-    return editableList(value, key);
+    return editableList(
+      value,
+      key,
+      options.listPreviewCount,
+      options.listExpanded,
+    );
   }
   if (kind === "checkbox") {
     return `<input type="checkbox" data-property="${escape(key)}" class="metadata-input-checkbox" tabindex="-1"${value === true ? " checked" : ""}${attr("aria-label", key)}>`;
@@ -155,17 +208,30 @@ function editableValue(
   return `<input${attr("type", inputType)}${attr("data-property-input", key)}${attr("data-property-kind", kind)}${attr("aria-label", key)}${attr("value", matchesPropertyKind(kind, value) ? text : "")} class="metadata-input-${kind}" tabindex="-1"${kind === "number" ? ' inputmode="decimal" step="any"' : ""}>`;
 }
 
-function editableList(value: unknown, key: string): string {
+function editableList(
+  value: unknown,
+  key: string,
+  previewCount: number,
+  expanded: boolean,
+): string {
   const values = value === null || value === undefined ? [] : asList(value);
   const chips = values
     .map((item, index) => {
       const raw = propertyInputText(item);
       const text = key.toLowerCase() === "tags" ? raw.replace(/^#/, "") : raw;
       const label = pillLabel(text, key.toLowerCase() === "tags");
-      return `<span class="property-chip multi-select-pill" tabindex="-1" data-property-chip="${index}"><span class="multi-select-pill-content">${label}</span><button type="button" tabindex="-1" class="multi-select-pill-remove-button" data-property-remove="${index}"${attr("aria-label", `Remove ${text} from ${key}`)}>×</button></span>`;
+      const extra =
+        !expanded && index >= previewCount
+          ? " hidden data-property-chip-extra"
+          : "";
+      return `<span class="property-chip multi-select-pill"${extra} tabindex="-1" data-property-chip="${index}"><span class="multi-select-pill-content">${label}</span><button type="button" tabindex="-1" class="multi-select-pill-remove-button" data-property-remove="${index}"${attr("aria-label", `Remove ${text} from ${key}`)}>×</button></span>`;
     })
     .join("");
-  return `<div class="property-list multi-select-container"${attr("data-property-list", key)}>${chips}<div class="multi-select-input" contenteditable="true" role="textbox" tabindex="-1" data-property-list-input${attr("aria-label", `Add item to ${key}`)}${values.length ? "" : ' data-placeholder="Empty"'}></div></div>`;
+  const more =
+    !expanded && values.length > previewCount
+      ? `<button type="button" data-property-list-more>Showing ${previewCount} of ${values.length}</button>`
+      : "";
+  return `<div class="property-list multi-select-container"${attr("data-property-list", key)}>${chips}${more}<div class="multi-select-input" contenteditable="true" role="textbox" tabindex="-1" data-property-list-input${attr("aria-label", `Add item to ${key}`)}${values.length ? "" : ' data-placeholder="Empty"'}></div></div>`;
 }
 
 function pillLabel(text: string, isTags: boolean): string {
@@ -199,26 +265,75 @@ function isUnknownPropertyValue(value: unknown): boolean {
   return value !== null && typeof value === "object";
 }
 
+/**
+ * OKF SPEC §5.2 `generated` / `verified` — typed actor+time UI.
+ * `decision_confirmation` is WorkVault-only and stays Unknown+JSON.
+ */
+function isOkfProvenance(key: string, value: unknown): boolean {
+  const name = key.toLowerCase();
+  if (name !== "generated" && name !== "verified") {
+    return false;
+  }
+  if (Array.isArray(value)) {
+    return (
+      value.length > 0 &&
+      value.every(
+        (entry) =>
+          entry !== null &&
+          typeof entry === "object" &&
+          !Array.isArray(entry) &&
+          typeof (entry as Record<string, unknown>).by === "string",
+      )
+    );
+  }
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof (value as Record<string, unknown>).by === "string"
+  );
+}
+
+function okfProvenanceValue(value: unknown): string {
+  const record = value as Record<string, unknown>;
+  const parts: string[] = [];
+  if (typeof record.by === "string" && record.by) {
+    parts.push(
+      `<span class="okf-provenance-by"${attr("title", "by")}>${escape(record.by)}</span>`,
+    );
+  }
+  if (record.at !== null && record.at !== undefined && record.at !== "") {
+    parts.push(
+      `<span class="okf-provenance-at"${attr("title", "at")}>${escape(String(record.at))}</span>`,
+    );
+  }
+  const known = new Set(["by", "at"]);
+  const extra = Object.fromEntries(
+    Object.entries(record).filter(([k]) => !known.has(k)),
+  );
+  if (Object.keys(extra).length > 0) {
+    parts.push(
+      `<span class="okf-provenance-extra"${attr("title", "other")}>${escape(JSON.stringify(extra))}</span>`,
+    );
+  }
+  return `<div class="metadata-property-value-item mod-okf-provenance" tabindex="0">${parts.join("")}</div>`;
+}
+
+function okfVerifiedListValue(value: unknown[]): string {
+  const rows = value.map((entry) => okfProvenanceValue(entry)).join("");
+  return `<div class="metadata-property-value-item mod-okf-verified-list" tabindex="0">${rows}</div>`;
+}
+
 /** Obsidian REA: `metadata-property-value-item mod-unknown` + JSON.stringify. */
 function unknownPropertyValue(value: unknown): string {
   return `<span class="metadata-property-value-item mod-unknown" tabindex="0">${escape(JSON.stringify(value))}</span>`;
 }
 
-function complexEditable(
-  key: string,
-  options: Pick<PropertyRowOptions, "custom" | "draft">,
-): string {
-  const { custom, draft } = options;
-  const editor =
-    draft === undefined
-      ? '<span class="property-empty">Edit in Source mode: tagged, recursive or unsupported YAML.</span>'
-      : editableYaml(key, draft);
-  return custom
-    ? `<div class="property-complex">${custom}${editor}</div>`
-    : editor;
-}
-
 function editableYaml(key: string, text: string): string {
   // textarea keeps Enter as real newlines (contenteditable textContent does not).
   return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
+}
+
+function complexFallback(draft: string | undefined): string {
+  void draft;
+  return '<span class="property-empty">Edit in Source mode: tagged, recursive or unsupported YAML.</span>';
 }

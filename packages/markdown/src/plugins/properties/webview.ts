@@ -9,6 +9,7 @@ import type {} from "../render/api";
 import type {} from "./api";
 import { protocol as actions } from "../commands/protocol";
 import { config } from "./manifest";
+import { listPreviewCount } from "../../markdown/properties/list-preview";
 import { protocol } from "./protocol";
 import { PropertyEditing } from "./editing";
 import { PropertyPresentation } from "./presentation";
@@ -42,16 +43,9 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     let refreshRenderers = () => {};
     const renderers = createPropertyRenderers(() => refreshRenderers());
     ctx.provide("propertyRenderers", renderers);
-    ctx.on("editor/focusProperties", () => {
-      const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
-        ".hybrid-properties [data-properties-heading]",
-      );
-      if (!heading?.getClientRects().length) {
-        return undefined;
-      }
-      heading.focus();
-      return true;
-    });
+    let previewCount = listPreviewCount(settings.listPreviewCount);
+    const expandedLists = new Set<string>();
+    registerFocusProperties(ctx);
     const lifetime = new AbortController();
     ctx.effect(() => () => lifetime.abort());
     const heading = propertyHeadingFocus(() => {
@@ -68,7 +62,13 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     });
     const presentation = new PropertyPresentation(
       ctx.livePreview,
-      createSheetContext(ctx, editing, renderers),
+      createSheetContext(ctx, editing, renderers, {
+        listPreviewCount: () => previewCount,
+        expandedLists: () => expandedLists,
+        expandList: (key) => {
+          expandedLists.add(key);
+        },
+      }),
       settings.display,
     );
     refreshRenderers = () => {
@@ -79,7 +79,9 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
       ctx.emit("render/changed");
       presentation.reconcileEmpty();
     };
-    registerConfiguration(ctx, presentation);
+    registerConfiguration(ctx, presentation, (next) => {
+      previewCount = listPreviewCount(next.listPreviewCount);
+    });
     registerEmptySheet(ctx, presentation);
     registerEditorControls(ctx, { heading, editing, presentation });
     ctx.effect(() => {
@@ -92,6 +94,19 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     registerDraftFlush(ctx);
   },
 };
+
+function registerFocusProperties(ctx: Context): void {
+  ctx.on("editor/focusProperties", () => {
+    const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
+      ".hybrid-properties [data-properties-heading]",
+    );
+    if (!heading?.getClientRects().length) {
+      return undefined;
+    }
+    heading.focus();
+    return true;
+  });
+}
 
 function createEditing(
   ctx: Context,
@@ -176,6 +191,11 @@ function createSheetContext(
   ctx: Context,
   editing: PropertyEditing,
   renderers: ReturnType<typeof createPropertyRenderers>,
+  listUi: {
+    listPreviewCount(): number;
+    expandedLists(): ReadonlySet<string>;
+    expandList(key: string): void;
+  },
 ): PropertyContext {
   return {
     renderProperty: (key, value, values) =>
@@ -183,6 +203,9 @@ function createSheetContext(
     bindRenderedProperties: (root) => renderers.bind(root),
     source: "current",
     propertyEditor: editing.editor("current"),
+    listPreviewCount: listUi.listPreviewCount,
+    expandedLists: listUi.expandedLists,
+    expandList: listUi.expandList,
     readClipboard: () => ctx.editor.clipboard.read(),
     copy: (text) => {
       void ctx.editor.clipboard
@@ -202,10 +225,12 @@ function createSheetContext(
 function registerConfiguration(
   ctx: Context,
   presentation: PropertyPresentation,
+  onSettings: (settings: Infer<typeof config>) => void,
 ): void {
-  configurations.set(ctx, (settings) =>
-    presentation.configure(settings.display),
-  );
+  configurations.set(ctx, (settings) => {
+    presentation.configure(settings.display);
+    onSettings(settings);
+  });
   ctx.effect(() => () => {
     configurations.delete(ctx);
   });

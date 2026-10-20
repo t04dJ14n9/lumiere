@@ -8,6 +8,8 @@ const estimate = (
     hidden?: boolean;
     collapsed?: boolean;
     allowEmpty?: boolean;
+    listPreviewCount?: number;
+    expandedLists?: ReadonlySet<string>;
     renderValue?: (
       key: string,
       value: unknown,
@@ -20,6 +22,10 @@ const estimate = (
     hidden: options.hidden ?? false,
     collapsed: options.collapsed ?? false,
     allowEmpty: options.allowEmpty ?? false,
+    ...(options.listPreviewCount !== undefined
+      ? { listPreviewCount: options.listPreviewCount }
+      : {}),
+    ...(options.expandedLists ? { expandedLists: options.expandedLists } : {}),
     ...(options.renderValue ? { renderValue: options.renderValue } : {}),
   });
 
@@ -49,11 +55,12 @@ test("a collapsed sheet reserves the heading, not the rows", () => {
   assert.equal(estimate(`---\n${rows}\n---\n`, { collapsed: true }), 69);
 });
 
-test("a multiline value uses the fixed YAML field, not one row per source line", () => {
+test("a multiline text value uses YAML-draft estimate (not one row per source line)", () => {
+  // Block scalars are not editableKeys; sheet shows YAML draft (#141), not Unknown.
   assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 182);
 });
 
-test("only the disclosed source rows count, and the YAML field under them does too", () => {
+test("only the disclosed source rows count (no YAML draft under Sources)", () => {
   const entries = Array.from({ length: 9 }, (_, index) => ({
     title: `Source ${index}`,
     resource: `https://example.com/${index}`,
@@ -74,8 +81,8 @@ test("only the disclosed source rows count, and the YAML field under them does t
       return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 9</button></div>`;
     },
   });
-  // 8 articles × ~57, 7 gaps × 8, disclosure 29, yaml 76, chrome 106 (0.875em + 2rem).
-  assert.equal(height, 747);
+  // 8 articles × ~65, 7 gaps × 8, disclosure — no YAML draft under Sources (OKF).
+  assert.equal(height, 663);
 });
 
 test("an unreadable frontmatter reserves the source it shows", () => {
@@ -159,7 +166,11 @@ test("a wrapping tags list reserves more than one control row", () => {
     { length: 36 },
     (_, index) => `  - project-area-${index}-long-label`,
   ).join("\n");
-  const height = estimate(`---\ntags:\n${tags}\n---\n`);
+  // Expand past listPreviewCount so wrap estimate sees every chip.
+  const height = estimate(`---\ntags:\n${tags}\n---\n`, {
+    listPreviewCount: 3,
+    expandedLists: new Set(["tags"]),
+  });
   assert.ok(height > 200, String(height));
   assert.ok(height > estimate("---\ntags:\n  - a\n---\n") * 2, String(height));
 });
