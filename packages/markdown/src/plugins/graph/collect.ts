@@ -19,7 +19,7 @@ export function indexCompleteness(
   return "ready";
 }
 
-/** Markdown files inside one bundle, plus whether indexing has finished. */
+/** Markdown files inside one bundle (`bundleRoot === ""` = whole vault), plus indexing completeness. */
 export function collectBundle(
   vault: Vault,
   bundleRoot: string,

@@ -10,6 +10,41 @@ export interface HeldScope {
   focusPath?: string;
 }
 
+/** Synthetic scope: every markdown note in the vault (`bundle.root === ""`). */
+export function vaultWideBundle(vault: { index: { root: string } }): OkfBundle {
+  return {
+    id: `${encodeURIComponent(vault.index.root)}:`,
+    name: "Whole vault",
+    root: "",
+    vaultRoot: vault.index.root,
+  };
+}
+
+/**
+ * Prepend a Whole-vault choice per vault so Obsidian-style vault graphs work
+ * without an OKF bundle. Existing `root: ""` entries are left alone.
+ */
+export function withVaultWideChoices(
+  vaults: Iterable<{ index: { root: string } }>,
+  choices: readonly OkfBundle[],
+): OkfBundle[] {
+  const seen = new Set(choices.map((bundle) => scopeKey(bundle)));
+  const wide: OkfBundle[] = [];
+  for (const vault of vaults) {
+    const candidate = vaultWideBundle(vault);
+    const key = scopeKey(candidate);
+    if (!seen.has(key)) {
+      wide.push(candidate);
+      seen.add(key);
+    }
+  }
+  return [...wide, ...choices];
+}
+
+function scopeKey(bundle: OkfBundle): string {
+  return `${bundle.vaultRoot}\0${bundle.root}`;
+}
+
 /** Resolve the bundle for this open. Dismissing the picker leaves the previous scope. */
 export async function resolveScope(input: {
   ctx: Context;
@@ -20,12 +55,16 @@ export async function resolveScope(input: {
   const reported = located
     ? input.ctx.okf.scope(located.vault, located.path)
     : undefined;
+  const choices = withVaultWideChoices(
+    input.ctx.vaults.all(),
+    reported ? reported.choices : allBundles(input.ctx),
+  );
   const decision = selectScope({
     explicit: input.explicit,
     hasCurrent: !input.explicit && input.current !== undefined,
     ambiguous: reported ? reported.ambiguous : true,
     ...(reported?.owner ? { owner: reported.owner } : {}),
-    choices: reported ? reported.choices : allBundles(input.ctx),
+    choices,
   });
   if (decision.kind === "keep") {
     return input.current;
@@ -37,7 +76,7 @@ export async function resolveScope(input: {
     return hold(input.ctx, decision.bundle, located?.path);
   }
   const picked = await input.ctx.dialogs.pick({
-    placeholder: "Choose an OKF bundle",
+    placeholder: "Choose a graph scope",
     items: (query) => bundleItems(decision.choices, query),
   });
   if (!picked?.item) {
@@ -50,11 +89,16 @@ function bundleItems(choices: readonly OkfBundle[], query: string) {
   const needle = query.trim().toLowerCase();
   return choices
     .filter((bundle) =>
-      `${bundle.name} ${bundle.root}`.toLowerCase().includes(needle),
+      `${bundle.name} ${bundle.root || "(whole vault)"} ${bundle.vaultRoot}`
+        .toLowerCase()
+        .includes(needle),
     )
     .map((bundle) => ({
       label: bundle.name,
-      description: bundle.root || bundle.vaultRoot,
+      description:
+        bundle.root === ""
+          ? bundle.vaultRoot || "(vault root)"
+          : bundle.root || bundle.vaultRoot,
       value: bundle,
     }));
 }
