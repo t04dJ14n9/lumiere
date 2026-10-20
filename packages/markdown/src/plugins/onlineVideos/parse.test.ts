@@ -133,3 +133,42 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Apple Podcasts show links (optional slug; episode ?i= still show)", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://podcasts.apple.com/us/podcast/the-daily/id1200361736",
+    ),
+    {
+      provider: "applePodcasts",
+      id: "podcast:1200361736",
+      page: "https://podcasts.apple.com/us/podcast/id1200361736",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://podcasts.apple.com/gb/podcast/id1200361736"),
+    {
+      provider: "applePodcasts",
+      id: "podcast:1200361736",
+      page: "https://podcasts.apple.com/us/podcast/id1200361736",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://podcasts.apple.com/us/podcast/the-daily/id1200361736?i=1000797238020",
+    ),
+    {
+      provider: "applePodcasts",
+      id: "podcast:1200361736",
+      page: "https://podcasts.apple.com/us/podcast/id1200361736",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://podcasts.apple.com/us/podcast/the-daily/1200361736"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://music.apple.com/us/album/x/1440762551"),
+    undefined,
+  );
+});

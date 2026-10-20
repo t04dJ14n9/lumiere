@@ -9,6 +9,8 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  applePodcastsThumbnail,
+  parseApplePodcastsLookup,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +331,88 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("applePodcastsThumbnail accepts isN-ssl.mzstatic.com thumb paths only", () => {
+  assert.equal(
+    applePodcastsThumbnail(
+      "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/ab/64/66/ab6466a9-9a7d-e20e-7a3d-bc5be37d29ce/mza_15084852813176276273.jpg/600x600bb.jpg",
+    ),
+    "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/ab/64/66/ab6466a9-9a7d-e20e-7a3d-bc5be37d29ce/mza_15084852813176276273.jpg/600x600bb.jpg",
+  );
+  for (const value of [
+    "https://evil.test/image/thumb/Podcasts221/v4/x/a.jpg/600x600bb.jpg",
+    "https://is1-ssl.mzstatic.com/other/a.jpg",
+    "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/x/a.jpg/600x600bb.svg",
+    "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/x/a.jpg/600x600bb.jpg?x=1",
+  ]) {
+    assert.equal(applePodcastsThumbnail(value), undefined, value);
+  }
+});
+
+test("parseApplePodcastsLookup reads show title, author and cover", () => {
+  assert.deepEqual(
+    parseApplePodcastsLookup({
+      resultCount: 1,
+      results: [
+        {
+          wrapperType: "track",
+          kind: "podcast",
+          collectionName: "The Daily",
+          artistName: "The New York Times",
+          artworkUrl600:
+            "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/ab/64/66/ab6466a9-9a7d-e20e-7a3d-bc5be37d29ce/mza_15084852813176276273.jpg/600x600bb.jpg",
+        },
+      ],
+    }),
+    {
+      details: {
+        title: "The Daily",
+        author: "The New York Times",
+      },
+      cover:
+        "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/ab/64/66/ab6466a9-9a7d-e20e-7a3d-bc5be37d29ce/mza_15084852813176276273.jpg/600x600bb.jpg",
+    },
+  );
+});
+
+test("an Apple Podcasts lookup uses itunes lookup and may fetch artwork", async () => {
+  const thumb =
+    "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/ab/64/66/ab6466a9-9a7d-e20e-7a3d-bc5be37d29ce/mza_15084852813176276273.jpg/100x100bb.jpg";
+  const scaled =
+    "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/ab/64/66/ab6466a9-9a7d-e20e-7a3d-bc5be37d29ce/mza_15084852813176276273.jpg/600x600bb.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://itunes.apple.com/lookup": () =>
+      response({
+        resultCount: 1,
+        results: [
+          {
+            wrapperType: "track",
+            kind: "podcast",
+            collectionName: "The Daily",
+            artistName: "The New York Times",
+            artworkUrl100: thumb,
+          },
+        ],
+      }),
+    "https://is1-ssl.mzstatic.com/": () =>
+      response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "applePodcasts",
+    "podcast:1200361736",
+  );
+  assert.equal(details.title, "The Daily");
+  assert.equal(details.author, "The New York Times");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    "https://itunes.apple.com/lookup?id=1200361736&country=us",
+  );
+  assert.equal(calls[1]?.url, scaled);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

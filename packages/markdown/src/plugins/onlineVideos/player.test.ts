@@ -71,8 +71,23 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
     thumbnailUrl(video("https://www.bilibili.com/video/BV1DRHU6LELy")),
     undefined,
   );
+  assert.equal(
+    thumbnailUrl(
+      video("https://podcasts.apple.com/us/podcast/the-daily/id1200361736"),
+    ),
+    undefined,
+  );
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
+  assert.equal(providers.applePodcasts.embeddable, false);
+});
+
+test("Apple Podcasts refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(
+      video("https://podcasts.apple.com/us/podcast/the-daily/id1200361736"),
+    ),
+  );
 });
 
 test("Hugging Face refuses an in-webview player", () => {

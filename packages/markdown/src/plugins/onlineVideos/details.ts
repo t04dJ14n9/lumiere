@@ -151,6 +151,21 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "applePodcasts") {
+      const resource = id.slice("podcast:".length);
+      const body = await this.json(
+        `https://itunes.apple.com/lookup?id=${encodeURIComponent(resource)}&country=us`,
+        signal,
+      );
+      const { details, cover } = parseApplePodcastsLookup(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +222,77 @@ export class VideoDetailsSource {
   }
 }
 
+/** Apple Podcasts artwork (`isN-ssl.mzstatic.com`). */
+const APPLE_PODCASTS_THUMB_HOSTS = new Set(
+  Array.from({ length: 9 }, (_, i) => `is${i + 1}-ssl.mzstatic.com`),
+);
+
+/** iTunes Lookup for a podcast collection (show). */
+export function parseApplePodcastsLookup(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (
+    !isRecord(body) ||
+    !Array.isArray(body.results) ||
+    body.results.length === 0
+  ) {
+    throw new Error("Unexpected Apple Podcasts lookup response");
+  }
+  const results = body.results.filter(isRecord);
+  const preferred =
+    results.find(
+      (row) => row.kind === "podcast" || row.wrapperType === "track",
+    ) ?? results[0];
+  if (!preferred) {
+    throw new Error("Unexpected Apple Podcasts lookup response");
+  }
+  const cover = applePodcastsThumbnail(
+    preferred.artworkUrl600 ??
+      preferred.artworkUrl100 ??
+      preferred.artworkUrl60,
+  );
+  return {
+    details: withoutUndefined({
+      title: text(preferred.collectionName, 300),
+      author: text(preferred.artistName, 100),
+    }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/** mzstatic artwork rewritten to 600×600 when the path is a known thumb. */
+export function applePodcastsThumbnail(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !APPLE_PODCASTS_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  const match = /^(\/image\/thumb\/.+)\/\d+x\d+bb\.(jpe?g|png|webp)$/i.exec(
+    url.pathname,
+  );
+  if (!match) {
+    return undefined;
+  }
+  const base = match[1]!;
+  const ext = match[2]!.toLowerCase();
+  return `https://${url.hostname}${base}/600x600bb.${ext === "jpeg" ? "jpg" : ext}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
