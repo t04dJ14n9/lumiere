@@ -27,6 +27,12 @@ const STACK_GAP = 8;
 const COMPLEX_GAP = 8;
 /** `textarea` rows=3 at 0.92em, plus its padding and border. */
 const YAML_FIELD = 76;
+/** Flex-wrap chips in the value column (default ~16px sheet width). */
+const LIST_WIDTH = 340;
+const CHIP_GAP = 6;
+const CHIP_CHROME = 30;
+const CHAR_WIDTH = TEXT * 0.55;
+const CHIP_ROW = LINE;
 
 export function propertiesEstimatedHeight(input: {
   source: string;
@@ -81,7 +87,35 @@ function valueColumnHeight(row: string): number {
   if (row.includes("metadata-input-yaml")) {
     return YAML_FIELD;
   }
+  const list = listHeight(row);
+  if (list !== undefined) {
+    return list;
+  }
   return longTextHeight(row);
+}
+
+/** Tag/alias/list chips wrap; one-row reserve blanks the body like Sources did. */
+function listHeight(row: string): number | undefined {
+  if (!row.includes("multi-select-container")) {
+    return undefined;
+  }
+  const labels = [
+    ...row.matchAll(/multi-select-pill-content">([\s\S]*?)<\/span>/g),
+  ].map((match) => match[1]!.replace(/<[^>]+>/g, "").trim());
+  if (labels.length === 0) {
+    return VALUE_MIN;
+  }
+  let x = 0;
+  let rows = 1;
+  for (const label of labels) {
+    const width = CHIP_CHROME + Math.max(label.length, 1) * CHAR_WIDTH;
+    if (x > 0 && x + width > LIST_WIDTH) {
+      rows += 1;
+      x = 0;
+    }
+    x += width + CHIP_GAP;
+  }
+  return Math.max(VALUE_MIN, rows * CHIP_ROW);
 }
 
 function longTextHeight(row: string): number {
