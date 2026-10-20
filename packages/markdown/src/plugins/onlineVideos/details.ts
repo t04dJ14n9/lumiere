@@ -42,6 +42,15 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
+/** Giphy CDN hosts that may serve oEmbed `url` GIFs. */
+const GIPHY_THUMB_HOSTS = new Set([
+  "media.giphy.com",
+  "media0.giphy.com",
+  "media1.giphy.com",
+  "media2.giphy.com",
+  "media3.giphy.com",
+  "media4.giphy.com",
+]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -151,6 +160,23 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+
+    if (provider === "giphy") {
+      const page = `https://giphy.com/gifs/${id}`;
+      const body = await this.json(
+        `https://giphy.com/services/oembed?url=${encodeURIComponent(page)}`,
+        signal,
+      );
+      const details = parseOEmbed(body);
+      const thumb = giphyThumbnail(body, id);
+      if (thumb) {
+        const image = await this.image(thumb, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +272,41 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/**
+ * Giphy oEmbed `url` when it is a media*.giphy.com `/media/{id}/giphy.gif`
+ * (or webp) for the same media id.
+ */
+export function giphyThumbnail(body: unknown, id: string): string | undefined {
+  if (!isRecord(body) || typeof body.url !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(body.url);
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    !GIPHY_THUMB_HOSTS.has(url.hostname) ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    return undefined;
+  }
+  const match = /^\/media\/([A-Za-z0-9]{8,32})\/giphy\.(gif|webp)$/i.exec(
+    url.pathname,
+  );
+  if (!match || match[1] !== id) {
+    return undefined;
+  }
+  const ext = match[2]!.toLowerCase();
+  return `https://${url.hostname}/media/${id}/giphy.${ext}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

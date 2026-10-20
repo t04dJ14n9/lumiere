@@ -105,6 +105,48 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Giphy gifs/clips pages and media CDN links", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://giphy.com/gifs/funny-cat-3oEjI6SIIHBdRxXI40"),
+    {
+      provider: "giphy",
+      id: "3oEjI6SIIHBdRxXI40",
+      page: "https://giphy.com/gifs/3oEjI6SIIHBdRxXI40",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://www.giphy.com/gifs/3oEjI6SIIHBdRxXI40"),
+    {
+      provider: "giphy",
+      id: "3oEjI6SIIHBdRxXI40",
+      page: "https://giphy.com/gifs/3oEjI6SIIHBdRxXI40",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://giphy.com/clips/xyz-3oEjI6SIIHBdRxXI40"),
+    {
+      provider: "giphy",
+      id: "3oEjI6SIIHBdRxXI40",
+      page: "https://giphy.com/gifs/3oEjI6SIIHBdRxXI40",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://media1.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+    ),
+    {
+      provider: "giphy",
+      id: "3oEjI6SIIHBdRxXI40",
+      page: "https://giphy.com/gifs/3oEjI6SIIHBdRxXI40",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://i.giphy.com/3oEjI6SIIHBdRxXI40.gif"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://giphy.com/search/cats"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +171,9 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://giphy.com/search/cats",
+    "https://i.giphy.com/3oEjI6SIIHBdRxXI40.gif",
+    "https://giphy.com.evil.test/gifs/3oEjI6SIIHBdRxXI40",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }

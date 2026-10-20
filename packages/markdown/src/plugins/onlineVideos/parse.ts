@@ -1,14 +1,14 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and Giphy links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are
+ * built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "giphy";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Giphy media id.
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -23,6 +23,13 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** Giphy media id (path token after optional slug-). */
+const GIPHY_ID = /^[A-Za-z0-9]{8,32}$/;
+/** `/gifs|clips/{slug-}?{id}` */
+const GIPHY_PAGE_PATH = /^\/(gifs|clips)\/([A-Za-z0-9-]+)\/?$/;
+/** `/media/{id}/giphy.gif` (and siblings on media CDN). */
+const GIPHY_MEDIA_PATH =
+  /^\/media\/([A-Za-z0-9]{8,32})\/(?:giphy|200|200w|downsized)(?:\.\w+)?\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -35,6 +42,15 @@ const BILIBILI_HOSTS = new Set([
   "bilibili.com",
   "www.bilibili.com",
   "m.bilibili.com",
+]);
+const GIPHY_PAGE_HOSTS = new Set(["giphy.com", "www.giphy.com"]);
+const GIPHY_MEDIA_HOSTS = new Set([
+  "media.giphy.com",
+  "media0.giphy.com",
+  "media1.giphy.com",
+  "media2.giphy.com",
+  "media3.giphy.com",
+  "media4.giphy.com",
 ]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
@@ -79,7 +95,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return GIPHY_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +136,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+
+  if (GIPHY_PAGE_HOSTS.has(host) || GIPHY_MEDIA_HOSTS.has(host)) {
+    return giphy(url, host);
   }
   return undefined;
 }
@@ -158,6 +181,34 @@ function huggingface(id: string): OnlineVideo | undefined {
     provider: "huggingface",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+/** Page `/gifs|clips/…` or CDN `/media/{id}/…`; `i.giphy.com` stays images. */
+function giphy(url: URL, host: string): OnlineVideo | undefined {
+  if (GIPHY_MEDIA_HOSTS.has(host)) {
+    const media = GIPHY_MEDIA_PATH.exec(url.pathname)?.[1];
+    return giphyId(media);
+  }
+  const match = GIPHY_PAGE_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const token = match[2]!;
+  const id = token.includes("-")
+    ? token.slice(token.lastIndexOf("-") + 1)
+    : token;
+  return giphyId(id);
+}
+
+function giphyId(id: string | undefined): OnlineVideo | undefined {
+  if (!id || !GIPHY_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "giphy",
+    id,
+    page: `https://giphy.com/gifs/${id}`,
   };
 }
 

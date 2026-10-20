@@ -11,7 +11,8 @@ interface Provider {
    * Whether the card may offer "Play here" (Bilibili, behind the
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
-   * gets no referrer to check. Hugging Face has no in-webview player.
+   * gets no referrer to check. Hugging Face and Giphy have no in-webview
+   * player.
    */
   readonly embeddable: boolean;
 }
@@ -39,6 +40,14 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
       /^\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,99})?)$/,
     embeddable: false,
   },
+
+  giphy: {
+    name: "Giphy",
+    origin: "https://giphy.com",
+    path: "/embed/",
+    pathPattern: /^\/embed\/[A-Za-z0-9]{8,32}$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -49,6 +58,10 @@ export function playerUrl(video: OnlineVideo): string {
   const provider = providers[video.provider];
   if (video.provider === "huggingface") {
     throw new Error("Hugging Face has no in-webview player");
+  }
+
+  if (video.provider === "giphy") {
+    throw new Error("Giphy has no in-webview player");
   }
   if (video.provider === "youtube") {
     const url = new URL(`${provider.path}${video.id}`, provider.origin);

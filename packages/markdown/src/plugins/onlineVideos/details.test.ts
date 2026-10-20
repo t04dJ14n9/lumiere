@@ -5,6 +5,7 @@ import {
   USER_AGENT,
   VideoDetailsSource,
   coverUrl,
+  giphyThumbnail,
   imageDataUrl,
   parseBilibiliView,
   parseHuggingFaceModel,
@@ -12,6 +13,8 @@ import {
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+const GIF = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 1, 2, 3]);
+
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const COVER = "http://i0.hdslb.com/bfs/archive/4260b5a0d7a5.jpg";
 const VIEW = {
@@ -329,5 +332,72 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("giphyThumbnail accepts media*.giphy.com /media/{id}/giphy.gif only", () => {
+  assert.equal(
+    giphyThumbnail(
+      {
+        url: "https://media1.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+      },
+      "3oEjI6SIIHBdRxXI40",
+    ),
+    "https://media1.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+  );
+  for (const [body, id] of [
+    [
+      { url: "https://evil.test/media/3oEjI6SIIHBdRxXI40/giphy.gif" },
+      "3oEjI6SIIHBdRxXI40",
+    ],
+    [
+      { url: "https://media1.giphy.com/media/otherid/giphy.gif" },
+      "3oEjI6SIIHBdRxXI40",
+    ],
+    [
+      { url: "https://media1.giphy.com/media/3oEjI6SIIHBdRxXI40/200.gif" },
+      "3oEjI6SIIHBdRxXI40",
+    ],
+    [
+      {
+        url: "https://media1.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif?x=1",
+      },
+      "3oEjI6SIIHBdRxXI40",
+    ],
+  ] as const) {
+    assert.equal(giphyThumbnail(body, id), undefined);
+  }
+});
+
+test("a Giphy lookup uses giphy.com oEmbed and may fetch the GIF cover", async () => {
+  const gifUrl = "https://media1.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
+  const { fetch, calls } = fakeFetch({
+    "https://giphy.com/services/oembed": () =>
+      response({
+        title: "Processing Buffering GIF by Mashable - Find & Share on GIPHY",
+        author_name: "Mashable",
+        url: gifUrl,
+        provider_name: "GIPHY",
+      }),
+    "https://media1.giphy.com/": () => response(GIF, { type: "image/gif" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "giphy",
+    "3oEjI6SIIHBdRxXI40",
+  );
+  assert.equal(
+    details.title,
+    "Processing Buffering GIF by Mashable - Find & Share on GIPHY",
+  );
+  assert.equal(details.author, "Mashable");
+  assert.equal(
+    details.cover,
+    `data:image/gif;base64,${Buffer.from(GIF).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://giphy.com/services/oembed?url=${encodeURIComponent("https://giphy.com/gifs/3oEjI6SIIHBdRxXI40")}`,
+  );
+  assert.equal(calls[1]?.url, gifUrl);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
