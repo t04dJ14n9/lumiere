@@ -117,6 +117,31 @@ function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
   void syncBacklinksSortContext(ctx).catch(() => undefined);
 }
 
+function seedExtraContext(ctx: BacklinksCtx): void {
+  void Promise.resolve(
+    ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      wantsExtraContext(ctx.settings),
+    ) as unknown,
+  ).catch(() => undefined);
+}
+
+function clearExtraContext(ctx: BacklinksCtx): void {
+  try {
+    const done = ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      undefined,
+    ) as unknown;
+    if (done && typeof (done as Promise<void>).then === "function") {
+      void Promise.resolve(done).catch(() => undefined);
+    }
+  } catch {
+    // ignore teardown races
+  }
+}
+
 function wireExtraContext(
   ctx: BacklinksCtx,
   refresh: () => Promise<void>,
@@ -163,28 +188,8 @@ function wireExtraContext(
       }
     };
   });
-  // Seed context; clear without an effect whose disposer can reject.
-  void Promise.resolve(
-    ctx.hostCommands.execute(
-      "setContext",
-      EXTRA_CONTEXT_CONTEXT,
-      wantsExtraContext(ctx.settings),
-    ) as unknown,
-  ).catch(() => undefined);
-  ctx.effect(() => () => {
-    try {
-      const done = ctx.hostCommands.execute(
-        "setContext",
-        EXTRA_CONTEXT_CONTEXT,
-        undefined,
-      ) as unknown;
-      if (done && typeof (done as Promise<void>).then === "function") {
-        void Promise.resolve(done).catch(() => undefined);
-      }
-    } catch {
-      // ignore
-    }
-  });
+  seedExtraContext(ctx);
+  ctx.effect(() => () => clearExtraContext(ctx));
 }
 
 /** The Backlinks view and status bar count, following the active note. */
