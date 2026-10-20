@@ -151,6 +151,21 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+
+    if (provider === "kick") {
+      const body = await this.json(
+        `https://kick.com/api/v2/channels/${encodeURIComponent(id)}`,
+        signal,
+      );
+      const { details, cover } = parseKickChannel(body);
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -246,6 +261,59 @@ function huggingfaceAuthor(
   }
   const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
   return text(owner, 100);
+}
+
+/** Kick channel API: live title when streaming, else display name; profile cover. */
+export function parseKickChannel(body: unknown): {
+  details: VideoDetails;
+  cover?: string;
+} {
+  if (!isRecord(body) || !isRecord(body.user)) {
+    throw new Error("Unexpected Kick response");
+  }
+  const user = body.user;
+  const live = isRecord(body.livestream) ? body.livestream : undefined;
+  const author = text(user.username, 100);
+  const title =
+    (live ? text(live.session_title, 300) : undefined) ??
+    author ??
+    text(body.slug, 300);
+  const cover = kickCoverUrl(user.profile_pic);
+  return {
+    details: withoutUndefined({ title, author }),
+    ...(cover ? { cover } : {}),
+  };
+}
+
+/**
+ * Kick profile pictures on `files.kick.com` under
+ * `/images/user/{id}/profile_image/conversion/{uuid}-fullsize.{ext}`.
+ */
+export function kickCoverUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "files.kick.com" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !/^\/images\/user\/\d+\/profile_image\/conversion\/[0-9a-f-]{36}-fullsize\.(?:jpe?g|png|webp)$/i.test(
+      url.pathname,
+    )
+  ) {
+    return undefined;
+  }
+  return `https://files.kick.com${url.pathname}`;
 }
 
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */

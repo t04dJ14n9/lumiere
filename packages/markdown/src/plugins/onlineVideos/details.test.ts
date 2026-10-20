@@ -6,12 +6,17 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  kickCoverUrl,
+  parseKickChannel,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+const WEBP = new Uint8Array([
+  0x52, 0x49, 0x46, 0x46, 8, 0, 0, 0, 0x57, 0x45, 0x42, 0x50,
+]);
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const COVER = "http://i0.hdslb.com/bfs/archive/4260b5a0d7a5.jpg";
 const VIEW = {
@@ -329,5 +334,70 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("kickCoverUrl accepts files.kick.com profile fullsize images only", () => {
+  assert.equal(
+    kickCoverUrl(
+      "https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp",
+    ),
+    "https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp",
+  );
+  for (const value of [
+    "https://evil.test/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp",
+    "https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp?x=1",
+    "https://files.kick.com/images/channel/668/banner_image/6fcf7418-df00-460b-9467-1fa95b8eb981",
+  ]) {
+    assert.equal(kickCoverUrl(value), undefined);
+  }
+});
+
+test("parseKickChannel prefers live title and profile cover", () => {
+  assert.deepEqual(
+    parseKickChannel({
+      slug: "xqc",
+      user: {
+        username: "xQc",
+        profile_pic:
+          "https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp",
+      },
+      livestream: { session_title: "CLICK DRAMA NEWS" },
+    }),
+    {
+      details: { title: "CLICK DRAMA NEWS", author: "xQc" },
+      cover:
+        "https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp",
+    },
+  );
+  assert.deepEqual(
+    parseKickChannel({
+      slug: "xqc",
+      user: { username: "xQc", profile_pic: "https://evil.test/x.webp" },
+    }),
+    { details: { title: "xQc", author: "xQc" } },
+  );
+});
+
+test("a Kick lookup uses the channel API and may fetch the profile cover", async () => {
+  const pic =
+    "https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp";
+  const { fetch, calls } = fakeFetch({
+    "https://kick.com/api/v2/channels/": () =>
+      response({
+        slug: "xqc",
+        user: { username: "xQc", profile_pic: pic },
+      }),
+    "https://files.kick.com/": () => response(WEBP, { type: "image/webp" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get("kick", "xqc");
+  assert.equal(details.title, "xQc");
+  assert.equal(details.author, "xQc");
+  assert.equal(
+    details.cover,
+    `data:image/webp;base64,${Buffer.from(WEBP).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://kick.com/api/v2/channels/xqc");
+  assert.equal(calls[1]?.url, pic);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

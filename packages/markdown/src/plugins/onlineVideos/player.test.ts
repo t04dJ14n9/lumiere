@@ -85,3 +85,9 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Kick refuses an in-webview player", () => {
+  assert.equal(providers.kick.embeddable, false);
+  assert.equal(thumbnailUrl(video("https://kick.com/xqc")), undefined);
+  assert.throws(() => playerUrl(video("https://kick.com/xqc")));
+});

@@ -105,6 +105,25 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
 });
 
+test("Kick channel home links", () => {
+  assert.deepEqual(parseVideoUrl("https://kick.com/xqc"), {
+    provider: "kick",
+    id: "xqc",
+    page: "https://kick.com/xqc",
+  });
+  assert.deepEqual(parseVideoUrl("https://www.kick.com/trainwreckstv/"), {
+    provider: "kick",
+    id: "trainwreckstv",
+    page: "https://kick.com/trainwreckstv",
+  });
+  assert.equal(
+    parseVideoUrl("https://kick.com/api/v2/channels/xqc"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://kick.com/xqc/videos/abc"), undefined);
+  assert.equal(parseVideoUrl("https://kick.com/ab"), undefined);
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -129,6 +148,9 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://kick.com/api/v2/channels/xqc",
+    "https://kick.com.evil.test/xqc",
+    "https://kick.com/xqc/videos/abc",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
