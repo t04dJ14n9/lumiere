@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { markdownBlockEstimatedHeight } from "./markdown-block-height";
+import {
+  clearHtmlBlockHeights,
+  markdownBlockEstimatedHeight,
+  rememberHtmlBlockHeight,
+} from "./markdown-block-height";
 
 test("empty source still reserves one line of chrome", () => {
   assert.ok(markdownBlockEstimatedHeight("") > 20);
@@ -96,4 +100,42 @@ test("short-tall flowchart fixture clears remount 0.7× measured guard", () => {
   ].join("\n");
   const height = markdownBlockEstimatedHeight(source);
   assert.ok(height >= 447, `got ${height}`);
+});
+
+test("HTML CSS height vh/em/% reserves beyond bare line count", () => {
+  clearHtmlBlockHeights();
+  const vh = markdownBlockEstimatedHeight(
+    '<div style="height: 80vh; background: #444">tall</div>',
+  );
+  const em = markdownBlockEstimatedHeight(
+    '<div style="height: 40em">tall em</div>',
+  );
+  const pct = markdownBlockEstimatedHeight(
+    '<section style="height: 50%">half</section>',
+  );
+  const plain = markdownBlockEstimatedHeight("<div>hello</div>");
+  // 80% of VIEWPORT_FALLBACK 640 = 512 + chrome
+  assert.ok(vh >= 500, `vh got ${vh}`);
+  assert.ok(em >= 600, `em got ${em}`); // 40 × 16
+  assert.ok(pct >= 300, `pct got ${pct}`);
+  assert.ok(plain < 80, `plain got ${plain}`);
+  assert.ok(vh > plain * 10, `vh=${vh} plain=${plain}`);
+});
+
+test("remembered HTML-block height beats the CSS-unit floor on remount", () => {
+  clearHtmlBlockHeights();
+  const source = '<div style="height: 80vh">tall</div>';
+  const floor = markdownBlockEstimatedHeight(source);
+  rememberHtmlBlockHeight(source, 900);
+  const cached = markdownBlockEstimatedHeight(source);
+  assert.ok(cached >= 900, `got ${cached}`);
+  assert.ok(cached > floor, `${cached} vs floor ${floor}`);
+  // Non-HTML ignores the cache API (callout chrome from #128 is ~112, not 900).
+  const callout = "> [!note]\n> x\n";
+  const calloutFloor = markdownBlockEstimatedHeight(callout);
+  rememberHtmlBlockHeight(callout, 900);
+  assert.equal(markdownBlockEstimatedHeight(callout), calloutFloor);
+  assert.ok(calloutFloor < 200, `callout floor ${calloutFloor}`);
+  clearHtmlBlockHeights();
+  assert.equal(markdownBlockEstimatedHeight(source), floor);
 });
