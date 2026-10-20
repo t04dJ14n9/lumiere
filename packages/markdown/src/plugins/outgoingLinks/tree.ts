@@ -129,9 +129,7 @@ export class OutgoingLinksTree implements TreeSource {
     const { path, vault } = this.note!;
     const mtimeOf = (target: string) => vault.index.file(target)?.mtime ?? 0;
     return [...vault.index.resolvedLinks(path)]
-      .sort(([a], [b]) =>
-        compareOutgoingPaths(a, b, this.sortOrder(), mtimeOf),
-      )
+      .sort(([a], [b]) => compareOutgoingPaths(a, b, this.sortOrder(), mtimeOf))
       .map(([target, count]) => {
         const uri = vault.index.file(target)?.uri ?? target;
         return {
@@ -148,9 +146,7 @@ export class OutgoingLinksTree implements TreeSource {
     const { path, vault } = this.note!;
     // Unresolved paths have no file mtime — name order within the chosen mode.
     return [...vault.index.unresolvedLinks(path)]
-      .sort(([a], [b]) =>
-        compareOutgoingPaths(a, b, this.sortOrder(), () => 0),
-      )
+      .sort(([a], [b]) => compareOutgoingPaths(a, b, this.sortOrder(), () => 0))
       .map(([linkpath, count]) => ({
         id: `unresolved:${linkpath}`,
         label: linkpath,
@@ -215,8 +211,10 @@ export class OutgoingLinksTree implements TreeSource {
         paths.push(file.path);
       }
     }
-    return sortOutgoingPaths(paths, this.sortOrder(), (path) =>
-      index.file(path)?.mtime ?? 0,
+    return sortOutgoingPaths(
+      paths,
+      this.sortOrder(),
+      (path) => index.file(path)?.mtime ?? 0,
     );
   }
 }
