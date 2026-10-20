@@ -40,7 +40,14 @@ export function activeListGuideColumn(state: EditorState): number | undefined {
   const head = state.selection.main.head;
   const tree = parseMarkdown(state.doc);
   let item = null;
-  for (let node = tree.resolveInner(head, 1); node; node = node.parent) {
+  for (
+    let node: ReturnType<typeof tree.resolveInner> | null = tree.resolveInner(
+      head,
+      1,
+    );
+    node;
+    node = node.parent
+  ) {
     if (["CodeBlock", "FencedCode"].includes(node.name)) {
       return undefined;
     }
