@@ -1,7 +1,8 @@
-import { EditorView, WidgetType } from "@codemirror/view";
+import { WidgetType, type EditorView } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
 import { placePreview } from "../../webview/ui/popover-position";
+import { selectFootnoteDefinition } from "./select-definition";
 /**
  * The text a reference shows: its number in order of first reference, as
  * in a LaTeX paper. Named labels are numbered too.
@@ -177,13 +178,7 @@ export class FootnoteReference extends WidgetType {
       mountReference(sup, this.note, {
         render: this.render,
         navigate: () => {
-          this.navigate(() =>
-            view.dispatch({
-              selection: { anchor: this.note.from },
-              effects: EditorView.scrollIntoView(this.note.from),
-            }),
-          );
-          view.focus();
+          this.navigate(() => selectFootnoteDefinition(view, this.note.from));
         },
         measure: () => view.requestMeasure(),
       }),

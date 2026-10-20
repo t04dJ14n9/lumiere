@@ -11,6 +11,7 @@ import { footnoteInline } from "./inline";
 import { insertFootnote } from "./edit";
 import { editDefinition } from "./definition-popover";
 import { RenderedReferences } from "./render-references";
+import { selectFootnoteDefinition } from "./select-definition";
 export const footnotesWebview: Plugin = {
   name: "footnotes",
   inject: { required: ["editor", "commands", "livePreview", "render", "rpc"] },
@@ -98,12 +99,5 @@ function navigateReference(
       .catch((error) => ctx.logger.warn("Footnote navigation failed", error));
     return;
   }
-  const at = Math.min(view.state.doc.length, note.from);
-  ctx.editor.navigate(() =>
-    view.dispatch({
-      selection: { anchor: at },
-      effects: EditorView.scrollIntoView(at),
-    }),
-  );
-  view.focus();
+  ctx.editor.navigate(() => selectFootnoteDefinition(view, note.from));
 }
