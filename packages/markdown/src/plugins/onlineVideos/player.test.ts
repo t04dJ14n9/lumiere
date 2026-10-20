@@ -85,3 +85,12 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("crates.io refuses an in-webview player", () => {
+  assert.equal(providers.cratesIo.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://crates.io/crates/serde")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://crates.io/crates/serde")));
+});

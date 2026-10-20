@@ -3,7 +3,7 @@
  * parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "cratesIo";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
@@ -72,6 +72,26 @@ const HF_RESERVED = new Set([
 ]);
 
 /** Whether `id` is an ID `parseVideoUrl` could have produced. */
+
+/** crates.io crate name (Cargo: letter then alphanumerics, `_`, `-`). */
+const CRATES_NAME = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+
+/** Crate root only — version paths are normalised away at parse time. */
+const CRATES_PATH =
+  /^\/crates\/([A-Za-z][A-Za-z0-9_-]{0,63})(?:\/[0-9][^/]*)?\/?$/;
+
+const CRATES_HOSTS = new Set(["crates.io"]);
+
+function cratesIo(name: string): OnlineVideo | undefined {
+  if (!CRATES_NAME.test(name)) {
+    return undefined;
+  }
+  return {
+    provider: "cratesIo",
+    id: name,
+    page: `https://crates.io/crates/${name}`,
+  };
+}
 export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
@@ -79,7 +99,10 @@ export function isVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return CRATES_NAME.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -117,6 +140,10 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (CRATES_HOSTS.has(host)) {
+    const match = CRATES_PATH.exec(url.pathname);
+    return match ? cratesIo(match[1]!) : undefined;
   }
   return undefined;
 }

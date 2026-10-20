@@ -133,3 +133,24 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("crates.io crate pages", () => {
+  assert.deepEqual(parseVideoUrl("https://crates.io/crates/serde"), {
+    provider: "cratesIo",
+    id: "serde",
+    page: "https://crates.io/crates/serde",
+  });
+  assert.deepEqual(parseVideoUrl("https://crates.io/crates/serde_json/"), {
+    provider: "cratesIo",
+    id: "serde_json",
+    page: "https://crates.io/crates/serde_json",
+  });
+  assert.deepEqual(parseVideoUrl("https://crates.io/crates/serde/1.0.229"), {
+    provider: "cratesIo",
+    id: "serde",
+    page: "https://crates.io/crates/serde",
+  });
+  assert.equal(parseVideoUrl("https://www.crates.io/crates/serde"), undefined);
+  assert.equal(parseVideoUrl("https://crates.io/crates/1bad"), undefined);
+  assert.equal(parseVideoUrl("https://crates.io/keywords/serde"), undefined);
+});

@@ -9,6 +9,9 @@ import {
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
+  cratesIoAvatarUrl,
+  parseCratesIoCrate,
+  parseCratesIoOwners,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -329,5 +332,97 @@ test("a Hugging Face lookup fetches the models API", async () => {
     calls[0]?.url,
     "https://huggingface.co/api/models/google/gemma-2-2b",
   );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("cratesIoAvatarUrl accepts GitHub /u/ avatars only", () => {
+  assert.equal(
+    cratesIoAvatarUrl("https://avatars.githubusercontent.com/u/1940490?v=4"),
+    "https://avatars.githubusercontent.com/u/1940490",
+  );
+  for (const value of [
+    "https://evil.test/u/1940490",
+    "https://avatars.githubusercontent.com/id/1940490",
+    "http://avatars.githubusercontent.com/u/1940490",
+  ]) {
+    assert.equal(cratesIoAvatarUrl(value), undefined);
+  }
+});
+
+test("parseCratesIoCrate prefers description; owners give author and avatar", () => {
+  assert.deepEqual(
+    parseCratesIoCrate({
+      crate: {
+        name: "serde",
+        description: "A generic serialization/deserialization framework",
+      },
+    }),
+    {
+      title: "A generic serialization/deserialization framework",
+    },
+  );
+  assert.deepEqual(
+    parseCratesIoOwners({
+      users: [
+        {
+          kind: "team",
+          login: "github:serde-rs:publish",
+          avatar: "https://avatars.githubusercontent.com/u/11965399?v=4",
+        },
+        {
+          kind: "user",
+          login: "dtolnay",
+          name: "David Tolnay",
+          avatar: "https://avatars.githubusercontent.com/u/1940490?v=4",
+        },
+      ],
+    }),
+    {
+      author: "David Tolnay",
+      cover: "https://avatars.githubusercontent.com/u/1940490",
+    },
+  );
+});
+
+test("a crates.io lookup fetches crate and owners, then may fetch the avatar", async () => {
+  const cover = "https://avatars.githubusercontent.com/u/1940490";
+  const { fetch, calls } = fakeFetch({
+    "https://crates.io/api/v1/crates/serde/owners": () =>
+      response({
+        users: [
+          {
+            kind: "user",
+            login: "dtolnay",
+            name: "David Tolnay",
+            avatar: `${cover}?v=4`,
+          },
+        ],
+      }),
+    "https://crates.io/api/v1/crates/": () =>
+      response({
+        crate: {
+          name: "serde",
+          description: "A generic serialization/deserialization framework",
+        },
+      }),
+    "https://avatars.githubusercontent.com/": () =>
+      response(PNG, { type: "image/png" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "cratesIo",
+    "serde",
+  );
+  assert.equal(
+    details.title,
+    "A generic serialization/deserialization framework",
+  );
+  assert.equal(details.author, "David Tolnay");
+  assert.equal(
+    details.cover,
+    `data:image/png;base64,${Buffer.from(PNG).toString("base64")}`,
+  );
+  assert.equal(calls[0]?.url, "https://crates.io/api/v1/crates/serde");
+  assert.equal(calls[1]?.url, "https://crates.io/api/v1/crates/serde/owners");
+  assert.equal(calls[2]?.url, cover);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });

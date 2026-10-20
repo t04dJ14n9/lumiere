@@ -151,6 +151,28 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
+    if (provider === "cratesIo") {
+      const body = await this.json(
+        `https://crates.io/api/v1/crates/${encodeURIComponent(id)}`,
+        signal,
+      );
+      const details = parseCratesIoCrate(body);
+      const ownersBody = await this.json(
+        `https://crates.io/api/v1/crates/${encodeURIComponent(id)}/owners`,
+        signal,
+      ).catch(() => undefined);
+      const { author, cover } = parseCratesIoOwners(ownersBody);
+      if (author) {
+        details.author = author;
+      }
+      if (cover) {
+        const image = await this.image(cover, signal).catch(() => undefined);
+        if (image !== undefined) {
+          details.cover = image;
+        }
+      }
+      return details;
+    }
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
@@ -207,6 +229,61 @@ export class VideoDetailsSource {
   }
 }
 
+/** crates.io crate JSON: description preferred, else crate name. */
+export function parseCratesIoCrate(body: unknown): VideoDetails {
+  if (!isRecord(body) || !isRecord(body.crate)) {
+    throw new Error("Unexpected crates.io response");
+  }
+  const crate = body.crate;
+  const title = text(crate.description, 300) ?? text(crate.name, 300);
+  return withoutUndefined({ title });
+}
+
+/** First user owner: display name / login and GitHub avatar. */
+export function parseCratesIoOwners(body: unknown): {
+  author?: string;
+  cover?: string;
+} {
+  if (!isRecord(body) || !Array.isArray(body.users)) {
+    return {};
+  }
+  for (const user of body.users) {
+    if (!isRecord(user) || user.kind !== "user") {
+      continue;
+    }
+    const author = text(user.name, 100) ?? text(user.login, 100);
+    const cover = cratesIoAvatarUrl(user.avatar);
+    return {
+      ...(author ? { author } : {}),
+      ...(cover ? { cover } : {}),
+    };
+  }
+  return {};
+}
+
+export function cratesIoAvatarUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return undefined;
+  }
+  if (
+    url.protocol !== "https:" ||
+    url.hostname !== "avatars.githubusercontent.com" ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    !/^\/u\/[1-9][0-9]{0,15}$/.test(url.pathname)
+  ) {
+    return undefined;
+  }
+  return `https://avatars.githubusercontent.com${url.pathname}`;
+}
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
