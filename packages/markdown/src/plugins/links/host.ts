@@ -15,7 +15,12 @@ import {
   protocol,
   type request as requestSchema,
 } from "./protocol";
-import { externalScheme, linkParts, openedVaultTarget } from "./target";
+import {
+  externalScheme,
+  knownNoteKeys,
+  linkParts,
+  openedVaultTarget,
+} from "./target";
 export const linksHost: Plugin<{ panel: PanelShell }> = {
   name: "links",
   inject: {
@@ -31,6 +36,7 @@ export const linksHost: Plugin<{ panel: PanelShell }> = {
   apply(ctx, { panel }) {
     registerNavigation(ctx, panel);
     registerUnresolvedLinks(ctx, panel);
+    registerKnownNotes(ctx);
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "open", (request, token) =>
         openLink(ctx, panel, request, token),
@@ -45,29 +51,19 @@ export const linksHost: Plugin<{ panel: PanelShell }> = {
  */
 function registerUnresolvedLinks(ctx: Context, panel: PanelShell): void {
   let sent = "";
-  const forUri = (uri: string): string[] => {
-    try {
-      if (!uri.startsWith(ctx.vault.root)) {
-        return [];
-      }
-      return unresolvedPaths(ctx.vault, notePath(ctx.vault.root, uri));
-    } catch {
-      return [];
-    }
-  };
-  const current = (params: { source?: string } = {}) => {
-    const uri = params.source ?? panel.document.uri;
-    const paths = forUri(uri);
-    if (!params.source) {
-      sent = paths.join("\n");
-    }
+  const current = () => {
+    const paths = unresolvedPaths(
+      ctx.vault,
+      notePath(ctx.vault.root, panel.document.uri),
+    );
+    sent = paths.join("\n");
     return paths;
   };
   ctx.effect(() => ctx.rpc.handle(protocol, "unresolved", current));
   ctx.effect(() =>
     ctx.vault.onDidResolve(() => {
       const previous = sent;
-      const paths = current({});
+      const paths = current();
       if (sent !== previous) {
         ctx.rpc.notify(protocol, "unresolvedChanged", paths, {
           coalesce: true,
@@ -83,6 +79,29 @@ export function unresolvedPaths(vault: VaultIndex, source: string): string[] {
     [...vault.unresolvedLinks(source).keys()].map((path) => path.toLowerCase()),
   );
   return [...keys].sort().slice(0, MAX_UNRESOLVED);
+}
+
+/**
+ * Push vault note lookup keys so the webview can dim brand-new missing links
+ * before the open-note overlay re-index lands (Obsidian is near-instant).
+ */
+function registerKnownNotes(ctx: Context): void {
+  let sent = "";
+  const current = () => {
+    const keys = knownNoteKeys(ctx.vault);
+    sent = keys.join("\n");
+    return keys;
+  };
+  ctx.effect(() => ctx.rpc.handle(protocol, "knownNotes", current));
+  ctx.effect(() =>
+    ctx.vault.onDidResolve(() => {
+      const previous = sent;
+      const keys = current();
+      if (sent !== previous) {
+        ctx.rpc.notify(protocol, "knownNotesChanged", keys, { coalesce: true });
+      }
+    }),
+  );
 }
 
 /** A note's path inside the vault, from its URI. */

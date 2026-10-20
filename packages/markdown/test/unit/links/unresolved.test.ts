@@ -10,6 +10,7 @@ import { protocol } from "../../../src/plugins/links/protocol";
 import { unresolvedKey } from "../../../src/plugins/links/target";
 import {
   unresolvedLinks,
+  knownNotes,
   wikiLinkRenderer,
 } from "../../../src/plugins/links/webview";
 import { documentTree } from "../../../src/plugins/livePreview/document-tree";
@@ -27,7 +28,12 @@ test("an unresolved key is the link path as written, lower-cased, without subpat
 });
 
 /** The classes of every wikilink mark, with the cursor at `cursor`. */
-function wikiLinkClasses(doc: string, cursor: number, unresolved: string[]) {
+function wikiLinkClasses(
+  doc: string,
+  cursor: number,
+  unresolved: string[],
+  known: string[] = [],
+) {
   const state = EditorState.create({
     doc,
     selection: EditorSelection.cursor(cursor),
@@ -35,6 +41,7 @@ function wikiLinkClasses(doc: string, cursor: number, unresolved: string[]) {
       documentTree,
       inlineRenderers.of(wikiLinkRenderer),
       unresolvedLinks.init(() => new Set(unresolved)),
+      knownNotes.init(() => new Set(known)),
     ],
   });
   const classes: Record<string, string> = {};
@@ -234,4 +241,25 @@ test("unresolved accepts an embedded note URI for that note's outbound misses", 
   await root.dispose();
   host.dispose();
   client.dispose();
+});
+
+test("known note keys include path, basename and aliases", () => {
+  const index = new MemoryVaultIndex({
+    root: "memory:///vault",
+    folderNote: "",
+    linkFormat: "shortest",
+  });
+  index.replaceFiles([
+    {
+      uri: "memory:///vault/Folder/Note.md",
+      path: "Folder/Note.md",
+      mtime: 1,
+      size: 1,
+    },
+  ]);
+  index.setMetadata(
+    "Folder/Note.md",
+    metadata("---\naliases: [Big Map]\n---\n"),
+  );
+  assert.deepEqual(knownNoteKeys(index), ["big map", "folder/note", "note"]);
 });
