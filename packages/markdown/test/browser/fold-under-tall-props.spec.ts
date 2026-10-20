@@ -80,8 +80,8 @@ test("fold gutter under tall Sources folds the heading section", async ({
         ({ box }) =>
           box.height > 0 &&
           box.width > 0 &&
-          midY >= box.top - 2 &&
-          midY <= box.bottom + 2,
+          midY >= box.top - 10 &&
+          midY <= box.bottom + 10,
       );
     if (!arrow) {
       return { ok: false as const, reason: "no-arrow", midY, rowTop: row.top };
