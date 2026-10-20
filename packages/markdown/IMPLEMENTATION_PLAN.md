@@ -536,6 +536,32 @@ Known issues: <list, with the failing test or observation>.
 
 ## Phase records
 
+### Host GUI R8 — Keyboard input into rendered math and callouts, 2026-10-19
+
+Rendered-source clicks now hand both the CodeMirror selection and the native
+browser selection to the same source range. A repeated display-preview click
+could leave the native caret in the widget while CodeMirror still cached the
+previous formula selection; subsequent selection/input then used a fence or
+neighboring offset. Completed block clicks thaw pointer reveal in that same
+transaction, before immediate input, so the deferred thaw cannot reselect the
+first typed character. Inline widgets also retain their native selection-change
+events. Math selects only its body, preserving the dollar delimiters. Vim's
+first `i` after an explicit widget selection exits its automatic visual mode
+at the source head and goes through its ordinary insert mapping; ordinary
+visual text objects retain their behavior.
+
+Callout title/body clicks now reveal and select the whole callout source,
+matching the measured replacement path in Obsidian 1.14.4. This deliberately
+uses a visible source selection rather than a caret in rendered content with
+input landing at the previous editor position. Folded titles edit too; a
+separate fold button retains disclosure, while links and controls retain their
+clicks. Source selection, repeated math clicks, typing, the Vim handoff and
+callout editing/disclosure have focused unit and browser coverage.
+
+Validation: markdown unit + full Chromium browser suite green on this
+branch; Host GUI retest remains for the parent session. R8 plan/results live
+under `/workspace/plans/lumiere-pr83-host-gui/`.
+
 ### Properties chip removal reconciliation — 2026-10-16
 
 Delivered: list rows retain focused add-input and chip-editor drafts only. A

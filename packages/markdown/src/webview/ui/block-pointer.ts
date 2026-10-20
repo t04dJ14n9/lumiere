@@ -21,6 +21,7 @@ export function bindClickToEdit(
   shell: HTMLElement,
   edit: () => void,
   signal: AbortSignal,
+  editSummary = false,
 ): void {
   let press: ClickToEditPress | null = null;
   const clearPress = (): void => {
@@ -35,7 +36,10 @@ export function bindClickToEdit(
   shell.addEventListener(
     "mousedown",
     (event) => {
-      if (event.button !== 0 || isBlockControl(shell, event.target)) {
+      if (
+        event.button !== 0 ||
+        isBlockControl(shell, event.target, editSummary)
+      ) {
         clearPress();
         return;
       }
@@ -49,6 +53,7 @@ export function bindClickToEdit(
     signal,
     getPress: () => press,
     takePress,
+    editSummary,
   });
 }
 
@@ -59,6 +64,7 @@ function watchClickToEditGesture(input: {
   signal: AbortSignal;
   getPress: () => ClickToEditPress | null;
   takePress: () => ClickToEditPress | null;
+  editSummary: boolean;
 }): void {
   const { shell, edit, signal, getPress, takePress } = input;
   const doc = shell.ownerDocument;
@@ -83,7 +89,7 @@ function watchClickToEditGesture(input: {
         press: active,
         button: event.button,
         overWidget: eventTargetInside(shell, event.target),
-        onControl: isBlockControl(shell, event.target),
+        onControl: isBlockControl(shell, event.target, input.editSummary),
       })
     ) {
       edit();
@@ -201,11 +207,15 @@ export function isNativeSelectableLabelTarget(
 export function isBlockControl(
   shell: HTMLElement,
   target: EventTarget | null,
+  editSummary = false,
 ): boolean {
   if (!(target instanceof Element)) {
     return false;
   }
   const control = target.closest(interactive);
+  if (editSummary && control?.tagName.toLowerCase() === "summary") {
+    return false;
+  }
   return Boolean(control && control !== shell && shell.contains(control));
 }
 

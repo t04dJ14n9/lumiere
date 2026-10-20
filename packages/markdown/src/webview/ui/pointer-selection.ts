@@ -226,7 +226,7 @@ export function shouldApplyDeferredThaw(input: {
   );
 }
 
-/** Test helper: start or end the pointer reveal freeze. */
+/** Start or end the pointer reveal freeze, including a completed widget click. */
 export function setPointerSelection(
   value: EditorSelection | null,
 ): ReturnType<typeof press.of> {

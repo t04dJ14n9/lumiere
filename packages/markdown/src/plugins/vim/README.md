@@ -41,6 +41,9 @@ Mode events queue freeze/thaw transactions after CodeMirror's update lifecycle;
 the event's target mode also thaws visual-to-insert commands. The Vim extension
 owns the freeze field, so disabling Vim removes it during reconfiguration and
 cancels pending work without dispatching from plugin cleanup.
+The first `i` after a rendered widget selects source leaves Vim's automatic
+visual mode at that selection's head, then uses the ordinary insert mapping.
+Keyboard-created visual selections keep Vim's text-object behavior.
 
 ## Files
 
@@ -49,6 +52,8 @@ cancels pending work without dispatching from plugin cleanup.
 - `key-routing.ts`: adapter-scoped mapping/macro handoff and dispatcher restoration.
 - `keyboard.ts`: shared note/cell translation of Chinese shifted line-motion keys.
 - `keyboard.test.ts`: key variants, physical codes, modifiers and mode guards.
+- `click-insert.ts`: first-key insert handoff from a rendered-source selection.
+- `../../../test/unit/livePreview/click-position.test.ts`: source selection, typing and Vim handoff units.
 - `test/unit/vim-key-routing.test.ts`: cross-buffer sequences, unaffected adapters and hook disposal.
 - `webview.ts`: service, host action, Ex and editor extension registrations.
 - `motion.ts`: per-editor table motion correction and single-step entry into revealable blocks.

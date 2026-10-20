@@ -11,16 +11,22 @@ test("callout aliases, fallback kinds and fold flags preserve distinct container
     result,
     /<details class="callout" data-callout="abstract" open>/,
   );
-  assert.match(result, /<summary class="callout-title">Summary<\/summary>/);
+  assert.match(
+    result,
+    /<summary class="callout-title"><span class="callout-title-text">Summary<\/span><button type="button" class="callout-fold" aria-label="Toggle callout">›<\/button><\/summary>/,
+  );
   assert.match(result, /<details class="callout" data-callout="note">/);
-  assert.match(result, /<summary class="callout-title">Unknown<\/summary>/);
+  assert.match(
+    result,
+    /<summary class="callout-title"><span class="callout-title-text">Unknown<\/span><button type="button" class="callout-fold" aria-label="Toggle callout">›<\/button><\/summary>/,
+  );
   assert.equal((result.match(/<\/details>/g) ?? []).length, 2);
 });
 
 test("an untitled callout of a hyphenated type reads as words, as in Obsidian", () => {
   assert.match(
     renderMarkdown("> [!unknown-type]\n> Body"),
-    /class="callout-title">Unknown type<\/div>/,
+    /class="callout-title"><span class="callout-title-text">Unknown type<\/span><\/div>/,
   );
 });
 

@@ -49,10 +49,10 @@ export function callouts(
   md.renderer.rules.callout_open = (tokens, index, _options, env) => {
     const data = tokens[index]!.meta as unknown as Callout;
     const title = md.renderInline(data.title, env);
-    const icon = calloutIcon(data.kind);
+    const heading = `${calloutIcon(data.kind)}<span class="callout-title-text">${title}</span>`;
     return data.fold
-      ? `<details class="callout" data-callout="${data.kind}"${data.fold === "+" ? " open" : ""}><summary class="callout-title">${icon}${title}</summary><div class="callout-content">`
-      : `<aside class="callout" data-callout="${data.kind}"><div class="callout-title">${icon}${title}</div><div class="callout-content">`;
+      ? `<details class="callout" data-callout="${data.kind}"${data.fold === "+" ? " open" : ""}><summary class="callout-title">${heading}<button type="button" class="callout-fold" aria-label="Toggle callout">›</button></summary><div class="callout-content">`
+      : `<aside class="callout" data-callout="${data.kind}"><div class="callout-title">${heading}</div><div class="callout-content">`;
   };
   md.renderer.rules.callout_close = (tokens, index) =>
     `</div></${(tokens[index]!.meta as unknown as Callout).fold ? "details" : "aside"}>`;

@@ -2,7 +2,7 @@ import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import type { SourceSpan } from "./markdown-widget";
-import { CLICK_SELECT } from "./pointer-selection";
+import { selectRenderedSource } from "./source-selection";
 
 /**
  * What a plain click on rendered inline content does, as in Obsidian:
@@ -74,7 +74,10 @@ export class MarkdownInline extends WidgetType {
   }
   /** A plain click this widget handles is its own; others drive the editor. */
   override ignoreEvent(event: Event): boolean {
-    return Boolean(this.click) && isPlainClick(event);
+    return (
+      Boolean(this.click) &&
+      (event.type === "selectionchange" || isPlainClick(event))
+    );
   }
   private onClick(
     view: EditorView,
@@ -90,11 +93,9 @@ export class MarkdownInline extends WidgetType {
     }
     const start = view.posAtDOM(node);
     const span = this.click.select(this.source);
-    view.focus();
-    // As in Obsidian, the selection's head is at its start.
-    view.dispatch({
-      selection: { anchor: start + span.to, head: start + span.from },
-      userEvent: CLICK_SELECT,
+    selectRenderedSource(view, {
+      from: start + span.from,
+      to: start + span.to,
     });
   }
   override destroy(node: HTMLElement): void {

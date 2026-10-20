@@ -17,6 +17,7 @@ import { freezeRevealDuringVisual } from "./visual-reveal";
 import { normalCaretAfterHostEdits } from "./normal-caret";
 import { installVimKeyRouting } from "./key-routing";
 import { vimLineKeyboard } from "./keyboard";
+import { insertIntoClickedSource } from "./click-insert";
 import type {} from "../livePreview/api";
 
 /** Live caret profile for the panel; reconfigure updates without remounting Vim. */
@@ -175,6 +176,7 @@ function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
     vimLineKeyboard,
+    insertIntoClickedSource,
     revealBlockMotion(ctx.livePreview),
     freezeRevealDuringVisual(),
     normalCaretAfterHostEdits,

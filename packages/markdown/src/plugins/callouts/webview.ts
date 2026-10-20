@@ -38,8 +38,9 @@ function registerCalloutRenderer(ctx: Context): void {
         isCallout(state.sliceDoc(node.from, node.to)),
       widget: (block) =>
         new MarkdownBlock(block, ctx.render, {
-          reveal: "button",
+          reveal: "click",
           guardMargin: true,
+          editSummary: true,
         }),
     }),
   );
@@ -106,12 +107,18 @@ export function bindDisclosure({
     (event) => {
       if (
         event.target instanceof Element &&
-        event.target.closest("a, button, input")
+        event.target.closest("a, input, button:not(.callout-fold)")
       ) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".callout-title-text, .callout-icon")
+      ) {
+        return;
+      }
       details.open = !details.open;
       remember();
     },
