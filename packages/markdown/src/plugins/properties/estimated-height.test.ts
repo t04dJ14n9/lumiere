@@ -55,9 +55,9 @@ test("a collapsed sheet reserves the heading, not the rows", () => {
   assert.equal(estimate(`---\n${rows}\n---\n`, { collapsed: true }), 69);
 });
 
-test("a multiline text value uses longtext estimate (not one row per source line)", () => {
-  // Folded/block scalars are Text, not Unknown/YAML drafts.
-  assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 121);
+test("a multiline text value uses YAML-draft estimate (not one row per source line)", () => {
+  // Block scalars are not editableKeys; sheet shows YAML draft (#141), not Unknown.
+  assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 169);
 });
 
 test("only the disclosed source rows count (no YAML draft under Sources)", () => {

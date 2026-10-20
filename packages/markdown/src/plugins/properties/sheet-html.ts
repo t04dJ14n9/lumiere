@@ -105,6 +105,11 @@ function propertyBody(
   if (options.draft !== undefined && isUnknownPropertyValue(value)) {
     return unknownPropertyValue(value);
   }
+  // Draftable scalars/collections that are not Unknown still use YAML editors
+  // (e.g. block-scalar text that is not in editableKeys).
+  if (options.draft !== undefined) {
+    return editableYaml(key, options.draft);
+  }
   return complexFallback(options.draft);
 }
 
@@ -321,6 +326,11 @@ function okfVerifiedListValue(value: unknown[]): string {
 /** Obsidian REA: `metadata-property-value-item mod-unknown` + JSON.stringify. */
 function unknownPropertyValue(value: unknown): string {
   return `<span class="metadata-property-value-item mod-unknown" tabindex="0">${escape(JSON.stringify(value))}</span>`;
+}
+
+function editableYaml(key: string, text: string): string {
+  // textarea keeps Enter as real newlines (contenteditable textContent does not).
+  return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
 }
 
 function complexFallback(draft: string | undefined): string {
