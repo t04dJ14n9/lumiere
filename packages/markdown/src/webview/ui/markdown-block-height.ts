@@ -22,9 +22,12 @@
  *
  * Raw HTML blocks (`<img height>`, `<iframe>`, bare `<img>`, CSS `height`)
  * are another short-source / tall-paint case: line×24 under-reserves the
- * painted box. Attribute/`px` heights are exact; `vh`/`em`/`%` use a stable
- * viewport/font fallback. After measure, remember painted height so remounts
- * keep exotic CSS (and under-parsed units) honest.
+ * painted box. Attribute/`px` heights are exact; `vh`/`em`/`%` (and
+ * `height="N%"`) use a stable viewport/font fallback.
+ *
+ * Wrapping callouts (and other MarkdownBlocks) can paint far taller than
+ * line×24 on a narrow pane. After measure, remember painted height so an
+ * off-viewport remount does not fall back to the formula and jump the map.
  */
 const LINE = 24;
 const CHROME = 12;
@@ -44,30 +47,50 @@ const HTML_MEDIA_DEFAULT = 240;
 const CALLOUT_LINE = 36;
 const CALLOUT_CHROME = 40;
 /**
- * Fallback pane height for `vh` / `%` CSS. Matches the constrained remount
- * harness scroller and a typical note webview; measure + cache corrects.
+ * Fallback pane height for `vh` / `%` CSS and `height="N%"`. Matches the
+ * constrained remount harness scroller and a typical note webview; measure +
+ * cache corrects.
  */
 const VIEWPORT_FALLBACK = 640;
 /** Fallback font size for `em` CSS heights in HTML blocks. */
 const FONT_FALLBACK = 16;
 
-/** Painted heights for HTML blocks, keyed by Markdown source. */
-const measuredHtmlHeights = new Map<string, number>();
+/** Painted heights for MarkdownBlock widgets, keyed by source. */
+const measuredBlockHeights = new Map<string, number>();
 
-/** Remember an HTML block's painted height for the next off-viewport remount. */
-export function rememberHtmlBlockHeight(source: string, height: number): void {
-  if (!/^\s*</.test(source) || !(height > 0)) {
+/** Remember a block's painted height for the next off-viewport remount. */
+export function rememberMarkdownBlockHeight(
+  source: string,
+  height: number,
+): void {
+  if (!source || !(height > 0)) {
     return;
   }
-  const previous = measuredHtmlHeights.get(source) ?? 0;
+  const previous = measuredBlockHeights.get(source) ?? 0;
   if (height > previous) {
-    measuredHtmlHeights.set(source, height);
+    measuredBlockHeights.set(source, height);
   }
 }
 
-/** Test helper: drop remembered HTML-block heights. */
+/** Test helper: drop remembered MarkdownBlock heights. */
+export function clearMarkdownBlockHeights(): void {
+  measuredBlockHeights.clear();
+}
+
+/**
+ * HTML-block alias used by HTML CSS remount tests (#131). Same cache as
+ * `rememberMarkdownBlockHeight`, but ignores non-HTML sources.
+ */
+export function rememberHtmlBlockHeight(source: string, height: number): void {
+  if (!/^\s*</.test(source)) {
+    return;
+  }
+  rememberMarkdownBlockHeight(source, height);
+}
+
+/** Test helper: drop remembered heights (HTML remount suite). */
 export function clearHtmlBlockHeights(): void {
-  measuredHtmlHeights.clear();
+  clearMarkdownBlockHeights();
 }
 
 function isMermaidFence(source: string): boolean {
@@ -103,8 +126,13 @@ function htmlMediaHeight(source: string): number | undefined {
   }
   let attributed = 0;
   let attributedCount = 0;
-  for (const match of source.matchAll(/\bheight\s*=\s*["']?(\d+)/gi)) {
-    attributed += Number(match[1]);
+  // Prefer unit-aware attrs: height="100%" is not 100 CSS pixels.
+  for (const match of source.matchAll(
+    /\bheight\s*=\s*["']?(\d+(?:\.\d+)?)(%|px)?/gi,
+  )) {
+    const value = Number(match[1]);
+    const unit = (match[2] ?? "px").toLowerCase();
+    attributed += unit === "%" ? (value / 100) * VIEWPORT_FALLBACK : value;
     attributedCount += 1;
   }
   for (const match of source.matchAll(/height\s*:\s*(\d+(?:\.\d+)?)\s*px/gi)) {
@@ -133,8 +161,7 @@ function htmlMediaHeight(source: string): number | undefined {
   return CHROME + attributed + unattributed * HTML_MEDIA_DEFAULT;
 }
 
-/** Reserve rendered-block height from Markdown source before DOM measure. */
-export function markdownBlockEstimatedHeight(source: string): number {
+function formulaHeight(source: string): number {
   if (!source) {
     return LINE + CHROME;
   }
@@ -147,19 +174,17 @@ export function markdownBlockEstimatedHeight(source: string): number {
   }
   const html = htmlMediaHeight(source);
   if (html !== undefined) {
-    const floor = Math.max(LINE + CHROME, html, CHROME + lines * LINE);
-    const cached = measuredHtmlHeights.get(source);
-    return cached === undefined ? floor : Math.max(floor, cached);
-  }
-  // Non-media HTML can still paint tall via layout; use cache after measure.
-  if (/^\s*</.test(source)) {
-    const cached = measuredHtmlHeights.get(source);
-    if (cached !== undefined) {
-      return Math.max(CHROME + lines * LINE, cached);
-    }
+    return Math.max(LINE + CHROME, html, CHROME + lines * LINE);
   }
   if (isCallout(source)) {
     return CALLOUT_CHROME + lines * CALLOUT_LINE;
   }
   return CHROME + lines * LINE;
+}
+
+/** Reserve rendered-block height from Markdown source before DOM measure. */
+export function markdownBlockEstimatedHeight(source: string): number {
+  const floor = formulaHeight(source);
+  const cached = measuredBlockHeights.get(source);
+  return cached === undefined ? floor : Math.max(floor, cached);
 }
