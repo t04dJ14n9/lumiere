@@ -11,8 +11,7 @@ test("Tags view title exposes sort and nested toggles", async () => {
   const generated = await contributions();
   const actions = generated.menus["view/title"] ?? [];
   const frequency = actions.find(
-    (action) =>
-      action.command === "lumiere.markdown.tags.sortByFrequency",
+    (action) => action.command === "lumiere.markdown.tags.sortByFrequency",
   );
   const name = actions.find(
     (action) => action.command === "lumiere.markdown.tags.sortByName",
