@@ -8,6 +8,7 @@ import {
 } from "../../webview/ui/markdown-widget";
 import { QueryClient } from "./client";
 import { bindSearchBlock } from "./blocks";
+import { queryEstimatedHeight } from "./estimated-height";
 import { protocol } from "./protocol";
 export const searchWebview: Plugin = {
   name: "search",
@@ -37,10 +38,18 @@ function registerQueryBlocks(ctx: Context): void {
           isQuery(state.sliceDoc(info.from, info.to))
         );
       },
-      widget: (block) => new MarkdownBlock(block, ctx.render, FENCED_PREVIEW),
+      widget: (block) => new QueryBlock(block, ctx.render, FENCED_PREVIEW),
     }),
   );
 }
+
+/** MarkdownBlock with a results-sized height reserve for off-viewport remounts. */
+class QueryBlock extends MarkdownBlock {
+  override get estimatedHeight(): number {
+    return queryEstimatedHeight(this.block.source);
+  }
+}
+
 function registerQueryFences(ctx: Context, client: QueryClient): void {
   const cleanups = new Set<() => void>();
   ctx.effect(() => () => {
