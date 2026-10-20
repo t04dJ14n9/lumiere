@@ -20,6 +20,7 @@ import {
   Forward,
   ChevronRight,
   Text,
+  FileQuestion,
   type IconNode,
 } from "lucide";
 import {
@@ -73,8 +74,14 @@ export function calloutIcon(kind: string): string {
 export function propertyIcon(
   name: string,
   value: unknown,
-  kind = inferPropertyKind(name, value),
+  kind: PropertyKind | "unknown" = inferPropertyKind(name, value),
 ): string {
+  if (kind === "unknown") {
+    return iconHTML(FileQuestion, "property-icon").replace(
+      "<svg",
+      `<svg data-lucide="file-question"`,
+    );
+  }
   const icons: Record<PropertyKind, [IconNode, string]> = {
     text: [Text, "text"],
     list: [List, "list"],

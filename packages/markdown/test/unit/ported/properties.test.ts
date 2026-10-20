@@ -14,33 +14,29 @@ test("recursive YAML properties render without throwing or mistaking shared alia
     assert.match(html, /Source mode/);
     assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
   }
+  // Shared aliases of collections: Obsidian-unknown JSON (#141), not YAML drafts.
   const repeated = renderProperties(
     "---\nfirst: &shared [one, two]\nsecond: *shared\n---\n",
   );
   assert.doesNotMatch(repeated, /Source mode/);
-  assert.equal((repeated.match(/data-property-kind="yaml"/g) ?? []).length, 2);
+  assert.equal((repeated.match(/mod-unknown/g) ?? []).length, 2);
   assert.match(repeated, /one/);
   assert.match(repeated, /two/);
+  assert.doesNotMatch(repeated, /data-property-kind="yaml"/);
 });
 
 test("nested property values preserve links, empty lists and multiline text", () => {
   const html = renderProperties(
     '---\nobject: {link: "[[Linked]]", missing: null, list: []}\ntext: |\n  first\n  second\n---\n',
   );
-  assert.match(
-    html,
-    /data-property-input="object"[^>]*data-property-kind="yaml"/,
-  );
+  // Nested maps are Obsidian Unknown JSON (#141).
+  assert.match(html, /data-property-key="object"[\s\S]*mod-unknown/);
   assert.match(html, /\[\[Linked\]\]/);
-  assert.match(html, /list: \[\]/);
-  assert.match(
-    html,
-    /data-property-input="text"[^>]*data-property-kind="yaml"/,
-  );
-  assert.match(
-    html,
-    /data-property-input="text"[^>]*>\|\n {2}first\n {2}second\n<\/textarea>/,
-  );
+  assert.match(html, /list/);
+  // Block scalar text stays a longtext/yaml-style editor when typed as text.
+  assert.match(html, /data-property-input="text"/);
+  assert.match(html, /first/);
+  assert.match(html, /second/);
 });
 
 test("boolean property edits preserve anchors, comments, flow syntax and CRLF", () => {
