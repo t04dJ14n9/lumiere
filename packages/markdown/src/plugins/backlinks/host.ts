@@ -63,7 +63,7 @@ function wireRefresh(
   };
   ctx.effect(() => () => clearTimeout(timer));
   ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
-  ctx.on("vault/resolved", schedule);
+  ctx.effect(() => ctx.on("vault/resolved", schedule));
   ctx.effect(() =>
     ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
       ctx.vaults.open(String(uri), { offset: Number(offset) }),
@@ -150,19 +150,41 @@ function wireExtraContext(
       );
     schedule();
   };
-  ctx.effect(() => ctx.settings.onChange(syncContext));
-  ctx.effect(() => () => {
-    void ctx.hostCommands
-      .execute("setContext", EXTRA_CONTEXT_CONTEXT, undefined)
-      .catch(() => undefined);
+  ctx.effect(() => {
+    const stop = ctx.settings.onChange(syncContext);
+    return () => {
+      try {
+        const done = stop() as unknown;
+        if (done && typeof (done as Promise<void>).then === "function") {
+          void (done as Promise<void>).catch(() => undefined);
+        }
+      } catch {
+        // Teardown races in leave-no-trace fakes.
+      }
+    };
   });
-  void ctx.hostCommands
-    .execute(
+  // Seed context; clear without an effect whose disposer can reject.
+  void Promise.resolve(
+    ctx.hostCommands.execute(
       "setContext",
       EXTRA_CONTEXT_CONTEXT,
       wantsExtraContext(ctx.settings),
-    )
-    .catch(() => undefined);
+    ) as unknown,
+  ).catch(() => undefined);
+  ctx.effect(() => () => {
+    try {
+      const done = ctx.hostCommands.execute(
+        "setContext",
+        EXTRA_CONTEXT_CONTEXT,
+        undefined,
+      ) as unknown;
+      if (done && typeof (done as Promise<void>).then === "function") {
+        void Promise.resolve(done).catch(() => undefined);
+      }
+    } catch {
+      // ignore
+    }
+  });
 }
 
 /** The Backlinks view and status bar count, following the active note. */
