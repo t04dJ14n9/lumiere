@@ -6,7 +6,9 @@
  * the height map the same way tall Properties / tables do.
  *
  * Use source line count × default editor line height. Slight over-estimate is
- * safer than under-estimate (blank body / black PageDown).
+ * safer than under-estimate (blank body / black PageDown). Callouts get a
+ * taller per-line factor plus title/padding chrome so remounts stay near the
+ * painted box, not bare quote lines.
  *
  * Mermaid fences are special: a short source can render a tall SVG (hundreds
  * of px). Plain line×24 under-reserves; use a taller per-line factor and a
@@ -31,6 +33,13 @@ const MATH_LINE = 48;
 const MATH_MIN = 160;
 /** Bare <img>/<iframe>/<video> without an explicit height attribute. */
 const HTML_MEDIA_DEFAULT = 240;
+/**
+ * Callout boxes add title row + padding beyond plain quote lines. line×24
+ * under-reserves (~996 vs ~1530 measured for 40 body lines) so remounts
+ * fail the 0.7× measured guard in callout-remount-height.
+ */
+const CALLOUT_LINE = 36;
+const CALLOUT_CHROME = 40;
 
 function isMermaidFence(source: string): boolean {
   const first = source.split("\n", 1)[0] ?? "";
@@ -39,6 +48,10 @@ function isMermaidFence(source: string): boolean {
 
 function isDisplayMath(source: string): boolean {
   return /^\${2}/.test(source.trimStart());
+}
+
+function isCallout(source: string): boolean {
+  return /^>\s*\[!.+?\]/m.test(source.trimStart());
 }
 
 /** TeX row breaks (`\\`) plus source lines — matrices often sit on one line. */
@@ -93,6 +106,9 @@ export function markdownBlockEstimatedHeight(source: string): number {
   const html = htmlMediaHeight(source);
   if (html !== undefined) {
     return Math.max(LINE + CHROME, html, CHROME + lines * LINE);
+  }
+  if (isCallout(source)) {
+    return CALLOUT_CHROME + lines * CALLOUT_LINE;
   }
   return CHROME + lines * LINE;
 }
