@@ -1,7 +1,11 @@
 /**
  * Regression for Live Preview / find under a tall Sources sheet (#100):
  * - clicking an embedded ```query block must land near its source
- * - Find next for a token below the sheet must select that token, not empty map space
+ * - Find for a token below the sheet must select that token, not empty map space
+ *
+ * insertText already jumps to match 1; Enter is Find *next* (match 2). Assert
+ * the selected text is the token and the caret is near some occurrence — not
+ * that Enter re-selects the first hit.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
@@ -42,7 +46,7 @@ test("query widget under tall Sources remains clickable near its source", async 
   expect(Math.abs(head - at)).toBeLessThan(80);
 });
 
-test("Find next under tall Sources selects the body token, not empty space", async ({
+test("Find under tall Sources selects a body token, not empty space", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
@@ -55,12 +59,65 @@ test("Find next under tall Sources selects the body token, not empty space", asy
   await expect(find).toBeFocused();
   await page.keyboard.insertText("UniqueFindToken");
   await expect(page.locator(".mw-find-count")).toContainText("/");
+
+  const afterType = await page.evaluate(async () => {
+    const vs = await window.harness.viewState();
+    const text = window.harness.text;
+    const from = Math.min(vs.anchor, vs.head);
+    const to = Math.max(vs.anchor, vs.head);
+    const first = text.indexOf("UniqueFindToken");
+    const second = text.indexOf("UniqueFindToken", first + 1);
+    return {
+      sel: text.slice(from, to),
+      head: vs.head,
+      first,
+      second,
+      near: Math.min(
+        Math.abs(vs.head - first),
+        Math.abs(vs.head - second),
+        Math.abs(vs.anchor - first),
+        Math.abs(vs.anchor - second),
+      ),
+      count: document.querySelector(".mw-find-count")?.textContent ?? "",
+    };
+  });
+  expect(afterType.sel, JSON.stringify(afterType)).toBe("UniqueFindToken");
+  expect(afterType.first).toBeGreaterThan(0);
+  expect(afterType.near, JSON.stringify(afterType)).toBeLessThan(40);
+
+  // Enter advances Find next (match 2 when match 1 is already current).
   await page.keyboard.press("Enter");
-  const head = await page.evaluate(
-    async () => (await window.harness.viewState()).head,
-  );
-  const text = await page.evaluate(() => window.harness.text);
-  const at = text.indexOf("UniqueFindToken");
-  expect(at).toBeGreaterThan(0);
-  expect(Math.abs(head - at)).toBeLessThan(40);
+  const afterNext = await page.evaluate(async () => {
+    const vs = await window.harness.viewState();
+    const text = window.harness.text;
+    const from = Math.min(vs.anchor, vs.head);
+    const to = Math.max(vs.anchor, vs.head);
+    const first = text.indexOf("UniqueFindToken");
+    const second = text.indexOf("UniqueFindToken", first + 1);
+    return {
+      sel: text.slice(from, to),
+      head: vs.head,
+      first,
+      second,
+      near: Math.min(
+        Math.abs(vs.head - first),
+        Math.abs(vs.head - second),
+        Math.abs(vs.anchor - first),
+        Math.abs(vs.anchor - second),
+      ),
+      count: document.querySelector(".mw-find-count")?.textContent ?? "",
+    };
+  });
+  expect(afterNext.sel, JSON.stringify(afterNext)).toBe("UniqueFindToken");
+  expect(afterNext.near, JSON.stringify(afterNext)).toBeLessThan(40);
+  // Prefer that Find next moved off the first hit when two exist.
+  if (afterNext.second > afterNext.first) {
+    expect(afterNext.count).toMatch(/2\s*\/\s*2/);
+    expect(
+      Math.min(
+        Math.abs(afterNext.head - afterNext.second),
+        Math.abs(afterNext.head - (afterNext.second + "UniqueFindToken".length)),
+      ),
+    ).toBeLessThan(40);
+  }
 });
