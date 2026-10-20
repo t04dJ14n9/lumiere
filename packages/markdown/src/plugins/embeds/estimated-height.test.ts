@@ -32,3 +32,9 @@ test("note embeds, media and PDF cards use kind defaults above one line", () => 
   assert.ok(embedEstimatedHeight("![[doc.pdf]]") > 40);
   assert.ok(embedEstimatedHeight("![[doc.pdf]]") < 120);
 });
+
+test("inline WxH images use the same height reserve as block embeds", () => {
+  // Mid-paragraph `text ![[pic|200x800]] more` still needs |WxH|, not one line.
+  const height = embedEstimatedHeight("![[pic.png|200x800]]");
+  assert.ok(height > 700, `got ${height}`);
+});
