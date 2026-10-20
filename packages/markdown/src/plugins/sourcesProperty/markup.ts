@@ -1,20 +1,22 @@
 import { sourceRows } from "../../markdown/okf";
 import { escape } from "../../markdown/html/helpers";
 
-const FIRST_ROWS = 8;
+export const FIRST_SOURCE_ROWS = 8;
 
 /** Stacked Sources rows with open links. Disclosure never drops a row from the markup. */
 export function renderSources(
   value: unknown,
   values: Record<string, unknown>,
+  options: { expanded?: boolean } = {},
 ): string {
   const rows = sourceRows(value, values);
+  const expanded = options.expanded === true;
   const body = rows
-    .map((row) => sourceRow(row, row.index >= FIRST_ROWS))
+    .map((row) => sourceRow(row, !expanded && row.index >= FIRST_SOURCE_ROWS))
     .join("");
   const more =
-    rows.length > FIRST_ROWS
-      ? `<button type="button" data-source-more>Showing ${FIRST_ROWS} of ${rows.length}</button>`
+    !expanded && rows.length > FIRST_SOURCE_ROWS
+      ? `<button type="button" data-source-more>Showing ${FIRST_SOURCE_ROWS} of ${rows.length}</button>`
       : "";
   return `<div class="source-rows" data-source-rows>${body}${more}</div>`;
 }

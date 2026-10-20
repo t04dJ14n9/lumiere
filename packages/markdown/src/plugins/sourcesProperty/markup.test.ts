@@ -20,6 +20,16 @@ test("sources markup is stacked, keeps every row, and has no Copy id", () => {
   assert.doesNotMatch(html, /Copy id|data-source-copy/);
 });
 
+test("expanded sources show every row without a disclosure button", () => {
+  const entries = Array.from({ length: 9 }, (_, index) => ({
+    resource: `https://example.com/${index}`,
+    title: `Source ${index}`,
+  }));
+  const html = renderSources(entries, {}, { expanded: true });
+  assert.doesNotMatch(html, /Showing |data-source-more|data-source-extra| hidden/);
+  assert.equal(html.match(/data-source-index=/g)?.length, 9);
+});
+
 test("sources id is plain selectable text without a copy control", () => {
   const html = renderSources(
     [{ resource: "https://example.com/a", id: "src-1", title: "One" }],

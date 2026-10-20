@@ -10,17 +10,31 @@ export const sourcesPropertyWebview: Plugin = {
   inject: { required: ["propertyRenderers", "rpc"] },
   apply(ctx) {
     const lifetime = new AbortController();
+    // Session flag: expand-all is DOM-only unless remount/estimate see it too.
+    let sourcesExpanded = false;
     ctx.effect(() => () => lifetime.abort());
     ctx.effect(() =>
       ctx.propertyRenderers.register({
         key: "sources",
-        render: (value, values) => renderSources(value, values),
+        render: (value, values) =>
+          renderSources(value, values, { expanded: sourcesExpanded }),
         bind: (root) =>
-          bindSources(root as ParentNode, lifetime.signal, (resource) => {
-            void ctx.rpc
-              .call(protocol, "open", { resource })
-              .catch((error) => ctx.logger.error("Source open failed", error));
-          }),
+          bindSources(
+            root as ParentNode,
+            lifetime.signal,
+            (resource) => {
+              void ctx.rpc
+                .call(protocol, "open", { resource })
+                .catch((error) =>
+                  ctx.logger.error("Source open failed", error),
+                );
+            },
+            {
+              onExpand: () => {
+                sourcesExpanded = true;
+              },
+            },
+          ),
       }),
     );
   },
