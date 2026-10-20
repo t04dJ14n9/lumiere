@@ -230,7 +230,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: lumiere.markdown.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.backlinks.enabled |
+| Setting: lumiere.markdown.backlinks.sortOrder | not observed | not manually observed | Manual scenario pending | not observed | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.ideContext.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -350,6 +351,10 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.backlinks.sortByAlphabetical | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.backlinks.sortByAlphabeticalReverse | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.backlinks.sortByModifiedTime | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.backlinks.sortByModifiedTimeReverse | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
