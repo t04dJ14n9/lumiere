@@ -399,7 +399,7 @@
       },
       {
         "command": "lumiere.markdown.graph.chooseBundle",
-        "title": "Choose Vault Graph Bundle",
+        "title": "Choose Vault Graph Scope",
         "category": "Lumière"
       },
       {
@@ -2480,7 +2480,7 @@
             "type": "boolean",
             "default": true,
             "scope": "resource",
-            "description": "Draw an OKF bundle as a directed graph of notes, in a panel of its own."
+            "description": "Draw notes as a directed graph (OKF bundle or whole vault) in a panel of its own."
           },
           "lumiere.markdown.plugins.ideContext.enabled": {
             "type": "boolean",
