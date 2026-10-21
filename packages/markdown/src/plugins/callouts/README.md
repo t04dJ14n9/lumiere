@@ -36,6 +36,8 @@ Insert Callout has no default keybinding.
 
 ## Limits and differences from Obsidian
 
-Colors follow VS Code's theme rather than Obsidian assets. Disclosure state belongs
-to each panel, while text and undo belong to VS Code. Exact visual parity awaits
-the owner's manual comparison.
+Colors follow VS Code's theme rather than Obsidian assets. Live Preview zeros the
+outer callout margin (as Obsidian CM6) and keeps nested callouts at `1em` vertical
+margin; titles use `flex-start` and a 4px icon gap (`--size-4-1`). Disclosure state
+belongs to each panel, while text and undo belong to VS Code. Exact colour parity
+awaits the owner's manual comparison.
