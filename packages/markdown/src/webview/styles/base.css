@@ -291,3 +291,17 @@ body.vscode-high-contrast-light
 #app .cm-line .cm-widgetBuffer {
   vertical-align: text-top;
 }
+/*
+ * Hiding a heading marker leaves an empty widget span and 1em buffers.
+ * `vertical-align: text-top` still lets those boxes extend a 1.2 line-height
+ * by a few pixels even at height 0, so revealing `##` shifts the note.
+ * Top-aligned zero boxes stay in the line for the caret without growing it.
+ */
+#app .cm-line.md-heading > span:empty,
+#app .cm-line.md-heading .cm-widgetBuffer {
+  display: inline-block;
+  vertical-align: top;
+  height: 0;
+  line-height: 0;
+  font-size: 0;
+}
