@@ -75,3 +75,11 @@ test("space meta labels the kind before author or id", () => {
     "Bilibili · Space",
   );
 });
+
+test("live meta labels the kind before author or id", () => {
+  assert.equal(videoMeta("Bilibili", "live:3", {}, "live"), "Bilibili · Live");
+  assert.equal(
+    videoMeta("Bilibili", "live:3", { title: "哔哩哔哩音悦台" }, "live"),
+    "Bilibili · Live",
+  );
+});

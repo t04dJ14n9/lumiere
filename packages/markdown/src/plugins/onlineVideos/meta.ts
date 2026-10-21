@@ -26,6 +26,8 @@ export function videoMeta(
     kindLabel = "Channel";
   } else if (kind === "space") {
     kindLabel = "Space";
+  } else if (kind === "live") {
+    kindLabel = "Live";
   }
   const known = [
     kindLabel,

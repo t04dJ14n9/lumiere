@@ -25,15 +25,19 @@ import { imageDataUrl } from "./imageData";
 export { imageDataUrl } from "./imageData";
 import {
   parseBilibiliCard,
+  parseBilibiliLive,
   parseBilibiliSeason,
   parseBilibiliView,
 } from "./bilibili";
 export {
   coverUrl,
   parseBilibiliCard,
+  parseBilibiliLive,
   parseBilibiliSeason,
   parseBilibiliView,
 } from "./bilibili";
+import { parseHuggingFaceModel, parseOEmbed } from "./oembed";
+export { parseHuggingFaceModel, parseOEmbed } from "./oembed";
 
 /** The part of `fetch` this module uses, so tests can pass a fake. */
 export type Fetch = (
@@ -198,6 +202,9 @@ export class VideoDetailsSource {
     if (kind === "space") {
       return this.fetchBilibiliSpace(id, signal);
     }
+    if (kind === "live") {
+      return this.fetchBilibiliLive(id, signal);
+    }
     return this.fetchBilibiliView(id, part, signal);
   }
 
@@ -295,6 +302,29 @@ export class VideoDetailsSource {
     return details;
   }
 
+  /** Live room API, plus a scaled cover with a raw keyframe fallback. */
+  private async fetchBilibiliLive(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const room = id.slice("live:".length);
+    const body = await this.json(
+      `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${room}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliLive(body);
+    if (cover) {
+      // Live keyframes often reject Bilibili's @WxH scaler; try scaled then raw.
+      const image = await this.image(cover + COVER_SIZE, signal)
+        .catch(() => this.image(cover, signal))
+        .catch(() => undefined);
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
+    return details;
+  }
+
   private async fetchBilibiliView(
     id: string,
     part: number,
@@ -365,67 +395,4 @@ export class VideoDetailsSource {
     }
     return response;
   }
-}
-
-/** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
-export function parseOEmbed(body: unknown): VideoDetails {
-  if (!isRecord(body)) {
-    throw new Error("Unexpected oEmbed response");
-  }
-  return withoutUndefined({
-    title: text(body.title, 300),
-    author: text(body.author_name, 100),
-  });
-}
-
-/**
- * Hugging Face model API (`/api/models/{id}`): pipeline tag or model id as
- * title; author from `author` or the owner segment of the id. No cover.
- */
-export function parseHuggingFaceModel(body: unknown): VideoDetails {
-  if (!isRecord(body)) {
-    throw new Error("Unexpected Hugging Face response");
-  }
-  const modelId =
-    text(body.modelId, 200) ?? text(body.id, 200) ?? text(body._id, 200);
-  const pipeline = text(body.pipeline_tag, 100);
-  const title =
-    pipeline && modelId ? `${pipeline} · ${modelId}` : (pipeline ?? modelId);
-  return withoutUndefined({
-    title,
-    author: huggingfaceAuthor(body, modelId),
-  });
-}
-
-function huggingfaceAuthor(
-  body: Record<string, unknown>,
-  modelId: string | undefined,
-): string | undefined {
-  const direct = text(body.author, 100);
-  if (direct) {
-    return direct;
-  }
-  const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
-  return text(owner, 100);
-}
-
-function text(value: unknown, max: number): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.replace(/\s+/g, " ").trim();
-  return trimmed ? trimmed.slice(0, max) : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** Parsing yields undefined for a missing or invalid field; drop those keys. */
-function withoutUndefined(details: {
-  [K in keyof VideoDetails]?: VideoDetails[K] | undefined;
-}): VideoDetails {
-  return Object.fromEntries(
-    Object.entries(details).filter(([, value]) => value !== undefined),
-  ) as VideoDetails;
 }

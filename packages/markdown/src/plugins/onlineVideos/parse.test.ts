@@ -71,6 +71,31 @@ test("Bilibili UP space links give a space:{mid} id", () => {
   assert.equal(isVideoId("bilibili", "BV1DRHU6LELy", "space"), false);
 });
 
+test("Bilibili live room links give a live:{room} id", () => {
+  assert.deepEqual(parseVideoUrl("https://live.bilibili.com/3"), {
+    provider: "bilibili",
+    kind: "live",
+    id: "live:3",
+    page: "https://live.bilibili.com/3",
+  });
+  assert.deepEqual(parseVideoUrl("https://live.bilibili.com/23058/"), {
+    provider: "bilibili",
+    kind: "live",
+    id: "live:23058",
+    page: "https://live.bilibili.com/23058",
+  });
+  assert.deepEqual(parseVideoUrl("https://www.live.bilibili.com/3"), {
+    provider: "bilibili",
+    kind: "live",
+    id: "live:3",
+    page: "https://live.bilibili.com/3",
+  });
+  assert.equal(isVideoId("bilibili", "live:3", "live"), true);
+  assert.equal(isVideoId("bilibili", "live:3"), false);
+  assert.equal(isVideoId("bilibili", "live:0", "live"), false);
+  assert.equal(isVideoId("bilibili", "BV1DRHU6LELy", "live"), false);
+});
+
 test("Bilibili BV and av links keep the part number", () => {
   assert.deepEqual(
     parseVideoUrl("https://www.bilibili.com/video/BV1DRHU6LELy/?spm_id_from=x"),
@@ -258,6 +283,9 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://www.bilibili.com/bangumi/media/md28235858",
     "https://space.bilibili.com/video/BV1DRHU6LELy",
     "https://space.bilibili.com/0",
+    "https://live.bilibili.com/",
+    "https://live.bilibili.com/0",
+    "https://live.bilibili.com/3/extra",
     "https://space.bilibili.com/2/video",
     "https://space.bilibili.com/",
     "https://m.bilibili.com/space/",

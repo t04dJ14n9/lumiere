@@ -33,6 +33,7 @@ export const protocol = defineProtocol("onlineVideos", {
           "bangumi",
           "channel",
           "space",
+          "live",
         ]).default("video"),
         /** Bilibili multi-part index (`?p=`), 1-based. */
         part: Schema.number().min(1).max(10_000).optional(),
