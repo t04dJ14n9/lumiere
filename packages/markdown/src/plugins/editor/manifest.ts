@@ -113,7 +113,7 @@ export default defineManifest({
         command: "selectionActions",
         location: "webview/context",
         when: "webviewSection == 'markdownContent' && lumiere.markdown.hasSelection && lumiere.markdown.hasSelectionActions",
-        group: "agent",
+        group: "0_agent@2",
       },
     ],
   },

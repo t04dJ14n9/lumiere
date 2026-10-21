@@ -31,7 +31,13 @@ test("table wheel cancels restore only for vertical input and preserves boundary
     scrollTop: 600,
     scrollHeight: 2000,
     clientHeight: 500,
-    scrollTo: (options: ScrollToOptions) => scrolls.push(options),
+    scrollTo(options: ScrollToOptions) {
+      scrolls.push(options);
+      // Instant scroll applies synchronously in the browser.
+      if (options.behavior === "instant" && options.top !== undefined) {
+        this.scrollTop = options.top;
+      }
+    },
     getBoundingClientRect: () => ({ top: 0 }),
   });
   const dom = Object.assign(view.dom, {
