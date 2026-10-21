@@ -419,14 +419,16 @@
   padding: 4px 6px;
 }
 
-/* Obsidian unknown nested maps: JSON.stringify, single-line ellipsis. */
+/* Obsidian unknown nested maps: JSON.stringify, single-line ellipsis;
+ * padding matches --metadata-input-padding (REA app.css). */
 .metadata-property-value .mod-unknown {
   display: block;
+  box-sizing: border-box;
   color: var(
     --vscode-editorWarning-foreground,
     var(--vscode-list-warningForeground, #cca700)
   );
-  padding: 0;
+  padding: 4px 8px;
   font-size: inherit;
   text-overflow: ellipsis;
   overflow: hidden;
