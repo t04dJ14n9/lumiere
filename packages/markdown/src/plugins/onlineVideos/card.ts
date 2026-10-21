@@ -25,6 +25,14 @@ interface CardOptions {
  * itself as well. "Play here" swaps in a player frame built from the
  * validated ID.
  */
+
+function mediaNoun(video: OnlineVideo): string {
+  if (video.provider === "spotify") {
+    return video.id.split(":")[0]!;
+  }
+  return video.kind === "playlist" ? "playlist" : "video";
+}
+
 export function videoCard(
   video: OnlineVideo,
   options: CardOptions,
@@ -33,16 +41,10 @@ export function videoCard(
   const card = element("span", "mw-video");
   card.dataset.provider = video.provider;
   const label = options.label.trim();
-  const noun =
-    video.provider === "spotify"
-      ? video.id.split(":")[0]!
-      : video.kind === "playlist"
-        ? "playlist"
-        : "video";
   const title = element(
     "span",
     "mw-video-title",
-    label || `${provider.name} ${noun}`,
+    label || `${provider.name} ${mediaNoun(video)}`,
   );
   const meta = element(
     "span",

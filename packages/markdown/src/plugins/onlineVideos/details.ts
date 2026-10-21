@@ -146,25 +146,7 @@ export class VideoDetailsSource {
     signal: AbortSignal,
   ): Promise<VideoDetails> {
     if (provider === "youtube") {
-      const page =
-        kind === "playlist"
-          ? `https://www.youtube.com/playlist?list=${id}`
-          : `https://www.youtube.com/watch?v=${id}`;
-      const body = await this.json(
-        `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`,
-        signal,
-      );
-      const details = parseOEmbed(body);
-      if (kind === "playlist") {
-        const thumb = oEmbedThumbnail(body);
-        if (thumb) {
-          const image = await this.image(thumb, signal).catch(() => undefined);
-          if (image !== undefined) {
-            details.cover = image;
-          }
-        }
-      }
-      return details;
+      return this.fetchYoutube(id, kind, signal);
     }
     if (provider === "huggingface") {
       const body = await this.json(
@@ -174,40 +156,79 @@ export class VideoDetailsSource {
       return parseHuggingFaceModel(body);
     }
     if (provider === "spotify") {
-      const colon = id.indexOf(":");
-      const resourceKind = id.slice(0, colon);
-      const resource = id.slice(colon + 1);
-      const page = `https://open.spotify.com/${resourceKind}/${resource}`;
-      const body = await this.json(
-        `https://open.spotify.com/oembed?url=${encodeURIComponent(page)}`,
-        signal,
-      );
-      const details = parseOEmbed(body);
-      const thumb = spotifyThumbnail(body);
-      if (thumb) {
-        const image = await this.image(thumb, signal).catch(() => undefined);
-        if (image !== undefined) {
-          details.cover = image;
-        }
-      }
-      return details;
+      return this.fetchSpotify(id, signal);
     }
+    return this.fetchBilibiliView(id, signal);
+  }
+
+  private async fetchYoutube(
+    id: string,
+    kind: MediaKind,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page =
+      kind === "playlist"
+        ? `https://www.youtube.com/playlist?list=${id}`
+        : `https://www.youtube.com/watch?v=${id}`;
+    const body = await this.json(
+      `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    if (kind === "playlist") {
+      await this.attachCover(details, oEmbedThumbnail(body), signal);
+    }
+    return details;
+  }
+
+  private async fetchSpotify(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const colon = id.indexOf(":");
+    const resourceKind = id.slice(0, colon);
+    const resource = id.slice(colon + 1);
+    const page = `https://open.spotify.com/${resourceKind}/${resource}`;
+    const body = await this.json(
+      `https://open.spotify.com/oembed?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, spotifyThumbnail(body), signal);
+    return details;
+  }
+
+  private async fetchBilibiliView(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
     const body = await this.json(
       `https://api.bilibili.com/x/web-interface/view?${query}`,
       signal,
     );
     const { details, cover } = parseBilibiliView(body);
-    if (cover) {
-      // A missing cover still leaves the title.
-      const image = await this.image(cover + COVER_SIZE, signal).catch(
-        () => undefined,
-      );
-      if (image !== undefined) {
-        details.cover = image;
-      }
-    }
+    // A missing cover still leaves the title.
+    await this.attachCover(
+      details,
+      cover ? cover + COVER_SIZE : undefined,
+      signal,
+    );
     return details;
+  }
+
+  private async attachCover(
+    details: VideoDetails,
+    cover: string | undefined,
+    signal: AbortSignal,
+  ): Promise<void> {
+    if (!cover) {
+      return;
+    }
+    const image = await this.image(cover, signal).catch(() => undefined);
+    if (image !== undefined) {
+      details.cover = image;
+    }
   }
 
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
