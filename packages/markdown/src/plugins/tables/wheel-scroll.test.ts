@@ -169,11 +169,12 @@ test("an outward tick at the note edge chains natively after an instant jump", (
     [1400, 120, 1500],
   ] as const) {
     const calls: ScrollToOptions[] = [];
-    const viewport = Object.assign(note(scrollTop), {
+    const base = note(scrollTop);
+    const viewport = Object.assign(base, {
       scrollTo(options: ScrollToOptions) {
         calls.push(options);
         if (options.behavior === "instant") {
-          this.scrollTop = options.top ?? this.scrollTop;
+          base.scrollTop = options.top ?? base.scrollTop;
         }
       },
     });

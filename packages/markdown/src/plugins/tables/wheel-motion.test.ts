@@ -67,7 +67,7 @@ test("an outward tick at a visible edge chains without scrolling", () => {
     const viewport = note(edge);
     const motion = new TableWheelMotion(viewport, () => false);
     assert.equal(motion.scroll(-inward), false);
-    assert.deepEqual(viewport.calls, []);
+    assert.equal(viewport.calls.length, 0);
     assert.equal(motion.scroll(inward), true);
     assert.equal(viewport.calls.at(-1)?.top, edge + inward);
   }
