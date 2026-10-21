@@ -152,6 +152,7 @@ export class VideoDetailsSource {
       return parseHuggingFaceModel(body);
     }
     if (provider === "nuget") {
+      // Package ids are lowercased for the URL; host stays api.nuget.org.
       const index = await this.json(
         `https://api.nuget.org/v3/registration5-semver1/${encodeURIComponent(id.toLowerCase())}/index.json`,
         signal,
@@ -216,6 +217,11 @@ export class VideoDetailsSource {
   }
 }
 
+/**
+ * NuGet registration index or leaf page: prefer the latest non-prerelease
+ * `catalogEntry`, else the newest entry. Title is description, then title,
+ * then the package id; author is the `authors` string. No cover.
+ */
 export function parseNugetRegistration(
   body: unknown,
   packageId: string,
@@ -233,6 +239,10 @@ export function parseNugetRegistration(
   });
 }
 
+/**
+ * When the index's last page omits inlined `items`, its `@id` is the leaf
+ * document to fetch. Only `https://api.nuget.org/v3/registration…` URLs.
+ */
 export function nugetRegistrationLeafUrl(body: unknown): string | undefined {
   if (
     !isRecord(body) ||

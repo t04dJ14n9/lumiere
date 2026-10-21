@@ -1,14 +1,15 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face model and NuGet package links.
+ * Only a fully parsed and validated ID leaves this module; players and cards
+ * are built from it, never from the link text.
  */
 export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "nuget";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a NuGet package id (e.g.
+   * `Newtonsoft.Json`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */
@@ -71,8 +72,10 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
-/** Whether `id` is an ID `parseVideoUrl` could have produced. */
-
+/**
+ * NuGet package id: letters, digits, `_`, `-`, `.`; not starting or ending
+ * with `.`; at most 100 chars (Gallery limit).
+ */
 const NUGET_ID = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?$/;
 
 const NUGET_PATH =
