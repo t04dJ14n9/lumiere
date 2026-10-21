@@ -170,3 +170,32 @@ test("anything that is not a well-formed video link is left alone", () => {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
 });
+
+test("Spotify track, album, playlist, episode and show links", () => {
+  const id = "11dFghVXANMlKmJXsNCbNl";
+  assert.deepEqual(parseVideoUrl(`https://open.spotify.com/track/${id}`), {
+    provider: "spotify",
+    kind: "video",
+    id: `track:${id}`,
+    page: `https://open.spotify.com/track/${id}`,
+  });
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=x",
+    ),
+    {
+      provider: "spotify",
+      kind: "video",
+      id: "playlist:37i9dQZF1DXcBWIGoYBM5M",
+      page: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
+    },
+  );
+  assert.equal(
+    parseVideoUrl(`https://open.spotify.com/track/${id.slice(0, 10)}`),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://spotify.com/track/11dFghVXANMlKmJXsNCbNl"),
+    undefined,
+  );
+});

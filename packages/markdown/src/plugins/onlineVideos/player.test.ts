@@ -85,3 +85,10 @@ test("Hugging Face refuses an in-webview player", () => {
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
   );
 });
+
+test("Spotify refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(video("https://open.spotify.com/track/11dFghVXANMlKmJXsNCbNl")),
+  );
+  assert.equal(providers.spotify.embeddable, false);
+});

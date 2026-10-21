@@ -1,9 +1,9 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links (and YouTube
+ * Recognise YouTube, Bilibili, Hugging Face and Spotify links (and YouTube
  * playlists). Only a fully parsed and validated ID leaves this module;
  * players and cards are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "spotify";
 export type MediaKind = "video" | "playlist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
@@ -11,7 +11,8 @@ export interface OnlineVideo {
   readonly kind: MediaKind;
   /**
    * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
-   * `BV…` / `av` id, or a Hugging Face model id (`name` or `owner/name`).
+   * `BV…` / `av` id, a Hugging Face model id (`name` or `owner/name`), or a
+   * Spotify `track|album|playlist|episode|show:…` id.
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -76,6 +77,31 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
+/** Spotify resource id with type prefix (`track:…`). */
+const SPOTIFY_ID = /^(track|album|playlist|episode|show):([A-Za-z0-9]{22})$/;
+
+const SPOTIFY_PATH =
+  /^\/(track|album|playlist|episode|show)\/([A-Za-z0-9]{22})\/?$/;
+
+const SPOTIFY_HOSTS = new Set(["open.spotify.com"]);
+
+/** `/track|album|playlist|episode|show/{22-char id}`. */
+function spotify(url: URL): OnlineVideo | undefined {
+  const match = SPOTIFY_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const resourceKind = match[1]!;
+  const resource = match[2]!;
+  const id = `${resourceKind}:${resource}`;
+  return {
+    provider: "spotify",
+    kind: "video",
+    id,
+    page: `https://open.spotify.com/${resourceKind}/${resource}`,
+  };
+}
+
 /** Whether `id` is an ID `parseVideoUrl` could have produced for that kind. */
 export function isVideoId(
   provider: VideoProvider,
@@ -91,7 +117,10 @@ export function isVideoId(
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  return SPOTIFY_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
@@ -133,6 +162,9 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
     return match ? huggingface(match[1]!) : undefined;
+  }
+  if (SPOTIFY_HOSTS.has(host)) {
+    return spotify(url);
   }
   return undefined;
 }
