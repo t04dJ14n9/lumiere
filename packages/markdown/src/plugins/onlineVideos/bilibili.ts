@@ -6,8 +6,47 @@ import type { VideoDetails } from "./protocol";
 
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
 
+function positiveDuration(value: unknown): number | undefined {
+  return typeof value === "number" &&
+    Number.isInteger(value) &&
+    value > 0 &&
+    value < 1_000_000
+    ? value
+    : undefined;
+}
+
+function bilibiliPage(
+  pages: unknown[],
+  part: number,
+): Record<string, unknown> | undefined {
+  const pageIndex = Number.isInteger(part) && part > 0 ? part : 1;
+  const page =
+    pages.find((item) => isRecord(item) && item.page === pageIndex) ??
+    pages[pageIndex - 1];
+  return isRecord(page) ? page : undefined;
+}
+
+function withBilibiliPartTitle(
+  title: string | undefined,
+  page: Record<string, unknown> | undefined,
+  pageCount: number,
+): string | undefined {
+  if (!page || pageCount <= 1) {
+    return title;
+  }
+  const partTitle = text(page.part, 300);
+  // Multi-part videos expose each page's title; Obsidian cards show it for ?p=.
+  if (!partTitle) {
+    return title;
+  }
+  return title ? `${title} · ${partTitle}` : partTitle;
+}
+
 /** The view API's details and the cover's https URL, if it is on hdslb.com. */
-export function parseBilibiliView(body: unknown): {
+export function parseBilibiliView(
+  body: unknown,
+  part = 1,
+): {
   details: VideoDetails;
   cover?: string;
 } {
@@ -16,17 +55,21 @@ export function parseBilibiliView(body: unknown): {
   }
   const data = body.data;
   const owner = isRecord(data.owner) ? data.owner : {};
-  const duration =
-    typeof data.duration === "number" &&
-    Number.isInteger(data.duration) &&
-    data.duration > 0 &&
-    data.duration < 1_000_000
-      ? data.duration
-      : undefined;
+  const pages = Array.isArray(data.pages) ? data.pages : [];
+  const page = bilibiliPage(pages, part);
+  let duration = positiveDuration(data.duration);
+  if (page) {
+    duration = positiveDuration(page.duration) ?? duration;
+  }
+  const title = withBilibiliPartTitle(
+    text(data.title, 300),
+    page,
+    pages.length,
+  );
   const cover = coverUrl(data.pic);
   return {
     details: withoutUndefined({
-      title: text(data.title, 300),
+      title,
       author: text(owner.name, 100),
       duration,
     }),

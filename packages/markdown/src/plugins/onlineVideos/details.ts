@@ -87,22 +87,24 @@ export class VideoDetailsSource {
     provider: VideoProvider,
     id: string,
     kind: MediaKind = "video",
+    part = 1,
   ): Promise<VideoDetails> {
     if (!isVideoId(provider, id, kind)) {
       return Promise.resolve({});
     }
-    const key = `${provider}:${kind}:${id}`;
+    const page = Number.isInteger(part) && part > 0 ? part : 1;
+    const key = `${provider}:${kind}:${id}:${page}`;
     const cached = this.cache.get(key);
     if (cached && cached.expires > this.now()) {
       return cached.value;
     }
     const entry = { expires: Infinity, value: Promise.resolve({}) };
-    entry.value = this.queued(() => this.lookup(provider, id, kind)).catch(
-      () => {
-        entry.expires = this.now() + this.retryAfterMs;
-        return {};
-      },
-    );
+    entry.value = this.queued(() =>
+      this.lookup(provider, id, kind, page),
+    ).catch(() => {
+      entry.expires = this.now() + this.retryAfterMs;
+      return {};
+    });
     this.cache.delete(key);
     this.cache.set(key, entry);
     for (const old of this.cache.keys()) {
@@ -131,6 +133,7 @@ export class VideoDetailsSource {
     provider: VideoProvider,
     id: string,
     kind: MediaKind,
+    part: number,
   ): Promise<VideoDetails> {
     const timeout = new AbortController();
     const timer = setTimeout(
@@ -138,18 +141,25 @@ export class VideoDetailsSource {
       this.timeoutMs,
     );
     try {
-      return await this.fetchDetails(provider, id, kind, timeout.signal);
+      return await this.fetchDetails(
+        { provider, id, kind, part },
+        timeout.signal,
+      );
     } finally {
       clearTimeout(timer);
     }
   }
 
   private async fetchDetails(
-    provider: VideoProvider,
-    id: string,
-    kind: MediaKind,
+    video: {
+      provider: VideoProvider;
+      id: string;
+      kind: MediaKind;
+      part: number;
+    },
     signal: AbortSignal,
   ): Promise<VideoDetails> {
+    const { provider, id, kind, part } = video;
     if (provider === "youtube") {
       return this.fetchYoutube(id, kind, signal);
     }
@@ -176,7 +186,7 @@ export class VideoDetailsSource {
     if (kind === "bangumi") {
       return this.fetchBangumi(id, signal);
     }
-    return this.fetchBilibiliView(id, signal);
+    return this.fetchBilibiliView(id, part, signal);
   }
 
   private async fetchYoutube(
@@ -256,6 +266,7 @@ export class VideoDetailsSource {
 
   private async fetchBilibiliView(
     id: string,
+    part: number,
     signal: AbortSignal,
   ): Promise<VideoDetails> {
     const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
@@ -263,7 +274,7 @@ export class VideoDetailsSource {
       `https://api.bilibili.com/x/web-interface/view?${query}`,
       signal,
     );
-    const { details, cover } = parseBilibiliView(body);
+    const { details, cover } = parseBilibiliView(body, part);
     // A missing cover still leaves the title.
     await this.attachCover(
       details,

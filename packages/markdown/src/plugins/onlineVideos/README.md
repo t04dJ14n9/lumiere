@@ -149,10 +149,10 @@ off, the links fall back to Embeds (a remote image).
 
 ## Limits
 
-Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's,
-YouTube's, Hugging Face's, Spotify's, SoundCloud's and npm's public
-endpoints, which may change or rate-limit. YouTube playlists
-(`/playlist?list=` and embed videoseries), YouTube channels
+Bilibili multi-part links (`?p=`) use the view API page title (series · part).
+Lookups depend on Bilibili's, YouTube's, Hugging Face's, Spotify's,
+SoundCloud's and npm's public endpoints, which may change or rate-limit.
+YouTube playlists (`/playlist?list=` and embed videoseries), YouTube channels
 (`/channel/UC…`, `/@handle`, `/c/…`, `/user/…`), and Bilibili bangumi
 (`/bangumi/play/ep…` / `ss…`) render as cards. Channels, bangumi, Hugging
 Face, Spotify, SoundCloud and npm have no in-webview player (Open on

@@ -30,6 +30,8 @@ export const protocol = defineProtocol("onlineVideos", {
         kind: Schema.union(["video", "playlist", "bangumi", "channel"]).default(
           "video",
         ),
+        /** Bilibili multi-part index (`?p=`), 1-based. */
+        part: Schema.number().min(1).max(10_000).optional(),
       }),
       result: videoDetails,
     },
