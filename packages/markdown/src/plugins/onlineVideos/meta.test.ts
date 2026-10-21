@@ -41,3 +41,19 @@ test("playlist meta labels the kind before author or id", () => {
     "YouTube · Playlist · Redlist",
   );
 });
+
+test("bangumi meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("Bilibili", "ep409506", {}, "bangumi"),
+    "Bilibili · Bangumi",
+  );
+  assert.equal(
+    videoMeta(
+      "Bilibili",
+      "ep409506",
+      { author: "哔哩哔哩番剧", duration: 1441 },
+      "bangumi",
+    ),
+    "Bilibili · Bangumi · 哔哩哔哩番剧 · 24:01",
+  );
+});

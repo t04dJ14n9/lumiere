@@ -33,7 +33,23 @@ function mediaNoun(video: OnlineVideo): string {
   if (video.provider === "soundcloud") {
     return video.id.includes("/sets/") ? "playlist" : "track";
   }
-  return video.kind === "playlist" ? "playlist" : "video";
+  if (video.kind === "playlist") {
+    return "playlist";
+  }
+  if (video.kind === "bangumi") {
+    return "bangumi";
+  }
+  return "video";
+}
+
+function openLabel(kind: OnlineVideo["kind"], providerName: string): string {
+  if (kind === "playlist") {
+    return `Open playlist on ${providerName}`;
+  }
+  if (kind === "bangumi") {
+    return `Open bangumi on ${providerName}`;
+  }
+  return `Open on ${providerName}`;
 }
 
 export function videoCard(
@@ -66,15 +82,12 @@ export function videoCard(
     options.trusted &&
     options.player &&
     provider.embeddable &&
-    video.kind !== "playlist"
+    video.kind === "video"
   ) {
     actions.append(playButton(card, video, options));
   }
   const open = opener(video, "mw-video-open", options);
-  open.textContent =
-    video.kind === "playlist"
-      ? `Open playlist on ${provider.name}`
-      : `Open on ${provider.name}`;
+  open.textContent = openLabel(video.kind, provider.name);
   actions.append(open);
   body.append(actions);
   if (!options.trusted) {

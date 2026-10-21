@@ -21,6 +21,10 @@ export { npmRegistryPath, parseNpmPackage } from "./npm";
 
 import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
+import { imageDataUrl } from "./imageData";
+export { imageDataUrl } from "./imageData";
+import { parseBilibiliSeason, parseBilibiliView } from "./bilibili";
+export { coverUrl, parseBilibiliSeason, parseBilibiliView } from "./bilibili";
 
 /** The part of `fetch` this module uses, so tests can pass a fake. */
 export type Fetch = (
@@ -54,19 +58,8 @@ export interface DetailsOptions {
 
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
-const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
-const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
-  ["image/jpeg", (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff],
-  ["image/png", (b) => ascii(b, 1, 4) === "PNG" && b[0] === 0x89],
-  ["image/gif", (b) => ascii(b, 0, 4) === "GIF8"],
-  [
-    "image/webp",
-    (b) => ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 12) === "WEBP",
-  ],
-];
-
 export class VideoDetailsSource {
   private readonly cache = new Map<
     string,
@@ -180,6 +173,9 @@ export class VideoDetailsSource {
       );
       return parseNpmPackage(body);
     }
+    if (kind === "bangumi") {
+      return this.fetchBangumi(id, signal);
+    }
     return this.fetchBilibiliView(id, signal);
   }
 
@@ -231,6 +227,26 @@ export class VideoDetailsSource {
     );
     const details = parseOEmbed(body);
     await this.attachCover(details, soundcloudThumbnail(body), signal);
+    return details;
+  }
+
+  private async fetchBangumi(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const query = id.startsWith("ep")
+      ? `ep_id=${id.slice(2)}`
+      : `season_id=${id.slice(2)}`;
+    const body = await this.json(
+      `https://api.bilibili.com/pgc/view/web/season?${query}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliSeason(body, id);
+    await this.attachCover(
+      details,
+      cover ? cover + COVER_SIZE : undefined,
+      signal,
+    );
     return details;
   }
 
@@ -305,6 +321,7 @@ export class VideoDetailsSource {
   }
 }
 
+/** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
@@ -346,78 +363,12 @@ function huggingfaceAuthor(
   return text(owner, 100);
 }
 
-/** The view API's details and the cover's https URL, if it is on hdslb.com. */
-export function parseBilibiliView(body: unknown): {
-  details: VideoDetails;
-  cover?: string;
-} {
-  if (!isRecord(body) || body.code !== 0 || !isRecord(body.data)) {
-    throw new Error("Unexpected Bilibili response");
-  }
-  const data = body.data;
-  const owner = isRecord(data.owner) ? data.owner : {};
-  const duration =
-    typeof data.duration === "number" &&
-    Number.isInteger(data.duration) &&
-    data.duration > 0 &&
-    data.duration < 1_000_000
-      ? data.duration
-      : undefined;
-  const cover = coverUrl(data.pic);
-  return {
-    details: withoutUndefined({
-      title: text(data.title, 300),
-      author: text(owner.name, 100),
-      duration,
-    }),
-    ...(cover ? { cover } : {}),
-  };
-}
-
-export function coverUrl(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return undefined;
-  }
-  if (
-    !/^https?:$/.test(url.protocol) ||
-    !COVER_HOSTS.has(url.hostname) ||
-    url.port ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    !/^\/bfs\/[A-Za-z0-9_\-/]+\.(?:jpg|jpeg|png|webp|gif)$/i.test(url.pathname)
-  ) {
-    return undefined;
-  }
-  return `https://${url.hostname}${url.pathname}`;
-}
-
-/** A data URL typed by the image's own signature, not the server's header. */
-export function imageDataUrl(bytes: Uint8Array): string {
-  const type = SIGNATURES.find(([, matches]) => matches(bytes))?.[0];
-  if (!type) {
-    throw new Error("Unrecognised image");
-  }
-  return `data:${type};base64,${Buffer.from(bytes).toString("base64")}`;
-}
-
 function text(value: unknown, max: number): string | undefined {
   if (typeof value !== "string") {
     return undefined;
   }
   const trimmed = value.replace(/\s+/g, " ").trim();
   return trimmed ? trimmed.slice(0, max) : undefined;
-}
-
-function ascii(bytes: Uint8Array, from: number, to: number): string {
-  return String.fromCharCode(...bytes.subarray(from, to));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

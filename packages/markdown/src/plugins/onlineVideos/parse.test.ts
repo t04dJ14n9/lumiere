@@ -142,6 +142,35 @@ test("YouTube playlist links give the playlist ID", () => {
   );
 });
 
+test("Bilibili bangumi episode and season links", () => {
+  assert.deepEqual(
+    parseVideoUrl("https://www.bilibili.com/bangumi/play/ep409506"),
+    {
+      provider: "bilibili",
+      kind: "bangumi",
+      id: "ep409506",
+      page: "https://www.bilibili.com/bangumi/play/ep409506",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl("https://m.bilibili.com/bangumi/play/ss40154/?from=x"),
+    {
+      provider: "bilibili",
+      kind: "bangumi",
+      id: "ss40154",
+      page: "https://www.bilibili.com/bangumi/play/ss40154",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://www.bilibili.com/bangumi/play/EP409506")?.id,
+    "ep409506",
+  );
+  assert.equal(
+    parseVideoUrl("https://www.bilibili.com/bangumi/play/ep1")?.id,
+    "ep1",
+  );
+});
+
 test("anything that is not a well-formed video link is left alone", () => {
   for (const link of [
     "clip.mp4",
@@ -160,7 +189,9 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://www.bilibili.com/video/BV1DRHU6LEL",
     "https://www.bilibili.com/video/BV1DRHU6LELy/extra",
     "https://www.bilibili.com/video/av0",
-    "https://www.bilibili.com/bangumi/play/ep1",
+    "https://www.bilibili.com/bangumi/play/ep0",
+    "https://www.bilibili.com/bangumi/play/epid123",
+    "https://www.bilibili.com/bangumi/media/md28235858",
     "https://space.bilibili.com/video/BV1DRHU6LELy",
     "https://huggingface.co.evil.test/google/gemma-2-2b",
     "https://huggingface.co/datasets/squad",

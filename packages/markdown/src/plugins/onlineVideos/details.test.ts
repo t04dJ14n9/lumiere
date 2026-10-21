@@ -6,6 +6,7 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  parseBilibiliSeason,
   parseBilibiliView,
   parseHuggingFaceModel,
   parseOEmbed,
@@ -490,4 +491,82 @@ test("an npm lookup fetches the registry document", async () => {
   assert.equal(calls[0]?.url, "https://registry.npmjs.org/lodash");
   assert.equal(calls[1]?.url, "https://registry.npmjs.org/@babel%2Fcore");
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+const SEASON = {
+  code: 0,
+  message: "success",
+  result: {
+    title: "现实主义勇者的王国再建记",
+    season_title: "现实主义勇者的王国再建记",
+    cover:
+      "http://i0.hdslb.com/bfs/bangumi/image/ddfeb0782515b3af39fb12818273b9ced5850f34.jpg",
+    square_cover: "http://i0.hdslb.com/bfs/bangumi/image/square.jpg",
+    up_info: { uname: "哔哩哔哩番剧" },
+    episodes: [
+      {
+        id: 409505,
+        title: "1",
+        long_title: "欢迎来到现实世界",
+        duration: 1421000,
+        cover: "http://i0.hdslb.com/bfs/archive/aaaa.jpg",
+      },
+      {
+        id: 409506,
+        title: "2",
+        long_title: "唯才是举",
+        duration: 1441000,
+        cover:
+          "http://i0.hdslb.com/bfs/archive/78fbc05a9552e8032496801cba031a19b5f0478a.png",
+      },
+    ],
+  },
+};
+
+test("Bilibili season responses give episode or season titles and covers", () => {
+  assert.deepEqual(parseBilibiliSeason(SEASON, "ep409506"), {
+    details: {
+      title: "现实主义勇者的王国再建记 · 唯才是举",
+      author: "哔哩哔哩番剧",
+      duration: 1441,
+    },
+    cover:
+      "https://i0.hdslb.com/bfs/archive/78fbc05a9552e8032496801cba031a19b5f0478a.png",
+  });
+  assert.deepEqual(parseBilibiliSeason(SEASON, "ss40154"), {
+    details: {
+      title: "现实主义勇者的王国再建记",
+      author: "哔哩哔哩番剧",
+    },
+    cover:
+      "https://i0.hdslb.com/bfs/bangumi/image/ddfeb0782515b3af39fb12818273b9ced5850f34.jpg",
+  });
+  assert.throws(() => parseBilibiliSeason({ code: -404 }, "ep1"));
+  assert.throws(() => parseBilibiliSeason(null, "ep1"));
+});
+
+test("a bangumi lookup uses the season API with ep_id or season_id", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://api.bilibili.com/pgc/view/web/season?ep_id=409506": () =>
+      response(SEASON),
+    "https://api.bilibili.com/pgc/view/web/season?season_id=40154": () =>
+      response(SEASON),
+    "https://i0.hdslb.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const source = new VideoDetailsSource({ fetch });
+  const ep = await source.get("bilibili", "ep409506", "bangumi");
+  assert.equal(ep.title, "现实主义勇者的王国再建记 · 唯才是举");
+  assert.equal(ep.author, "哔哩哔哩番剧");
+  assert.equal(ep.duration, 1441);
+  assert.match(ep.cover ?? "", /^data:image\/jpeg;base64,/);
+  const ss = await source.get("bilibili", "ss40154", "bangumi");
+  assert.equal(ss.title, "现实主义勇者的王国再建记");
+  assert.deepEqual(
+    calls.map((call) => call.url).filter((u) => u.includes("pgc")),
+    [
+      "https://api.bilibili.com/pgc/view/web/season?ep_id=409506",
+      "https://api.bilibili.com/pgc/view/web/season?season_id=40154",
+    ],
+  );
+  assert.deepEqual(await source.get("bilibili", "ep409506"), {});
 });

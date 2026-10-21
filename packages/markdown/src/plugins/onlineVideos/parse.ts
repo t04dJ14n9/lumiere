@@ -1,21 +1,22 @@
 /**
  * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm
- * links (and YouTube playlists). Only a fully parsed and validated ID leaves
- * this module; players and cards are built from it, never from the link text.
+ * links (YouTube playlists, Bilibili bangumi). Only a fully parsed and
+ * validated ID leaves this module; players and cards are built from it,
+ * never from the link text.
  */
 export type VideoProvider =
   "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
-export type MediaKind = "video" | "playlist";
+export type MediaKind = "video" | "playlist" | "bangumi";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
-  /** Video or playlist kind (playlists are YouTube-only today). */
+  /** Video, playlist (YouTube), or bangumi episode/season (Bilibili). */
   readonly kind: MediaKind;
   /**
    * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
-   * `BV…` / `av` id, a Hugging Face model id (`name` or `owner/name`), a
-   * Spotify `track|album|playlist|episode|show:…` id, a SoundCloud
-   * `user/slug` (or `user/sets/slug`) path, or an npm package name
-   * (`lodash` or `@scope/name`).
+   * `BV…` / `av` id, a bangumi `ep…` / `ss…` id, a Hugging Face model id
+   * (`name` or `owner/name`), a Spotify `track|album|playlist|episode|show:…`
+   * id, a SoundCloud `user/slug` (or `user/sets/slug`) path, or an npm
+   * package name (`lodash` or `@scope/name`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -32,6 +33,8 @@ const YOUTUBE_PLAYLIST = /^(?:PL|UU|LL|FL|OL|RD)[A-Za-z0-9_-]{10,64}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** Bangumi episode (`ep409506`) or season (`ss40154`) ids. */
+const BANGUMI_ID = /^(?:ep|ss)([1-9][0-9]{0,9})$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -45,6 +48,7 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+
 const SOUNDCLOUD_HOSTS = new Set([
   "soundcloud.com",
   "www.soundcloud.com",
@@ -55,6 +59,7 @@ const SOUNDCLOUD_ID = /^[A-Za-z0-9_-]{1,50}\/(?:sets\/)?[A-Za-z0-9_-]{1,200}$/;
 const SOUNDCLOUD_PATH =
   /^\/([A-Za-z0-9_-]{1,50})\/(?:(sets)\/)?([A-Za-z0-9_-]{1,200})\/?$/;
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
+const BANGUMI_PATH = /^\/bangumi\/play\/((?:ep|ss)[1-9][0-9]{0,9})\/?$/i;
 const MAX_INTEGER = 10 ** 9;
 
 /**
@@ -144,6 +149,9 @@ export function isVideoId(
   if (kind === "playlist") {
     return provider === "youtube" && YOUTUBE_PLAYLIST.test(id);
   }
+  if (kind === "bangumi") {
+    return provider === "bilibili" && BANGUMI_ID.test(id);
+  }
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
   }
@@ -164,15 +172,18 @@ export function isVideoId(
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   const url = httpUrl(raw);
-  return url ? parseKnownHost(url.hostname.toLowerCase(), url) : undefined;
-}
-
-function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
-  if (host === "youtu.be" || YOUTUBE_HOSTS.has(host)) {
-    return parseYoutubeHost(host, url);
+  if (!url) {
+    return undefined;
+  }
+  const host = url.hostname.toLowerCase();
+  if (host === "youtu.be") {
+    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+  }
+  if (YOUTUBE_HOSTS.has(host)) {
+    return youtubeFromHost(url);
   }
   if (BILIBILI_HOSTS.has(host)) {
-    return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+    return bilibiliFromHost(url);
   }
   if (HF_HOSTS.has(host)) {
     const match = HF_PATH.exec(url.pathname);
@@ -209,10 +220,7 @@ function httpUrl(raw: string): URL | undefined {
   return url;
 }
 
-function parseYoutubeHost(host: string, url: URL): OnlineVideo | undefined {
-  if (host === "youtu.be") {
-    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
-  }
+function youtubeFromHost(url: URL): OnlineVideo | undefined {
   const playlist = youtubePlaylist(url);
   if (playlist) {
     return playlist;
@@ -222,6 +230,14 @@ function parseYoutubeHost(host: string, url: URL): OnlineVideo | undefined {
       ? url.searchParams.get("v")
       : YOUTUBE_PATHS.exec(url.pathname)?.[1];
   return youtubeVideo(id ?? undefined, url);
+}
+
+function bilibiliFromHost(url: URL): OnlineVideo | undefined {
+  const bangumi = bilibiliBangumi(url);
+  if (bangumi) {
+    return bangumi;
+  }
+  return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
 }
 
 /**
@@ -322,6 +338,24 @@ function soundcloud(url: URL): OnlineVideo | undefined {
     kind: "video",
     id,
     page: `https://soundcloud.com/${id}`,
+  };
+}
+
+/** `/bangumi/play/ep409506` or `/bangumi/play/ss40154`. */
+function bilibiliBangumi(url: URL): OnlineVideo | undefined {
+  const match = BANGUMI_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const id = match[1]!.toLowerCase();
+  if (!BANGUMI_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "bilibili",
+    kind: "bangumi",
+    id,
+    page: `https://www.bilibili.com/bangumi/play/${id}`,
   };
 }
 
