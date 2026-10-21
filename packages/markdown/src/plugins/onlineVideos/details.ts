@@ -99,12 +99,12 @@ export class VideoDetailsSource {
       return cached.value;
     }
     const entry = { expires: Infinity, value: Promise.resolve({}) };
-    entry.value = this.queued(() => this.lookup(provider, id, kind, page)).catch(
-      () => {
-        entry.expires = this.now() + this.retryAfterMs;
-        return {};
-      },
-    );
+    entry.value = this.queued(() =>
+      this.lookup(provider, id, kind, page),
+    ).catch(() => {
+      entry.expires = this.now() + this.retryAfterMs;
+      return {};
+    });
     this.cache.delete(key);
     this.cache.set(key, entry);
     for (const old of this.cache.keys()) {
