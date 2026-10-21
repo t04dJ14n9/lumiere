@@ -189,10 +189,25 @@ test("YouTube channel UC and @handle links", () => {
     parseVideoUrl("https://m.youtube.com/@GoogleDevelopers/videos"),
     undefined,
   );
-  assert.equal(
+  assert.deepEqual(
     parseVideoUrl("https://www.youtube.com/c/GoogleDevelopers"),
-    undefined,
+    {
+      provider: "youtube",
+      kind: "channel",
+      id: "c:GoogleDevelopers",
+      page: "https://www.youtube.com/c/GoogleDevelopers",
+    },
   );
+  assert.deepEqual(
+    parseVideoUrl("https://www.youtube.com/user/GoogleDevelopers/"),
+    {
+      provider: "youtube",
+      kind: "channel",
+      id: "user:GoogleDevelopers",
+      page: "https://www.youtube.com/user/GoogleDevelopers",
+    },
+  );
+  assert.equal(parseVideoUrl("https://www.youtube.com/c/x"), undefined);
 });
 
 test("anything that is not a well-formed video link is left alone", () => {
