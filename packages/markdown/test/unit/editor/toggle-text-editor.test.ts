@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createRoot } from "@workshop/core";
 import { toggleTextEditor } from "../../../src/plugins/editor/toggle-text-editor";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
-import { fakeDocument, fakeHost } from "../../support/vscode-fake";
+import { editorHost } from "../../../src/plugins/editor/host";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
+import { provideHostServices } from "../../../src/shared/host";
+import type { DocumentSession } from "../../../src/plugins/document/api";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function panelHarness(uri = "file:///note.md") {
   const calls: unknown[][] = [];
@@ -159,4 +163,51 @@ test("with nothing open, the toggle is a no-op", async () => {
     serial: async () => {},
   });
   assert.deepEqual(calls, []);
+});
+
+test("the editor host's Ctrl/Cmd+E command can read the editors service it provides", async () => {
+  let toggle: (() => Promise<void>) | undefined;
+  const calls: unknown[][] = [];
+  const root = createRoot();
+  root.provide("documents", {
+    session: () => ({}) as DocumentSession,
+    release() {},
+  });
+  provideHostServices(
+    root,
+    fakeHost({
+      activeEditor: {
+        note: () => "file:///note.md",
+        textEditor: () => ({ text: "hi", selection: "" }),
+        onNoteChanged: () => () => {},
+        onTextSelectionChanged: () => () => {},
+      },
+      hostCommands: {
+        register: (id, command) => {
+          if (id === "lumiere.markdown.toggleTextEditor") {
+            toggle = async () => {
+              await command();
+            };
+          }
+          return () => {};
+        },
+        execute: async (...args) => {
+          calls.push(args);
+          return undefined;
+        },
+      },
+    }),
+  );
+  root.plugin(editorHost, { configure() {} });
+  await root.settled();
+
+  assert.ok(toggle, "editor host should register the toggle command");
+  await toggle();
+
+  assert.deepEqual(calls.at(-1), [
+    "vscode.openWith",
+    "file:///note.md",
+    MARKDOWN_EDITOR.viewType,
+  ]);
+  await root.dispose();
 });

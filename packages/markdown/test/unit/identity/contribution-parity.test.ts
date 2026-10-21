@@ -251,7 +251,7 @@ function directRegistrations(selections: Selections): Plugin {
     provides: ["editorActions"],
     apply(ctx) {
       registerMarkdownAssociation(ctx);
-      registerToggleTextEditor(ctx);
+      registerToggleTextEditor(ctx, ctx.editors);
       registerJumpHistory(ctx, ctx.editors);
       registerEditorActions(ctx, ctx.editors, selections);
       registerPluginManagement(ctx, {} as never, {} as never);
