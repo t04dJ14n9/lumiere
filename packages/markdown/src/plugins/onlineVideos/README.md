@@ -137,6 +137,8 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
   parsing, and hdslb cover URLs.
 - `imageData.ts`: image signatures and cover data URLs.
 - `thumbnails.ts`: oEmbed / Spotify / SoundCloud cover URL allowlists.
+- `oembed.ts`: oEmbed and Hugging Face model title/author parsing.
+- `soundcloud.ts`: SoundCloud track/set URL recognition.
 - `protocol.ts`: the `details` request.
 - `meta.ts`: the card's author and length line.
 - `parse.ts`: link recognition and ID validation.

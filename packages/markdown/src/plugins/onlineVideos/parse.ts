@@ -4,6 +4,9 @@
  * Only a fully parsed and validated ID leaves this module; players and
  * cards are built from it, never from the link text.
  */
+
+import { isSoundcloudHost, isSoundcloudId, soundcloud } from "./soundcloud";
+
 export type VideoProvider =
   "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
 export type MediaKind =
@@ -70,15 +73,6 @@ const BILIBILI_LIVE_HOSTS = new Set([
   "www.live.bilibili.com",
 ]);
 
-const SOUNDCLOUD_HOSTS = new Set([
-  "soundcloud.com",
-  "www.soundcloud.com",
-  "m.soundcloud.com",
-]);
-/** `user/track` or `user/sets/playlist` (slugs: letters, digits, `_`, `-`). */
-const SOUNDCLOUD_ID = /^[A-Za-z0-9_-]{1,50}\/(?:sets\/)?[A-Za-z0-9_-]{1,200}$/;
-const SOUNDCLOUD_PATH =
-  /^\/([A-Za-z0-9_-]{1,50})\/(?:(sets)\/)?([A-Za-z0-9_-]{1,200})\/?$/;
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const BANGUMI_PATH = /^\/bangumi\/play\/((?:ep|ss)[1-9][0-9]{0,9})\/?$/i;
 const MAX_INTEGER = 10 ** 9;
@@ -204,7 +198,7 @@ function isProviderVideoId(provider: VideoProvider, id: string): boolean {
     return SPOTIFY_ID.test(id);
   }
   if (provider === "soundcloud") {
-    return SOUNDCLOUD_ID.test(id);
+    return isSoundcloudId(id);
   }
   return id.length <= 214 && NPM_NAME.test(id);
 }
@@ -237,7 +231,7 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   if (SPOTIFY_HOSTS.has(host)) {
     return spotify(url);
   }
-  if (SOUNDCLOUD_HOSTS.has(host)) {
+  if (isSoundcloudHost(host)) {
     return soundcloud(url);
   }
   if (NPM_HOSTS.has(host)) {
@@ -422,35 +416,6 @@ function huggingface(id: string): OnlineVideo | undefined {
     kind: "video",
     id,
     page: `https://huggingface.co/${id}`,
-  };
-}
-
-/** `/user/track` or `/user/sets/playlist` (not discover/you/settings). */
-function soundcloud(url: URL): OnlineVideo | undefined {
-  const match = SOUNDCLOUD_PATH.exec(url.pathname);
-  if (!match) {
-    return undefined;
-  }
-  const user = match[1]!;
-  const sets = match[2];
-  const slug = match[3]!;
-  // Reserved first segments that are not artist pages.
-  if (
-    /^(?:discover|you|settings|pages|charts|genres|search|signin|signup|upload|messages|notifications|premium|pro|jobs|terms|privacy|cookies|imprint|about)$/i.test(
-      user,
-    )
-  ) {
-    return undefined;
-  }
-  const id = sets ? `${user}/sets/${slug}` : `${user}/${slug}`;
-  if (!SOUNDCLOUD_ID.test(id)) {
-    return undefined;
-  }
-  return {
-    provider: "soundcloud",
-    kind: "video",
-    id,
-    page: `https://soundcloud.com/${id}`,
   };
 }
 
