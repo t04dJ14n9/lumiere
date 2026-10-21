@@ -47,10 +47,10 @@ for (const [name, source, diagnostic] of [
   });
 }
 
-test("the plugins' bootstrap imports no VS Code, so other editors can start it", async () => {
+test("the portable host entry imports no VS Code, so other editors can start the plugins", async () => {
   const esbuild = await import("esbuild");
   const result = await esbuild.build({
-    entryPoints: [resolve("src/host/bootstrap.ts")],
+    entryPoints: [resolve("src/host/portable.ts")],
     bundle: true,
     platform: "node",
     format: "esm",
