@@ -39,6 +39,9 @@ function mediaNoun(video: OnlineVideo): string {
   if (video.kind === "bangumi") {
     return "bangumi";
   }
+  if (video.kind === "channel") {
+    return "channel";
+  }
   return "video";
 }
 
@@ -48,6 +51,9 @@ function openLabel(kind: OnlineVideo["kind"], providerName: string): string {
   }
   if (kind === "bangumi") {
     return `Open bangumi on ${providerName}`;
+  }
+  if (kind === "channel") {
+    return `Open channel on ${providerName}`;
   }
   return `Open on ${providerName}`;
 }

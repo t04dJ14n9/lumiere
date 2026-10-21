@@ -570,3 +570,18 @@ test("a bangumi lookup uses the season API with ep_id or season_id", async () =>
   );
   assert.deepEqual(await source.get("bilibili", "ep409506"), {});
 });
+
+test("a YouTube channel lookup skips the network", async () => {
+  let hits = 0;
+  const fetch: Fetch = async () => {
+    hits++;
+    return response({ title: "nope" });
+  };
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "youtube",
+    "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+    "channel",
+  );
+  assert.deepEqual(details, {});
+  assert.equal(hits, 0);
+});

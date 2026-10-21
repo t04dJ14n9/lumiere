@@ -22,6 +22,8 @@ export function videoMeta(
     kindLabel = "Playlist";
   } else if (kind === "bangumi") {
     kindLabel = "Bangumi";
+  } else if (kind === "channel") {
+    kindLabel = "Channel";
   }
   const known = [
     kindLabel,

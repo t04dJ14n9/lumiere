@@ -184,6 +184,10 @@ export class VideoDetailsSource {
     kind: MediaKind,
     signal: AbortSignal,
   ): Promise<VideoDetails> {
+    // Channels have no keyless oEmbed; the card keeps alt text / id.
+    if (kind === "channel") {
+      return {};
+    }
     const page =
       kind === "playlist"
         ? `https://www.youtube.com/playlist?list=${id}`

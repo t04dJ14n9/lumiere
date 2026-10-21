@@ -1,22 +1,23 @@
 /**
  * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm
- * links (YouTube playlists, Bilibili bangumi). Only a fully parsed and
- * validated ID leaves this module; players and cards are built from it,
- * never from the link text.
+ * links (YouTube playlists and channels, Bilibili bangumi). Only a fully
+ * parsed and validated ID leaves this module; players and cards are built
+ * from it, never from the link text.
  */
 export type VideoProvider =
   "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
-export type MediaKind = "video" | "playlist" | "bangumi";
+export type MediaKind = "video" | "playlist" | "bangumi" | "channel";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
-  /** Video, playlist (YouTube), or bangumi episode/season (Bilibili). */
+  /** Video, playlist/channel (YouTube), or bangumi episode/season (Bilibili). */
   readonly kind: MediaKind;
   /**
-   * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
-   * `BV…` / `av` id, a bangumi `ep…` / `ss…` id, a Hugging Face model id
-   * (`name` or `owner/name`), a Spotify `track|album|playlist|episode|show:…`
-   * id, a SoundCloud `user/slug` (or `user/sets/slug`) path, or an npm
-   * package name (`lodash` or `@scope/name`).
+   * An 11-character YouTube video ID, a YouTube playlist ID, a channel
+   * `UC…` / `@handle`, a Bilibili `BV…` / `av` id, a bangumi `ep…` / `ss…`
+   * id, a Hugging Face model id (`name` or `owner/name`), a Spotify
+   * `track|album|playlist|episode|show:…` id, a SoundCloud `user/slug`
+   * (or `user/sets/slug`) path, or an npm package name (`lodash` or
+   * `@scope/name`).
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -35,6 +36,11 @@ const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
 /** Bangumi episode (`ep409506`) or season (`ss40154`) ids. */
 const BANGUMI_ID = /^(?:ep|ss)([1-9][0-9]{0,9})$/;
+/** YouTube channel id (`UCxxxx…` 24 chars) or `@handle`. */
+const YOUTUBE_CHANNEL_UC = /^UC[A-Za-z0-9_-]{22}$/;
+const YOUTUBE_CHANNEL_HANDLE = /^@[A-Za-z0-9._-]{3,30}$/;
+const YOUTUBE_CHANNEL_PATH =
+  /^\/(?:channel\/(UC[A-Za-z0-9_-]{22})|(@[A-Za-z0-9._-]{3,30}))\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -152,6 +158,16 @@ export function isVideoId(
   if (kind === "bangumi") {
     return provider === "bilibili" && BANGUMI_ID.test(id);
   }
+  if (kind === "channel") {
+    return (
+      provider === "youtube" &&
+      (YOUTUBE_CHANNEL_UC.test(id) || YOUTUBE_CHANNEL_HANDLE.test(id))
+    );
+  }
+  return isProviderVideoId(provider, id);
+}
+
+function isProviderVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
   }
@@ -225,6 +241,10 @@ function youtubeFromHost(url: URL): OnlineVideo | undefined {
   if (playlist) {
     return playlist;
   }
+  const channel = youtubeChannel(url);
+  if (channel) {
+    return channel;
+  }
   const id =
     url.pathname === "/watch"
       ? url.searchParams.get("v")
@@ -238,6 +258,22 @@ function bilibiliFromHost(url: URL): OnlineVideo | undefined {
     return bangumi;
   }
   return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+}
+
+/**
+ * Channel URLs (`/channel/UC…` or `/@handle`). Custom `/c/` and `/user/`
+ * paths stay images — they need a network resolve we refuse.
+ */
+function youtubeChannel(url: URL): OnlineVideo | undefined {
+  const match = YOUTUBE_CHANNEL_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const id = match[1] ?? match[2]!;
+  const page = id.startsWith("@")
+    ? `https://www.youtube.com/${id}`
+    : `https://www.youtube.com/channel/${id}`;
+  return { provider: "youtube", kind: "channel", id, page };
 }
 
 /**

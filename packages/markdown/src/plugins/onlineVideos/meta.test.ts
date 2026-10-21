@@ -57,3 +57,10 @@ test("bangumi meta labels the kind before author or id", () => {
     "Bilibili · Bangumi · 哔哩哔哩番剧 · 24:01",
   );
 });
+
+test("channel meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("YouTube", "UC_x5XG1OV2P6uZZ5FSM9Ttw", {}, "channel"),
+    "YouTube · Channel",
+  );
+});
