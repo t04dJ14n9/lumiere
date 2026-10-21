@@ -84,27 +84,29 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
 export const PLAYER_SANDBOX =
   "allow-scripts allow-same-origin allow-presentation";
 
+const NO_WEBVIEW_KIND = new Set([
+  "playlist",
+  "bangumi",
+  "channel",
+  "space",
+  "live",
+]);
+
+const NO_WEBVIEW_PROVIDER = new Set([
+  "huggingface",
+  "spotify",
+  "soundcloud",
+  "npm",
+  "vimeo",
+  "ted",
+]);
+
 export function playerUrl(video: OnlineVideo): string {
-  if (
-    video.kind === "playlist" ||
-    video.kind === "bangumi" ||
-    video.kind === "channel" ||
-    video.kind === "space" ||
-    video.kind === "live"
-  ) {
+  if (NO_WEBVIEW_KIND.has(video.kind)) {
     throw new Error(`${video.kind} has no in-webview player`);
   }
   const provider = providers[video.provider];
-  if (video.provider === "huggingface") {
-    throw new Error("Hugging Face has no in-webview player");
-  }
-  if (
-    video.provider === "spotify" ||
-    video.provider === "soundcloud" ||
-    video.provider === "npm" ||
-    video.provider === "vimeo" ||
-    video.provider === "ted"
-  ) {
+  if (NO_WEBVIEW_PROVIDER.has(video.provider)) {
     throw new Error(`${video.provider} has no in-webview player`);
   }
   if (video.provider === "youtube") {

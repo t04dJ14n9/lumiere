@@ -254,15 +254,7 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
     const match = NPM_PATH.exec(url.pathname);
     return match ? npmPackage(match[1]!) : undefined;
   }
-  const vimeoVideo = vimeo(url);
-  if (vimeoVideo) {
-    return vimeoVideo;
-  }
-  const tedTalk = ted(url);
-  if (tedTalk) {
-    return tedTalk;
-  }
-  return undefined;
+  return vimeo(url) ?? ted(url);
 }
 
 function httpUrl(raw: string): URL | undefined {
