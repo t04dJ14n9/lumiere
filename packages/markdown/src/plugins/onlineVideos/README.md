@@ -118,6 +118,7 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 - `bilibili.ts`: Bilibili view and bangumi season parsing, and hdslb cover
   URLs.
 - `imageData.ts`: image signatures and cover data URLs.
+- `thumbnails.ts`: oEmbed / Spotify / SoundCloud cover URL allowlists.
 - `protocol.ts`: the `details` request.
 - `meta.ts`: the card's author and length line.
 - `parse.ts`: link recognition and ID validation.

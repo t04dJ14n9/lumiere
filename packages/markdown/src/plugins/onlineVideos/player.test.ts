@@ -119,7 +119,9 @@ test("bangumi and playlists refuse an in-webview player", () => {
   );
   assert.throws(() =>
     playerUrl(
-      video("https://www.youtube.com/playlist?list=PL4cUxeGkcC9gZD-Tvwfod2gaISzfRiP9d"),
+      video(
+        "https://www.youtube.com/playlist?list=PL4cUxeGkcC9gZD-Tvwfod2gaISzfRiP9d",
+      ),
     ),
   );
 });
