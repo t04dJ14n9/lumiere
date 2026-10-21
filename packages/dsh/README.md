@@ -1,0 +1,85 @@
+# Lumière in DeepSeek Harness (`@workshop/dsh`)
+
+Opens the Markdown notes of a [DeepSeek Harness](https://www.deepseek.com/en/harness/)
+(DSH) workspace in Lumière's editor, in DSH's preview sidebar, instead of
+DSH's read-only preview: the same Obsidian-style Live Preview, wikilinks,
+embeds, properties, math, Mermaid and callouts as in VS Code and Cursor.
+Notes save as you type. DSH's own preview stays in the viewer menu above a
+note.
+
+## How it works
+
+DSH, like Lumière, is built on Cordis with "everything is a plugin", and a
+DSH bundle has a host half (Node) and a browser half. Lumière's Markdown
+plugins already reach their editor only through the host services in
+`packages/markdown/src/shared/host`, so the host half here implements those
+services over Node and DSH, and starts the plugins with the same `bootstrap`
+VS Code uses (`@workshop/markdown/portable`). Lumière's plugin tree runs on
+its own Cordis; DSH's context objects never enter it.
+
+The browser half registers Lumière as the Markdown renderer of DSH's
+document previews (`ctx.documentPreviews`, at the `extension` band, which
+outranks DSH's own). Its body is an iframe of the editor page, the same
+webview bundle VS Code shows, served by the host half from DSH's web server
+behind DSH's browser authentication. A shim in the page stands in for VS
+Code's webview API: `acquireVsCodeApi().postMessage` and the page's
+`message` events travel over a WebSocket to the panel on the host, and DSH's
+theme tokens become the `--vscode-*` variables the editor's styles read.
+
+Following a link to a note that is not open asks DSH to open it in a new
+tab (`ctx.sidebarRight.openResource`); the host reveals the heading or block
+once the new page connects.
+
+## Files
+
+- `src/host/index.ts`: the DSH plugin: starts Lumière and registers its routes.
+- `src/host/start.ts`: Lumière's plugin tree over DSH's host services.
+- `src/host/services.ts`: every host service the plugins inject, as DSH provides it.
+- `src/host/documents.ts`: notes on disk, edited in memory and saved after a pause.
+- `src/host/panels.ts`, `src/host/panel.ts`: editor pages as panels, and their sockets.
+- `src/host/routes.ts`, `src/host/page.ts`: the editor page, assets, note files and the socket.
+- `src/host/vault.ts`: the vault index's file system, listing and watching.
+- `src/host/navigation.ts`: following links, creating notes, opening tabs.
+- `src/host/settings.ts`: settings from the contributed defaults and a JSON file.
+- `src/host/ui-services.ts`: dialogs, clipboard and the active editor, drawn by the page.
+- `src/host/workspace.ts`: workspace files and state.
+- `src/host/inert.ts`: Git, diffs, views and panels, which DSH has no counterpart for yet.
+- `src/host/dsh.ts`: the parts of DSH's plugin context used here.
+- `src/client/index.ts`, `src/client/address.ts`: the browser half and DSH's file addresses.
+- `src/webview/shim.ts`, `src/webview/ui.ts`, `src/webview/theme.ts`, `src/webview/theme-dom.ts`: the page's stand-in for VS Code.
+- `src/protocol.ts`: what the page and the host send each other.
+- `scripts/build.mjs`: builds the installable bundle into `dist/bundle`.
+
+## Services, routes and settings
+
+The host half injects DSH's `webServer` and `connection`; the browser half
+`documentPreviews`, `slots` and `sidebarRight`. Routes, all behind DSH's
+authentication: `/lumiere/editor` (a note's page), `/lumiere/m/*` (the
+editor), `/lumiere/d/*` (the shim), `/lumiere/file` (a note's images, inside
+its workspace only) and the `/lumiere/socket` upgrade. Settings use the
+`lumiere.markdown.*` keys and defaults of the VS Code extension and are kept
+in `$DSH_HOME/lumiere/settings.json` (`~/.dsh` by default), beside the vault
+snapshots and editor state.
+
+## Build and install
+
+```sh
+pnpm --filter @workshop/dsh build          # dist/bundle
+dsh plugin --profile web add link:$PWD/packages/dsh/dist/bundle
+dsh web
+```
+
+Needs DeepSeek Harness 0.2.1 or later, whose document previews accept
+plugins. Restart DSH after rebuilding.
+
+## Limits and differences from VS Code
+
+- Markdown only: PDFs still open in DSH's own viewer.
+- No Git features (blame, gutter, diffs), no tree views (backlinks, outline,
+  tags), no graph panel and no status bar: DSH has no counterpart yet.
+- Commands have no palette or keybindings in DSH yet; what Lumière does
+  through clicks, links, the editor and its context menus works.
+- Copy Link for Agent copies to the clipboard: paste into DSH's chat.
+- Renaming a note from its inline title is not available.
+- The editor page is same-origin with DSH, so its strict content security
+  policy (scripts by nonce only) is what keeps a note from reaching DSH.
