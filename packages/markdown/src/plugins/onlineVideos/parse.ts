@@ -164,6 +164,10 @@ export function isVideoId(
       (YOUTUBE_CHANNEL_UC.test(id) || YOUTUBE_CHANNEL_HANDLE.test(id))
     );
   }
+  return isProviderVideoId(provider, id);
+}
+
+function isProviderVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
   }
