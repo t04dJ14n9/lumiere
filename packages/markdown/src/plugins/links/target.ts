@@ -1,8 +1,10 @@
 import {
+  lookupKey,
   splitLinktext,
   withoutNoteExtension,
   type LinkSyntax,
 } from "../../shared/vault-path";
+import { MAX_KNOWN_NOTES } from "./protocol";
 import type { VaultIndex } from "../vault/api";
 
 /** Decode once and reject ambiguous paths before the host resolves a target. */
@@ -61,4 +63,27 @@ export function openedVaultTarget(
     uri: vault.resolveLink(path, source, syntax)?.uri,
     passthrough: true,
   };
+}
+
+/**
+ * Keys the webview can match against `unresolvedKey` for optimistic dimming
+ * before the open note is re-indexed: each note's path without `.md`, its
+ * Obsidian lookup basename, and its aliases — all lower-cased.
+ */
+export function knownNoteKeys(vault: VaultIndex): string[] {
+  const keys = new Set<string>();
+  for (const file of vault.files()) {
+    if (file.extension !== "md" || file.excluded) {
+      continue;
+    }
+    keys.add(withoutNoteExtension(file.path).toLowerCase());
+    keys.add(lookupKey(file.path));
+    for (const alias of vault.metadata(file.path)?.aliases ?? []) {
+      const name = alias.trim().toLowerCase();
+      if (name.length > 0) {
+        keys.add(name);
+      }
+    }
+  }
+  return [...keys].sort().slice(0, MAX_KNOWN_NOTES);
 }
