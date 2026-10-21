@@ -25,3 +25,19 @@ test("the card line shows author and length when known, else the ID", () => {
     "YouTube · Rick Astley",
   );
 });
+
+test("playlist meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("YouTube", "PLrAXtmRdnEQy6nuLMVjHUkRUhDiXqVc1J", {}, "playlist"),
+    "YouTube · Playlist",
+  );
+  assert.equal(
+    videoMeta(
+      "YouTube",
+      "PLrAXtmRdnEQy6nuLMVjHUkRUhDiXqVc1J",
+      { author: "Redlist" },
+      "playlist",
+    ),
+    "YouTube · Playlist · Redlist",
+  );
+});

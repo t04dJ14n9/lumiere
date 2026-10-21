@@ -46,6 +46,9 @@ export const PLAYER_SANDBOX =
   "allow-scripts allow-same-origin allow-presentation";
 
 export function playerUrl(video: OnlineVideo): string {
+  if (video.kind === "playlist") {
+    throw new Error("Playlists have no in-webview player");
+  }
   const provider = providers[video.provider];
   if (video.provider === "huggingface") {
     throw new Error("Hugging Face has no in-webview player");
@@ -105,7 +108,7 @@ export function playerAttributes(video: OnlineVideo): Record<string, string> {
 
 /** YouTube's still for the video; other covers need an API call, so none. */
 export function thumbnailUrl(video: OnlineVideo): string | undefined {
-  return video.provider === "youtube"
+  return video.provider === "youtube" && video.kind === "video"
     ? `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
     : undefined;
 }

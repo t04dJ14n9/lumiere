@@ -44,13 +44,14 @@ export const onlineVideosWebview: Plugin<Infer<typeof config>> = {
           .catch((error) => ctx.logger.warn("Open video failed", error));
       },
       details(video) {
-        const key = `${video.provider}:${video.id}`;
+        const key = `${video.provider}:${video.kind}:${video.id}`;
         let answer = known.get(key);
         if (!answer) {
           answer = ctx.rpc
             .call(protocol, "details", {
               provider: video.provider,
               id: video.id,
+              kind: video.kind,
             })
             .catch((error) => {
               ctx.logger.debug("Video details unavailable", error);

@@ -20,6 +20,7 @@ test("YouTube watch, youtu.be, Shorts, embed and live links give the video ID", 
       parseVideoUrl(link),
       {
         provider: "youtube",
+        kind: "video",
         id: ID,
         page: `https://www.youtube.com/watch?v=${ID}`,
       },
@@ -50,6 +51,7 @@ test("Bilibili BV and av links keep the part number", () => {
     parseVideoUrl("https://www.bilibili.com/video/BV1DRHU6LELy/?spm_id_from=x"),
     {
       provider: "bilibili",
+      kind: "video",
       id: "BV1DRHU6LELy",
       part: 1,
       page: "https://www.bilibili.com/video/BV1DRHU6LELy/",
@@ -57,6 +59,7 @@ test("Bilibili BV and av links keep the part number", () => {
   );
   assert.deepEqual(parseVideoUrl("https://m.bilibili.com/video/av170001?p=3"), {
     provider: "bilibili",
+    kind: "video",
     id: "av170001",
     part: 3,
     page: "https://www.bilibili.com/video/av170001/?p=3",
@@ -78,6 +81,7 @@ test("Bilibili BV and av links keep the part number", () => {
 test("Hugging Face model pages, owner/name and tree paths", () => {
   assert.deepEqual(parseVideoUrl("https://huggingface.co/google/gemma-2-2b"), {
     provider: "huggingface",
+    kind: "video",
     id: "google/gemma-2-2b",
     page: "https://huggingface.co/google/gemma-2-2b",
   });
@@ -85,12 +89,14 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
     parseVideoUrl("https://www.huggingface.co/google/gemma-2-2b/tree/main"),
     {
       provider: "huggingface",
+      kind: "video",
       id: "google/gemma-2-2b",
       page: "https://huggingface.co/google/gemma-2-2b",
     },
   );
   assert.deepEqual(parseVideoUrl("https://huggingface.co/bert-base-uncased"), {
     provider: "huggingface",
+    kind: "video",
     id: "bert-base-uncased",
     page: "https://huggingface.co/bert-base-uncased",
   });
@@ -103,6 +109,37 @@ test("Hugging Face model pages, owner/name and tree paths", () => {
     undefined,
   );
   assert.equal(parseVideoUrl("https://hf.co/google/gemma-2-2b"), undefined);
+});
+
+test("YouTube playlist links give the playlist ID", () => {
+  const list = "PLrAXtmRdnEQy6nuLMVjHUkRUhDiXqVc1J";
+  for (const link of [
+    `https://www.youtube.com/playlist?list=${list}`,
+    `https://youtube.com/playlist?list=${list}`,
+    `https://www.youtube.com/embed/videoseries?list=${list}`,
+    `https://www.youtube-nocookie.com/embed/videoseries?list=${list}`,
+  ]) {
+    assert.deepEqual(parseVideoUrl(link), {
+      provider: "youtube",
+      kind: "playlist",
+      id: list,
+      page: `https://www.youtube.com/playlist?list=${list}`,
+    });
+  }
+  // Watch with v= stays a video even when list= is present.
+  assert.deepEqual(
+    parseVideoUrl(`https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=${list}`),
+    {
+      provider: "youtube",
+      kind: "video",
+      id: "dQw4w9WgXcQ",
+      page: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://www.youtube.com/playlist?list=short"),
+    undefined,
+  );
 });
 
 test("anything that is not a well-formed video link is left alone", () => {
