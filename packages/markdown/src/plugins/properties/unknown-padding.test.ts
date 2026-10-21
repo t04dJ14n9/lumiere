@@ -11,8 +11,7 @@ const css = readFileSync(
 
 test("mod-unknown uses Obsidian metadata-input-padding 4px 8px", () => {
   const rule =
-    /\.metadata-property-value \.mod-unknown \{([^}]*)\}/.exec(css)?.[1] ??
-    "";
+    /\.metadata-property-value \.mod-unknown \{([^}]*)\}/.exec(css)?.[1] ?? "";
   assert.match(rule, /padding:\s*4px 8px;/);
   assert.match(rule, /box-sizing:\s*border-box;/);
   assert.match(rule, /white-space:\s*nowrap;/);
