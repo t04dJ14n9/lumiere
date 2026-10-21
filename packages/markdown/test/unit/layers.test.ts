@@ -46,3 +46,21 @@ for (const [name, source, diagnostic] of [
     }
   });
 }
+
+test("the plugins' bootstrap imports no VS Code, so other editors can start it", async () => {
+  const esbuild = await import("esbuild");
+  const result = await esbuild.build({
+    entryPoints: [resolve("src/host/bootstrap.ts")],
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    write: false,
+    external: ["vscode"],
+    metafile: true,
+    logLevel: "silent",
+  });
+  const importers = Object.entries(result.metafile.inputs)
+    .filter(([, input]) => input.imports.some((item) => item.path === "vscode"))
+    .map(([file]) => file);
+  assert.deepEqual(importers, []);
+});

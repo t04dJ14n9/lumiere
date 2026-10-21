@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { contributionId } from "../../shared/setting-schema";
@@ -11,7 +10,6 @@ import * as fs from "node:fs/promises";
 const { readdir: readTempDir } = fs;
 import * as fssync from "node:fs";
 import {
-  createVsCodeIdeContextHost,
   publishIdeContextTemp,
   renewLeaseAtomic,
 } from "@workshop/agents/ide-context";
@@ -83,8 +81,12 @@ async function gatherInput(ctx: Context) {
     ctx.dialogs.inform("Open a Lumière note first");
     return undefined;
   }
+  const host = ctx.agentHost.ideContextHost?.();
+  if (!host) {
+    ctx.dialogs.inform("IDE context is not available in this editor");
+    return undefined;
+  }
   const selection = await ctx.selections.capture(panel.id);
-  const host = createVsCodeIdeContextHost(vscode);
   return {
     uri: panel.document.uri,
     editorKind: "livePreview" as const,

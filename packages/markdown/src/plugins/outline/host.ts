@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import type { Context, Plugin } from "@workshop/core";
 import type { TreeHandle } from "../../shared/host";
 import type {} from "../editor/api";
@@ -26,6 +25,7 @@ export const outlineHost: Plugin = {
       "editors",
       "views",
       "dialogs",
+      "activeEditor",
     ],
   },
   apply(ctx) {
@@ -87,11 +87,13 @@ function registerOutlineUpdates(
 }
 
 function registerOutlineFocus(ctx: Context): void {
+  // Captured while live: the focus check can run after the plugin stops.
+  const activeEditor = ctx.activeEditor;
   const focus = createOutlineFocus({
     execute: (command) => ctx.hostCommands.execute(command),
     focusEditor: () =>
       ctx.hostCommands.execute("workbench.action.focusActiveEditorGroup"),
-    activeCustomEditorViewType: activeCustomEditorViewType,
+    activeCustomEditorViewType: () => activeEditor.customEditorViewType(),
   });
   ctx.effect(() => () => focus.dispose());
   const sync = () => focus.sync(Boolean(ctx.editors.active()));
@@ -100,16 +102,4 @@ function registerOutlineFocus(ctx: Context): void {
   ctx.on("editor/activeChanged", sync);
   // An already-active panel may not emit activeChanged at startup.
   sync();
-}
-
-function activeCustomEditorViewType(): string | undefined {
-  // Unit stubs resolve `vscode` to a forbidden placeholder without window APIs.
-  const input = vscode.window?.tabGroups?.activeTabGroup?.activeTab?.input;
-  if (
-    typeof vscode.TabInputCustom === "function" &&
-    input instanceof vscode.TabInputCustom
-  ) {
-    return input.viewType;
-  }
-  return undefined;
 }

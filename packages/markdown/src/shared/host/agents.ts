@@ -1,3 +1,5 @@
+import type { IdeContextHostApis } from "@workshop/agents/ide-context";
+
 /** The `lumiere.markdown.copyLinkForAgent.target` setting. */
 export type CopyLinkTarget =
   "auto" | "cursor" | "chat" | "claudeCode" | "codex" | "clipboard";
@@ -24,4 +26,6 @@ export interface AgentHost {
   environment(): Promise<AgentEnvironment>;
   /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */
   writeScratchFile(name: string, text: string): Promise<string>;
+  /** The editor's tabs and diagnostics for an IDE context packet; absent where the editor has none. */
+  ideContextHost?(): IdeContextHostApis;
 }

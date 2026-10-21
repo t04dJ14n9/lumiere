@@ -80,6 +80,7 @@ function defaultHost(): HostServices {
       textEditor: () => undefined,
       onTextSelectionChanged: none,
       closeSiblingTabs: async () => {},
+      customEditorViewType: () => undefined,
     },
     settings: {
       get: (_key, fallback) => fallback,
