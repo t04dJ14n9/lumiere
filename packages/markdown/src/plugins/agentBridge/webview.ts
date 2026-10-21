@@ -17,9 +17,10 @@ export const agentBridgeWebview: Plugin = {
       );
     };
     ctx.effect(() => ctx.commands.register("copyLinkForAgent", copy));
+    // Always first in the selection / table context menu (user standing rule).
     ctx.on("editor/selectionMenu", (items) => [
-      ...items,
       { label: "Copy Link for Agent", run: copyNow },
+      ...items,
     ]);
   },
 };

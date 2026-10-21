@@ -69,6 +69,10 @@
 .table-scroll {
   contain: inline-size;
   overflow-x: auto;
+  /* overflow-x: auto would otherwise compute overflow-y: auto and let
+     Chromium keep vertical wheel in this nested scrollport. Hide Y so the
+     note scroller (or our instant forwarder) owns vertical motion. */
+  overflow-y: hidden;
 }
 .table-wrapper {
   display: grid;

@@ -2110,12 +2110,12 @@
         {
           "command": "lumiere.markdown.copyLinkForAgent",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
-          "group": "agent"
+          "group": "0_agent@1"
         },
         {
           "command": "lumiere.markdown.selectionActions",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection && lumiere.markdown.hasSelectionActions",
-          "group": "agent"
+          "group": "0_agent@2"
         },
         {
           "command": "lumiere.markdown.toggleBold",

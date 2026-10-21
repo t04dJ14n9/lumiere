@@ -1,7 +1,7 @@
 import { defaultKeymap } from "@codemirror/commands";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import type { Transaction } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
 import type { Cell, CellPosition, Table } from "../../markdown/tables/model";
 import { difference } from "../../shared/document/wire";
@@ -81,6 +81,9 @@ export class CellEditor {
           cellNavigation((step, extend) => options.arrow(step, extend)),
           this.groups.extension,
           cellKeymap(options),
+          // Nested cells are not `.mw-editor`, so stock drawSelection stays
+          // visible (outer CSS only hides the note-level selection layer).
+          drawSelection(),
           // Table navigation gets the first chance at a cell boundary.
           this.vim.of(
             options.vim ? (this.environment.vim?.extension() ?? []) : [],
