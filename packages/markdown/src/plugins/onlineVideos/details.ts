@@ -10,12 +10,14 @@ import {
   soundcloudThumbnail,
   spotifyThumbnail,
 } from "./thumbnails";
+import { npmRegistryPath, parseNpmPackage } from "./npm";
 
 export {
   oEmbedThumbnail,
   soundcloudThumbnail,
   spotifyThumbnail,
 } from "./thumbnails";
+export { npmRegistryPath, parseNpmPackage } from "./npm";
 
 import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
@@ -170,6 +172,13 @@ export class VideoDetailsSource {
     }
     if (provider === "soundcloud") {
       return this.fetchSoundcloud(id, signal);
+    }
+    if (provider === "npm") {
+      const body = await this.json(
+        `https://registry.npmjs.org/${npmRegistryPath(id)}`,
+        signal,
+      );
+      return parseNpmPackage(body);
     }
     return this.fetchBilibiliView(id, signal);
   }

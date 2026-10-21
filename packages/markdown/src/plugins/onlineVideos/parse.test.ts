@@ -227,3 +227,42 @@ test("SoundCloud track and set links", () => {
     undefined,
   );
 });
+
+test("npm package pages, scoped and versioned", () => {
+  assert.deepEqual(parseVideoUrl("https://www.npmjs.com/package/lodash"), {
+    provider: "npm",
+    kind: "video",
+    id: "lodash",
+    page: "https://www.npmjs.com/package/lodash",
+  });
+  assert.deepEqual(parseVideoUrl("https://npmjs.com/package/Lodash/"), {
+    provider: "npm",
+    kind: "video",
+    id: "lodash",
+    page: "https://www.npmjs.com/package/lodash",
+  });
+  assert.deepEqual(parseVideoUrl("https://www.npmjs.com/package/@babel/core"), {
+    provider: "npm",
+    kind: "video",
+    id: "@babel/core",
+    page: "https://www.npmjs.com/package/@babel/core",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.npmjs.com/package/lodash/v/4.17.21"),
+    {
+      provider: "npm",
+      kind: "video",
+      id: "lodash",
+      page: "https://www.npmjs.com/package/lodash",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://www.npmjs.com/package/.hidden"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://www.npmjs.com/search?q=lodash"),
+    undefined,
+  );
+  assert.equal(parseVideoUrl("https://registry.npmjs.org/lodash"), undefined);
+});
