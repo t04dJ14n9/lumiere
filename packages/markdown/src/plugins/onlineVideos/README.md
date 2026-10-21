@@ -1,7 +1,7 @@
 # Online Videos
 
-YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm links written
-as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
+YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm and Vimeo links
+written as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), YouTube playlists (`/playlist?list=` and
 `/embed/videoseries?list=`), YouTube channels (`/channel/UC…`, `/@handle`,
@@ -14,15 +14,17 @@ as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `/tree/…` normalised away), Spotify
 `open.spotify.com/{track|album|playlist|episode|show}/…`, SoundCloud
 `soundcloud.com/{user}/{track}` or `…/sets/{playlist}`, and npm
-`www.npmjs.com/package/{name}` (scoped `@scope/name`, optional `/v/{version}`).
+`www.npmjs.com/package/{name}` (scoped `@scope/name`, optional `/v/{version}`),
+and Vimeo `vimeo.com/{id}` or `player.vimeo.com/video/{id}`.
 Obsidian has no equivalent (it shows such links as broken images); local video
 (`![[clip.mp4]]`) stays with Embeds.
 
 A card shows a title (the alt text, else the provider's title, else "YouTube
 video", "Bilibili video", "Bilibili space", "Bilibili live", "Hugging Face
-video", "Spotify track/…", "SoundCloud track/playlist", or "npm video"), the
+video", "Spotify track/…", "SoundCloud track/playlist", "npm video", or "Vimeo
+video"), the
 provider with the author and length (or the ID), and **Open on
-YouTube/Bilibili/Hugging Face/Spotify/SoundCloud/npm** (or **Open space** /
+YouTube/Bilibili/Hugging Face/Spotify/SoundCloud/npm/Vimeo** (or **Open space** /
 **Open live on Bilibili**), which asks
 the host (Links RPC `open`) to open the page in the external browser. The
 card uses buttons rather than `<a href>`: VS Code's webview opens every
@@ -32,7 +34,7 @@ from the ID) and a Bilibili card the video's cover, the UP's face, or the
 live room's cover/keyframe. A
 YouTube playlist card says **Open playlist** and may show the oEmbed
 thumbnail. A YouTube channel card says **Open channel on YouTube** (no
-cover — channels have no keyless oEmbed). Spotify and SoundCloud cards may
+cover — channels have no keyless oEmbed). Spotify, SoundCloud and Vimeo cards may
 show an oEmbed cover. Hugging Face and npm cards have no cover. In an
 untrusted workspace nothing is fetched: no title, cover, still or player,
 and the card says so. The caret on the link reveals its Markdown, as for
@@ -51,7 +53,7 @@ player.
 `c:…` / `user:…` for channels, `BV` plus 10 alphanumerics or `av` digits for
 Bilibili, `ep…` / `ss…` for bangumi, `space:{mid}` for UP spaces,
 `live:{room}` for live rooms, Hugging Face model ids, Spotify
-`type:22-char` ids, SoundCloud `user/slug` paths, npm package names).
+`type:22-char` ids, SoundCloud `user/slug` paths, npm package names, numeric Vimeo ids).
 `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
@@ -101,6 +103,10 @@ the webview only), so the extension host looks them up (`host.ts`,
   cover (`i.scdn.co` / `*.spotifycdn.com`); no in-webview player.
 - SoundCloud: keyless oEmbed (`https://soundcloud.com/oembed`) for title,
   author and cover (`i1`–`i4.sndcdn.com`); no in-webview player.
+- Vimeo: keyless oEmbed (`https://vimeo.com/api/oembed.json`) for the title,
+  author, duration and thumbnail. Thumbnails are fetched only from
+  `i.vimeocdn.com` (query params allowed), limited to 512 KB, typed by
+  signature and handed over as a `data:` URL; no in-webview player.
 
 The host refuses the RPC in an untrusted workspace (and the webview does not
 ask), checks the ID again, sends `User-Agent: MarkdownWorkshop (VS Code
@@ -136,9 +142,10 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 - `bilibili.ts`: Bilibili view, bangumi season, UP space card and live room
   parsing, and hdslb cover URLs.
 - `imageData.ts`: image signatures and cover data URLs.
-- `thumbnails.ts`: oEmbed / Spotify / SoundCloud cover URL allowlists.
-- `oembed.ts`: oEmbed and Hugging Face model title/author parsing.
+- `thumbnails.ts`: oEmbed / Spotify / SoundCloud / Vimeo cover URL allowlists.
+- `oembed.ts`: oEmbed (incl. Vimeo duration) and Hugging Face model title/author parsing.
 - `soundcloud.ts`: SoundCloud track/set URL recognition.
+- `vimeo.ts`: Vimeo video URL recognition.
 - `protocol.ts`: the `details` request.
 - `meta.ts`: the card's author and length line.
 - `parse.ts`: link recognition and ID validation.
@@ -165,16 +172,19 @@ off, the links fall back to Embeds (a remote image).
 
 Bilibili multi-part links (`?p=`) use the view API page title (series · part).
 Lookups depend on Bilibili's, YouTube's, Hugging Face's, Spotify's,
-SoundCloud's and npm's public endpoints, which may change or rate-limit.
+SoundCloud's, npm's and Vimeo's public endpoints, which may change or
+rate-limit.
 YouTube playlists (`/playlist?list=` and embed videoseries), YouTube channels
 (`/channel/UC…`, `/@handle`, `/c/…`, `/user/…`), Bilibili bangumi
 (`/bangumi/play/ep…` / `ss…`), and Bilibili UP spaces (`space.bilibili.com/{mid}`)
 render as cards. Channels, bangumi, spaces, Hugging Face, Spotify,
-SoundCloud and npm have no in-webview player (Open on provider only; spaces
-use **Open space on Bilibili**). Hub redirects (legacy single-segment model
+SoundCloud, npm and Vimeo have no in-webview player (Open on provider only;
+spaces use **Open space on Bilibili**). Hub redirects (legacy single-segment model
 ids) fail the host lookup because redirects are refused; the card still
 opens the page.
 Spotify uses keyless oEmbed (`https://open.spotify.com/oembed`) for title
 and CDN cover. SoundCloud uses keyless oEmbed
 (`https://soundcloud.com/oembed`) for title and sndcdn cover. npm uses
-the keyless registry for description and author.
+the keyless registry for description and author. Vimeo uses keyless oEmbed
+(`https://vimeo.com/api/oembed.json`) for title, author, duration and
+`i.vimeocdn.com` cover.

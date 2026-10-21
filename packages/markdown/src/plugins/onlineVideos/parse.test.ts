@@ -295,6 +295,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://hf.co/google/gemma-2-2b",
     "https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02",
     "https://soundcloud.com/discover/sets/charts-top",
+    "https://vimeo.com/",
+    "https://vimeo.com/0",
+    "https://vimeo.com/channels/staffpicks/22439234",
+    "https://player.vimeo.com/22439234",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
@@ -392,4 +396,20 @@ test("npm package pages, scoped and versioned", () => {
     undefined,
   );
   assert.equal(parseVideoUrl("https://registry.npmjs.org/lodash"), undefined);
+});
+
+test("Vimeo links give the numeric id", () => {
+  assert.deepEqual(parseVideoUrl("https://vimeo.com/22439234"), {
+    provider: "vimeo",
+    kind: "video",
+    id: "22439234",
+    page: "https://vimeo.com/22439234",
+  });
+  assert.deepEqual(parseVideoUrl("https://player.vimeo.com/video/22439234/"), {
+    provider: "vimeo",
+    kind: "video",
+    id: "22439234",
+    page: "https://vimeo.com/22439234",
+  });
+  assert.equal(parseVideoUrl("https://www.vimeo.com/22439234")?.id, "22439234");
 });

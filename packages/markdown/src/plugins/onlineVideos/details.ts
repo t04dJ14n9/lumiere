@@ -9,6 +9,7 @@ import {
   oEmbedThumbnail,
   soundcloudThumbnail,
   spotifyThumbnail,
+  vimeoThumbnail,
 } from "./thumbnails";
 import { npmRegistryPath, parseNpmPackage } from "./npm";
 
@@ -16,6 +17,7 @@ export {
   oEmbedThumbnail,
   soundcloudThumbnail,
   spotifyThumbnail,
+  vimeoThumbnail,
 } from "./thumbnails";
 export { npmRegistryPath, parseNpmPackage } from "./npm";
 
@@ -196,6 +198,9 @@ export class VideoDetailsSource {
       );
       return parseNpmPackage(body);
     }
+    if (provider === "vimeo") {
+      return this.fetchVimeo(id, signal);
+    }
     if (kind === "bangumi") {
       return this.fetchBangumi(id, signal);
     }
@@ -260,6 +265,21 @@ export class VideoDetailsSource {
     );
     const details = parseOEmbed(body);
     await this.attachCover(details, soundcloudThumbnail(body), signal);
+    return details;
+  }
+
+  /** Vimeo oEmbed, plus a CDN thumbnail when the host is allowlisted. */
+  private async fetchVimeo(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://vimeo.com/${id}`;
+    const body = await this.json(
+      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, vimeoThumbnail(body), signal);
     return details;
   }
 

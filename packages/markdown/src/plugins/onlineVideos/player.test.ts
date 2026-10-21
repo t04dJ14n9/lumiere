@@ -81,6 +81,7 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
   );
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
+  assert.equal(providers.vimeo.embeddable, false);
 });
 
 test("Hugging Face refuses an in-webview player", () => {
@@ -115,6 +116,15 @@ test("npm refuses an in-webview player", () => {
     undefined,
   );
   assert.throws(() => playerUrl(video("https://www.npmjs.com/package/lodash")));
+});
+
+test("Vimeo refuses an in-webview player", () => {
+  assert.equal(providers.vimeo.embeddable, false);
+  assert.equal(thumbnailUrl(video("https://vimeo.com/22439234")), undefined);
+  assert.throws(
+    () => playerUrl(video("https://vimeo.com/22439234")),
+    /vimeo has no in-webview player/,
+  );
 });
 
 test("bangumi, playlists, channels, spaces and live refuse an in-webview player", () => {

@@ -1,14 +1,22 @@
 /**
- * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud and npm
- * links (YouTube playlists and channels, Bilibili bangumi, UP spaces and live).
+ * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm and
+ * Vimeo links (YouTube playlists and channels, Bilibili bangumi, UP spaces
+ * and live).
  * Only a fully parsed and validated ID leaves this module; players and
  * cards are built from it, never from the link text.
  */
 
 import { isSoundcloudHost, isSoundcloudId, soundcloud } from "./soundcloud";
+import { isVimeoId, vimeo } from "./vimeo";
 
 export type VideoProvider =
-  "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud" | "npm";
+  | "youtube"
+  | "bilibili"
+  | "huggingface"
+  | "spotify"
+  | "soundcloud"
+  | "npm"
+  | "vimeo";
 export type MediaKind =
   "video" | "playlist" | "bangumi" | "channel" | "space" | "live";
 export interface OnlineVideo {
@@ -22,8 +30,8 @@ export interface OnlineVideo {
    * `live:{room}` id, a Hugging Face
    * model id (`name` or `owner/name`), a Spotify
    * `track|album|playlist|episode|show:…` id, a SoundCloud `user/slug`
-   * (or `user/sets/slug`) path, or an npm package name (`lodash` or
-   * `@scope/name`).
+   * (or `user/sets/slug`) path, an npm package name (`lodash` or
+   * `@scope/name`), or a Vimeo numeric id.
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -200,6 +208,9 @@ function isProviderVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "soundcloud") {
     return isSoundcloudId(id);
   }
+  if (provider === "vimeo") {
+    return isVimeoId(id);
+  }
   return id.length <= 214 && NPM_NAME.test(id);
 }
 
@@ -237,6 +248,10 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   if (NPM_HOSTS.has(host)) {
     const match = NPM_PATH.exec(url.pathname);
     return match ? npmPackage(match[1]!) : undefined;
+  }
+  const vimeoVideo = vimeo(url);
+  if (vimeoVideo) {
+    return vimeoVideo;
   }
   return undefined;
 }
