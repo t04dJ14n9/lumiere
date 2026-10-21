@@ -5,6 +5,17 @@
  */
 import type { MediaKind, VideoProvider } from "./parse";
 import { isVideoId } from "./parse";
+import {
+  oEmbedThumbnail,
+  soundcloudThumbnail,
+  spotifyThumbnail,
+} from "./thumbnails";
+
+export {
+  oEmbedThumbnail,
+  soundcloudThumbnail,
+  spotifyThumbnail,
+} from "./thumbnails";
 
 import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
@@ -42,7 +53,6 @@ export interface DetailsOptions {
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
-const YOUTUBE_THUMB_HOSTS = new Set(["i.ytimg.com", "img.youtube.com"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
 const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
@@ -158,6 +168,9 @@ export class VideoDetailsSource {
     if (provider === "spotify") {
       return this.fetchSpotify(id, signal);
     }
+    if (provider === "soundcloud") {
+      return this.fetchSoundcloud(id, signal);
+    }
     return this.fetchBilibiliView(id, signal);
   }
 
@@ -195,6 +208,20 @@ export class VideoDetailsSource {
     );
     const details = parseOEmbed(body);
     await this.attachCover(details, spotifyThumbnail(body), signal);
+    return details;
+  }
+
+  private async fetchSoundcloud(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://soundcloud.com/${id}`;
+    const body = await this.json(
+      `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, soundcloudThumbnail(body), signal);
     return details;
   }
 
@@ -267,48 +294,6 @@ export class VideoDetailsSource {
     }
     return response;
   }
-}
-
-const SPOTIFY_THUMB_HOSTS = new Set([
-  "i.scdn.co",
-  "image-cdn-ak.spotifycdn.com",
-  "image-cdn-fa.spotifycdn.com",
-]);
-
-/** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
-export function oEmbedThumbnail(body: unknown): string | undefined {
-  return thumbnailFromHosts(body, YOUTUBE_THUMB_HOSTS);
-}
-
-/** Spotify oEmbed thumbnail when it is a known CDN host. */
-export function spotifyThumbnail(body: unknown): string | undefined {
-  return thumbnailFromHosts(body, SPOTIFY_THUMB_HOSTS);
-}
-
-function thumbnailFromHosts(
-  body: unknown,
-  hosts: ReadonlySet<string>,
-): string | undefined {
-  if (!isRecord(body) || typeof body.thumbnail_url !== "string") {
-    return undefined;
-  }
-  let url: URL;
-  try {
-    url = new URL(body.thumbnail_url);
-  } catch {
-    return undefined;
-  }
-  if (
-    !/^https?:$/.test(url.protocol) ||
-    !hosts.has(url.hostname) ||
-    url.port ||
-    url.username ||
-    url.password ||
-    url.hash
-  ) {
-    return undefined;
-  }
-  return url.href;
 }
 
 export function parseOEmbed(body: unknown): VideoDetails {

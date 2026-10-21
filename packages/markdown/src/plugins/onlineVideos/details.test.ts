@@ -11,6 +11,7 @@ import {
   parseOEmbed,
   oEmbedThumbnail,
   spotifyThumbnail,
+  soundcloudThumbnail,
 } from "./details";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
@@ -382,5 +383,43 @@ test("a Spotify lookup uses oEmbed and may fetch a CDN cover", async () => {
   assert.equal(
     calls[0]!.url,
     "https://open.spotify.com/oembed?url=https%3A%2F%2Fopen.spotify.com%2Ftrack%2F11dFghVXANMlKmJXsNCbNl",
+  );
+});
+
+test("soundcloudThumbnail accepts sndcdn hosts only", () => {
+  assert.equal(
+    soundcloudThumbnail({
+      thumbnail_url:
+        "https://i1.sndcdn.com/artworks-000067273316-smsiqx-t500x500.jpg",
+    }),
+    "https://i1.sndcdn.com/artworks-000067273316-smsiqx-t500x500.jpg",
+  );
+  assert.equal(
+    soundcloudThumbnail({ thumbnail_url: "https://evil.test/x.jpg" }),
+    undefined,
+  );
+});
+
+test("a SoundCloud lookup uses oEmbed and may fetch a sndcdn cover", async () => {
+  const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+  const { fetch, calls } = fakeFetch({
+    "https://soundcloud.com/oembed": () =>
+      response({
+        title: "Flickermood by Forss",
+        author_name: "Forss",
+        thumbnail_url:
+          "https://i1.sndcdn.com/artworks-000067273316-smsiqx-t500x500.jpg",
+      }),
+    "https://i1.sndcdn.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "soundcloud",
+    "forss/flickermood",
+  );
+  assert.equal(details.title, "Flickermood by Forss");
+  assert.equal(details.author, "Forss");
+  assert.match(details.cover ?? "", /^data:image\/jpeg;base64,/);
+  assert.ok(
+    calls[0]!.url.startsWith("https://soundcloud.com/oembed?format=json&url="),
   );
 });

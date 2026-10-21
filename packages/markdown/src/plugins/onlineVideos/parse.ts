@@ -1,9 +1,10 @@
 /**
- * Recognise YouTube, Bilibili, Hugging Face and Spotify links (and YouTube
- * playlists). Only a fully parsed and validated ID leaves this module;
- * players and cards are built from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face, Spotify and SoundCloud links
+ * (and YouTube playlists). Only a fully parsed and validated ID leaves this
+ * module; players and cards are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface" | "spotify";
+export type VideoProvider =
+  "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud";
 export type MediaKind = "video" | "playlist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
@@ -11,8 +12,9 @@ export interface OnlineVideo {
   readonly kind: MediaKind;
   /**
    * An 11-character YouTube video ID, a YouTube playlist ID, a Bilibili
-   * `BV…` / `av` id, a Hugging Face model id (`name` or `owner/name`), or a
-   * Spotify `track|album|playlist|episode|show:…` id.
+   * `BV…` / `av` id, a Hugging Face model id (`name` or `owner/name`), a
+   * Spotify `track|album|playlist|episode|show:…` id, or a SoundCloud
+   * `user/slug` (or `user/sets/slug`) path.
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -42,6 +44,15 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+const SOUNDCLOUD_HOSTS = new Set([
+  "soundcloud.com",
+  "www.soundcloud.com",
+  "m.soundcloud.com",
+]);
+/** `user/track` or `user/sets/playlist` (slugs: letters, digits, `_`, `-`). */
+const SOUNDCLOUD_ID = /^[A-Za-z0-9_-]{1,50}\/(?:sets\/)?[A-Za-z0-9_-]{1,200}$/;
+const SOUNDCLOUD_PATH =
+  /^\/([A-Za-z0-9_-]{1,50})\/(?:(sets)\/)?([A-Za-z0-9_-]{1,200})\/?$/;
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
 
@@ -120,28 +131,18 @@ export function isVideoId(
   if (provider === "huggingface") {
     return id.length <= 200 && HF_ID.test(id);
   }
-  return SPOTIFY_ID.test(id);
+  if (provider === "spotify") {
+    return SPOTIFY_ID.test(id);
+  }
+  return SOUNDCLOUD_ID.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
-  let url: URL;
-  try {
-    url = new URL(raw.trim());
-  } catch {
+  const url = httpUrl(raw);
+  if (!url) {
     return undefined;
   }
-  if (
-    !/^https?:$/.test(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.port
-  ) {
-    return undefined;
-  }
-  return parseKnownHost(url.hostname.toLowerCase(), url);
-}
-
-function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
+  const host = url.hostname.toLowerCase();
   if (host === "youtu.be") {
     return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
   }
@@ -166,7 +167,28 @@ function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
   if (SPOTIFY_HOSTS.has(host)) {
     return spotify(url);
   }
+  if (SOUNDCLOUD_HOSTS.has(host)) {
+    return soundcloud(url);
+  }
   return undefined;
+}
+
+function httpUrl(raw: string): URL | undefined {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    return undefined;
+  }
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.port
+  ) {
+    return undefined;
+  }
+  return url;
 }
 
 /**
@@ -238,6 +260,35 @@ function huggingface(id: string): OnlineVideo | undefined {
     kind: "video",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+/** `/user/track` or `/user/sets/playlist` (not discover/you/settings). */
+function soundcloud(url: URL): OnlineVideo | undefined {
+  const match = SOUNDCLOUD_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const user = match[1]!;
+  const sets = match[2];
+  const slug = match[3]!;
+  // Reserved first segments that are not artist pages.
+  if (
+    /^(?:discover|you|settings|pages|charts|genres|search|signin|signup|upload|messages|notifications|premium|pro|jobs|terms|privacy|cookies|imprint|about)$/i.test(
+      user,
+    )
+  ) {
+    return undefined;
+  }
+  const id = sets ? `${user}/sets/${slug}` : `${user}/${slug}`;
+  if (!SOUNDCLOUD_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "soundcloud",
+    kind: "video",
+    id,
+    page: `https://soundcloud.com/${id}`,
   };
 }
 

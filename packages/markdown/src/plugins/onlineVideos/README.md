@@ -1,26 +1,30 @@
 # Online Videos
 
-YouTube, Bilibili and Hugging Face model and Spotify links written as images show as
-video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
+YouTube, Bilibili, Hugging Face, Spotify and SoundCloud links written as
+images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `https://youtu.be/ID`, Shorts, `/embed/` and `/live/` links (with `t=` or
 `start=`), YouTube playlists (`/playlist?list=` and
 `/embed/videoseries?list=`), `![](https://www.bilibili.com/video/BV…)` or
-`…/video/av123`, with `?p=` for a part, and Hugging Face
+`…/video/av123`, with `?p=` for a part, Hugging Face
 `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
-`/tree/…` normalised away). Obsidian has no equivalent (it shows such links
-as broken images); local video (`![[clip.mp4]]`) stays with Embeds.
+`/tree/…` normalised away), Spotify
+`open.spotify.com/{track|album|playlist|episode|show}/…`, and SoundCloud
+`soundcloud.com/{user}/{track}` or `…/sets/{playlist}`. Obsidian has no
+equivalent (it shows such links as broken images); local video
+(`![[clip.mp4]]`) stays with Embeds.
 
 A card shows a title (the alt text, else the provider's title, else "YouTube
-video", "Bilibili video" or "Hugging Face video"), the provider with the
-author and length (or the ID), and **Open on YouTube/Bilibili/Hugging Face**,
+video", "Bilibili video", "Hugging Face video", "Spotify track/…", or
+"SoundCloud track/playlist"), the provider with the author and length (or
+the ID), and **Open on YouTube/Bilibili/Hugging Face/Spotify/SoundCloud**,
 which asks the host (Links RPC `open`) to open the page in the external
 browser. The card uses buttons rather than `<a href>`: VS Code's webview
 opens every clicked anchor itself as well, which would open the page twice.
 In a trusted workspace a YouTube card shows the video's still (`i.ytimg.com`,
 derived from the ID) and a Bilibili card the video's cover. A YouTube
 playlist card says **Open playlist** and may show the oEmbed thumbnail.
-Hugging Face cards have no cover. In an untrusted workspace nothing is
-fetched: no title,
+Spotify and SoundCloud cards may show an oEmbed cover. Hugging Face cards
+have no cover. In an untrusted workspace nothing is fetched: no title,
 cover, still or player, and the card says so. The caret on the link reveals
 its Markdown, as for images.
 
@@ -34,7 +38,8 @@ player.
 `parse.ts` accepts only the hosts and path shapes above and validated IDs
 (11 characters of `[A-Za-z0-9_-]` for YouTube videos, a `PL`/`UU`/`LL`/`FL`/
 `OL`/`RD` prefix plus 10–64 characters for playlists, `BV` plus 10
-alphanumerics or `av` digits for Bilibili, Hugging Face model ids). `player.ts` builds the player URL from the parsed
+alphanumerics or `av` digits for Bilibili, Hugging Face model ids, Spotify
+`type:22-char` ids, SoundCloud `user/slug` paths). `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
 (`autoplay=0`), checks it against that allowlist again, and gives the frame
 `sandbox="allow-scripts allow-same-origin allow-presentation"`,
@@ -68,6 +73,10 @@ when a trusted card asks over the `onlineVideos.details` RPC:
 - Hugging Face: keyless `https://huggingface.co/api/models/{id}` for
   `pipeline_tag` / model id and `author` (else the owner segment). No cover.
   Datasets and Spaces stay images.
+- Spotify: keyless oEmbed (`https://open.spotify.com/oembed`) for title and
+  cover (`i.scdn.co` / `*.spotifycdn.com`); no in-webview player.
+- SoundCloud: keyless oEmbed (`https://soundcloud.com/oembed`) for title,
+  author and cover (`i1`–`i4.sndcdn.com`); no in-webview player.
 
 The host refuses the RPC in an untrusted workspace (and the webview does not
 ask), checks the ID again, sends `User-Agent: MarkdownWorkshop (VS Code
@@ -125,11 +134,13 @@ off, the links fall back to Embeds (a remote image).
 ## Limits
 
 Bilibili part titles (`?p=`) are not shown. Lookups depend on Bilibili's,
-YouTube's, Hugging Face's and Spotify's public endpoints, which may change or
-rate-limit. YouTube playlists (`/playlist?list=` and embed videoseries)
-render as cards with an oEmbed title and optional cover. Channels, Bilibili
-bangumi and other providers stay images. Hugging Face and Spotify have no
-in-webview player (Open on provider only). Hub redirects (legacy
-single-segment model ids) fail the host lookup because redirects are
-refused; the card still opens the page. Spotify uses keyless oEmbed
-(`https://open.spotify.com/oembed`) for title and CDN cover.
+YouTube's, Hugging Face's, Spotify's and SoundCloud's public endpoints,
+which may change or rate-limit. YouTube playlists (`/playlist?list=` and
+embed videoseries) render as cards with an oEmbed title and optional cover.
+Channels, Bilibili bangumi and other providers stay images. Hugging Face,
+Spotify and SoundCloud have no in-webview player (Open on provider only).
+Hub redirects (legacy single-segment model ids) fail the host lookup because
+redirects are refused; the card still opens the page. Spotify uses keyless
+oEmbed (`https://open.spotify.com/oembed`) for title and CDN cover.
+SoundCloud uses keyless oEmbed (`https://soundcloud.com/oembed`) for title
+and sndcdn cover.

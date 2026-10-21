@@ -30,6 +30,9 @@ function mediaNoun(video: OnlineVideo): string {
   if (video.provider === "spotify") {
     return video.id.split(":")[0]!;
   }
+  if (video.provider === "soundcloud") {
+    return video.id.includes("/sets/") ? "playlist" : "track";
+  }
   return video.kind === "playlist" ? "playlist" : "video";
 }
 

@@ -166,6 +166,8 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
     "https://hf.co/google/gemma-2-2b",
+    "https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02",
+    "https://soundcloud.com/discover/sets/charts-top",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
@@ -196,6 +198,32 @@ test("Spotify track, album, playlist, episode and show links", () => {
   );
   assert.equal(
     parseVideoUrl("https://spotify.com/track/11dFghVXANMlKmJXsNCbNl"),
+    undefined,
+  );
+});
+
+test("SoundCloud track and set links", () => {
+  assert.deepEqual(parseVideoUrl("https://soundcloud.com/forss/flickermood"), {
+    provider: "soundcloud",
+    kind: "video",
+    id: "forss/flickermood",
+    page: "https://soundcloud.com/forss/flickermood",
+  });
+  assert.deepEqual(
+    parseVideoUrl("https://www.soundcloud.com/forss/sets/soulhack/?in=x"),
+    {
+      provider: "soundcloud",
+      kind: "video",
+      id: "forss/sets/soulhack",
+      page: "https://soundcloud.com/forss/sets/soulhack",
+    },
+  );
+  assert.equal(
+    parseVideoUrl("https://soundcloud.com/discover/sets/charts-top"),
+    undefined,
+  );
+  assert.equal(
+    parseVideoUrl("https://soundcloud.com/forss/flickermood/comments"),
     undefined,
   );
 });
