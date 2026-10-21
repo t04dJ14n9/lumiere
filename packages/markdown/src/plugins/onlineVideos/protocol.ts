@@ -27,9 +27,13 @@ export const protocol = defineProtocol("onlineVideos", {
          * model ids are at most 200; npm package names at most 214.
          */
         id: Schema.string().max(300),
-        kind: Schema.union(["video", "playlist", "bangumi", "channel"]).default(
+        kind: Schema.union([
           "video",
-        ),
+          "playlist",
+          "bangumi",
+          "channel",
+          "space",
+        ]).default("video"),
         /** Bilibili multi-part index (`?p=`), 1-based. */
         part: Schema.number().min(1).max(10_000).optional(),
       }),

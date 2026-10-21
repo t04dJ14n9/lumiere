@@ -12,7 +12,7 @@ interface Provider {
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
    * gets no referrer to check. Hugging Face, Spotify, SoundCloud and npm have
-   * no in-webview player.
+   * no in-webview player; Bilibili spaces have no embed.
    */
   readonly embeddable: boolean;
 }
@@ -73,7 +73,8 @@ export function playerUrl(video: OnlineVideo): string {
   if (
     video.kind === "playlist" ||
     video.kind === "bangumi" ||
-    video.kind === "channel"
+    video.kind === "channel" ||
+    video.kind === "space"
   ) {
     throw new Error(`${video.kind} has no in-webview player`);
   }

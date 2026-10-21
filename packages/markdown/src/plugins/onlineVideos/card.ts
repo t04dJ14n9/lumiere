@@ -42,6 +42,9 @@ function mediaNoun(video: OnlineVideo): string {
   if (video.kind === "channel") {
     return "channel";
   }
+  if (video.kind === "space") {
+    return "space";
+  }
   return "video";
 }
 
@@ -54,6 +57,9 @@ function openLabel(kind: OnlineVideo["kind"], providerName: string): string {
   }
   if (kind === "channel") {
     return `Open channel on ${providerName}`;
+  }
+  if (kind === "space") {
+    return `Open space on ${providerName}`;
   }
   return `Open on ${providerName}`;
 }

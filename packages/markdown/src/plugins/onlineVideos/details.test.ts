@@ -6,6 +6,7 @@ import {
   VideoDetailsSource,
   coverUrl,
   imageDataUrl,
+  parseBilibiliCard,
   parseBilibiliSeason,
   parseBilibiliView,
   parseHuggingFaceModel,
@@ -29,6 +30,20 @@ const VIEW = {
     title: " 2026英雄联盟全球总决赛主题曲\n《KNOW MY NAME》 ",
     duration: 257,
     owner: { mid: 1, name: "英雄联盟" },
+  },
+};
+const FACE =
+  "http://i2.hdslb.com/bfs/face/ef0457addb241401e3367dc0e4bd0f495e369c79.jpg";
+const CARD = {
+  code: 0,
+  message: "OK",
+  data: {
+    card: {
+      mid: "2",
+      name: " 碧诗 ",
+      face: FACE,
+      sign: "https://kami.im",
+    },
   },
 };
 
@@ -135,6 +150,19 @@ test("Bilibili multi-part pages append the part title and prefer its duration", 
   );
 });
 
+test("Bilibili space card responses give the UP name and face cover", () => {
+  assert.deepEqual(parseBilibiliCard(CARD), {
+    details: { title: "碧诗" },
+    cover:
+      "https://i2.hdslb.com/bfs/face/ef0457addb241401e3367dc0e4bd0f495e369c79.jpg",
+  });
+  assert.throws(() => parseBilibiliCard({ code: -404 }));
+  assert.deepEqual(
+    parseBilibiliCard({ code: 0, data: { card: { name: 7, face: 3 } } }),
+    { details: {} },
+  );
+});
+
 test("covers are accepted only from i0–i2.hdslb.com image paths", () => {
   assert.equal(
     coverUrl("https://i2.hdslb.com/bfs/archive/a_b-1.png"),
@@ -198,6 +226,31 @@ test("a Bilibili lookup fetches the view and a scaled cover with the extension's
     [
       "https://api.bilibili.com/x/web-interface/view?bvid=BV1DRHU6LELy",
       "https://i0.hdslb.com/bfs/archive/4260b5a0d7a5.jpg@480w_270h_1c.jpg",
+    ],
+  );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a Bilibili space lookup fetches the card API and a scaled face", async () => {
+  const { fetch, calls } = fakeFetch({
+    "https://api.bilibili.com/x/web-interface/card?mid=2": () => response(CARD),
+    "https://i2.hdslb.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "bilibili",
+    "space:2",
+    "space",
+  );
+  assert.equal(details.title, "碧诗");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.deepEqual(
+    calls.map((call) => call.url),
+    [
+      "https://api.bilibili.com/x/web-interface/card?mid=2",
+      "https://i2.hdslb.com/bfs/face/ef0457addb241401e3367dc0e4bd0f495e369c79.jpg@480w_270h_1c.jpg",
     ],
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));

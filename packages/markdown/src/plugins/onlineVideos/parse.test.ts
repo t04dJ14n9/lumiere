@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseVideoUrl } from "./parse";
+import { isVideoId, parseVideoUrl } from "./parse";
 
 const ID = "dQw4w9WgXcQ";
 
@@ -44,6 +44,31 @@ test("YouTube start times in seconds or h/m/s", () => {
     undefined,
   );
   assert.equal(parseVideoUrl(`https://youtu.be/${ID}?t=0`)?.start, undefined);
+});
+
+test("Bilibili UP space links give a space:{mid} id", () => {
+  assert.deepEqual(parseVideoUrl("https://space.bilibili.com/2"), {
+    provider: "bilibili",
+    kind: "space",
+    id: "space:2",
+    page: "https://space.bilibili.com/2",
+  });
+  assert.deepEqual(parseVideoUrl("https://space.bilibili.com/2/"), {
+    provider: "bilibili",
+    kind: "space",
+    id: "space:2",
+    page: "https://space.bilibili.com/2",
+  });
+  assert.deepEqual(parseVideoUrl("https://m.bilibili.com/space/2"), {
+    provider: "bilibili",
+    kind: "space",
+    id: "space:2",
+    page: "https://space.bilibili.com/2",
+  });
+  assert.equal(isVideoId("bilibili", "space:2", "space"), true);
+  assert.equal(isVideoId("bilibili", "space:2"), false);
+  assert.equal(isVideoId("bilibili", "space:0", "space"), false);
+  assert.equal(isVideoId("bilibili", "BV1DRHU6LELy", "space"), false);
 });
 
 test("Bilibili BV and av links keep the part number", () => {
@@ -232,6 +257,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://www.bilibili.com/bangumi/play/epid123",
     "https://www.bilibili.com/bangumi/media/md28235858",
     "https://space.bilibili.com/video/BV1DRHU6LELy",
+    "https://space.bilibili.com/0",
+    "https://space.bilibili.com/2/video",
+    "https://space.bilibili.com/",
+    "https://m.bilibili.com/space/",
     "https://huggingface.co.evil.test/google/gemma-2-2b",
     "https://huggingface.co/datasets/squad",
     "https://huggingface.co/spaces/foo/bar",
