@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { toggleTextEditor } from "../../../src/plugins/editor/toggle-text-editor";
+import { createRoot } from "@workshop/core";
+import {
+  registerToggleTextEditor,
+  toggleTextEditor,
+} from "../../../src/plugins/editor/toggle-text-editor";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
-import { fakeDocument, fakeHost } from "../../support/vscode-fake";
+import { editorHost } from "../../../src/plugins/editor/host";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
+import { provideHostServices } from "../../../src/shared/host";
+import type { DocumentSession } from "../../../src/plugins/document/api";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function panelHarness(uri = "file:///note.md") {
   const calls: unknown[][] = [];
@@ -159,4 +166,131 @@ test("with nothing open, the toggle is a no-op", async () => {
     serial: async () => {},
   });
   assert.deepEqual(calls, []);
+});
+
+test("the editor host's Ctrl/Cmd+E command can read the editors service it provides", async () => {
+  let toggle: (() => Promise<void>) | undefined;
+  const calls: unknown[][] = [];
+  const root = createRoot();
+  root.provide("documents", {
+    session: () => ({}) as DocumentSession,
+    release() {},
+  });
+  provideHostServices(
+    root,
+    fakeHost({
+      activeEditor: {
+        note: () => "file:///note.md",
+        textEditor: () => ({ text: "hi", selection: "" }),
+        onNoteChanged: () => () => {},
+        onTextSelectionChanged: () => () => {},
+      },
+      hostCommands: {
+        register: (id, command) => {
+          if (id === "lumiere.markdown.toggleTextEditor") {
+            toggle = async () => {
+              await command();
+            };
+          }
+          return () => {};
+        },
+        execute: async (...args) => {
+          calls.push(args);
+          return undefined;
+        },
+      },
+    }),
+  );
+  root.plugin(editorHost, { configure() {} });
+  await root.settled();
+
+  assert.ok(toggle, "editor host should register the toggle command");
+  await toggle();
+
+  assert.deepEqual(calls.at(-1), [
+    "vscode.openWith",
+    "file:///note.md",
+    MARKDOWN_EDITOR.viewType,
+  ]);
+  await root.dispose();
+});
+
+test("toggleTextEditor with unbound Context.serial fails like Host GUI", async () => {
+  const root = createRoot();
+  const h = panelHarness("file:///unbound.md");
+  // Same extraction the broken register used: serial: ctx.serial
+  await assert.rejects(
+    () =>
+      toggleTextEditor({
+        ...h.host,
+        serial: root.serial,
+      }),
+    (err: unknown) => {
+      assert.ok(err instanceof TypeError);
+      assert.match(String(err), /assertLive is not a function/);
+      return true;
+    },
+  );
+  assert.deepEqual(h.calls, []);
+  await root.dispose();
+});
+
+test("registerToggleTextEditor keeps serial bound through the Lumière panel path", async () => {
+  let toggle: (() => Promise<void>) | undefined;
+  const calls: unknown[][] = [];
+  const root = createRoot();
+  const document = fakeDocument({
+    uri: "file:///bound.md",
+    id: "file:///bound.md",
+  });
+  const panel = {
+    id: "panel",
+    document,
+    active: () => true,
+    session: {
+      withAction: async <T>(run: () => Promise<T>) => run(),
+      flush: async () => {},
+    },
+  } as unknown as EditorPanel;
+  const editors: Editors = {
+    all: () => [panel],
+    active: () => panel,
+    capture: async () => {
+      throw new Error("unused");
+    },
+    restore: async () => {},
+  };
+  provideHostServices(
+    root,
+    fakeHost({
+      hostCommands: {
+        register: (id, command) => {
+          if (id === "lumiere.markdown.toggleTextEditor") {
+            toggle = async () => {
+              await command();
+            };
+          }
+          return () => {};
+        },
+        execute: async (...args) => {
+          calls.push(args);
+          return undefined;
+        },
+      },
+    }),
+  );
+  root.plugin({
+    name: "testToggleBind",
+    inject: { required: ["hostCommands", "activeEditor"] },
+    apply(ctx) {
+      registerToggleTextEditor(ctx, editors);
+    },
+  });
+  await root.settled();
+
+  assert.ok(toggle, "toggle command should register");
+  await toggle();
+
+  assert.deepEqual(calls, [["vscode.openWith", "file:///bound.md", "default"]]);
+  await root.dispose();
 });

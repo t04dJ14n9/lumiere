@@ -65,10 +65,16 @@ async function openPanelAsText(
 }
 
 /** Palette and keybinding registration for the toggle. */
-export function registerToggleTextEditor(ctx: Context): void {
+export function registerToggleTextEditor(ctx: Context, editors: Editors): void {
   ctx.effect(() =>
     ctx.hostCommands.register(contributionId("toggleTextEditor"), () =>
-      toggleTextEditor(ctx),
+      toggleTextEditor({
+        editors,
+        activeEditor: ctx.activeEditor,
+        hostCommands: ctx.hostCommands,
+        // Keep Context as `this`: serial() calls this.assertLive().
+        serial: ctx.serial.bind(ctx) as Context["serial"],
+      }),
     ),
   );
 }

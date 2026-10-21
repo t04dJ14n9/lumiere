@@ -50,9 +50,9 @@ export const editorHost: Plugin<EditorHostConfig> = {
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
     const setFocus = registerFocusContext(ctx, active);
-    provideEditorServices(ctx, panels, active);
+    const editors = provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
-    registerToggleTextEditor(ctx);
+    registerToggleTextEditor(ctx, editors);
     ctx.effect(() =>
       ctx.customEditors.register(MARKDOWN_EDITOR, (shell) => {
         const panel = createPanel(shell, ctx.documents, ctx, {
@@ -142,7 +142,7 @@ function provideEditorServices(
   ctx: Context,
   panels: Map<string, EditorPanel>,
   active: () => EditorPanel | undefined,
-): void {
+): Editors {
   const editors: Editors = {
     all: () => [...panels.values()],
     active,
@@ -166,6 +166,7 @@ function provideEditorServices(
   ctx.provide("selections", selections);
   registerEditorActions(ctx, editors, selections);
   registerJumpHistory(ctx, editors);
+  return editors;
 }
 
 function registerSelectionContext(
