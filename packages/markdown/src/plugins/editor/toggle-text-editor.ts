@@ -72,7 +72,8 @@ export function registerToggleTextEditor(ctx: Context, editors: Editors): void {
         editors,
         activeEditor: ctx.activeEditor,
         hostCommands: ctx.hostCommands,
-        serial: ctx.serial,
+        // Keep Context as `this`: serial() calls this.assertLive().
+        serial: ctx.serial.bind(ctx) as Context["serial"],
       }),
     ),
   );
