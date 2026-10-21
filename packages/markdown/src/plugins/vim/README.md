@@ -8,9 +8,16 @@ It defaults to off and transfers insert/normal mode between the note and table c
 The plugin provides mode inspection and transfer through the injected Vim service.
 A shared keyboard adapter translates Chinese Shift+4 (`￥`/`¥`) and Shift+6
 (`……`/`…`), including `Process` events with those physical codes, to `$` and `^`
-in normal mode. It delivers the translated key through the ordinary Vim dispatcher
-so counts, operators, mappings and recording keep their native behavior. Insert
-and visual mode, literal arguments, prompts and active composition are excluded.
+in normal mode. The same capture path also maps IME `Process`/`Unidentified`
+keydowns on `KeyA`–`KeyZ`, `Digit0`–`Digit9` (Shift for `*`/`#`/`$`/…), and punctuation codes
+(`.`, `,`, `;`, `/`, `?`, `-`, `[]`, `'`, backticks, …) to the matching Latin command keys in normal
+and visual mode (so `gg`, `G`, word motions, counts, `dd`/`yy`, `f`/`t` and
+`.`-repeat still run when the host's beforeinput guard blocks Vim's text-input
+fallback). Chinese punctuation glyphs `。`/`，`/`；` map to `.`/`,`/`;` except
+in insert mode and while `f`/`t`/`r` wait for a literal argument. It delivers
+the translated key through the ordinary Vim dispatcher so counts, operators,
+mappings and recording keep their native behavior. Insert mode, prompts and
+active composition are excluded; ASCII keys are never rewritten.
 A scoped key-dispatch hook routes remaining mapping and macro keys to the note
 adapter after a cell document jump, while its current motion finishes bookkeeping.
 The executor receives forwarding adapter and mode objects: at the next key lookup,
@@ -50,8 +57,8 @@ Keyboard-created visual selections keep Vim's text-object behavior.
 - `manifest.ts`: default enablement and host shortcut contributions.
 - `api.ts`: mode, extension, mode-transfer and buffer-handoff contract.
 - `key-routing.ts`: adapter-scoped mapping/macro handoff and dispatcher restoration.
-- `keyboard.ts`: shared note/cell translation of Chinese shifted line-motion keys.
-- `keyboard.test.ts`: key variants, physical codes, modifiers and mode guards.
+- `keyboard.ts`: shared note/cell translation of Chinese shifted line-motion keys, Chinese punctuation, and IME Process/Unidentified letter/digit/punctuation command keys.
+- `keyboard.test.ts`: key variants, physical codes, modifiers, IME Process letters and mode guards.
 - `click-insert.ts`: first-key insert handoff from a rendered-source selection.
 - `../../../test/unit/livePreview/click-position.test.ts`: source selection, typing and Vim handoff units.
 - `test/unit/vim-key-routing.test.ts`: cross-buffer sequences, unaffected adapters and hook disposal.
