@@ -171,11 +171,12 @@ class MenuSession {
     // Restore focus before the action runs. Table focusout clears grid
     // selection after two microtasks; Copy Link for Agent (and captureSelection)
     // must still see the projected table range when they flush asynchronously.
-    const restore = this.originalFocus?.isConnected
-      ? this.originalFocus
-      : this.options.owner.isConnected
-        ? this.options.owner
-        : undefined;
+    let restore: HTMLElement | undefined;
+    if (this.originalFocus?.isConnected) {
+      restore = this.originalFocus;
+    } else if (this.options.owner.isConnected) {
+      restore = this.options.owner;
+    }
     restore?.focus({ preventScroll: true });
     Promise.resolve()
       .then(() => item.run?.())
