@@ -11,6 +11,13 @@
 - **Toggle Text Editor** (Ctrl/Cmd+E): after switching Lumière ↔ the host text
   editor, close the leave-behind sibling tab of the same file so only one tab
   remains (BH-011 / BH-003). Dirty tabs are left alone.
+- **DeepSeek Harness**: Lumière's Markdown editor runs in DeepSeek Harness
+  0.2.1 or later, as a DSH plugin (`packages/dsh`): notes open in Lumière in
+  DSH's preview sidebar and save as you type. PDFs, Git features and the side
+  views stay VS Code and Cursor only for now.
+- Fixed: Current-line authorship (gitBlame) could throw "Disposed: gitBlame
+  is stopped" into the editor while the plugin restarted.
+
 - **Toggle Text Editor** (Ctrl/Cmd+E): switch the active Markdown note between
   Lumière and the host's built-in text editor. Deliberately not Obsidian's
   Live Preview ↔ Source binding; that remains the unbound Toggle Live
