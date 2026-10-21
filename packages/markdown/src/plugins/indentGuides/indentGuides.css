@@ -28,6 +28,15 @@
   background-size: calc(var(--list-depth, 0) * var(--list-indent)) 100%;
 }
 
+/* Continuations: space-step lines set --list-guide-depth (Obsidian nobullet
+ * cm-indent). Hang lines omit it and fall back to --list-depth (ancestors only). */
+.mw-indent-guides .cm-line.md-list-continuation {
+  background-size: calc(
+      var(--list-guide-depth, var(--list-depth, 0)) * var(--list-indent)
+    )
+    100%;
+}
+
 /* Obsidian active indent on nested Live Preview list guides. */
 .mw-indent-guides.mw-list-active-guide .cm-line.md-list-line {
   background-image:
