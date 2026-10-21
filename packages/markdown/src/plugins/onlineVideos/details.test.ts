@@ -70,7 +70,11 @@ function fakeFetch(
     method?: string;
   }[] = [];
   const fetch: Fetch = async (url, init) => {
-    calls.push({ url, headers: init.headers, method: init.method });
+    calls.push({
+      url,
+      headers: init.headers,
+      ...(init.method !== undefined ? { method: init.method } : {}),
+    });
     const route = Object.keys(routes).find((prefix) => url.startsWith(prefix));
     if (!route) {
       throw new TypeError("fetch failed");
