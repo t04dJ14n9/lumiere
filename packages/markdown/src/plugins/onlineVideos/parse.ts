@@ -4,11 +4,7 @@
  * module; players and cards are built from it, never from the link text.
  */
 export type VideoProvider =
-  | "youtube"
-  | "bilibili"
-  | "huggingface"
-  | "spotify"
-  | "soundcloud";
+  "youtube" | "bilibili" | "huggingface" | "spotify" | "soundcloud";
 export type MediaKind = "video" | "playlist";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
