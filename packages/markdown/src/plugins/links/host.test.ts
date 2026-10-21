@@ -134,6 +134,31 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     });
     assert.equal((opens.at(-1) as unknown[])[3], place);
   }
+  // Host GUI: basename MD (with/without .md) create+open; relative stay open-only.
+  for (const href of ["MissingNote", "MissingNote.md"] as const) {
+    opens.length = 0;
+    await client.call(protocol, "open", {
+      href,
+      wiki: false,
+      side: false,
+    });
+    const created = opens[0] as unknown as { create: boolean; path: string };
+    assert.equal(created.create, true, href);
+    assert.equal(created.path, href, href);
+  }
+  for (const href of ["folder/Missing", "./no-such-relative"] as const) {
+    opens.length = 0;
+    await client.call(protocol, "open", {
+      href,
+      wiki: false,
+      side: false,
+    });
+    assert.equal(
+      (opens[0] as unknown as { create: boolean }).create,
+      false,
+      href,
+    );
+  }
   await fiber.dispose();
   await assert.rejects(
     client.call(protocol, "open", { href: "x", wiki: true, side: false }),
