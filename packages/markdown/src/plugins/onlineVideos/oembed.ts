@@ -4,7 +4,7 @@
  */
 import type { VideoDetails } from "./protocol";
 
-/** YouTube / Spotify / SoundCloud / Vimeo oEmbed title, author, duration. */
+/** YouTube / Spotify / SoundCloud / Vimeo / TED oEmbed title, author, duration. */
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");

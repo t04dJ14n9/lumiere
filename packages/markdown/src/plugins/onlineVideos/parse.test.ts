@@ -299,6 +299,10 @@ test("anything that is not a well-formed video link is left alone", () => {
     "https://vimeo.com/0",
     "https://vimeo.com/channels/staffpicks/22439234",
     "https://player.vimeo.com/22439234",
+    "https://ted.com/talks/",
+    "https://www.ted.com/talks/Do_Schools",
+    "https://www.ted.com/speakers/ken_robinson",
+    "https://embed.ted.com/talks",
   ]) {
     assert.equal(parseVideoUrl(link), undefined, link);
   }
@@ -412,4 +416,35 @@ test("Vimeo links give the numeric id", () => {
     page: "https://vimeo.com/22439234",
   });
   assert.equal(parseVideoUrl("https://www.vimeo.com/22439234")?.id, "22439234");
+});
+
+test("TED talk links give the slug id", () => {
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://www.ted.com/talks/ken_robinson_do_schools_kill_creativity",
+    ),
+    {
+      provider: "ted",
+      kind: "video",
+      id: "ken_robinson_do_schools_kill_creativity",
+      page: "https://www.ted.com/talks/ken_robinson_do_schools_kill_creativity",
+    },
+  );
+  assert.deepEqual(
+    parseVideoUrl(
+      "https://embed.ted.com/talks/ken_robinson_do_schools_kill_creativity/",
+    ),
+    {
+      provider: "ted",
+      kind: "video",
+      id: "ken_robinson_do_schools_kill_creativity",
+      page: "https://www.ted.com/talks/ken_robinson_do_schools_kill_creativity",
+    },
+  );
+  assert.equal(
+    parseVideoUrl(
+      "https://ted.com/talks/brene_brown_the_power_of_vulnerability",
+    )?.id,
+    "brene_brown_the_power_of_vulnerability",
+  );
 });

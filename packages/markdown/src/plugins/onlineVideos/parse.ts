@@ -1,12 +1,13 @@
 /**
- * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm and
- * Vimeo links (YouTube playlists and channels, Bilibili bangumi, UP spaces
- * and live).
+ * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm,
+ * Vimeo and TED links (YouTube playlists and channels, Bilibili bangumi,
+ * UP spaces and live).
  * Only a fully parsed and validated ID leaves this module; players and
  * cards are built from it, never from the link text.
  */
 
 import { isSoundcloudHost, isSoundcloudId, soundcloud } from "./soundcloud";
+import { isTedId, ted } from "./ted";
 import { isVimeoId, vimeo } from "./vimeo";
 
 export type VideoProvider =
@@ -16,7 +17,8 @@ export type VideoProvider =
   | "spotify"
   | "soundcloud"
   | "npm"
-  | "vimeo";
+  | "vimeo"
+  | "ted";
 export type MediaKind =
   "video" | "playlist" | "bangumi" | "channel" | "space" | "live";
 export interface OnlineVideo {
@@ -31,7 +33,7 @@ export interface OnlineVideo {
    * model id (`name` or `owner/name`), a Spotify
    * `track|album|playlist|episode|show:…` id, a SoundCloud `user/slug`
    * (or `user/sets/slug`) path, an npm package name (`lodash` or
-   * `@scope/name`), or a Vimeo numeric id.
+   * `@scope/name`), a Vimeo numeric id, or a TED talk slug.
    */
   readonly id: string;
   /** YouTube start time in whole seconds (videos only). */
@@ -211,6 +213,9 @@ function isProviderVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "vimeo") {
     return isVimeoId(id);
   }
+  if (provider === "ted") {
+    return isTedId(id);
+  }
   return id.length <= 214 && NPM_NAME.test(id);
 }
 
@@ -252,6 +257,10 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   const vimeoVideo = vimeo(url);
   if (vimeoVideo) {
     return vimeoVideo;
+  }
+  const tedTalk = ted(url);
+  if (tedTalk) {
+    return tedTalk;
   }
   return undefined;
 }

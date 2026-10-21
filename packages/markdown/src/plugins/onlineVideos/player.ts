@@ -11,8 +11,9 @@ interface Provider {
    * Whether the card may offer "Play here" (Bilibili, behind the
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
-   * gets no referrer to check. Hugging Face, Spotify, SoundCloud, npm and Vimeo
-   * have no in-webview player; Bilibili spaces and live rooms have no embed.
+   * gets no referrer to check. Hugging Face, Spotify, SoundCloud, npm, Vimeo
+   * and TED have no in-webview player; Bilibili spaces and live rooms have no
+   * embed.
    */
   readonly embeddable: boolean;
 }
@@ -70,6 +71,13 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
     pathPattern: /^\/video\/[1-9][0-9]{0,15}$/,
     embeddable: false,
   },
+  ted: {
+    name: "TED",
+    origin: "https://embed.ted.com",
+    path: "/talks/",
+    pathPattern: /^\/talks\/[a-z0-9_]{1,200}$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -94,7 +102,8 @@ export function playerUrl(video: OnlineVideo): string {
     video.provider === "spotify" ||
     video.provider === "soundcloud" ||
     video.provider === "npm" ||
-    video.provider === "vimeo"
+    video.provider === "vimeo" ||
+    video.provider === "ted"
   ) {
     throw new Error(`${video.provider} has no in-webview player`);
   }

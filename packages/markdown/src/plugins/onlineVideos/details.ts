@@ -9,6 +9,7 @@ import {
   oEmbedThumbnail,
   soundcloudThumbnail,
   spotifyThumbnail,
+  tedThumbnail,
   vimeoThumbnail,
 } from "./thumbnails";
 import { npmRegistryPath, parseNpmPackage } from "./npm";
@@ -17,6 +18,7 @@ export {
   oEmbedThumbnail,
   soundcloudThumbnail,
   spotifyThumbnail,
+  tedThumbnail,
   vimeoThumbnail,
 } from "./thumbnails";
 export { npmRegistryPath, parseNpmPackage } from "./npm";
@@ -201,6 +203,9 @@ export class VideoDetailsSource {
     if (provider === "vimeo") {
       return this.fetchVimeo(id, signal);
     }
+    if (provider === "ted") {
+      return this.fetchTed(id, signal);
+    }
     if (kind === "bangumi") {
       return this.fetchBangumi(id, signal);
     }
@@ -280,6 +285,21 @@ export class VideoDetailsSource {
     );
     const details = parseOEmbed(body);
     await this.attachCover(details, vimeoThumbnail(body), signal);
+    return details;
+  }
+
+  /** TED oEmbed, plus a CDN thumbnail when the host is allowlisted. */
+  private async fetchTed(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://www.ted.com/talks/${id}`;
+    const body = await this.json(
+      `https://www.ted.com/services/v1/oembed.json?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, tedThumbnail(body), signal);
     return details;
   }
 

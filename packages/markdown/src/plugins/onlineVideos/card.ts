@@ -33,6 +33,9 @@ function mediaNoun(video: OnlineVideo): string {
   if (video.provider === "soundcloud") {
     return video.id.includes("/sets/") ? "playlist" : "track";
   }
+  if (video.provider === "ted") {
+    return "talk";
+  }
   if (video.kind === "playlist") {
     return "playlist";
   }

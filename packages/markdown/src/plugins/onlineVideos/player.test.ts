@@ -127,6 +127,27 @@ test("Vimeo refuses an in-webview player", () => {
   );
 });
 
+test("TED refuses an in-webview player", () => {
+  assert.equal(providers.ted.embeddable, false);
+  assert.equal(
+    thumbnailUrl(
+      video(
+        "https://www.ted.com/talks/ken_robinson_do_schools_kill_creativity",
+      ),
+    ),
+    undefined,
+  );
+  assert.throws(
+    () =>
+      playerUrl(
+        video(
+          "https://www.ted.com/talks/ken_robinson_do_schools_kill_creativity",
+        ),
+      ),
+    /ted has no in-webview player/,
+  );
+});
+
 test("bangumi, playlists, channels, spaces and live refuse an in-webview player", () => {
   assert.throws(() =>
     playerUrl(video("https://www.bilibili.com/bangumi/play/ep409506")),

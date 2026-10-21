@@ -16,6 +16,7 @@ import {
   spotifyThumbnail,
   soundcloudThumbnail,
   vimeoThumbnail,
+  tedThumbnail,
   npmRegistryPath,
   parseNpmPackage,
 } from "./details";
@@ -625,6 +626,51 @@ test("a Vimeo lookup fetches oEmbed and a CDN thumbnail", async () => {
   assert.equal(
     calls[0]?.url,
     `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(page)}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("tedThumbnail accepts tedcdn hosts only", () => {
+  const thumb =
+    "https://pi.tedcdn.com/r/pe.tedcdn.com/images/ted/abc_2880x1620.jpg?w=560&h=315";
+  assert.equal(tedThumbnail({ thumbnail_url: thumb }), thumb);
+  assert.equal(
+    tedThumbnail({
+      thumbnail_url: "https://evil.test/images/ted/abc.jpg",
+    }),
+    undefined,
+  );
+  assert.equal(tedThumbnail({ title: "x" }), undefined);
+});
+
+test("a TED lookup fetches oEmbed and a CDN thumbnail", async () => {
+  const page =
+    "https://www.ted.com/talks/ken_robinson_do_schools_kill_creativity";
+  const thumb =
+    "https://pi.tedcdn.com/r/pe.tedcdn.com/images/ted/abc_2880x1620.jpg?w=560";
+  const { fetch, calls } = fakeFetch({
+    "https://www.ted.com/services/v1/oembed.json": () =>
+      response({
+        title: "Do schools kill creativity?",
+        author_name: "Sir Ken Robinson",
+        thumbnail_url: thumb,
+      }),
+    "https://pi.tedcdn.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "ted",
+    "ken_robinson_do_schools_kill_creativity",
+  );
+  assert.equal(details.title, "Do schools kill creativity?");
+  assert.equal(details.author, "Sir Ken Robinson");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://www.ted.com/services/v1/oembed.json?url=${encodeURIComponent(page)}`,
   );
   assert.equal(calls[1]?.url, thumb);
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));

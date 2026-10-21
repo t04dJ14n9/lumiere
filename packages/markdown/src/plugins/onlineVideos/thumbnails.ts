@@ -17,6 +17,9 @@ const SOUNDCLOUD_THUMB_HOSTS = new Set([
 /** Vimeo oEmbed thumbnails (query params allowed). */
 const VIMEO_THUMB_HOSTS = new Set(["i.vimeocdn.com"]);
 
+/** TED oEmbed thumbnails (query params allowed). */
+const TED_THUMB_HOSTS = new Set(["pi.tedcdn.com", "pe.tedcdn.com"]);
+
 /** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
 export function oEmbedThumbnail(body: unknown): string | undefined {
   return thumbnailFromHosts(body, YOUTUBE_THUMB_HOSTS);
@@ -35,6 +38,11 @@ export function soundcloudThumbnail(body: unknown): string | undefined {
 /** Vimeo oEmbed thumbnail when it is a known vimeocdn host. */
 export function vimeoThumbnail(body: unknown): string | undefined {
   return thumbnailFromHosts(body, VIMEO_THUMB_HOSTS);
+}
+
+/** TED oEmbed thumbnail when it is a known tedcdn host. */
+export function tedThumbnail(body: unknown): string | undefined {
+  return thumbnailFromHosts(body, TED_THUMB_HOSTS);
 }
 
 /** oEmbed `thumbnail_url` when it is https on an allowlisted host. */
