@@ -8,7 +8,8 @@ as images show as video cards: `![Title](https://www.youtube.com/watch?v=ID)`,
 `/c/…`, or `/user/…`), `![](https://www.bilibili.com/video/BV…)` or
 `…/video/av123`, with `?p=` for a part, bangumi `…/bangumi/play/ep…` or
 `…/ss…`, Bilibili UP spaces `![](https://space.bilibili.com/{mid})`
-(or `m.bilibili.com/space/{mid}`), Hugging Face
+(or `m.bilibili.com/space/{mid}`), Bilibili live rooms
+`![](https://live.bilibili.com/{room})`, Hugging Face
 `![](https://huggingface.co/{owner}/{model})` (or a single-segment model id;
 `/tree/…` normalised away), Spotify
 `open.spotify.com/{track|album|playlist|episode|show}/…`, SoundCloud
@@ -18,15 +19,17 @@ Obsidian has no equivalent (it shows such links as broken images); local video
 (`![[clip.mp4]]`) stays with Embeds.
 
 A card shows a title (the alt text, else the provider's title, else "YouTube
-video", "Bilibili video", "Bilibili space", "Hugging Face video", "Spotify
-track/…", "SoundCloud track/playlist", or "npm video"), the provider with
-the author and length (or the ID), and **Open on YouTube/Bilibili/Hugging
-Face/Spotify/SoundCloud/npm** (or **Open space on Bilibili**), which asks
+video", "Bilibili video", "Bilibili space", "Bilibili live", "Hugging Face
+video", "Spotify track/…", "SoundCloud track/playlist", or "npm video"), the
+provider with the author and length (or the ID), and **Open on
+YouTube/Bilibili/Hugging Face/Spotify/SoundCloud/npm** (or **Open space** /
+**Open live on Bilibili**), which asks
 the host (Links RPC `open`) to open the page in the external browser. The
 card uses buttons rather than `<a href>`: VS Code's webview opens every
 clicked anchor itself as well, which would open the page twice. In a trusted
 workspace a YouTube card shows the video's still (`i.ytimg.com`, derived
-from the ID) and a Bilibili card the video's cover or the UP's face. A
+from the ID) and a Bilibili card the video's cover, the UP's face, or the
+live room's cover/keyframe. A
 YouTube playlist card says **Open playlist** and may show the oEmbed
 thumbnail. A YouTube channel card says **Open channel on YouTube** (no
 cover — channels have no keyless oEmbed). Spotify and SoundCloud cards may
@@ -46,8 +49,8 @@ player.
 (11 characters of `[A-Za-z0-9_-]` for YouTube videos, a `PL`/`UU`/`LL`/`FL`/
 `OL`/`RD` prefix plus 10–64 characters for playlists, `UC…` / `@handle` /
 `c:…` / `user:…` for channels, `BV` plus 10 alphanumerics or `av` digits for
-Bilibili, `ep…` / `ss…` for bangumi, `space:{mid}` for UP spaces, Hugging
-Face model ids, Spotify
+Bilibili, `ep…` / `ss…` for bangumi, `space:{mid}` for UP spaces,
+`live:{room}` for live rooms, Hugging Face model ids, Spotify
 `type:22-char` ids, SoundCloud `user/slug` paths, npm package names).
 `player.ts` builds the player URL from the parsed
 ID on `www.youtube-nocookie.com/embed/` or `player.bilibili.com/player.html`
@@ -65,7 +68,8 @@ puts the image back when the pass is disposed.
 
 ### Titles and covers
 
-Bilibili covers, UP faces and Hugging Face model metadata have no URL derived
+Bilibili covers, UP faces, live room covers and Hugging Face model metadata
+have no URL derived
 from the ID alone, and the webview CSP allows no network (`connect-src` is
 the webview only), so the extension host looks them up (`host.ts`,
 `details.ts`) when a trusted card asks over the `onlineVideos.details` RPC:
@@ -73,7 +77,10 @@ the webview only), so the extension host looks them up (`host.ts`,
 - Bilibili videos: `https://api.bilibili.com/x/web-interface/view?bvid=…`
   (or `aid=`), reading `data.title`, `data.owner.name`, `data.duration` and
   `data.pic`. Bilibili space: `…/x/web-interface/card?mid=…`, reading
-  `data.card.name` and `data.card.face`. Covers and faces are fetched only
+  `data.card.name` and `data.card.face`. Bilibili live:
+  `api.live.bilibili.com/room/v1/Room/get_info?room_id=…`, reading
+  `data.title` and `data.user_cover` or `data.keyframe` (scaled cover with
+  raw fallback when the scaler 404s). Covers and faces are fetched only
   from `i0`–`i2.hdslb.com` under `/bfs/`, scaled by Bilibili to 480×270
   (`@480w_270h_1c.jpg`, about 25 KB), limited to 512 KB, typed by its
   JPEG/PNG/GIF/WebP signature and handed to the webview as a `data:` URL,
@@ -126,8 +133,8 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 - `host.ts`: the trusted-only `details` RPC handler.
 - `details.ts`: provider lookups, cover fetches, timeout, concurrency
   and cache.
-- `bilibili.ts`: Bilibili view, bangumi season and UP space card parsing, and
-  hdslb cover URLs.
+- `bilibili.ts`: Bilibili view, bangumi season, UP space card and live room
+  parsing, and hdslb cover URLs.
 - `imageData.ts`: image signatures and cover data URLs.
 - `thumbnails.ts`: oEmbed / Spotify / SoundCloud cover URL allowlists.
 - `protocol.ts`: the `details` request.

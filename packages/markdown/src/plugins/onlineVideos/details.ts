@@ -25,12 +25,14 @@ import { imageDataUrl } from "./imageData";
 export { imageDataUrl } from "./imageData";
 import {
   parseBilibiliCard,
+  parseBilibiliLive,
   parseBilibiliSeason,
   parseBilibiliView,
 } from "./bilibili";
 export {
   coverUrl,
   parseBilibiliCard,
+  parseBilibiliLive,
   parseBilibiliSeason,
   parseBilibiliView,
 } from "./bilibili";
@@ -198,6 +200,9 @@ export class VideoDetailsSource {
     if (kind === "space") {
       return this.fetchBilibiliSpace(id, signal);
     }
+    if (kind === "live") {
+      return this.fetchBilibiliLive(id, signal);
+    }
     return this.fetchBilibiliView(id, part, signal);
   }
 
@@ -292,6 +297,29 @@ export class VideoDetailsSource {
       cover ? cover + COVER_SIZE : undefined,
       signal,
     );
+    return details;
+  }
+
+  /** Live room API, plus a scaled cover with a raw keyframe fallback. */
+  private async fetchBilibiliLive(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const room = id.slice("live:".length);
+    const body = await this.json(
+      `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${room}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliLive(body);
+    if (cover) {
+      // Live keyframes often reject Bilibili's @WxH scaler; try scaled then raw.
+      const image = await this.image(cover + COVER_SIZE, signal)
+        .catch(() => this.image(cover, signal))
+        .catch(() => undefined);
+      if (image !== undefined) {
+        details.cover = image;
+      }
+    }
     return details;
   }
 

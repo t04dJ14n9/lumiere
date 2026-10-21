@@ -7,6 +7,7 @@ import {
   coverUrl,
   imageDataUrl,
   parseBilibiliCard,
+  parseBilibiliLive,
   parseBilibiliSeason,
   parseBilibiliView,
   parseHuggingFaceModel,
@@ -44,6 +45,20 @@ const CARD = {
       face: FACE,
       sign: "https://kami.im",
     },
+  },
+};
+const KEYFRAME =
+  "http://i0.hdslb.com/bfs/live-key-frame/keyframe040916010000000230589l8p96.jpg";
+const LIVE = {
+  code: 0,
+  message: "ok",
+  data: {
+    room_id: 23058,
+    short_id: 3,
+    title: " 哔哩哔哩音悦台 ",
+    user_cover: "",
+    keyframe: KEYFRAME,
+    live_status: 0,
   },
 };
 
@@ -163,6 +178,18 @@ test("Bilibili space card responses give the UP name and face cover", () => {
   );
 });
 
+test("Bilibili live responses give the room title and keyframe cover", () => {
+  assert.deepEqual(parseBilibiliLive(LIVE), {
+    details: { title: "哔哩哔哩音悦台" },
+    cover:
+      "https://i0.hdslb.com/bfs/live-key-frame/keyframe040916010000000230589l8p96.jpg",
+  });
+  assert.throws(() => parseBilibiliLive({ code: -404 }));
+  assert.deepEqual(parseBilibiliLive({ code: 0, data: { title: 7 } }), {
+    details: {},
+  });
+});
+
 test("covers are accepted only from i0–i2.hdslb.com image paths", () => {
   assert.equal(
     coverUrl("https://i2.hdslb.com/bfs/archive/a_b-1.png"),
@@ -251,6 +278,36 @@ test("a Bilibili space lookup fetches the card API and a scaled face", async () 
     [
       "https://api.bilibili.com/x/web-interface/card?mid=2",
       "https://i2.hdslb.com/bfs/face/ef0457addb241401e3367dc0e4bd0f495e369c79.jpg@480w_270h_1c.jpg",
+    ],
+  );
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
+});
+
+test("a Bilibili live lookup fetches get_info and falls back to a raw keyframe", async () => {
+  const keyframe =
+    "https://i0.hdslb.com/bfs/live-key-frame/keyframe040916010000000230589l8p96.jpg";
+  const { fetch, calls } = fakeFetch({
+    "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=3": () =>
+      response(LIVE),
+    [keyframe + "@480w_270h_1c.jpg"]: () => response({}, { status: 404 }),
+    [keyframe]: () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "bilibili",
+    "live:3",
+    "live",
+  );
+  assert.equal(details.title, "哔哩哔哩音悦台");
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.deepEqual(
+    calls.map((call) => call.url),
+    [
+      "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=3",
+      keyframe + "@480w_270h_1c.jpg",
+      keyframe,
     ],
   );
   assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
