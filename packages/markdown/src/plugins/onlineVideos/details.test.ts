@@ -15,6 +15,7 @@ import {
   oEmbedThumbnail,
   spotifyThumbnail,
   soundcloudThumbnail,
+  vimeoThumbnail,
   npmRegistryPath,
   parseNpmPackage,
 } from "./details";
@@ -220,6 +221,18 @@ test("oEmbed responses give the YouTube title and channel", () => {
       html: "<iframe>",
     }),
     { title: "Never Gonna Give You Up", author: "Rick Astley" },
+  );
+  assert.deepEqual(
+    parseOEmbed({
+      title: "The Mountain",
+      author_name: "TSO Photography",
+      duration: 185,
+    }),
+    {
+      title: "The Mountain",
+      author: "TSO Photography",
+      duration: 185,
+    },
   );
   assert.throws(() => parseOEmbed(null));
   assert.deepEqual(parseOEmbed({ title: "" }), {});
@@ -573,6 +586,48 @@ test("a SoundCloud lookup uses oEmbed and may fetch a sndcdn cover", async () =>
   assert.ok(
     calls[0]!.url.startsWith("https://soundcloud.com/oembed?format=json&url="),
   );
+});
+
+test("vimeoThumbnail accepts vimeocdn hosts only", () => {
+  const thumb = "https://i.vimeocdn.com/video/145027281-abc_295x166?region=us";
+  assert.equal(vimeoThumbnail({ thumbnail_url: thumb }), thumb);
+  assert.equal(
+    vimeoThumbnail({ thumbnail_url: "https://evil.test/video/1.jpg" }),
+    undefined,
+  );
+  assert.equal(vimeoThumbnail({ title: "x" }), undefined);
+});
+
+test("a Vimeo lookup fetches oEmbed and a CDN thumbnail", async () => {
+  const page = "https://vimeo.com/22439234";
+  const thumb = "https://i.vimeocdn.com/video/145027281-abc_295x166?region=us";
+  const { fetch, calls } = fakeFetch({
+    "https://vimeo.com/api/oembed.json": () =>
+      response({
+        title: "The Mountain",
+        author_name: "TSO Photography",
+        duration: 185,
+        thumbnail_url: thumb,
+      }),
+    "https://i.vimeocdn.com/": () => response(JPEG, { type: "image/jpeg" }),
+  });
+  const details = await new VideoDetailsSource({ fetch }).get(
+    "vimeo",
+    "22439234",
+  );
+  assert.equal(details.title, "The Mountain");
+  assert.equal(details.author, "TSO Photography");
+  assert.equal(details.duration, 185);
+  assert.equal(
+    details.cover,
+    `data:image/jpeg;base64,${Buffer.from(JPEG).toString("base64")}`,
+  );
+  assert.equal(
+    calls[0]?.url,
+    `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(page)}`,
+  );
+  assert.equal(calls[1]?.url, thumb);
+  assert.ok(calls.every((call) => call.headers["User-Agent"] === USER_AGENT));
 });
 
 test("npmRegistryPath keeps @ and encodes the slash for scoped names", () => {

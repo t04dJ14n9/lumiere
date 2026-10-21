@@ -14,6 +14,9 @@ const SOUNDCLOUD_THUMB_HOSTS = new Set([
   "i4.sndcdn.com",
 ]);
 
+/** Vimeo oEmbed thumbnails (query params allowed). */
+const VIMEO_THUMB_HOSTS = new Set(["i.vimeocdn.com"]);
+
 /** YouTube oEmbed thumbnail when it is a known img host (playlist covers). */
 export function oEmbedThumbnail(body: unknown): string | undefined {
   return thumbnailFromHosts(body, YOUTUBE_THUMB_HOSTS);
@@ -27,6 +30,11 @@ export function spotifyThumbnail(body: unknown): string | undefined {
 /** SoundCloud oEmbed thumbnail when it is a known sndcdn host. */
 export function soundcloudThumbnail(body: unknown): string | undefined {
   return thumbnailFromHosts(body, SOUNDCLOUD_THUMB_HOSTS);
+}
+
+/** Vimeo oEmbed thumbnail when it is a known vimeocdn host. */
+export function vimeoThumbnail(body: unknown): string | undefined {
+  return thumbnailFromHosts(body, VIMEO_THUMB_HOSTS);
 }
 
 /** oEmbed `thumbnail_url` when it is https on an allowlisted host. */

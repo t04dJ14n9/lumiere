@@ -21,6 +21,7 @@ export const protocol = defineProtocol("onlineVideos", {
           "spotify",
           "soundcloud",
           "npm",
+          "vimeo",
         ]),
         /**
          * SoundCloud ids are `user/sets/slug` (up to 256 chars). Hugging Face

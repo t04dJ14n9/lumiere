@@ -4,14 +4,22 @@
  */
 import type { VideoDetails } from "./protocol";
 
-/** YouTube / Spotify / SoundCloud oEmbed title and author. */
+/** YouTube / Spotify / SoundCloud / Vimeo oEmbed title, author, duration. */
 export function parseOEmbed(body: unknown): VideoDetails {
   if (!isRecord(body)) {
     throw new Error("Unexpected oEmbed response");
   }
+  const duration =
+    typeof body.duration === "number" &&
+    Number.isInteger(body.duration) &&
+    body.duration > 0 &&
+    body.duration < 1_000_000
+      ? body.duration
+      : undefined;
   return withoutUndefined({
     title: text(body.title, 300),
     author: text(body.author_name, 100),
+    duration,
   });
 }
 
