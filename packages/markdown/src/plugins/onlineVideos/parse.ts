@@ -1,6 +1,6 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
+ * Recognise YouTube, Bilibili, Hugging Face model and Wikipedia links. Only a
+ * fully parsed and validated ID leaves this module; players and cards are built
  * from it, never from the link text.
  */
 export type VideoProvider =
@@ -8,8 +8,9 @@ export type VideoProvider =
 export interface OnlineVideo {
   readonly provider: VideoProvider;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, a Hugging Face
+   * model id (`name` or `owner/name`), or a Wikipedia `{lang}:{Title}`
+   * (underscored article title).
    */
   readonly id: string;
   /** YouTube start time in whole seconds. */

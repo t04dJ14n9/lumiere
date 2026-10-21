@@ -20,7 +20,7 @@ export const protocol = defineProtocol("onlineVideos", {
           "huggingface",
           "wikipedia",
         ]),
-        /** Hugging Face model ids are at most 200 chars. */
+        /** Wikipedia `{lang}:{Title}` needs room for long article titles. */
         id: Schema.string().max(220),
       }),
       result: videoDetails,
