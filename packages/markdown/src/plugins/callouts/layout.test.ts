@@ -22,7 +22,6 @@ test("callout icon flex-centers against multi-line titles", () => {
   assert.match(rule, /align-items:\s*center;/);
 });
 
-
 test("Live Preview zeros outer callout margin; nested keep 1em", () => {
   assert.match(css, /\.hybrid-callout \.callout \{[^}]*margin:\s*0;/);
   const nested =
