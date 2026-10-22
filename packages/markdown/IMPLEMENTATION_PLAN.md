@@ -536,6 +536,15 @@ Known issues: <list, with the failing test or observation>.
 
 ## Phase records
 
+### Host GUI BH-017 — Callout title click folds again, 2026-10-22
+
+Foldable callout titles (`.callout-title-text` / `.callout-icon`) toggle
+disclosure again, matching Obsidian and the Callouts.md fixture. #233 had made
+title clicks reveal source via `editSummary: true` while `bindDisclosure`
+swallowed the toggle; body/padding and the Edit button still reveal and select
+the whole callout. Coverage: disclosure unit + keyboard-widget-input browser
+(BH-017 title toggle; non-foldable title and body still edit).
+
 ### Host GUI R8 — Keyboard input into rendered math and callouts, 2026-10-19
 
 Rendered-source clicks now hand both the CodeMirror selection and the native
@@ -550,13 +559,12 @@ first `i` after an explicit widget selection exits its automatic visual mode
 at the source head and goes through its ordinary insert mapping; ordinary
 visual text objects retain their behavior.
 
-Callout title/body clicks now reveal and select the whole callout source,
-matching the measured replacement path in Obsidian 1.14.4. This deliberately
-uses a visible source selection rather than a caret in rendered content with
-input landing at the previous editor position. Folded titles edit too; a
-separate fold button retains disclosure, while links and controls retain their
-clicks. Source selection, repeated math clicks, typing, the Vim handoff and
-callout editing/disclosure have focused unit and browser coverage.
+Callout body/padding clicks reveal and select the whole callout source so
+typing replaces it (Obsidian replacement path). Foldable titles toggle
+disclosure (restored in BH-017); a separate fold button also toggles.
+Links and controls retain their clicks. Source selection, repeated math
+clicks, typing, the Vim handoff and callout editing/disclosure have focused
+unit and browser coverage.
 
 Validation: markdown unit + full Chromium browser suite green on this
 branch; Host GUI retest remains for the parent session. R8 plan/results live
