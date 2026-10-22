@@ -114,6 +114,33 @@ test("a fenced block shows its language and copy button in the hidden opening fe
   await expect(page.locator(".cm-line.md-code-fence-close")).toHaveText("```");
 });
 
+test("Copy appears while hovering any line of a fence (BH-015)", async ({
+  page,
+}) => {
+  await open(
+    page,
+    'Before\n\n```python\ndef greet(name):\n    return f"Hello, {name}"\n```\n\nAfter',
+  );
+  const fence = page.locator(".cm-line.md-code-fence-open");
+  const copy = fence.getByRole("button", { name: "Copy code" });
+  const language = fence.locator(".code-language");
+  const body = page.locator(".cm-line.md-code-line", { hasText: "return" });
+  const before = page.locator(".cm-line", { hasText: "Before" });
+  await expect(language).toHaveText("Python");
+  // Park the pointer off the fence so Copy starts hidden.
+  await before.hover();
+  await expect(fence).not.toHaveClass(/is-fence-hovered/);
+  await expect(copy).toHaveCSS("opacity", "0");
+  await body.hover();
+  await expect(fence).toHaveClass(/is-fence-hovered/);
+  await expect(copy).toHaveCSS("opacity", "1");
+  await expect(language).toHaveCSS("opacity", "0");
+  await before.hover();
+  await expect(fence).not.toHaveClass(/is-fence-hovered/);
+  await expect(copy).toHaveCSS("opacity", "0");
+  await expect(language).toHaveCSS("opacity", "1");
+});
+
 /** Reveals that show their source in place (audited; none may jump). */
 const inPlace: Record<string, string> = {
   "a heading": "## A heading",

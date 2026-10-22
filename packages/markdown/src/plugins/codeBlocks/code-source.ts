@@ -14,7 +14,13 @@ import {
 } from "@codemirror/view";
 import type { CodeTokenRange } from "./code-highlight";
 import type * as CodeHighlighter from "./code-highlight";
-import { FenceFlair, fenceInfo, fenceRevealed } from "./fence-flair";
+import {
+  FenceFlair,
+  fenceInfo,
+  fenceOpenLine,
+  fenceRevealed,
+  setFenceHover,
+} from "./fence-flair";
 
 const ready = StateEffect.define<null>();
 interface CachedCode {
@@ -213,6 +219,27 @@ export const codeSource = (copy: (text: string) => void) =>
             view.dispatch({ effects: ready.of(null) });
           }
         });
+      },
+      // Obsidian: Copy appears for the whole fence, not only the opening strip.
+      mouseover(event, view) {
+        if (!(event.target instanceof Element)) {
+          return;
+        }
+        setFenceHover(
+          view.contentDOM,
+          fenceOpenLine(event.target.closest(".cm-line")),
+        );
+      },
+      mouseout(event, view) {
+        const related = event.relatedTarget;
+        if (related instanceof Element && view.contentDOM.contains(related)) {
+          const open = fenceOpenLine(related.closest(".cm-line"));
+          if (open) {
+            setFenceHover(view.contentDOM, open);
+            return;
+          }
+        }
+        setFenceHover(view.contentDOM, null);
       },
     },
   });
