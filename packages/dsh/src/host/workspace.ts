@@ -11,10 +11,8 @@ import {
   readFile,
   rename,
   rm,
-  writeFile,
 } from "node:fs/promises";
 import * as path from "node:path";
-import { fileURLToPath } from "node:url";
 import type {
   DiagnosticSink,
   Extensions,
@@ -22,8 +20,12 @@ import type {
   WorkspaceFiles,
   WorkspaceStorage,
 } from "@workshop/markdown/portable";
-
-const toPath = (uri: string) => fileURLToPath(uri);
+import {
+  assertContained,
+  pathInsideRoots,
+  writeAtomic,
+  writeThroughFile,
+} from "./paths";
 
 export function createHostWorkspace(
   roots: () => readonly string[],
@@ -32,22 +34,13 @@ export function createHostWorkspace(
     folders: roots,
     // DSH runs only what its owner installed and opened.
     isTrusted: () => true,
-    read: async (uri) => readFile(toPath(uri)),
+    read: async (uri) => readFile(await pathInsideRoots(roots(), uri)),
     stat: async (uri) => {
-      const info = await lstat(toPath(uri));
+      const info = await lstat(await pathInsideRoots(roots(), uri));
       return { mtime: info.mtimeMs, symbolicLink: info.isSymbolicLink() };
     },
-    watch: (uri, listener) => {
-      const file = toPath(uri);
-      const watcher = watch(path.dirname(file), (_event, name) => {
-        if (name === null || name.toString() === path.basename(file)) {
-          listener();
-        }
-      });
-      watcher.on("error", () => watcher.close());
-      return () => watcher.close();
-    },
-    files: createWorkspaceFiles(),
+    watch: (uri, listener) => watchContained(roots, uri, listener),
+    files: createWorkspaceFiles(roots),
     diagnostics: noDiagnostics,
     revealTextEditor: async () => {},
   };
@@ -59,46 +52,35 @@ const noDiagnostics: DiagnosticSink = {
   clear: () => {},
 };
 
-export function createWorkspaceFiles(): WorkspaceFiles {
+export function createWorkspaceFiles(
+  roots: () => readonly string[],
+): WorkspaceFiles {
+  const inside = (uri: string) => pathInsideRoots(roots(), uri);
   return {
-    readText: async (uri) => {
-      try {
-        return await readFile(toPath(uri), "utf8");
-      } catch {
-        return undefined;
-      }
-    },
+    authorize: (root, target) => assertContained(root, target),
+    readText: (uri) => textInside(inside, uri),
     writeText: async (uri, text) => {
-      await mkdir(path.dirname(toPath(uri)), { recursive: true });
-      await writeFile(toPath(uri), text, "utf8");
+      const file = await inside(uri);
+      await mkdir(path.dirname(file), { recursive: true });
+      await writeThroughFile(file, text);
     },
-    list: async (uri) => {
-      try {
-        return await readdir(toPath(uri));
-      } catch {
-        return undefined;
-      }
-    },
+    list: (uri) => namesInside(inside, uri),
     mkdir: async (uri) => {
-      await mkdir(toPath(uri), { recursive: true });
+      await mkdir(await inside(uri), { recursive: true });
     },
     copy: async (from, to) => {
-      await cp(toPath(from), toPath(to), { recursive: true });
+      await cp(await inside(from), await inside(to), { recursive: true });
     },
     move: async (from, to) => {
-      await mkdir(path.dirname(toPath(to)), { recursive: true });
-      await rename(toPath(from), toPath(to));
+      const target = await inside(to);
+      await mkdir(path.dirname(target), { recursive: true });
+      await rename(await inside(from), target);
     },
     remove: async (uri) => {
-      await rm(toPath(uri), { recursive: true, force: true });
+      // A file, not a tree: VS Code's workspace fs deletes one entry.
+      await rm(await inside(uri), { recursive: false, force: true });
     },
-    isSymbolicLink: async (uri) => {
-      try {
-        return (await lstat(toPath(uri))).isSymbolicLink();
-      } catch {
-        return false;
-      }
-    },
+    isSymbolicLink: (uri) => linkInside(inside, uri),
     // There is no native file picker behind a browser page.
     pickFile: async () => undefined,
   };
@@ -107,15 +89,85 @@ export function createWorkspaceFiles(): WorkspaceFiles {
 /** Small state kept in one JSON file (VS Code's workspace state). */
 export function createWorkspaceStorage(file: string): WorkspaceStorage {
   let values = readValues(file);
+  let writing: Promise<void> = Promise.resolve();
   return {
     get: <T>(key: string, fallback: T): T =>
       key in values ? (values[key] as T) : fallback,
-    update: async (key, value) => {
-      values = { ...values, [key]: value };
-      await mkdir(path.dirname(file), { recursive: true });
-      await writeFile(file, JSON.stringify(values));
+    update: (key, value) => {
+      const job = writing.then(async () => {
+        values = { ...values, [key]: value };
+        await writeAtomic(file, JSON.stringify(values));
+      });
+      writing = job.then(
+        () => undefined,
+        () => undefined,
+      );
+      return job;
     },
   };
+}
+
+/** Watch a file only after it is known to sit inside a workspace. */
+function watchContained(
+  roots: () => readonly string[],
+  uri: string,
+  listener: () => void,
+): () => void {
+  let close = (): void => {};
+  let stopped = false;
+  void pathInsideRoots(roots(), uri)
+    .then((file) => {
+      if (stopped) {
+        return;
+      }
+      const watcher = watch(path.dirname(file), (_event, name) => {
+        if (name === null || name.toString() === path.basename(file)) {
+          listener();
+        }
+      });
+      watcher.on("error", () => watcher.close());
+      close = () => watcher.close();
+    })
+    .catch(() => {
+      // Outside the workspace, or gone: there is nothing to watch.
+    });
+  return () => {
+    stopped = true;
+    close();
+  };
+}
+
+async function textInside(
+  inside: (uri: string) => Promise<string>,
+  uri: string,
+): Promise<string | undefined> {
+  try {
+    return await readFile(await inside(uri), "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
+async function namesInside(
+  inside: (uri: string) => Promise<string>,
+  uri: string,
+): Promise<readonly string[] | undefined> {
+  try {
+    return await readdir(await inside(uri));
+  } catch {
+    return undefined;
+  }
+}
+
+async function linkInside(
+  inside: (uri: string) => Promise<string>,
+  uri: string,
+): Promise<boolean> {
+  try {
+    return (await lstat(await inside(uri))).isSymbolicLink();
+  } catch {
+    return false;
+  }
 }
 
 function readValues(file: string): Record<string, unknown> {

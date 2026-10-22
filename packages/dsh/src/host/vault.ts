@@ -25,6 +25,9 @@ import {
   type VaultSystem,
 } from "@workshop/markdown/portable";
 import type { NoteDocuments } from "./documents";
+import { isInside, pathInsideRoots } from "./paths";
+
+export { isInside } from "./paths";
 
 /** Stats run this many at a time while listing a vault. */
 const STAT_CONCURRENCY = 32;
@@ -48,14 +51,14 @@ export function createNodeVaultSystem(options: NodeVaultOptions): VaultSystem {
     workspaceFolders: roots,
     exists: async (uri) => {
       try {
-        await stat(fileURLToPath(uri));
+        await stat(await pathInsideRoots(roots(), uri));
         return true;
       } catch {
         return false;
       }
     },
     list: listVault,
-    read: async (uri) => readFile(fileURLToPath(uri)),
+    read: async (uri) => readFile(await pathInsideRoots(roots(), uri)),
     watch: watchVault,
     store: (root) => snapshotStore(options.storage, root),
     settings: (root) => ({
@@ -76,12 +79,6 @@ export function createNodeVaultSystem(options: NodeVaultOptions): VaultSystem {
     hash: (text) => createHash("sha256").update(text).digest("hex"),
     warn: options.warn,
   };
-}
-
-/** Whether a file URI is the root or under it. */
-export function isInside(root: string, uri: string): boolean {
-  const base = root.replace(/\/+$/, "");
-  return uri === base || uri.startsWith(base + "/");
 }
 
 /** Every file under a root, outside hidden folders and `node_modules`, up to `limit`. */

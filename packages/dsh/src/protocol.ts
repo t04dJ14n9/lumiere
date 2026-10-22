@@ -40,6 +40,56 @@ export type PageFrame =
 
 const MAX_TEXT = 64 * 1024;
 
+/** Schemes the page must not open. The host refuses them too; this is the sink. */
+const UNSAFE_EXTERNAL = new Set([
+  "javascript:",
+  "data:",
+  "file:",
+  "vbscript:",
+  "command:",
+]);
+
+/**
+ * An http(s), mailto or other application link safe to hand to `window.open`,
+ * or undefined for a scheme that can run a script or read a local file.
+ */
+export function safeExternalHref(href: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(href);
+  } catch {
+    return undefined;
+  }
+  if (UNSAFE_EXTERNAL.has(url.protocol)) {
+    return undefined;
+  }
+  return url.href;
+}
+
+/** A frame from the host, or undefined when it is not one. */
+export function parseHostFrame(text: string): HostFrame | undefined {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  if (value.ch === "rpc" && "data" in value) {
+    return { ch: "rpc", data: value.data };
+  }
+  if (
+    value.ch === "ui" &&
+    isRecord(value.data) &&
+    typeof value.data.type === "string"
+  ) {
+    return { ch: "ui", data: value.data as UiRequest };
+  }
+  return undefined;
+}
+
 /** A frame from the page, or undefined when it is not one. */
 export function parsePageFrame(text: string): PageFrame | undefined {
   let value: unknown;

@@ -3,7 +3,12 @@
  * picks), drawn inside the page: DSH has no API for them. Styled with the
  * page's `--vscode-*` variables, so they follow DSH's theme.
  */
-import type { PageFrame, PickRow, UiRequest } from "../protocol";
+import {
+  safeExternalHref,
+  type PageFrame,
+  type PickRow,
+  type UiRequest,
+} from "../protocol";
 
 type Send = (frame: PageFrame) => void;
 type Prompt = Extract<UiRequest, { type: "ask" | "input" | "pick" }>;
@@ -48,7 +53,7 @@ export function createUi(send: Send): (request: UiRequest) => void {
           location.origin,
         );
       case "external":
-        return void window.open(request.href, "_blank", "noopener,noreferrer");
+        return openExternal(request.href);
       case "pickItems":
         return picker?.id === request.id
           ? picker.update(request.items)
@@ -57,9 +62,20 @@ export function createUi(send: Send): (request: UiRequest) => void {
         picker = new Picker(request, send);
         return;
       default:
-        return prompt(request, send);
+        if (request.type === "ask" || request.type === "input") {
+          return prompt(request, send);
+        }
+        return undefined;
     }
   };
+}
+
+function openExternal(href: string): void {
+  const target = safeExternalHref(href);
+  if (!target) {
+    return;
+  }
+  window.open(target, "_blank", "noopener,noreferrer");
 }
 
 function installStyle(): void {

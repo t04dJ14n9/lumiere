@@ -13,8 +13,9 @@
   remains (BH-011 / BH-003). Dirty tabs are left alone.
 - **DeepSeek Harness**: Lumière's Markdown editor runs in DeepSeek Harness
   0.2.1 or later, as a DSH plugin (`packages/dsh`): notes open in Lumière in
-  DSH's preview sidebar and save as you type. PDFs, Git features and the side
-  views stay VS Code and Cursor only for now.
+  DSH's preview sidebar and save as you type. Paths that leave the workspace,
+  including through `..` or a symbolic link, are refused. PDFs, Git features
+  and the side views stay VS Code and Cursor only for now.
 - Fixed: Current-line authorship (gitBlame) could throw "Disposed: gitBlame
   is stopped" into the editor while the plugin restarted.
 

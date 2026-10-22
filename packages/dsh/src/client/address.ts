@@ -51,6 +51,32 @@ export function workspaceRoot(
     : undefined;
 }
 
+/**
+ * Whether `absolute` is `root` or a file inside it. A filesystem root is
+ * refused: it would let a page open any path the host can name.
+ */
+export function insideWorkspace(
+  root: string | undefined,
+  absolute: string,
+): boolean {
+  if (!root || !absolute || absolute.includes("\0")) {
+    return false;
+  }
+  const base = root.replace(/[\\/]+$/, "");
+  if (base === "" || base === "/" || /^[A-Za-z]:$/.test(base)) {
+    return false;
+  }
+  // A string prefix would admit `/vault/../etc`. The host checks too.
+  if (absolute.split(/[\\/]/).includes("..")) {
+    return false;
+  }
+  return (
+    absolute === base ||
+    absolute.startsWith(`${base}/`) ||
+    absolute.startsWith(`${base}\\`)
+  );
+}
+
 /** The address of another file of the session, from its absolute path. */
 export function sessionAddress(
   sessionId: string,

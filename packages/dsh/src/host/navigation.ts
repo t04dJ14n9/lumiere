@@ -3,8 +3,7 @@
  * works as in VS Code; opening one is DSH's to do: an open note's page reveals
  * the target itself, any other file opens in a new tab of DSH's sidebar.
  */
-import { constants } from "node:fs";
-import { mkdir, open as openFile, stat } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
@@ -16,8 +15,8 @@ import {
 } from "@workshop/markdown/portable";
 import { questionId, type LivePanel } from "./panel";
 import type { PanelHub } from "./panels";
+import { assertContained, createEmptyFile, OutsideWorkspace } from "./paths";
 import { presentingPanel } from "./ui-services";
-import { isInside } from "./vault";
 
 /** How long a new tab's page may take to open before its reveal is dropped. */
 const OPEN_TIMEOUT_MS = 15_000;
@@ -55,7 +54,7 @@ export function createDshNavigation(
     async open(
       ...[root, uri, fragment, , at, intent]: Parameters<Navigation["open"]>
     ) {
-      assertInside(root, uri);
+      await requireInside(root, uri);
       const destination: NavigationTarget = {
         fragment,
         ...(at === undefined ? {} : { at }),
@@ -81,7 +80,7 @@ export async function resolveLink(
           : path.dirname(fileURLToPath(source)),
         link.replace(/^\//, ""),
       );
-  assertInside(root, pathToFileURL(target).toString());
+  await requireInside(root, pathToFileURL(target).toString());
   const info = await stat(target).catch(() => undefined);
   if (intent?.token.cancelled) {
     return undefined;
@@ -91,7 +90,7 @@ export async function resolveLink(
       return undefined;
     }
     target = path.join(target, folderNote);
-    assertInside(root, pathToFileURL(target).toString());
+    await requireInside(root, pathToFileURL(target).toString());
   }
   if (info) {
     return pathToFileURL(target).toString();
@@ -122,17 +121,21 @@ async function createNote(options: {
     target += ".md";
   }
   const uri = pathToFileURL(target).toString();
-  assertInside(root, uri);
+  await requireInside(root, uri);
   await mkdir(path.dirname(target), { recursive: true });
-  // Never overwrite: a note created meanwhile is the one to open.
-  const handle = await openFile(target, constants.O_CREAT | constants.O_WRONLY);
-  await handle.close();
+  // O_EXCL and O_NOFOLLOW: an existing file, or a symlink planted in its place, is not written.
+  await createEmptyFile(target);
   return uri;
 }
 
-function assertInside(root: string, uri: string): void {
-  if (!isInside(root, uri)) {
-    throw new Error("That link points outside the vault");
+async function requireInside(root: string, uri: string): Promise<void> {
+  try {
+    await assertContained(root, uri);
+  } catch (error) {
+    if (error instanceof OutsideWorkspace) {
+      throw new Error("That link points outside the vault", { cause: error });
+    }
+    throw error;
   }
 }
 
@@ -154,18 +157,27 @@ async function openTarget(options: OpenTarget): Promise<void> {
     if (hasDestination) {
       await reveals.deliver(intent, shown.id, destination);
     }
+    // The note is already open in another DSH tab: focus it. Revealing only
+    // scrolls the hidden editor, which looks like the link did nothing.
+    if (shown !== presentingPanel(panels)) {
+      tellOpen(panels, uri, destination.fragment);
+    }
     return;
   }
   const opened = nextPanelFor(panels, uri);
-  presentingPanel(panels)?.tell({
-    type: "open",
-    path: fileURLToPath(uri),
-    fragment: destination.fragment,
-  });
+  tellOpen(panels, uri, destination.fragment);
   const panel = await opened;
   if (panel && hasDestination && !intent.token.cancelled) {
     await reveals.deliver(intent, panel.id, destination);
   }
+}
+
+function tellOpen(panels: PanelHub, uri: string, fragment: string): void {
+  presentingPanel(panels)?.tell({
+    type: "open",
+    path: fileURLToPath(uri),
+    fragment,
+  });
 }
 
 /** The next panel opened for `uri`, or undefined if none opens in time. */

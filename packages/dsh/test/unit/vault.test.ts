@@ -70,11 +70,15 @@ test("watching reports a new file, a change to it and its deletion, never hidden
   );
 });
 
-test("a URI is inside a root only at a path boundary", () => {
+test("a URI is inside a root only at a path boundary, after dot segments resolve", () => {
   assert.equal(isInside("file:///v", "file:///v/a.md"), true);
   assert.equal(isInside("file:///v/", "file:///v/a.md"), true);
   assert.equal(isInside("file:///v", "file:///v"), true);
+  assert.equal(isInside("file:///v", "file:///v/..secret"), true);
   assert.equal(isInside("file:///v", "file:///vault/a.md"), false);
+  assert.equal(isInside("file:///v", "file:///v/../etc/passwd"), false);
+  assert.equal(isInside("file:///v", "file:///v/%2e%2e/etc/passwd"), false);
+  assert.equal(isInside("file:///v", "file:///v/foo%2f..%2fetc/passwd"), false);
 });
 
 async function waitFor(check: () => boolean): Promise<void> {

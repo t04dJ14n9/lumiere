@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  insideWorkspace,
   parseSessionAddress,
   sessionAddress,
   workspaceRoot,
@@ -35,6 +36,15 @@ test("the workspace root is the absolute path without the relative one", () => {
     workspaceRoot("dsh-resource://file/session/s//v/a.md", "/v/a.md"),
     undefined,
   );
+});
+
+test("a page may open a file inside its workspace and not a prefix or the disk root", () => {
+  assert.equal(insideWorkspace("/v", "/v/notes/A.md"), true);
+  assert.equal(insideWorkspace("/v/", "/v"), true);
+  assert.equal(insideWorkspace("/v", "/vault/A.md"), false);
+  assert.equal(insideWorkspace("/v", "/v/../etc/passwd"), false);
+  assert.equal(insideWorkspace("/", "/etc/passwd"), false);
+  assert.equal(insideWorkspace(undefined, "/v/A.md"), false);
 });
 
 test("another note's address is relative to the workspace, encoded like DSH's", () => {

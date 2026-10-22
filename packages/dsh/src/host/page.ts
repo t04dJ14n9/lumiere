@@ -1,5 +1,6 @@
 /** The editor page's request and the changes it needs to run outside VS Code. */
 import * as path from "node:path";
+import { isFilesystemRoot } from "./paths";
 
 /** A note to open and the DSH workspace it was opened from. */
 export interface PageQuery {
@@ -23,7 +24,11 @@ export function pageQuery(url: URL): PageQuery | undefined {
     return undefined;
   }
   const relative = path.relative(root, normalized);
-  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+  if (
+    relative.startsWith("..") ||
+    path.isAbsolute(relative) ||
+    isFilesystemRoot(root)
+  ) {
     return undefined;
   }
   return { note: normalized, root };
@@ -50,6 +55,21 @@ export function injectShim(
   return at < 0
     ? withMeta.replace("</body>", `${script}</body>`)
     : withMeta.slice(0, at) + script + withMeta.slice(at);
+}
+
+/**
+ * `'self'` plus this page's own socket origin. The Host header is copied into
+ * the content security policy, so anything that is not a host or host:port is
+ * dropped rather than widening `connect-src`.
+ */
+const SOCKET_HOST =
+  /^(?:[a-zA-Z0-9.-]{1,253}|\[[0-9a-fA-F:]{2,64}\])(?::\d{1,5})?$/;
+
+export function socketSource(host: string): string {
+  if (!SOCKET_HOST.test(host)) {
+    return "'self'";
+  }
+  return `'self' ws://${host} wss://${host}`;
 }
 
 function escape(text: string): string {

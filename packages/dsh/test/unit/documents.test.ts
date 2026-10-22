@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import { NoteDocuments } from "../../src/host/documents";
+import { diskReadReplacesNote, NoteDocuments } from "../../src/host/documents";
 
 async function note(text: string) {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-dsh-"));
@@ -117,6 +117,64 @@ test("a failed write still closes every watch, so the host can exit", async (t) 
   await assert.rejects(documents.dispose(), { code: "ENOENT" });
   assert.equal(documents.text(uri), undefined);
   t.diagnostic("the test process exiting proves no watch stayed open");
+});
+
+test("a disk read that overlapped a save does not undo it", () => {
+  assert.equal(
+    diskReadReplacesNote({
+      text: "stale",
+      diskText: "edited",
+      dirty: false,
+      open: true,
+      writesAtStart: 0,
+      writesNow: 1,
+    }),
+    false,
+  );
+  assert.equal(
+    diskReadReplacesNote({
+      text: "from outside",
+      diskText: "saved",
+      dirty: false,
+      open: true,
+      writesAtStart: 1,
+      writesNow: 1,
+    }),
+    true,
+  );
+});
+
+test("a disk read in flight during a save is dropped when it resumes", async (t) => {
+  const { file, uri, cleanup } = await note("saved");
+  const pending: Array<(text: string) => void> = [];
+  let opened = false;
+  const documents = new NoteDocuments(60_000, {
+    readFile: (target) => {
+      if (!opened) {
+        opened = true;
+        return readFile(target, "utf8");
+      }
+      return new Promise((resolve) => {
+        pending.push(resolve);
+      });
+    },
+  });
+  t.after(() => {
+    for (const resolve of pending) {
+      resolve("edited");
+    }
+    return documents.dispose();
+  });
+  t.after(cleanup);
+  const document = await documents.open(uri);
+  await writeFile(file, "external");
+  await until(() => pending.length >= 1);
+  await documents.apply(document, [{ from: 0, to: 5, insert: "edited" }]);
+  assert.equal(await document.save(), true);
+  pending[0]!("stale");
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(document.getText(), "edited");
+  assert.equal(await readFile(file, "utf8"), "edited");
 });
 
 test("opening a note twice at once returns one document", async (t) => {

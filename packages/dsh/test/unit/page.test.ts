@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { injectShim, pageQuery } from "../../src/host/page";
+import { injectShim, pageQuery, socketSource } from "../../src/host/page";
 
 const url = (query: string) => new URL(`http://h/lumiere/editor?${query}`);
 
@@ -18,6 +18,7 @@ test("a page opens a Markdown note inside its workspace, and nothing else", () =
     "path=notes/A.md&root=/v",
     "path=/other/A.md&root=/v",
     "path=/v/../etc/A.md&root=/v",
+    "path=/v/A.md&root=/",
     "path=/v/A.md&root=relative",
     "",
   ]) {
@@ -39,4 +40,23 @@ test("the shim runs first, with the page's nonce, and the panel id is in the hea
   assert.ok(shim > 0);
   assert.ok(shim < page.indexOf('type="module"'));
   assert.throws(() => injectShim("<html><head></head></html>", "p", "/s.js"));
+});
+
+test("the socket origin is a host, never a content-security-policy breakout", () => {
+  assert.equal(
+    socketSource("localhost:3000"),
+    "'self' ws://localhost:3000 wss://localhost:3000",
+  );
+  assert.equal(
+    socketSource("[::1]:443"),
+    "'self' ws://[::1]:443 wss://[::1]:443",
+  );
+  for (const host of [
+    "",
+    "evil.com 'unsafe-inline'",
+    "localhost:3000\r\nX",
+    "a b",
+  ]) {
+    assert.equal(socketSource(host), "'self'", host);
+  }
 });

@@ -5,7 +5,7 @@
  */
 import { createHash } from "node:crypto";
 import { watch } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Disposer } from "@workshop/core";
@@ -16,6 +16,7 @@ import {
   type SourceEdit,
   type TextEdit,
 } from "@workshop/markdown/portable";
+import { writeThroughFile } from "./paths";
 
 /** How long typing must pause before a note is written to disk. */
 export const AUTOSAVE_DELAY_MS = 800;
@@ -69,6 +70,31 @@ export class NoteDocument implements HostDocument {
   }
 }
 
+/** How a test substitutes the disk. Production uses Node's filesystem. */
+export interface NoteDisk {
+  readFile(file: string): Promise<string>;
+}
+
+/**
+ * Whether a disk read should replace the open note. A read that started
+ * before a save finished is stale: applying it would undo that save.
+ */
+export function diskReadReplacesNote(state: {
+  text: string;
+  diskText: string;
+  dirty: boolean;
+  open: boolean;
+  writesAtStart: number;
+  writesNow: number;
+}): boolean {
+  return (
+    state.open &&
+    !state.dirty &&
+    state.writesAtStart === state.writesNow &&
+    state.text !== state.diskText
+  );
+}
+
 /** Every open note, with the events the plugins and the vault listen to. */
 export class NoteDocuments implements HostDocuments {
   private readonly notes = new Map<string, NoteDocument>();
@@ -80,8 +106,13 @@ export class NoteDocuments implements HostDocuments {
   private readonly saveListeners = new Set<(note: HostDocument) => void>();
   private readonly willSave = new Set<(note: HostDocument) => Promise<void>>();
   private readonly closeListeners = new Set<(uri: string) => void>();
+  /** Saves that have reached disk. A reload captures this before it reads. */
+  private readonly settledWrites = new Map<string, number>();
 
-  constructor(private readonly delay = AUTOSAVE_DELAY_MS) {}
+  constructor(
+    private readonly delay = AUTOSAVE_DELAY_MS,
+    private readonly disk?: NoteDisk,
+  ) {}
 
   fingerprint(text: string): string {
     return createHash("sha256").update(text).digest("hex");
@@ -115,7 +146,7 @@ export class NoteDocuments implements HostDocuments {
     if (open) {
       return open;
     }
-    const text = await readFile(fileURLToPath(uri), "utf8");
+    const text = await this.readNote(uri);
     // Another open() may have finished while this one read the file.
     const raced = this.notes.get(uri);
     if (raced) {
@@ -207,7 +238,13 @@ export class NoteDocuments implements HostDocuments {
     this.cancelSave(note.uri);
     await Promise.all([...this.willSave].map((listener) => listener(note)));
     const text = note.getText();
-    await writeFile(fileURLToPath(note.uri), text, "utf8");
+    await writeThroughFile(fileURLToPath(note.uri), text);
+    // Count the save before publishing diskText, so a reload that resumes
+    // in between still sees that its read is older than this write.
+    this.settledWrites.set(
+      note.uri,
+      (this.settledWrites.get(note.uri) ?? 0) + 1,
+    );
     note.diskText = text;
     note.isDirty = note.getText() !== text;
     for (const listener of this.saveListeners) {
@@ -255,17 +292,24 @@ export class NoteDocuments implements HostDocuments {
   }
 
   private async reload(note: NoteDocument): Promise<void> {
+    const writesAtStart = this.settledWrites.get(note.uri) ?? 0;
     let text: string;
     try {
-      text = await readFile(fileURLToPath(note.uri), "utf8");
+      text = await this.readNote(note.uri);
     } catch {
       return;
     }
     // Our own writes come back here; and unsaved typing wins over the disk.
+    // A read that overlapped a save is dropped: it can still hold the old bytes.
     if (
-      text === note.diskText ||
-      note.isDirty ||
-      this.notes.get(note.uri) !== note
+      !diskReadReplacesNote({
+        text,
+        diskText: note.diskText,
+        dirty: note.isDirty,
+        open: this.notes.get(note.uri) === note,
+        writesAtStart,
+        writesNow: this.settledWrites.get(note.uri) ?? 0,
+      })
     ) {
       return;
     }
@@ -285,6 +329,11 @@ export class NoteDocuments implements HostDocuments {
         listener(uri);
       }
     }
+  }
+
+  private readNote(uri: string): Promise<string> {
+    const file = fileURLToPath(uri);
+    return this.disk ? this.disk.readFile(file) : readFile(file, "utf8");
   }
 }
 

@@ -5,7 +5,7 @@
  * socket to its panel on the host. Runs before the editor's module
  * (host/page.ts puts it first).
  */
-import type { HostFrame, PageFrame } from "../protocol";
+import { parseHostFrame, type PageFrame } from "../protocol";
 import { followTheme } from "./theme-dom";
 import { createUi } from "./ui";
 
@@ -42,7 +42,10 @@ function connect(panel: string): (frame: PageFrame) => void {
     }
   });
   socket.addEventListener("message", (event) => {
-    const frame = JSON.parse(String(event.data)) as HostFrame;
+    const frame = parseHostFrame(String(event.data));
+    if (!frame) {
+      return;
+    }
     if (frame.ch === "rpc") {
       // The editor's transport accepts messages from this page's own origin.
       window.dispatchEvent(

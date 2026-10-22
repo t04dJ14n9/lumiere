@@ -56,7 +56,8 @@ The host half injects DSH's `webServer` and `connection`; the browser half
 `documentPreviews`, `slots` and `sidebarRight`. Routes, all behind DSH's
 authentication: `/lumiere/editor` (a note's page), `/lumiere/m/*` (the
 editor), `/lumiere/d/*` (the shim), `/lumiere/file` (a note's images, inside
-its workspace only) and the `/lumiere/socket` upgrade. Settings use the
+its workspace only — `..` and a symbolic link that leaves the workspace are
+refused) and the `/lumiere/socket` upgrade. Settings use the
 `lumiere.markdown.*` keys and defaults of the VS Code extension and are kept
 in `$DSH_HOME/lumiere/settings.json` (`~/.dsh` by default), beside the vault
 snapshots and editor state.
@@ -82,4 +83,10 @@ plugins. Restart DSH after rebuilding.
 - Copy Link for Agent copies to the clipboard: paste into DSH's chat.
 - Renaming a note from its inline title is not available.
 - The editor page is same-origin with DSH, so its strict content security
-  policy (scripts by nonce only) is what keeps a note from reaching DSH.
+  policy (scripts by nonce only) is what keeps a note's scripts from running.
+  The page can still read DSH's DOM, which is how it follows the theme.
+- A workspace that is the filesystem root is refused. The root otherwise is
+  the directory DSH's preview names for that note; the host re-checks every
+  path against it.
+- Copying a file into the vault from outside the workspace is refused.
+  DSH has no file picker for that yet.

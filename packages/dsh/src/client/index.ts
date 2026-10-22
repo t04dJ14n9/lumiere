@@ -4,7 +4,7 @@
  * DSH's read-only Markdown preview, which stays in the viewer menu. Written
  * against DSH's plugin module format: React comes from DSH's module table.
  */
-import { sessionAddress, workspaceRoot } from "./address";
+import { insideWorkspace, sessionAddress, workspaceRoot } from "./address";
 
 const ID = "@lumiere/dsh";
 const BODY_ID = `${ID}/markdown`;
@@ -154,7 +154,8 @@ function followOpens(
       event.source !== frame.current?.contentWindow ||
       data?.type !== "lumiere:open" ||
       typeof data.path !== "string" ||
-      !target.sessionId
+      !target.sessionId ||
+      (target.root !== undefined && !insideWorkspace(target.root, data.path))
     ) {
       return;
     }

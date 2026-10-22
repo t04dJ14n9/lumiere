@@ -4,7 +4,7 @@
  * that connects a page to its panel, a note's images, and the page's socket.
  */
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -12,8 +12,8 @@ import { WebSocketServer } from "ws";
 import type { DshContext } from "./dsh";
 import type { PanelUrls } from "./panel";
 import type { LumiereHost } from "./start";
-import { isInside } from "./vault";
-import { injectShim, pageQuery } from "./page";
+import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
+import { injectShim, pageQuery, socketSource } from "./page";
 
 export const BASE = "/lumiere";
 
@@ -58,10 +58,12 @@ export function registerRoutes(ctx: DshContext, options: RouteOptions): void {
           return;
         }
         await route(req, res, { ...options, roots }).catch((error: unknown) => {
+          ctx.logger?.("lumiere").error("Lumière route failed", error);
           if (!res.headersSent) {
             res.writeHead(500, { "content-type": "text/plain" });
           }
-          res.end(String(error instanceof Error ? error.message : error));
+          // The message can name a filesystem path. The log has it; the browser does not.
+          res.end("Internal error");
         });
       },
     }),
@@ -109,12 +111,18 @@ async function servePage(
     res.writeHead(400, { "content-type": "text/plain" }).end("Not a note");
     return;
   }
-  const rootUri = pathToFileURL(query.root).toString();
-  routing.host.addRoot(rootUri);
+  const resolved = await resolveContainedNote(query.note, query.root);
+  if (!resolved) {
+    res.writeHead(403).end();
+    return;
+  }
+  const rootUri = pathToFileURL(resolved.root).toString();
   const { id, html } = await routing.host.panels.open({
-    uri: pathToFileURL(query.note).toString(),
+    uri: pathToFileURL(resolved.note).toString(),
     urls: (panelId) => panelUrls(panelId, req.headers.host ?? ""),
   });
+  // Only a note that actually opened widens what the vault may list.
+  routing.host.addRoot(rootUri);
   routing.roots.set(id, rootUri);
   routing.host.panels.get(id)?.shell.onDispose(() => routing.roots.delete(id));
   res.writeHead(200, {
@@ -127,7 +135,7 @@ async function servePage(
 function panelUrls(panelId: string, host: string): PanelUrls {
   return {
     // The page's socket is same-origin, but CSP 'self' does not cover ws: everywhere.
-    cspSource: `'self' ws://${host} wss://${host}`,
+    cspSource: socketSource(host),
     asset: (relative) => `${BASE}/m/${relative}`,
     resource: (uri) =>
       `${BASE}/file?panel=${encodeURIComponent(panelId)}&uri=${encodeURIComponent(uri)}`,
@@ -139,8 +147,16 @@ async function serveStatic(
   base: string,
   relative: string,
 ): Promise<void> {
-  const file = path.resolve(base, decodeURIComponent(relative));
-  if (!file.startsWith(base + path.sep)) {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(relative);
+  } catch {
+    res.writeHead(400).end();
+    return;
+  }
+  const root = path.resolve(base);
+  const file = path.resolve(root, decoded);
+  if (file !== root && !file.startsWith(root + path.sep)) {
     res.writeHead(403).end();
     return;
   }
@@ -155,11 +171,32 @@ async function serveResource(
 ): Promise<void> {
   const root = roots.get(url.searchParams.get("panel") ?? "");
   const uri = url.searchParams.get("uri") ?? "";
-  if (!root || !uri.startsWith("file:") || !isInside(root, uri)) {
+  const file = await containedResource(root, uri);
+  if (!file) {
     res.writeHead(403).end();
     return;
   }
-  await serveFile(res, new URL(uri));
+  await serveFile(res, file);
+}
+
+/** The file a note may show, or undefined when the URI leaves its workspace. */
+async function containedResource(
+  root: string | undefined,
+  uri: string,
+): Promise<string | undefined> {
+  if (!root) {
+    return undefined;
+  }
+  try {
+    await assertContained(root, uri);
+  } catch {
+    return undefined;
+  }
+  const target = fileUriToPath(uri);
+  if (!target) {
+    return undefined;
+  }
+  return realpath(target).catch(() => undefined);
 }
 
 async function serveFile(

@@ -5,8 +5,7 @@
  * one JSON file. There are no folder or language scopes.
  */
 import { readFileSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
-import * as path from "node:path";
+import { writeAtomic } from "./paths";
 import type { Disposer } from "@workshop/core";
 import {
   EffectiveConfiguration,
@@ -50,6 +49,7 @@ class SettingValues {
   private readonly defaults: Map<string, unknown>;
   private overrides: Record<string, unknown>;
   private readonly listeners = new Set<() => void>();
+  private writing: Promise<void> = Promise.resolve();
 
   constructor(private readonly options: DshSettingsOptions) {
     this.defaults = new Map(
@@ -96,15 +96,24 @@ class SettingValues {
     };
   }
 
-  private async write(key: string, value: unknown): Promise<void> {
+  private write(key: string, value: unknown): Promise<void> {
+    const job = this.writing.then(() => this.persist(key, value));
+    this.writing = job.then(
+      () => undefined,
+      () => undefined,
+    );
+    return job;
+  }
+
+  /** Reads `overrides` when it runs, so a queued change sees the one before it. */
+  private async persist(key: string, value: unknown): Promise<void> {
     const next = { ...this.overrides };
     if (value === undefined) {
       delete next[key];
     } else {
       next[key] = value;
     }
-    await mkdir(path.dirname(this.options.file), { recursive: true });
-    await writeFile(this.options.file, JSON.stringify(next, null, 2) + "\n");
+    await writeAtomic(this.options.file, JSON.stringify(next, null, 2) + "\n");
     this.overrides = next;
     for (const listener of this.listeners) {
       listener();
