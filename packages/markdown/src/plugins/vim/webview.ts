@@ -54,6 +54,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     registerVimExtension(ctx);
     // BH-021: default <C-p>→k steals Quick Open and races suggest Ctrl+P.
     releaseQuickOpenFromVim(ctx);
+    // BH-029: default <C-a> increment steals Select All.
+    releaseSelectAllFromVim(ctx);
   },
 };
 
@@ -223,6 +225,24 @@ function releaseQuickOpenFromVim(ctx: Context): void {
     return () => {
       // Restore the library default when this vim fiber stops.
       Vim.map("<C-p>", "k", anyMode);
+    };
+  });
+}
+
+/** Drop vim-core's <C-a> increment so Select All can run (BH-029). */
+function releaseSelectAllFromVim(ctx: Context): void {
+  ctx.effect(() => {
+    const anyMode = undefined as unknown as string;
+    Vim.unmap("<C-a>", anyMode);
+    return () => {
+      // Library default is an action map, not keyToKey; re-map via Ex.
+      Vim.mapCommand(
+        "<C-a>",
+        "action",
+        "incrementNumberToken",
+        { increase: true, backtrack: false },
+        { isEdit: true },
+      );
     };
   });
 }
