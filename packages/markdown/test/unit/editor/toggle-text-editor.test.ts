@@ -14,6 +14,7 @@ import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function panelHarness(uri = "file:///note.md") {
   const calls: unknown[][] = [];
+  const closed: [string, "text" | "lumiere"][] = [];
   let focused = true;
   const document = fakeDocument({ uri, id: uri });
   const panel = {
@@ -41,9 +42,15 @@ function panelHarness(uri = "file:///note.md") {
         return undefined;
       },
     },
+    activeEditor: {
+      closeSiblingTabs: async (target, keep) => {
+        closed.push([target, keep]);
+      },
+    },
   });
   return {
     calls,
+    closed,
     panel,
     blur: () => {
       focused = false;
@@ -61,6 +68,7 @@ test("from Lumière, Ctrl/Cmd+E opens the same URI with the default text editor"
   const h = panelHarness("file:///a.md");
   await toggleTextEditor(h.host);
   assert.deepEqual(h.calls, [["vscode.openWith", "file:///a.md", "default"]]);
+  assert.deepEqual(h.closed, [["file:///a.md", "text"]]);
 });
 
 test("from Lumière, losing focus before openWith fails like Open as Text", async () => {
@@ -71,16 +79,21 @@ test("from Lumière, losing focus before openWith fails like Open as Text", asyn
     /lost focus before the command completed/,
   );
   assert.deepEqual(h.calls, []);
+  assert.deepEqual(h.closed, []);
 });
 
 test("from the built-in text editor, Ctrl/Cmd+E opens Lumière for that URI", async () => {
   const calls: unknown[][] = [];
+  const closed: [string, "text" | "lumiere"][] = [];
   const host = fakeHost({
     activeEditor: {
       note: () => "file:///b.md",
       textEditor: () => ({ text: "hi", selection: "" }),
       onNoteChanged: () => () => {},
       onTextSelectionChanged: () => () => {},
+      closeSiblingTabs: async (uri, keep) => {
+        closed.push([uri, keep]);
+      },
     },
     hostCommands: {
       register: () => () => {},
@@ -106,6 +119,7 @@ test("from the built-in text editor, Ctrl/Cmd+E opens Lumière for that URI", as
   assert.deepEqual(calls, [
     ["vscode.openWith", "file:///b.md", MARKDOWN_EDITOR.viewType],
   ]);
+  assert.deepEqual(closed, [["file:///b.md", "lumiere"]]);
 });
 
 test("with no Lumière panel and no text editor for the note, the toggle is a no-op", async () => {
@@ -260,6 +274,7 @@ test("registerToggleTextEditor keeps serial bound through the Lumière panel pat
     },
     restore: async () => {},
   };
+  const closed: [string, "text" | "lumiere"][] = [];
   provideHostServices(
     root,
     fakeHost({
@@ -277,6 +292,11 @@ test("registerToggleTextEditor keeps serial bound through the Lumière panel pat
           return undefined;
         },
       },
+      activeEditor: {
+        closeSiblingTabs: async (uri, keep) => {
+          closed.push([uri, keep]);
+        },
+      },
     }),
   );
   root.plugin({
@@ -292,5 +312,6 @@ test("registerToggleTextEditor keeps serial bound through the Lumière panel pat
   await toggle();
 
   assert.deepEqual(calls, [["vscode.openWith", "file:///bound.md", "default"]]);
+  assert.deepEqual(closed, [["file:///bound.md", "text"]]);
   await root.dispose();
 });

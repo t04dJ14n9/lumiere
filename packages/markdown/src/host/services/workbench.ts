@@ -9,6 +9,7 @@ import type {
 } from "../../shared/host";
 import { createWorkshopPanel } from "../panel-adapter";
 import { toDisposer } from "./documents";
+import { closeToggleSiblingTabs } from "../toggle-sibling-tabs";
 
 export function createClipboard(): Clipboard {
   return {
@@ -64,6 +65,7 @@ export function createActiveEditor(): ActiveEditor {
       toDisposer(
         vscode.window.onDidChangeTextEditorSelection(() => listener()),
       ),
+    closeSiblingTabs: closeToggleSiblingTabs,
   };
 }
 

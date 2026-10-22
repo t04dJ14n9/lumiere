@@ -156,10 +156,13 @@ Clean text tabs are closed; dirty text tabs keep their native document and undo.
 **Toggle Text Editor** (Ctrl/Cmd+E) switches the active note between Lumière
 and the host's default text editor via `vscode.openWith` (`default` ↔
 `lumiere.markdown.editor`). Opening as text still sets the reclaim bypass so
-Cursor does not yank the note back for 10 s. This is **not** Obsidian's
-Ctrl/Cmd+E (Live Preview ↔ Source); Source mode stays on the unbound
-**Toggle Live Preview/Source Mode** command. Selection and caret are not
-restored across the switch (`vscode.openWith` carries no range).
+Cursor does not yank the note back for 10 s. After `openWith`, the previous
+view's tab for the same URI is closed in the active group (clean tabs only),
+so the toggle leaves one tab rather than Lumière + Text Editor side by side
+(BH-011 / BH-003). This is **not** Obsidian's Ctrl/Cmd+E (Live Preview ↔
+Source); Source mode stays on the unbound **Toggle Live Preview/Source Mode**
+command. Selection and caret are not restored across the switch
+(`vscode.openWith` carries no range).
 
 **Open as Text** keeps the text editor for 10 s. A just-reclaimed note also
 ignores repeated tab notifications for 10 s; an explicit native command jump
