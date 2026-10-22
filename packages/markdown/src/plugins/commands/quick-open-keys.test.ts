@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   isQuickOpenKey,
   keepQuickOpenKey,
-  suggestOpen,
+  suggestTooltipOpen,
   type QuickOpenKey,
 } from "./quick-open-keys";
 
@@ -46,19 +46,19 @@ test("Ctrl/Cmd+P is Quick Open; other modifiers and keys are not", () => {
   }
 });
 
-test("suggestOpen detects the autocomplete tooltip", () => {
+test("suggestTooltipOpen detects the autocomplete tooltip", () => {
   const doc = {
     querySelector(sel: string) {
       return sel === ".cm-tooltip-autocomplete" ? {} : null;
     },
   } as unknown as Document;
-  assert.equal(suggestOpen(doc), true);
+  assert.equal(suggestTooltipOpen(doc), true);
   const empty = {
     querySelector() {
       return null;
     },
   } as unknown as Document;
-  assert.equal(suggestOpen(empty), false);
+  assert.equal(suggestTooltipOpen(empty), false);
 });
 
 test("capture listener owns Mod+P, skips native fields and open suggest", () => {
@@ -96,6 +96,7 @@ test("capture listener owns Mod+P, skips native fields and open suggest", () => 
         String((target as { tagName?: string }).tagName).toUpperCase() ===
           "INPUT",
       ),
+    () => suggest,
   );
 
   const listener = listeners.get("keydown");

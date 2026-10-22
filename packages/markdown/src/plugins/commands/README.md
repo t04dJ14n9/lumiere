@@ -21,8 +21,8 @@ CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Sa
 Ctrl/Cmd+E is owned the same way so `@replit/codemirror-vim` cannot treat it as
 scroll-window (BH-003); the host Toggle Text Editor command runs instead
 (Lumière product choice over Obsidian-vim scroll). Ctrl/Cmd+P likewise beats
-Vim's default `<C-p>` → `k` mapping so Quick Open still opens (BH-021); an open
-CodeMirror suggest list keeps Ctrl+P for moving through completions.
+Vim's default `<C-p>` → `k` mapping so Quick Open still opens (BH-021); an active
+CodeMirror completion (`completionStatus`) keeps Ctrl+P for moving through suggestions.
 
 ## Files
 
@@ -39,7 +39,7 @@ CodeMirror suggest list keeps Ctrl+P for moving through completions.
   scroll-window (BH-003); runs host `toggleTextEditor`.
 - `toggle-text-editor-keys.test.ts`: Mod+E mapping and native-field skip.
 - `quick-open-keys.ts`: capture-phase Ctrl/Cmd+P so Vim cannot line-up (BH-021);
-  runs host `workbench.action.quickOpen`.
+  runs host `workbench.action.quickOpen`; skips when completion is active.
 - `quick-open-keys.test.ts`: Mod+P mapping, native-field and suggest skip.
 
 - `registry.ts`: per-editor unique-ID command map.

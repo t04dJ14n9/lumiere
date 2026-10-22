@@ -1,3 +1,4 @@
+import { completionStatus } from "@codemirror/autocomplete";
 import { keymap } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
 import { protocol } from "./protocol";
@@ -127,13 +128,17 @@ function registerQuickOpenKey(
 ): void {
   // Capture-phase Mod/Ctrl+P so Vim cannot map <C-p>→k (BH-021). Leaves native
   // fields and an open suggest list alone (suggest uses Ctrl+P to move).
-  ctx.effect(() =>
-    keepQuickOpenKey(
-      ctx.editor.view.dom.ownerDocument,
+  ctx.effect(() => {
+    const doc = ctx.editor.view.dom.ownerDocument;
+    return keepQuickOpenKey(
+      doc,
       () => {
         trigger(ctx, host, "quickOpen");
       },
       leavesNativeHistory,
-    ),
-  );
+      () =>
+        completionStatus(ctx.editor.view.state) === "active" ||
+        !!doc.querySelector(".cm-tooltip-autocomplete"),
+    );
+  });
 }
