@@ -17,6 +17,9 @@ import {
   writtenWidth,
 } from "./image-size";
 import { setImageSelectedChrome } from "./image-resize-corner";
+import { imageKeyFromEvent } from "./image-selection-keys";
+
+export { imageKeyFromEvent } from "./image-selection-keys";
 
 interface Range {
   from: number;
@@ -304,47 +307,6 @@ export function escapeImage(view: EditorView): boolean {
 }
 
 /**
- * Map a DOM keydown to the image-selection keymap id (`Space`, `+`, …).
- * Returns undefined when the event is not an image key (or has Mod/Alt).
- */
-export function imageKeyFromEvent(
-  event: Pick<
-    KeyboardEvent,
-    "key" | "code" | "shiftKey" | "ctrlKey" | "altKey" | "metaKey"
-  >,
-): string | undefined {
-  if (event.ctrlKey || event.altKey || event.metaKey) {
-    return undefined;
-  }
-  if (event.key === " " || event.code === "Space") {
-    return "Space";
-  }
-  if (event.key === "Escape" || event.key === "Enter" || event.key === "Tab") {
-    return event.key;
-  }
-  if (event.key === "Backspace" || event.key === "Delete") {
-    return event.key;
-  }
-  if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-    return event.key;
-  }
-  // Unshifted `=` grows; Shift+`=` / key `+` grows (Obsidian binds both).
-  if (event.key === "+") {
-    return "+";
-  }
-  if (event.key === "=" || event.code === "Equal") {
-    return event.shiftKey ? "+" : "=";
-  }
-  if (event.key === "-" || event.code === "Minus") {
-    return event.shiftKey ? undefined : "-";
-  }
-  if (event.key === "0" || event.code === "Digit0") {
-    return event.shiftKey ? undefined : "0";
-  }
-  return undefined;
-}
-
-/**
  * Run the selected-image action for a keymap id. Used by the CM keymap and by
  * a capture-phase keydown so @replit/codemirror-vim (domEventHandlers) cannot
  * swallow Space / `=` / … while an image is selected (BH-006).
@@ -378,31 +340,72 @@ export function runSelectedImageKey(view: EditorView, key: string): boolean {
   }
 }
 
+/** Apply / clear Obsidian selected-image chrome for the current range. */
+function syncSelectedChrome(
+  view: EditorView,
+  marked: HTMLImageElement[],
+): HTMLImageElement[] {
+  const range = view.state.field(selectedImage);
+  const images = range ? imagesOf(view, range) : [];
+  for (const image of marked) {
+    if (!images.includes(image)) {
+      setImageSelectedChrome(image, false);
+    }
+  }
+  for (const image of images) {
+    setImageSelectedChrome(image, true);
+  }
+  // Outline only — a caret at the embed paints a tall bar below (height).
+  if (images.length) {
+    view.dom.dataset.mwImageSelected = "";
+  } else {
+    delete view.dom.dataset.mwImageSelected;
+  }
+  return images;
+}
+
+/**
+ * Capture-phase keydown so Vim's domEventHandler cannot swallow Space/= while
+ * an image is selected (BH-006). CM Prec.highest keymap alone is too late.
+ */
+function captureSelectedImageKeydown(
+  view: EditorView,
+  event: KeyboardEvent,
+): void {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.target !== view.contentDOM
+  ) {
+    return;
+  }
+  const selected = view.state.field(selectedImage);
+  const editing = view.state.field(editingImage);
+  if (!selected && !editing) {
+    return;
+  }
+  const key = imageKeyFromEvent(event);
+  if (!key) {
+    return;
+  }
+  // Source edit: only Escape is ours; Space must insert a space.
+  if (editing && !selected && key !== "Escape") {
+    return;
+  }
+  if (!runSelectedImageKey(view, key)) {
+    return;
+  }
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+
 /** Shows which image is selected. */
 const selectedClass = ViewPlugin.define((view) => {
   let marked: HTMLImageElement[] = [];
   const mark = () => {
-    const range = view.state.field(selectedImage);
-    const images = range ? imagesOf(view, range) : [];
-    for (const image of marked) {
-      if (!images.includes(image)) {
-        setImageSelectedChrome(image, false);
-      }
-    }
-    for (const image of images) {
-      setImageSelectedChrome(image, true);
-    }
-    marked = images;
-    // Obsidian shows the outline only; a caret at the embed would use the
-    // widget's (often overestimated) height and paint a long bar below.
-    if (images.length) {
-      view.dom.dataset.mwImageSelected = "";
-    } else {
-      delete view.dom.dataset.mwImageSelected;
-    }
+    marked = syncSelectedChrome(view, marked);
   };
-  // A resized image is drawn again once its file loads, replacing elements:
-  // mark whatever is drawn while one is selected.
+  // Resized images redraw once the file loads — remake chrome then.
   const redrawn = new MutationObserver(() => {
     if (view.state.field(selectedImage) || marked.length) {
       mark();
@@ -410,43 +413,15 @@ const selectedClass = ViewPlugin.define((view) => {
   });
   redrawn.observe(view.contentDOM, { childList: true, subtree: true });
   const onClick = (event: MouseEvent) => selectOnClick(view, event);
+  const onKeydown = (event: KeyboardEvent) =>
+    captureSelectedImageKeydown(view, event);
   view.contentDOM.addEventListener("mousedown", onClick, { capture: true });
-  // Capture precedes vim's keydown domEventHandler so Space/= grow/inspect
-  // while selected (BH-006). CM Prec.highest keymap alone is too late.
-  const onKeydown = (event: KeyboardEvent): void => {
-    if (
-      event.defaultPrevented ||
-      event.isComposing ||
-      event.target !== view.contentDOM
-    ) {
-      return;
-    }
-    const selected = view.state.field(selectedImage);
-    const editing = view.state.field(editingImage);
-    if (!selected && !editing) {
-      return;
-    }
-    const key = imageKeyFromEvent(event);
-    if (!key) {
-      return;
-    }
-    // Source edit: only Escape is ours; Space must insert a space.
-    if (editing && !selected && key !== "Escape") {
-      return;
-    }
-    if (!runSelectedImageKey(view, key)) {
-      return;
-    }
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  };
   view.contentDOM.addEventListener("keydown", onKeydown, true);
   return {
     update(update) {
       const before = update.startState.field(selectedImage);
       const after = update.state.field(selectedImage);
       if (before !== after || (after && update.docChanged)) {
-        // After the widgets are drawn for this update.
         view.requestMeasure({ read: () => null, write: mark });
       }
     },
