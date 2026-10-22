@@ -154,7 +154,7 @@ export function createActiveEditor(panels: PanelHub): ActiveEditor {
     onTextSelectionChanged: () => () => {},
     customEditorViewType: () =>
       panels.active() ? MARKDOWN_EDITOR.viewType : undefined,
-    // DSH opens one view per note, so Toggle Text Editor leaves no sibling tab.
+    // One view per note outside VS Code, so Toggle Text Editor leaves no sibling tab.
     closeSiblingTabs: async () => {},
   };
 }

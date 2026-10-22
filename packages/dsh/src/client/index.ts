@@ -4,7 +4,9 @@
  * DSH's read-only Markdown preview, which stays in the viewer menu. Written
  * against DSH's plugin module format: React comes from DSH's module table.
  */
+import { parseOpenMessage } from "@workshop/host-node/embedding";
 import { insideWorkspace, sessionAddress, workspaceRoot } from "./address";
+import { onDshThemeChange, readDshTheme } from "./theme";
 
 const ID = "@lumiere/dsh";
 const BODY_ID = `${ID}/markdown`;
@@ -102,6 +104,7 @@ function noteBody(React: ReactLike, open: (address: string) => void) {
       () => followOpens(frame, { sessionId: props.sessionId, root, open }),
       [props.sessionId, root],
     );
+    React.useEffect(() => onDshThemeChange(() => sendTheme(frame.current)), []);
     // DSH starts a new revision whenever the file changes, including Lumière's
     // own saves. The editor already follows the file, so it stays put and only
     // tells DSH the revision is shown; reloading would lose caret and scroll.
@@ -130,12 +133,18 @@ function noteBody(React: ReactLike, open: (address: string) => void) {
       allow: "clipboard-read; clipboard-write",
       onLoad: () => {
         hasLoaded.current = true;
+        sendTheme(frame.current);
         props.content.loaded?.(file?.version ?? "lumiere");
       },
       onError: () => props.content.failed?.(),
       style: { border: 0, width: "100%", height: "100%", display: "block" },
     });
   };
+}
+
+/** The page takes DSH's theme from a theme message (embedding.ts). */
+function sendTheme(frame: HTMLIFrameElement | null): void {
+  frame?.contentWindow?.postMessage(readDshTheme(), location.origin);
 }
 
 /** The page asks to open another note (a link to it): open it in a DSH tab. */
@@ -148,18 +157,19 @@ function followOpens(
   },
 ): () => void {
   const listener = (event: MessageEvent) => {
-    const data = event.data as { type?: unknown; path?: unknown } | null;
+    const request =
+      event.origin === location.origin &&
+      event.source === frame.current?.contentWindow
+        ? parseOpenMessage(event.data)
+        : undefined;
     if (
-      event.origin !== location.origin ||
-      event.source !== frame.current?.contentWindow ||
-      data?.type !== "lumiere:open" ||
-      typeof data.path !== "string" ||
-      !target.sessionId ||
-      (target.root !== undefined && !insideWorkspace(target.root, data.path))
+      request &&
+      target.sessionId &&
+      // A page may only open notes in its own workspace.
+      (target.root === undefined || insideWorkspace(target.root, request.path))
     ) {
-      return;
+      target.open(sessionAddress(target.sessionId, target.root, request.path));
     }
-    target.open(sessionAddress(target.sessionId, target.root, data.path));
   };
   window.addEventListener("message", listener);
   return () => window.removeEventListener("message", listener);

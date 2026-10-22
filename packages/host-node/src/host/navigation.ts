@@ -1,7 +1,7 @@
 /**
- * Following links in DSH. Resolving a link (and creating the note it names)
- * works as in VS Code; opening one is DSH's to do: an open note's page reveals
- * the target itself, any other file opens in a new tab of DSH's sidebar.
+ * Following links outside VS Code. Resolving a link (and creating the note
+ * it names) works as in VS Code; opening one is the embedder's to do: an open
+ * note's page reveals the target itself, any other file opens in a new tab.
  */
 import { mkdir, stat } from "node:fs/promises";
 import * as path from "node:path";
@@ -17,20 +17,22 @@ import { questionId, type LivePanel } from "./panel";
 import type { PanelHub } from "./panels";
 import { assertContained, createEmptyFile, OutsideWorkspace } from "./paths";
 import { presentingPanel } from "./ui-services";
+import type { HostIdentity } from "./services";
 
 /** How long a new tab's page may take to open before its reveal is dropped. */
 const OPEN_TIMEOUT_MS = 15_000;
 
-export function createDshNavigation(
+export function createNodeNavigation(
   panels: PanelHub,
   settings: HostSettings,
+  identity: HostIdentity,
 ): Navigation {
   const reveals = new RevealRouter();
   return {
     begin: () => reveals.begin(),
     registerReveal: (panel) => reveals.register(panel),
     registerNativeLinks: () => () => {},
-    scheme: "dsh",
+    scheme: identity.uriScheme,
     async external(href) {
       presentingPanel(panels)?.tell({ type: "external", href });
       return true;

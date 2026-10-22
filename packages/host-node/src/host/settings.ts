@@ -1,5 +1,5 @@
 /**
- * Lumière's settings in DSH. VS Code reads them from its settings files with
+ * Lumière's settings outside VS Code. VS Code reads them from its settings files with
  * the extension's contributed defaults; here the defaults come from the same
  * contributions, copied into the bundle, and a reader's changes are kept in
  * one JSON file. There are no folder or language scopes.
@@ -17,14 +17,14 @@ import {
 
 const PREFIX = "lumiere.markdown.";
 
-export interface DshSettingsOptions {
+export interface NodeSettingsOptions {
   /** The extension's contributed settings (`contributes.configuration`). */
   readonly contributed: readonly ContributedSetting[];
   /** Where the reader's changes are kept. */
   readonly file: string;
 }
 
-export function createDshSettings(options: DshSettingsOptions): HostSettings {
+export function createNodeSettings(options: NodeSettingsOptions): HostSettings {
   const values = new SettingValues(options);
   const effective = new EffectiveConfiguration({
     get: (key) => values.get(PREFIX + key),
@@ -40,7 +40,7 @@ export function createDshSettings(options: DshSettingsOptions): HostSettings {
     onChange: (listener) => effective.onDidChange(listener),
     effective,
     access: values.access(),
-    // DSH has no editor associations: Lumière's preview claims notes itself.
+    // No editor associations outside VS Code: the embedder opens notes in Lumière itself.
     editorAssociations: { read: () => undefined, write: async () => {} },
   };
 }
@@ -51,7 +51,7 @@ class SettingValues {
   private readonly listeners = new Set<() => void>();
   private writing: Promise<void> = Promise.resolve();
 
-  constructor(private readonly options: DshSettingsOptions) {
+  constructor(private readonly options: NodeSettingsOptions) {
     this.defaults = new Map(
       options.contributed.map((setting) => [
         setting.key,

@@ -74,6 +74,18 @@ importers:
       '@workshop/core':
         specifier: workspace:*
         version: link:../core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../host-node
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../markdown
+
+  packages/host-node:
+    dependencies:
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../core
       '@workshop/markdown':
         specifier: workspace:*
         version: link:../markdown

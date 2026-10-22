@@ -1,5 +1,5 @@
 /**
- * VS Code's workspace services, over Node's file system: the DSH workspaces
+ * VS Code's workspace services, over Node's file system: the workspaces
  * notes were opened from, file operations, and small persistent state.
  */
 import { readFileSync, watch } from "node:fs";
@@ -32,7 +32,7 @@ export function createHostWorkspace(
 ): HostWorkspace {
   return {
     folders: roots,
-    // DSH runs only what its owner installed and opened.
+    // The host runs only what its owner installed and opened.
     isTrusted: () => true,
     read: async (uri) => readFile(await pathInsideRoots(roots(), uri)),
     stat: async (uri) => {
@@ -46,7 +46,7 @@ export function createHostWorkspace(
   };
 }
 
-/** DSH shows no Problems list. */
+/** No Problems list outside VS Code. */
 const noDiagnostics: DiagnosticSink = {
   replaceAll: () => {},
   clear: () => {},
@@ -181,7 +181,7 @@ function readValues(file: string): Record<string, unknown> {
   }
 }
 
-/** No other extensions run beside Lumière in DSH. */
+/** No other extensions run beside Lumière outside VS Code. */
 export function createExtensions(markdownDist: string): Extensions {
   return {
     isInstalled: () => false,

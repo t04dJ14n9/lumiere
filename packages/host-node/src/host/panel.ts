@@ -1,6 +1,6 @@
 /**
- * One editor page in DSH, as the editor host sees a VS Code webview panel.
- * The page loads in an iframe of DSH's preview sidebar and connects back over
+ * One editor page, as the editor host sees a VS Code webview panel. The
+ * page loads in an iframe of the embedder (DSH's sidebar, the app's tabs) and connects back over
  * a socket; until it does, frames for it wait here.
  */
 import type { Disposer } from "@workshop/core";
@@ -167,7 +167,7 @@ export class LivePanel {
     };
     return {
       id: this.id,
-      // DSH has no editor groups; every panel is in the one sidebar.
+      // No editor groups outside VS Code: every panel is in the one column.
       column: 1,
       document: this.document,
       transport,

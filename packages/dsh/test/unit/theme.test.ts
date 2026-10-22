@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import * as path from "node:path";
-import { vscodeVariables } from "../../src/webview/theme";
+import { vscodeVariables } from "../../src/client/theme";
 
 const repository = path.resolve(import.meta.dirname, "../../../..");
 

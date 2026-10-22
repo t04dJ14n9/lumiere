@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import { createDshSettings } from "../../src/host/settings";
+import { createNodeSettings } from "../../src/host/settings";
 
 const contributed = [
   { key: "lumiere.markdown.preset", schema: { default: "obsidian" } },
@@ -17,7 +17,7 @@ test("contributed defaults apply, and a reader's change is kept and announced", 
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-settings-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const file = path.join(dir, "settings.json");
-  const settings = createDshSettings({ contributed, file });
+  const settings = createNodeSettings({ contributed, file });
   assert.equal(settings.get("preset", "minimal"), "obsidian");
   assert.equal(settings.get("unknown.key", 3), 3);
 
@@ -33,7 +33,7 @@ test("contributed defaults apply, and a reader's change is kept and announced", 
     "lumiere.markdown.editor.readableLineLength": false,
   });
 
-  const reopened = createDshSettings({ contributed, file });
+  const reopened = createNodeSettings({ contributed, file });
   assert.equal(reopened.get("editor.readableLineLength", true), false);
   assert.equal(
     reopened.forNote({
@@ -55,6 +55,6 @@ test("a damaged settings file reads as no changes", async (t) => {
   t.after(() => rm(dir, { recursive: true, force: true }));
   const file = path.join(dir, "settings.json");
   await import("node:fs/promises").then((fs) => fs.writeFile(file, "{oops"));
-  const settings = createDshSettings({ contributed, file });
+  const settings = createNodeSettings({ contributed, file });
   assert.equal(settings.get("preset", "minimal"), "obsidian");
 });

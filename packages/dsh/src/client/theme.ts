@@ -1,8 +1,10 @@
 /**
  * VS Code gives a webview its theme as `--vscode-*` CSS variables; Lumière's
  * styles read those. In DSH they come from DSH's own theme tokens
- * (`--dsw-alias-*`), so a note follows DSH's light and dark themes.
+ * (`--dsw-alias-*`), so a note follows DSH's light and dark themes. The
+ * preview plugin sends them to each page as a theme message (embedding.ts).
  */
+import type { ThemeMessage } from "@workshop/host-node/embedding";
 
 /** The DSH token (after `--dsw-alias-`) each VS Code variable takes its value from. */
 const FROM_TOKEN: Readonly<Record<string, string>> = {
@@ -135,4 +137,32 @@ export function vscodeVariables(theme: DshTheme): Record<string, string> {
   variables["--vscode-font-size"] = "13px";
   variables["--vscode-editor-font-size"] = "14px";
   return variables;
+}
+
+/** DSH's current theme as a theme message, from the tokens DSH sets on its body. */
+export function readDshTheme(): ThemeMessage {
+  const style = getComputedStyle(document.body);
+  const dark = document.body.hasAttribute("data-ds-dark-theme");
+  return {
+    lumiere: "theme",
+    dark,
+    variables: vscodeVariables({
+      token: (name) => style.getPropertyValue(`--dsw-alias-${name}`).trim(),
+      dark,
+      fontFamily: style.fontFamily || "system-ui, sans-serif",
+    }),
+  };
+}
+
+/** Call `listener` whenever DSH switches theme (attributes on its body and root). */
+export function onDshThemeChange(listener: () => void): () => void {
+  const observer = new MutationObserver(listener);
+  observer.observe(document.body, { attributes: true });
+  observer.observe(document.documentElement, { attributes: true });
+  const system = matchMedia("(prefers-color-scheme: dark)");
+  system.addEventListener("change", listener);
+  return () => {
+    observer.disconnect();
+    system.removeEventListener("change", listener);
+  };
 }

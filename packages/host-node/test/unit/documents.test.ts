@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { diskReadReplacesNote, NoteDocuments } from "../../src/host/documents";
 
 async function note(text: string) {
-  const dir = await mkdtemp(path.join(tmpdir(), "lumiere-dsh-"));
+  const dir = await mkdtemp(path.join(tmpdir(), "lumiere-host-"));
   const file = path.join(dir, "Note.md");
   await writeFile(file, text);
   return {

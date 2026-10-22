@@ -1,5 +1,5 @@
 /**
- * Every host service the Markdown plugins inject, as DSH provides them. The
+ * Every host service the Markdown plugins inject, for a Node host. The
  * VS Code adapter is packages/markdown/src/host/services; this is its twin.
  */
 import { mkdir, writeFile } from "node:fs/promises";
@@ -13,9 +13,9 @@ import type {
 } from "@workshop/markdown/portable";
 import type { NoteDocuments } from "./documents";
 import { noDiffViews, noGit, noViews } from "./inert";
-import { createDshNavigation } from "./navigation";
+import { createNodeNavigation } from "./navigation";
 import type { PanelHub } from "./panels";
-import { createDshSettings } from "./settings";
+import { createNodeSettings } from "./settings";
 import {
   createActiveEditor,
   createClipboard,
@@ -27,23 +27,32 @@ import {
   createWorkspaceStorage,
 } from "./workspace";
 
-export interface DshServicesOptions {
+/** Which app Lumière runs in, as VS Code's `env.appName` and `env.uriScheme` name it. */
+export interface HostIdentity {
+  /** "DeepSeek Harness", "Lumière". */
+  readonly appName: string;
+  /** The app's link scheme: "dsh", "lumiere". */
+  readonly uriScheme: string;
+}
+
+export interface NodeServicesOptions {
+  readonly identity: HostIdentity;
   readonly documents: NoteDocuments;
   readonly panels: PanelHub;
   readonly roots: () => readonly string[];
   readonly contributed: readonly ContributedSetting[];
-  /** The bundle's copy of the extension's `dist/markdown`. */
+  /** The built editor (`packages/markdown/dist`). */
   readonly markdownDist: string;
-  /** The plugin's own data folder. */
+  /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
   readonly log: (message: string) => void;
 }
 
-export function createDshHostServices(
-  options: DshServicesOptions,
+export function createNodeHostServices(
+  options: NodeServicesOptions,
 ): HostServices {
   const { documents, panels, roots, data, log } = options;
-  const settings = createDshSettings({
+  const settings = createNodeSettings({
     contributed: options.contributed,
     file: path.join(data, "settings.json"),
   });
@@ -58,9 +67,9 @@ export function createDshHostServices(
     workspace: createHostWorkspace(roots),
     storage: createWorkspaceStorage(path.join(data, "state.json")),
     extensions: createExtensions(options.markdownDist),
-    navigation: createDshNavigation(panels, settings),
+    navigation: createNodeNavigation(panels, settings, options.identity),
     customEditors: panels,
-    agentHost: createAgentHost(data),
+    agentHost: createAgentHost(options.identity, data),
     git: noGit,
     diffViews: noDiffViews,
   };
@@ -68,7 +77,7 @@ export function createDshHostServices(
 
 /**
  * Commands the plugins register run here. VS Code's own commands
- * (`setContext`, `workbench.*`) have no meaning in DSH and do nothing.
+ * (`setContext`, `workbench.*`) have no meaning here and do nothing.
  */
 export function createHostCommands(
   log: (message: string) => void,
@@ -89,17 +98,20 @@ export function createHostCommands(
         return run(...args);
       }
       if (!id.startsWith("setContext") && !id.startsWith("workbench.")) {
-        log(`No command ${id} in DeepSeek Harness`);
+        log(`No command ${id} outside VS Code`);
       }
       return undefined;
     },
   };
 }
 
-/** Copy Link for Agent copies; DSH's chat is next to the note, so pasting is one step. */
-function createAgentHost(data: string): AgentHost {
+/**
+ * Copy Link for Agent copies to the clipboard: no agent extension runs here.
+ * In DSH the agent's chat is beside the note, so pasting is one step.
+ */
+function createAgentHost(identity: HostIdentity, data: string): AgentHost {
   return {
-    appName: "DeepSeek Harness",
+    appName: identity.appName,
     async environment() {
       return {
         target: "clipboard",

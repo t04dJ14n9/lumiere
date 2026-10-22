@@ -1,0 +1,24 @@
+{
+  "name": "@workshop/host-node",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lumière's host for Node processes other than VS Code: the Markdown plugins over Node host services, and the routes and page shim that serve their editor.",
+  "type": "module",
+  "exports": {
+    ".": "./src/host/index.ts",
+    "./embedding": "./src/embedding.ts"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p src/host && tsc -p src/page && tsc -p test",
+    "test": "tsx --test \"test/unit/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@workshop/core": "workspace:*",
+    "@workshop/markdown": "workspace:*",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.2"
+  }
+}

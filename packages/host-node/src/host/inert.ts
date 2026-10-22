@@ -1,5 +1,5 @@
 /**
- * Host services DSH has no counterpart for yet. Each answers the way VS Code
+ * Host services with no counterpart outside VS Code yet. Each answers the way VS Code
  * does when the feature is unavailable, so the plugins that use them stay
  * quiet instead of failing: no Git, no diff editor, no tree views or status
  * bar, and no extra webview panels (the graph).

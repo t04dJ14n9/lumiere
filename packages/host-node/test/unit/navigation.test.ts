@@ -10,7 +10,7 @@ import {
   type PanelShell,
 } from "@workshop/markdown/portable";
 import { NoteDocuments } from "../../src/host/documents";
-import { createDshNavigation, resolveLink } from "../../src/host/navigation";
+import { createNodeNavigation, resolveLink } from "../../src/host/navigation";
 import type { PageSocket } from "../../src/host/panel";
 import { PanelHub } from "../../src/host/panels";
 
@@ -91,7 +91,10 @@ test("a link to a note open in another tab asks that tab to come forward", async
   hub.attach(second.id, hidden.socket);
   page.receive('{"ch":"ui","data":{"type":"focus"}}');
 
-  await createDshNavigation(hub, settings).open(root, otherUri, "", "here");
+  await createNodeNavigation(hub, settings, {
+    appName: "DeepSeek Harness",
+    uriScheme: "dsh",
+  }).open(root, otherUri, "", "here");
   const opens = page.sent.filter(
     (frame) =>
       typeof frame === "object" &&

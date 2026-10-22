@@ -1,5 +1,5 @@
 /**
- * Notes as DSH has them: files on the host's disk. VS Code owns a note's text,
+ * Notes outside VS Code: files on the host's disk. VS Code owns a note's text,
  * saving and undo; here this module does. A note's text lives in memory while
  * a panel shows it and is written back once typing pauses, as Obsidian does.
  */
@@ -183,7 +183,7 @@ export class NoteDocuments implements HostDocuments {
   }
 
   async rename(): Promise<void> {
-    throw new Error("Renaming a note is not available in DeepSeek Harness yet");
+    throw new Error("Renaming a note is not available here yet");
   }
 
   onChange(listener: ChangeListener): Disposer {
@@ -198,7 +198,7 @@ export class NoteDocuments implements HostDocuments {
     return subscribe(this.willSave, listener);
   }
 
-  /** DSH reports no renames, so there is nothing to update links for. */
+  /** No host reports renames here, so there is nothing to update links for. */
   onWillRename(): Disposer {
     return () => {};
   }

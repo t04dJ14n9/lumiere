@@ -7,23 +7,29 @@ import { homedir } from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Logger } from "@workshop/core";
+import { readContributed, startLumiere } from "@workshop/host-node";
 import type { DshContext, DshLogger } from "./dsh";
 import { registerRoutes } from "./routes";
-import { startLumiere } from "./start";
 
 export const name = "lumiere";
 export const inject = ["webServer", "connection"];
 
 export async function apply(ctx: DshContext): Promise<void> {
-  // The bundle's index.js sits beside markdown/ and dsh/.
+  // The bundle's index.js sits beside markdown/, page/ and contributed.json.
   const bundle = path.dirname(fileURLToPath(import.meta.url));
+  const markdown = path.join(bundle, "markdown");
   const host = await startLumiere({
-    bundle,
+    identity: { appName: "DeepSeek Harness", uriScheme: "dsh" },
+    markdown,
+    contributed: await readContributed(path.join(bundle, "contributed.json")),
     data: dataFolder(),
     logger: toLogger(ctx.logger?.("lumiere") ?? console),
   });
   ctx.effect(() => () => host.stop(), "lumiere: plugins and open notes");
-  registerRoutes(ctx, { host, bundle });
+  registerRoutes(ctx, host, {
+    markdown,
+    shim: path.join(bundle, "page", "shim.js"),
+  });
 }
 
 /** Beside DSH's own data, where DSH keeps it. */

@@ -1,8 +1,9 @@
 /**
  * What VS Code's window shows for an extension (messages, prompts, quick
- * picks), drawn inside the page: DSH has no API for them. Styled with the
- * page's `--vscode-*` variables, so they follow DSH's theme.
+ * picks), drawn inside the page: the embedder has no API for them. Styled
+ * with the page's `--vscode-*` variables, so they follow the embedder's theme.
  */
+import type { OpenMessage } from "../embedding";
 import {
   safeExternalHref,
   type PageFrame,
@@ -14,24 +15,24 @@ type Send = (frame: PageFrame) => void;
 type Prompt = Extract<UiRequest, { type: "ask" | "input" | "pick" }>;
 
 const STYLE = `
-.lumiere-dsh-toast{position:fixed;bottom:12px;right:12px;max-width:min(420px,80vw);padding:8px 12px;border-radius:6px;z-index:1000;
+.lumiere-page-toast{position:fixed;bottom:12px;right:12px;max-width:min(420px,80vw);padding:8px 12px;border-radius:6px;z-index:1000;
   background:var(--vscode-editorWidget-background);color:var(--vscode-editorWidget-foreground);border:1px solid var(--vscode-widget-border);font:13px var(--vscode-font-family)}
-.lumiere-dsh-toast.error{border-color:var(--vscode-errorForeground)}
-.lumiere-dsh-prompt{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:min(520px,92vw);z-index:1001;padding:8px;border-radius:8px;
+.lumiere-page-toast.error{border-color:var(--vscode-errorForeground)}
+.lumiere-page-prompt{position:fixed;top:12px;left:50%;transform:translateX(-50%);width:min(520px,92vw);z-index:1001;padding:8px;border-radius:8px;
   background:var(--vscode-editorWidget-background);color:var(--vscode-editorWidget-foreground);border:1px solid var(--vscode-widget-border);
   box-shadow:0 4px 16px var(--vscode-widget-shadow);font:13px var(--vscode-font-family)}
-.lumiere-dsh-prompt p{margin:4px 4px 8px}
-.lumiere-dsh-prompt input{box-sizing:border-box;width:100%;padding:6px 8px;border-radius:4px;font:inherit;
+.lumiere-page-prompt p{margin:4px 4px 8px}
+.lumiere-page-prompt input{box-sizing:border-box;width:100%;padding:6px 8px;border-radius:4px;font:inherit;
   background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border)}
-.lumiere-dsh-prompt .error{color:var(--vscode-errorForeground);margin:6px 4px 0}
-.lumiere-dsh-prompt ul{list-style:none;margin:6px 0 0;padding:0;max-height:50vh;overflow:auto}
-.lumiere-dsh-prompt li{padding:5px 8px;border-radius:4px;cursor:pointer}
-.lumiere-dsh-prompt li[aria-selected=true]{background:var(--vscode-list-activeSelectionBackground)}
-.lumiere-dsh-prompt li small{margin-left:8px;color:var(--vscode-descriptionForeground)}
-.lumiere-dsh-prompt .actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
-.lumiere-dsh-prompt button{padding:4px 12px;border-radius:4px;border:1px solid var(--vscode-button-border);font:inherit;cursor:pointer;
+.lumiere-page-prompt .error{color:var(--vscode-errorForeground);margin:6px 4px 0}
+.lumiere-page-prompt ul{list-style:none;margin:6px 0 0;padding:0;max-height:50vh;overflow:auto}
+.lumiere-page-prompt li{padding:5px 8px;border-radius:4px;cursor:pointer}
+.lumiere-page-prompt li[aria-selected=true]{background:var(--vscode-list-activeSelectionBackground)}
+.lumiere-page-prompt li small{margin-left:8px;color:var(--vscode-descriptionForeground)}
+.lumiere-page-prompt .actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
+.lumiere-page-prompt button{padding:4px 12px;border-radius:4px;border:1px solid var(--vscode-button-border);font:inherit;cursor:pointer;
   background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground)}
-.lumiere-dsh-prompt button:first-child{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
+.lumiere-page-prompt button:first-child{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
 `;
 
 export function createUi(send: Send): (request: UiRequest) => void {
@@ -44,14 +45,11 @@ export function createUi(send: Send): (request: UiRequest) => void {
       case "clipboard":
         return void copy(request.text);
       case "open":
-        return window.parent.postMessage(
-          {
-            type: "lumiere:open",
-            path: request.path,
-            fragment: request.fragment,
-          },
-          location.origin,
-        );
+        return openInEmbedder({
+          lumiere: "open",
+          path: request.path,
+          fragment: request.fragment,
+        });
       case "external":
         return openExternal(request.href);
       case "pickItems":
@@ -78,6 +76,11 @@ function openExternal(href: string): void {
   window.open(target, "_blank", "noopener,noreferrer");
 }
 
+/** Only the embedder can open a tab; it decides how (embedding.ts). */
+function openInEmbedder(message: OpenMessage): void {
+  window.parent.postMessage(message, location.origin);
+}
+
 function installStyle(): void {
   const style = document.createElement("style");
   style.textContent = STYLE;
@@ -86,7 +89,7 @@ function installStyle(): void {
 
 function toast(kind: "info" | "error", message: string): void {
   const element = document.createElement("div");
-  element.className = `lumiere-dsh-toast ${kind}`;
+  element.className = `lumiere-page-toast ${kind}`;
   element.setAttribute("role", kind === "error" ? "alert" : "status");
   element.textContent = message;
   document.body.append(element);
@@ -113,7 +116,7 @@ function frame(
   send: Send,
 ): { box: HTMLElement; close(value: string | number | null): void } {
   const box = document.createElement("div");
-  box.className = "lumiere-dsh-prompt";
+  box.className = "lumiere-page-prompt";
   box.setAttribute("role", "dialog");
   let closed = false;
   const close = (value: string | number | null) => {

@@ -1,12 +1,14 @@
 /**
- * Stands in for VS Code's webview API in a Lumière page inside DSH. In VS
- * Code a webview posts with `acquireVsCodeApi().postMessage` and hears the
- * extension through `message` events; here both travel over the page's
- * socket to its panel on the host. Runs before the editor's module
- * (host/page.ts puts it first).
+ * Stands in for VS Code's webview API in a Lumière editor page outside VS
+ * Code. In VS Code a webview posts with `acquireVsCodeApi().postMessage` and
+ * hears the extension through `message` events; here both travel over the
+ * page's socket to its panel on the host. The embedder (DSH's preview plugin,
+ * the app shell) sends the theme (embedding.ts). Runs before the editor's
+ * module (host/page.ts puts it first).
  */
+import { isEmbeddingMessage, parseThemeMessage } from "../embedding";
 import { parseHostFrame, type PageFrame } from "../protocol";
-import { followTheme } from "./theme-dom";
+import { applyTheme, followSystemTheme } from "./theme";
 import { createUi } from "./ui";
 
 interface VsCodeApi {
@@ -26,8 +28,30 @@ const panelId =
     ?.content ?? "";
 const send = connect(panelId);
 window.acquireVsCodeApi = () => vsCodeApi(send);
-followTheme();
+listenToEmbedder();
 reportFocus(send);
+
+/**
+ * The embedder's messages arrive as `message` events, like the editor's RPC.
+ * This listener is registered first and keeps them from the editor.
+ */
+function listenToEmbedder(): void {
+  const stopFollowingSystem = followSystemTheme();
+  window.addEventListener("message", (event) => {
+    if (!isEmbeddingMessage(event.data)) {
+      return;
+    }
+    event.stopImmediatePropagation();
+    const theme =
+      event.source === window.parent && event.origin === location.origin
+        ? parseThemeMessage(event.data)
+        : undefined;
+    if (theme) {
+      stopFollowingSystem();
+      applyTheme(theme);
+    }
+  });
+}
 
 function connect(panel: string): (frame: PageFrame) => void {
   const scheme = location.protocol === "https:" ? "wss" : "ws";

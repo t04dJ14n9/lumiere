@@ -2,7 +2,7 @@
 import * as path from "node:path";
 import { isFilesystemRoot } from "./paths";
 
-/** A note to open and the DSH workspace it was opened from. */
+/** A note to open and the workspace it was opened from. */
 export interface PageQuery {
   readonly note: string;
   readonly root: string;

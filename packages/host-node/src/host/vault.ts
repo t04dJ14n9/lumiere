@@ -1,6 +1,6 @@
 /**
- * The vault plugin's file system in DSH: Node's, in place of VS Code's
- * workspace API. Roots are the DSH workspaces the reader opened notes from.
+ * The vault plugin's file system outside VS Code: Node's, in place of VS
+ * Code's workspace API. Roots are the workspaces the reader opened notes from.
  */
 import { createHash } from "node:crypto";
 import { watch, type Dirent } from "node:fs";
@@ -35,7 +35,7 @@ const STAT_CONCURRENCY = 32;
 export interface NodeVaultOptions {
   readonly documents: NoteDocuments;
   readonly settings: HostSettings;
-  /** The DSH workspace roots, as file URIs. */
+  /** The workspace roots, as file URIs. */
   readonly roots: () => readonly string[];
   /** Where vault snapshots are kept between sessions. */
   readonly storage: string;

@@ -1,7 +1,7 @@
 /**
- * Start Lumière's Markdown plugins in DSH: the same bootstrap VS Code runs,
- * over DSH's host services. Lumière's plugin tree is its own (on its own
- * Cordis); nothing from DSH's plugin context enters it.
+ * Start Lumière's Markdown plugins outside VS Code: the same bootstrap VS
+ * Code runs, over Node host services. Lumière's plugin tree is its own (on
+ * its own Cordis); nothing from an embedder's plugin context enters it.
  */
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
@@ -13,20 +13,23 @@ import {
 } from "@workshop/markdown/portable";
 import { NoteDocuments } from "./documents";
 import { PanelHub } from "./panels";
-import { createDshHostServices } from "./services";
+import { createNodeHostServices, type HostIdentity } from "./services";
 import { createNodeVaultSystem } from "./vault";
 
 export interface StartOptions {
-  /** The installed bundle: `markdown/` (the built editor) and `contributed.json`. */
-  readonly bundle: string;
-  /** The plugin's data folder (settings, state, vault snapshots). */
+  readonly identity: HostIdentity;
+  /** The built editor (`packages/markdown/dist`); its workers parse the vault. */
+  readonly markdown: string;
+  /** Lumière's settings and defaults, from the extension's `contributes`. */
+  readonly contributed: readonly ContributedSetting[];
+  /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
   readonly logger: Logger;
 }
 
 export interface LumiereHost {
   readonly panels: PanelHub;
-  /** A DSH workspace a note was opened from; vaults are found inside these. */
+  /** A workspace a note was opened from; vaults are found inside these. */
   addRoot(root: string): void;
   stop(): Promise<void>;
 }
@@ -37,13 +40,14 @@ export async function startLumiere(
   const roots = new Set<string>();
   const documents = new NoteDocuments();
   const panels = new PanelHub(documents);
-  const markdownDist = path.join(options.bundle, "markdown");
+  const markdownDist = options.markdown;
   const log = (message: string) => options.logger.warn(message);
-  const host = createDshHostServices({
+  const host = createNodeHostServices({
+    identity: options.identity,
     documents,
     panels,
     roots: () => [...roots],
-    contributed: await readContributed(options.bundle),
+    contributed: options.contributed,
     markdownDist,
     data: options.data,
     log,
@@ -74,13 +78,12 @@ export async function startLumiere(
   };
 }
 
-/** The extension's contributed settings, copied into the bundle when it is built. */
-async function readContributed(
-  bundle: string,
+/** Contributed settings from a `contributed.json` written at build time; none if missing. */
+export async function readContributed(
+  file: string,
 ): Promise<readonly ContributedSetting[]> {
   try {
-    const text = await readFile(path.join(bundle, "contributed.json"), "utf8");
-    return JSON.parse(text) as ContributedSetting[];
+    return JSON.parse(await readFile(file, "utf8")) as ContributedSetting[];
   } catch {
     return [];
   }
