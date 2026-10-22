@@ -214,8 +214,6 @@ export class MarkdownBlock extends WidgetType {
   }
 }
 
-
-
 function beginMarkdownBlockRender(options: {
   view: EditorView;
   shell: HTMLElement;
