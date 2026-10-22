@@ -37,7 +37,6 @@ test("selected |200 image has no caret bar below the card", async ({
     const caret = document.querySelector(".mw-caret") as HTMLElement | null;
     const imgBox = image.getBoundingClientRect();
     const shellBox = shell.getBoundingClientRect();
-    const caretBox = caret?.getBoundingClientRect();
     const style = caret
       ? getComputedStyle(caret.closest(".mw-caret-layer")!).visibility
       : "missing";

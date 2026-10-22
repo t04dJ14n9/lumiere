@@ -159,36 +159,17 @@ export class MarkdownBlock extends WidgetType {
       events.abort();
       void pass?.dispose();
     });
-    void this.render
-      .into(body, this.block.source, {
-        sourceLine: view.state.doc.lineAt(this.block.from).number - 1,
-        measure: () => {
-          if (live) {
-            // Drop the paint reserve once content has height so a short |W|
-            // image is not left with empty shell below (caret/selection chrome).
-            if (
-              shell.style.minHeight &&
-              body.getBoundingClientRect().height > 0
-            ) {
-              shell.style.minHeight = "";
-            }
-            view.requestMeasure();
-          }
-        },
-      })
-      .then((result) => {
+    beginMarkdownBlockRender({
+      view,
+      shell,
+      body,
+      block: this.block,
+      render: this.render,
+      isLive: () => live,
+      setPass: (result) => {
         pass = result;
-        if (!live) {
-          void pass.dispose();
-        }
-      })
-      .catch(() => {
-        if (live) {
-          body.textContent = this.block.source;
-          shell.classList.add("render-error");
-          view.requestMeasure();
-        }
-      });
+      },
+    });
     watchMarkdownBlock(shell, this.block.source);
     return shell;
   }
@@ -230,6 +211,50 @@ export class MarkdownBlock extends WidgetType {
 
   override get estimatedHeight(): number {
     return markdownBlockEstimatedHeight(this.block.source);
+  }
+}
+
+
+
+function beginMarkdownBlockRender(options: {
+  view: EditorView;
+  shell: HTMLElement;
+  body: HTMLElement;
+  block: RenderBlock;
+  render: RenderService;
+  isLive: () => boolean;
+  setPass: (pass: RenderPass) => void;
+}): void {
+  const { view, shell, body, block, render, isLive, setPass } = options;
+  void render
+    .into(body, block.source, {
+      sourceLine: view.state.doc.lineAt(block.from).number - 1,
+      measure: () => {
+        if (isLive()) {
+          releasePaintReserve(shell, body);
+          view.requestMeasure();
+        }
+      },
+    })
+    .then((result) => {
+      setPass(result);
+      if (!isLive()) {
+        void result.dispose();
+      }
+    })
+    .catch(() => {
+      if (isLive()) {
+        body.textContent = block.source;
+        shell.classList.add("render-error");
+        view.requestMeasure();
+      }
+    });
+}
+
+/** Drop estimatedHeight minHeight once the body has painted height (BH-007). */
+function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
+  if (shell.style.minHeight && body.getBoundingClientRect().height > 0) {
+    shell.style.minHeight = "";
   }
 }
 
