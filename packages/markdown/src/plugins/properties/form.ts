@@ -116,22 +116,47 @@ function appendPendingRow(
     row.remove();
     return true;
   };
+  const dismiss = (focusBody: boolean): void => {
+    if (!row.isConnected) {
+      return;
+    }
+    suggestions.hide();
+    row.remove();
+    if (focusBody) {
+      editor?.focusBody?.();
+    }
+  };
   input.addEventListener("property-commit", (event) => {
     if (input.value.trim() && !create()) {
       event.preventDefault();
     }
   });
   input.addEventListener("keydown", (event) =>
-    pendingKeyDown(event, { input, editor, suggestions, create }),
+    pendingKeyDown(event, { input, editor, suggestions, create, dismiss }),
   );
+  // Leave the unfinished draft when focus moves into the note body (or any
+  // control outside this row). Suggestion mousedown preventDefault keeps focus
+  // on the input long enough to accept a name without dismissing first.
+  input.addEventListener("blur", () => {
+    void Promise.resolve().then(() => {
+      if (!row.isConnected) {
+        return;
+      }
+      const active = input.ownerDocument.activeElement;
+      if (active != null && row.contains(active)) {
+        return;
+      }
+      dismiss(false);
+    });
+  });
   row.addEventListener("keydown", (event) => {
     if (event.target === row && event.key === "Escape") {
       event.preventDefault();
-      editor?.focusBody?.();
+      dismiss(true);
     }
     if (event.target === row && event.key === "Delete") {
       event.preventDefault();
-      row.remove();
+      dismiss(false);
     }
   });
   input.focus();
@@ -148,12 +173,13 @@ function pendingKeyDown(
     editor: PropertyEditor;
     suggestions: PropertyNameSuggestions;
     create(): boolean;
+    dismiss(focusBody: boolean): void;
   },
 ): void {
   if (event.isComposing) {
     return;
   }
-  const { editor, suggestions, create } = options;
+  const { suggestions, create, dismiss } = options;
   if (event.key === "ArrowDown" || event.key === "ArrowUp") {
     suggestions.move(event.key === "ArrowDown" ? 1 : -1);
   } else if (
@@ -162,8 +188,9 @@ function pendingKeyDown(
   ) {
     create();
   } else if (event.key === "Escape") {
-    suggestions.hide();
-    editor?.focusBody?.();
+    // Host GUI BH-008: Escape dismisses the unfinished Add-property draft
+    // without writing YAML (Obsidian kept the empty row; we clear it).
+    dismiss(true);
   } else {
     return;
   }

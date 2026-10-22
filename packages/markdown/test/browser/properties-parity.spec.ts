@@ -80,8 +80,16 @@ test("Properties inline widgets, pending rows, pill keys and shared presentation
   const pending = sheet.locator("[data-property-new]");
   await expect(pending.locator("input")).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(pending).toHaveCount(1);
+  await expect(pending).toHaveCount(0);
   expect(await page.evaluate(() => window.harness.text)).toBe(beforePending);
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("ControlOrMeta+;");
+  await expect(pending.locator("input")).toBeFocused();
+  await page.getByRole("textbox", { name: "Markdown content" }).click();
+  await expect(pending).toHaveCount(0);
+  expect(await page.evaluate(() => window.harness.text)).toBe(beforePending);
+  await page.keyboard.press("ControlOrMeta+;");
+  await expect(pending.locator("input")).toBeFocused();
   await pending.locator("input").fill("title");
   await page.keyboard.press("Enter");
   await expect(pending.locator("input")).toBeFocused();
