@@ -4,7 +4,7 @@ import { SourceCoordinates } from "../../shared/document/coordinates";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import type { FileTextEdits, HostDocuments } from "../../shared/host";
 import { renameFile } from "../file-rename";
-import { cleanEditedUris, partitionLinkUpdateFiles } from "../rename-save";
+import { applyLineColEdits, cleanEditedUris } from "../rename-save";
 import type { NativeDocuments } from "./native-documents";
 
 /** VS Code's text documents, wrapped as `HostDocument`s by `documents`. */
@@ -73,23 +73,18 @@ const onWillRename: HostDocuments["onWillRename"] = (listener) =>
         newUri: newUri.toString(),
       }));
       event.waitUntil(
-        listener(renames).then((files) => {
-          // BH-014: onWill WorkspaceEdits often miss CustomTextEditor buffers.
-          // Apply those ourselves after the rename. Closed notes stay in
-          // waitUntil and are saved once the rename lands (Obsidian writes
-          // link updates to disk without a manual Save).
-          const openText = (uri: string) =>
-            vscode.workspace.textDocuments
-              .find((document) => document.uri.toString() === uri)
-              ?.getText();
-          const { open, closed } = partitionLinkUpdateFiles(
-            files,
-            lumiereOpenUris(),
-            openText,
-          );
-          scheduleOpenEditorLinkUpdates(files, open);
-          saveAfterRename(closed);
-          return workspaceEdit(closed);
+        listener(renames).then(async (files) => {
+          // BH-014: VS Code applies onWill edits in a participant that may
+          // Show Preview. onDidRenameFiles often fires before Apply, and
+          // Preview Apply can drop the edit (stale version) — leaving disk
+          // unchanged and not dirty. Capture expected text now; after rename
+          // apply+save every note ourselves (Obsidian writes to disk). Still
+          // return closed-note edits for Preview listing / OK undo grouping;
+          // Lumière-open tabs stay out of waitUntil so a failed custom-editor
+          // apply cannot abort the whole batch.
+          const lumiere = lumiereOpenUris();
+          await scheduleLinkUpdatesAfterRename(files);
+          return workspaceEdit(files.filter((file) => !lumiere.has(file.uri)));
         }),
       );
     }),
@@ -113,102 +108,114 @@ function lumiereOpenUris(): Set<string> {
 }
 
 /**
- * Obsidian writes link updates straight to disk. Save the notes the waitUntil
- * edit dirtied once the rename lands, unless they already had unsaved changes,
- * so a closed editor's "Don't Save" can't leave a stale edited buffer behind.
- * Retries briefly: Show Preview applies the waitUntil edit after onDidRenameFiles.
+ * Plan post-rename apply+save for every note the link update touches.
+ * Expected text is captured here (open buffer or on-disk bytes) so a delayed
+ * Preview → Apply cannot leave disk on the old name.
  */
-function saveAfterRename(files: readonly FileTextEdits[]): void {
-  const uris = cleanEditedUris(files, (uri) =>
-    vscode.workspace.textDocuments.some(
-      (document) => document.uri.toString() === uri && document.isDirty,
-    ),
-  );
-  if (uris.length === 0) {
-    return;
-  }
-  const done = vscode.workspace.onDidRenameFiles(() => {
-    done.dispose();
-    void saveCleanLinkUpdates(uris);
-  });
-}
-
-const SAVE_ATTEMPTS = 40;
-const SAVE_GAP_MS = 25;
-
-async function saveCleanLinkUpdates(uris: readonly string[]): Promise<void> {
-  const pending = new Set(uris);
-  for (let attempt = 0; attempt < SAVE_ATTEMPTS; attempt++) {
-    if (attempt > 0) {
-      await new Promise<void>((resolve) => setTimeout(resolve, SAVE_GAP_MS));
-    }
-    for (const uri of [...pending]) {
-      const document = vscode.workspace.textDocuments.find(
-        (open) => open.uri.toString() === uri,
-      );
-      if (document?.isDirty) {
-        await document.save();
-        pending.delete(uri);
-      }
-    }
-    if (pending.size === 0) {
-      return;
-    }
-  }
-}
-
-/**
- * After the rename lands, rewrite each Lumière-open note to the planned text
- * and save it when it had no unsaved edits of its own.
- */
-function scheduleOpenEditorLinkUpdates(
+async function scheduleLinkUpdatesAfterRename(
   files: readonly FileTextEdits[],
-  expected: ReadonlyMap<string, string>,
-): void {
-  if (expected.size === 0) {
+): Promise<void> {
+  const targets = files.filter((file) => file.edits.length > 0);
+  if (targets.length === 0) {
     return;
   }
   const clean = new Set(
-    cleanEditedUris(
-      files.filter((file) => expected.has(file.uri)),
-      (uri) =>
-        vscode.workspace.textDocuments.some(
-          (document) => document.uri.toString() === uri && document.isDirty,
-        ),
+    cleanEditedUris(targets, (uri) =>
+      vscode.workspace.textDocuments.some(
+        (document) => document.uri.toString() === uri && document.isDirty,
+      ),
     ),
   );
+  const expected = new Map<string, string>();
+  for (const file of targets) {
+    const text = await noteTextForLinkUpdate(file.uri);
+    expected.set(file.uri, applyLineColEdits(text, file.edits));
+  }
   const done = vscode.workspace.onDidRenameFiles(() => {
     done.dispose();
-    void applyOpenEditorLinkUpdates(files, expected, clean);
+    void settleLinkUpdates(targets, expected, clean);
   });
 }
 
-async function applyOpenEditorLinkUpdates(
+/** Open buffer text, or the file on disk without stamping a TextDocument version. */
+async function noteTextForLinkUpdate(uri: string): Promise<string> {
+  const open = vscode.workspace.textDocuments.find(
+    (document) => document.uri.toString() === uri,
+  );
+  if (open) {
+    return open.getText();
+  }
+  const bytes = await vscode.workspace.fs.readFile(vscode.Uri.parse(uri));
+  return Buffer.from(bytes).toString("utf8");
+}
+
+// Preview → Apply can lag well after onDidRenameFiles; keep trying so a slow
+// Apply (or a dropped Apply) still ends with disk matching the planned text.
+const SETTLE_ATTEMPTS = 300;
+const SETTLE_GAP_MS = 100;
+
+/**
+ * After the rename: if the note does not yet match the planned text (waitUntil
+ * OK path not run, or Preview Apply still pending/dropped), apply the edits
+ * ourselves and save clean notes to disk.
+ */
+async function settleLinkUpdates(
   files: readonly FileTextEdits[],
   expected: ReadonlyMap<string, string>,
   clean: ReadonlySet<string>,
 ): Promise<void> {
-  for (const [uri, want] of expected) {
-    const document = vscode.workspace.textDocuments.find(
-      (open) => open.uri.toString() === uri,
-    );
-    if (!document) {
-      continue;
+  for (let attempt = 0; attempt < SETTLE_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      await wait(SETTLE_GAP_MS);
     }
-    if (document.getText() === want) {
-      if (clean.has(uri) && document.isDirty) {
-        await document.save();
-      }
-      continue;
-    }
-    const file = files.find((entry) => entry.uri === uri);
-    if (!file || !(await vscode.workspace.applyEdit(workspaceEdit([file])))) {
-      continue;
-    }
-    if (clean.has(uri)) {
-      await document.save();
+    if (await ensureLinkUpdates(files, expected, clean)) {
+      return;
     }
   }
+  await ensureLinkUpdates(files, expected, clean);
+}
+
+/** @returns true when every target matches expected and clean notes are saved. */
+async function ensureLinkUpdates(
+  files: readonly FileTextEdits[],
+  expected: ReadonlyMap<string, string>,
+  clean: ReadonlySet<string>,
+): Promise<boolean> {
+  let done = true;
+  for (const file of files) {
+    const want = expected.get(file.uri);
+    if (want === undefined) {
+      continue;
+    }
+    const uri = vscode.Uri.parse(file.uri);
+    let document = await vscode.workspace.openTextDocument(uri);
+    if (document.getText() !== want) {
+      // Full-document replace: line/col from onWill stay valid only against the
+      // pre-rename snapshot. Preview may have mutated the buffer first.
+      const edit = new vscode.WorkspaceEdit();
+      const end = document.positionAt(document.getText().length);
+      edit.replace(uri, new vscode.Range(new vscode.Position(0, 0), end), want);
+      if (!(await vscode.workspace.applyEdit(edit))) {
+        done = false;
+        continue;
+      }
+      document = await vscode.workspace.openTextDocument(uri);
+    }
+    if (document.getText() !== want) {
+      done = false;
+      continue;
+    }
+    if (clean.has(file.uri) && document.isDirty) {
+      if (!(await document.save())) {
+        done = false;
+      }
+    }
+  }
+  return done;
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function workspaceEdit(files: readonly FileTextEdits[]): vscode.WorkspaceEdit {

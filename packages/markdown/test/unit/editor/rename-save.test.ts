@@ -171,3 +171,21 @@ test("a textDocument that is not a Lumière tab stays on the closed disk path", 
     ["file:///warmed.md"],
   );
 });
+
+test("disk bytes yield the same planned text as an open buffer (Preview settle)", () => {
+  const text = "See [[Old]] and ![[Old]].\n";
+  const edits = [
+    {
+      start: { line: 0, col: 4 },
+      end: { line: 0, col: 11 },
+      text: "[[New]]",
+    },
+    {
+      start: { line: 0, col: 16 },
+      end: { line: 0, col: 24 },
+      text: "![[New]]",
+    },
+  ];
+  // Same capture path settle uses for a closed note (fs bytes) vs open buffer.
+  assert.equal(applyLineColEdits(text, edits), "See [[New]] and ![[New]].\n");
+});
