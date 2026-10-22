@@ -128,7 +128,7 @@ export const editorWebview: Plugin<EditorConfig> = {
   },
 };
 
-/** Capture Mod/Ctrl+A/X so Select All / Cut beat Vim increment/decrement (BH-029). */
+/** Capture Mod/Ctrl+A/X/C/V so Select All / Cut / Copy / Paste beat Vim (BH-029 / BH-032). */
 function registerEditKeyOwnership(ctx: Context, view: EditorView): void {
   ctx.effect(() =>
     keepEditKeys(view.dom.ownerDocument, {
@@ -144,6 +144,20 @@ function registerEditKeyOwnership(ctx: Context, view: EditorView): void {
         }
         view.focus();
         return view.dom.ownerDocument.execCommand("cut");
+      },
+      copy: () => {
+        if (view.state.selection.ranges.every((range) => range.empty)) {
+          return false;
+        }
+        view.focus();
+        return view.dom.ownerDocument.execCommand("copy");
+      },
+      paste: () => {
+        if (view.state.readOnly) {
+          return false;
+        }
+        view.focus();
+        return view.dom.ownerDocument.execCommand("paste");
       },
     }),
   );
