@@ -47,7 +47,9 @@ test("sticky hscroll appears at the top of a tall wide table and pans columns", 
   await table
     .locator('th[data-row="0"][data-column="0"]')
     .scrollIntoViewIfNeeded();
-  await expect.poll(async () => sticky.evaluate((el) => !el.hidden)).toBe(true);
+  await expect
+    .poll(async () => sticky.evaluate((el) => !(el as HTMLElement).hidden))
+    .toBe(true);
   await expect(thumb).toBeVisible();
 
   const before = await scroll.evaluate((el) => el.scrollLeft);
@@ -65,12 +67,16 @@ test("sticky hscroll appears at the top of a tall wide table and pans columns", 
   await table
     .locator('td[data-row="49"][data-column="0"]')
     .scrollIntoViewIfNeeded();
-  await expect.poll(async () => sticky.evaluate((el) => el.hidden)).toBe(true);
+  await expect
+    .poll(async () => sticky.evaluate((el) => (el as HTMLElement).hidden))
+    .toBe(true);
 
   const kept = await scroll.evaluate((el) => el.scrollLeft);
   await table
     .locator('th[data-row="0"][data-column="0"]')
     .scrollIntoViewIfNeeded();
-  await expect.poll(async () => sticky.evaluate((el) => !el.hidden)).toBe(true);
+  await expect
+    .poll(async () => sticky.evaluate((el) => !(el as HTMLElement).hidden))
+    .toBe(true);
   expect(await scroll.evaluate((el) => el.scrollLeft)).toBe(kept);
 });
