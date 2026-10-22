@@ -67,8 +67,8 @@ What exists, each part with unit tests:
   - the contract `apps/desktop` depends on.
 - **`apps/desktop`**: the Tauri 2 shell:
   - starts the server and opens its window;
-  - the menu: Settings… (⌘,), Open Folder… (⌘O), Toggle Sidebar (⌘B),
-    Toggle Outline (⌥⌘B), Color Theme;
+  - the menu: Settings… (⌘,), Open Folder… (⌘O), Close Tab (⌘W), Toggle
+    Sidebar (⌘B), Toggle Outline (⌥⌘B), Color Theme;
   - the native folder picker, and a dark title bar with a dark theme;
   - notes from Finder, the command line or a second launch;
   - single instance;
@@ -269,6 +269,8 @@ The pass, in the Tauri window:
    - A change applies to open notes at once (Readable Line Length, Font
      Size), and Reset puts the default back.
    - A refused value (Font Size 99) says why under the field.
+   - ⌘W closes the shown tab while others are open, and the window on the
+     last one; ⇧⌘W closes the window.
    - ⌘B hides and shows the files; inside a note ⌘B is Bold instead.
    - ⌥⌘B hides and shows the outline.
    - The layout is the same after a relaunch.

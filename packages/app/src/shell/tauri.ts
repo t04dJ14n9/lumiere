@@ -1,6 +1,7 @@
 /**
  * What the shell uses of the desktop app (apps/desktop), and nothing more:
- * the native folder picker, the app menu's commands and the app's theme.
+ * the native folder picker, the app menu's commands, closing the window and
+ * the app's theme.
  * In a browser there is no Tauri and every feature has a fallback. The desktop app enables
  * `window.__TAURI__` (withGlobalTauri) and allows exactly these calls for
  * the server's origin (apps/desktop/src-tauri/capabilities).
@@ -10,6 +11,7 @@
 export const MENU_COMMANDS = [
   "open-vault",
   "open-settings",
+  "close-tab",
   "toggle-sidebar",
   "toggle-outline",
   "theme-system",
@@ -29,6 +31,9 @@ interface TauriGlobal {
       multiple: boolean;
       title: string;
     }): Promise<string | string[] | null>;
+  };
+  readonly window?: {
+    getCurrentWindow(): { close(): Promise<void> };
   };
   readonly app?: {
     setTheme(theme: "light" | "dark" | null): Promise<void>;
@@ -70,6 +75,16 @@ export async function setAppTheme(
     await tauri()?.app?.setTheme(theme);
   } catch {
     // An older app without the permission keeps the system's title bar.
+  }
+}
+
+/** Close the window: in the desktop app that quits it, as on its last tab. Never rejects. */
+export async function closeWindow(): Promise<void> {
+  const current = tauri()?.window?.getCurrentWindow();
+  try {
+    await (current ? current.close() : Promise.resolve(window.close()));
+  } catch {
+    // Nothing more to do: the window stays open.
   }
 }
 

@@ -6,6 +6,7 @@ import {
   tabId,
   tabsReducer,
   tabTitle,
+  tabToClose,
   type TabsState,
 } from "../../src/shell/tabs";
 
@@ -59,4 +60,14 @@ test("Settings opens once, as a tab beside the notes, and closes like one", () =
   assert.equal(state.active, SETTINGS_TAB);
   state = tabsReducer(state, { type: "close", id: SETTINGS_TAB });
   assert.equal(state.active, tabId("/v", "a.md"));
+});
+
+test("⌘W closes the shown tab while there are others, and leaves the last to the window", () => {
+  assert.equal(tabToClose(noTabs), undefined);
+  const one = open(noTabs, "a.md");
+  assert.equal(tabToClose(one), undefined);
+  const two = open(one, "b.md");
+  assert.equal(tabToClose(two), tabId("/v", "b.md"));
+  const back = tabsReducer(two, { type: "activate", id: tabId("/v", "a.md") });
+  assert.equal(tabToClose(back), tabId("/v", "a.md"));
 });

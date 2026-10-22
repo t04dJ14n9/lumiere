@@ -38,6 +38,14 @@ export function tabId(vault: string, path: string): string {
   return `${vault}\u0000${path}`;
 }
 
+/**
+ * The tab ⌘W closes: the shown one while there are others. With one tab or
+ * none it closes nothing, and ⌘W closes the window instead.
+ */
+export function tabToClose(state: TabsState): string | undefined {
+  return state.tabs.length > 1 ? state.active : undefined;
+}
+
 /** What a tab is called in the tab strip. */
 export function tabTitle(tab: Tab): string {
   return tab.kind === "settings"

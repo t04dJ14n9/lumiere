@@ -12,8 +12,9 @@
   the spirit of Typora (`apps/desktop`, Tauri), laid out as VS Code: the
   vault's files on the left, the note's outline on the right, notes in tabs.
   Settings opens as a tab (⌘,), with search, as VS Code's Settings editor.
-  Color Theme follows the system or stays light or dark. ⌘B and ⌥⌘B hide
-  the files and the outline. Open Folder… uses the native picker, and
+  Color Theme follows the system or stays light or dark. ⌘W closes the
+  shown tab while others are open. ⌘B and ⌥⌘B hide the files and the
+  outline. Open Folder… uses the native picker, and
   Markdown files open from Finder or the command line. Unsaved notes are written when you quit. The same window
   also runs in a browser (`packages/app`). PDFs do not open there yet.
 - **DeepSeek Harness**: Obsidian settings in `.obsidian/app.json` now apply,

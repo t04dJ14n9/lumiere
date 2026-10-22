@@ -3,8 +3,9 @@
 A light Markdown (and later PDF) reader and editor in a window of its own,
 in the spirit of Typora, laid out as VS Code: the vault's files on the left,
 the note's outline on the right, notes in tabs. The menu and keys are VS
-Code's: Settings… (⌘,), Open Folder… (⌘O), Toggle Sidebar (⌘B), Toggle
-Outline (⌥⌘B), and View > Color Theme. It is the same editor as the VS Code
+Code's: Settings… (⌘,), Open Folder… (⌘O), Close Tab (⌘W; the window when
+it is the last tab), Close Window (⇧⌘W), Toggle Sidebar (⌘B), Toggle Outline
+(⌥⌘B), and View > Color Theme. It is the same editor as the VS Code
 extension.
 
 ## How it is put together

@@ -1,7 +1,7 @@
 //! The app menu: the platform's standard menus, with Lumière's commands in
 //! them, under VS Code's keys:
 //! - Settings… (⌘,) in the app menu on macOS, in File elsewhere;
-//! - Open Folder… (⌘O) in File;
+//! - Open Folder… (⌘O), Close Tab (⌘W) and Close Window (⇧⌘W) in File;
 //! - Toggle Sidebar (⌘B), Toggle Outline (⌥⌘B) and Color Theme in View.
 //!
 //! A command the page handles is sent to it as a `lumiere://menu` event whose
@@ -10,7 +10,7 @@
 //! itself, such as ⌘B for Bold while typing, reaches the page first.
 
 use tauri::menu::{Menu, MenuEvent, MenuItem, MenuItemKind, PredefinedMenuItem, Submenu};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::MAIN_WINDOW;
 
@@ -21,6 +21,7 @@ pub const MENU_EVENT: &str = "lumiere://menu";
 const PAGE_COMMANDS: &[&str] = &[
     "open-vault",
     "open-settings",
+    "close-tab",
     "toggle-sidebar",
     "toggle-outline",
     "theme-system",
@@ -38,6 +39,12 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 
 pub fn handle<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
     let id = event.id().as_ref();
+    if id == "close-window" {
+        if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+            let _ = window.close();
+        }
+        return;
+    }
     if PAGE_COMMANDS.contains(&id) {
         if let Err(error) = app.emit_to(MAIN_WINDOW, MENU_EVENT, id) {
             eprintln!("Lumière: could not send the menu command {id}: {error}");
@@ -45,11 +52,27 @@ pub fn handle<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
     }
 }
 
+/// ⌘W is the page's Close Tab, which closes the shown tab while there are
+/// others and the window otherwise; Close Window moves to ⇧⌘W, as in VS
+/// Code. The platform's own Close Window would take ⌘W first, so it goes.
 fn add_file_items<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Result<()> {
-    let open_vault = item(app, "open-vault", "Open Folder…", "CmdOrCtrl+O")?;
     let file = submenu(app, menu, "File", 1)?;
+    for kind in file.items()? {
+        if let MenuItemKind::Predefined(predefined) = &kind {
+            if predefined.text()? == "Close Window" {
+                file.remove(predefined)?;
+            }
+        }
+    }
     file.prepend(&PredefinedMenuItem::separator(app)?)?;
-    file.prepend(&open_vault)?;
+    file.prepend(&item(app, "open-vault", "Open Folder…", "CmdOrCtrl+O")?)?;
+    file.append(&item(app, "close-tab", "Close Tab", "CmdOrCtrl+W")?)?;
+    file.append(&item(
+        app,
+        "close-window",
+        "Close Window",
+        "Shift+CmdOrCtrl+W",
+    )?)?;
     Ok(())
 }
 

@@ -1,7 +1,7 @@
 /**
  * The window's commands, from the app menu (apps/desktop's menu.rs) or the
- * keyboard. VS Code's keys: ⌘, Settings, ⌘B the files sidebar, ⌥⌘B the
- * outline, ⌘O Open Folder. A key the editor page uses (⌘B is Bold while
+ * keyboard. VS Code's keys: ⌘, Settings, ⌘W the tab, ⌘B the files sidebar,
+ * ⌥⌘B the outline, ⌘O Open Folder. A key the editor page uses (⌘B is Bold while
  * typing) stays the editor's: the page sees it first.
  */
 import { useEffect, useRef } from "react";
@@ -34,6 +34,9 @@ export function shortcutCommand(
   }
   if (key.code === "Comma") {
     return "open-settings";
+  }
+  if (key.code === "KeyW") {
+    return "close-tab";
   }
   return key.code === "KeyO" ? "open-vault" : undefined;
 }

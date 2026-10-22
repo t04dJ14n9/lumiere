@@ -44,8 +44,9 @@ Laid out as VS Code:
   (`@workshop/host-node/settings`), and every write passes the same check as
   in VS Code. Color Theme (Follow System, Light, Dark) is the window's own.
 
-VS Code's keys: ⌘, Settings, ⌘B the files sidebar, ⌥⌘B the outline, ⌘O
-Open Folder (`commands.ts`). The app menu runs the same commands. A key the
+VS Code's keys: ⌘, Settings, ⌘W the shown tab (the window when it is the
+last), ⌘B the files sidebar, ⌥⌘B the outline, ⌘O Open Folder
+(`commands.ts`). The app menu runs the same commands. A key the
 editor uses itself, such as ⌘B for Bold while typing, stays the editor's.
 
 The layout and Color Theme are kept by the server (`/api/ui`), because the

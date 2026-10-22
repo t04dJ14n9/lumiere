@@ -45,6 +45,15 @@ test("VS Code's keys: ⌘, Settings, ⌘B sidebar, ⌥⌘B outline, ⌘O Open Fo
     shortcutCommand(press("KeyO", { meta: true }), true),
     "open-vault",
   );
+  assert.equal(
+    shortcutCommand(press("KeyW", { meta: true }), true),
+    "close-tab",
+  );
+  // ⇧⌘W is the menu's Close Window, not the window's.
+  assert.equal(
+    shortcutCommand(press("KeyW", { meta: true, shift: true }), true),
+    undefined,
+  );
   // Ctrl on Windows and Linux, ⌘ on macOS, and nothing else.
   assert.equal(
     shortcutCommand(press("Comma", { ctrl: true }), false),
