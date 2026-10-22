@@ -66,6 +66,13 @@ function runPanelAction(
   panel: EditorPanel,
   action: Infer<typeof actionSchema>,
 ): Promise<boolean> {
+  // Toggle owns its own flush + sibling-tab close (BH-011); invoke the
+  // editor-registered host command (no cross-plugin import).
+  if (action === "toggleTextEditor") {
+    return ctx.hostCommands
+      .execute(contributionId("toggleTextEditor"))
+      .then(() => true);
+  }
   return panel.session.withAction(async () => {
     await ctx.serial("document/willSave", panel.session);
     await panel.session.flush();
