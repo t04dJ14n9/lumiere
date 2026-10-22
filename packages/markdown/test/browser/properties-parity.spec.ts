@@ -79,6 +79,9 @@ test("Properties inline widgets, pending rows, pill keys and shared presentation
   await page.keyboard.press("ControlOrMeta+;");
   const pending = sheet.locator("[data-property-new]");
   await expect(pending.locator("input")).toBeFocused();
+  // Host GUI BH-008: suggestions are open on an empty name; Escape must remove
+  // the draft row (not only close the list).
+  await expect(pending.locator('[role="option"]').first()).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(pending).toHaveCount(0);
   expect(await page.evaluate(() => window.harness.text)).toBe(beforePending);

@@ -34,7 +34,10 @@ test("pending rows dismiss on Escape and blur, reject duplicates quietly, and ac
       const key = new PropertyNativeInput(document);
       key.parentElement = new PropertyElement(document);
       row.find = () => key;
-      row.contains = (el) => el === row || el === key || row.children.includes(el as PropertyElement);
+      row.contains = (el) =>
+        el === row ||
+        el === key ||
+        row.children.includes(el as PropertyElement);
       element.children = [row];
       inputs.push(key);
     }
@@ -75,7 +78,12 @@ test("pending rows dismiss on Escape and blur, reject duplicates quietly, and ac
   wrapperNeeded = true;
   add.dispatchEvent(new Event("click"));
   await Promise.resolve();
+  await Promise.resolve(); // names().then → suggestions.receive (list open)
   const first = inputs[0]!;
+  first.focus();
+  first.dispatchEvent(new Event("input")); // filter/render with vault names
+  // Host GUI failure mode: Escape while the suggestion list is visible must
+  // unmount the draft row, not merely hide the popup.
   first.dispatchEvent(propertyKey("Escape"));
   assert.equal(left, 1);
   assert.equal(list.children.length, 0);

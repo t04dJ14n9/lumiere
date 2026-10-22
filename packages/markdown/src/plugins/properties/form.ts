@@ -100,7 +100,11 @@ function appendPendingRow(
   const row = wrapper.firstElementChild as HTMLElement;
   panel.querySelector(".metadata-properties")!.append(row);
   const input = row.querySelector<HTMLInputElement>("input")!;
-  const suggestions = new PropertyNameSuggestions(input, () => create());
+  const suggestions = new PropertyNameSuggestions(
+    input,
+    () => create(),
+    () => dismiss(true),
+  );
   const create = (): boolean => {
     const key = suggestions.name();
     const values = frontmatter(editor?.currentSource?.() ?? "")?.values ?? {};
@@ -131,13 +135,18 @@ function appendPendingRow(
       event.preventDefault();
     }
   });
-  input.addEventListener("keydown", (event) =>
-    pendingKeyDown(event, { input, editor, suggestions, create, dismiss }),
+  // Capture phase: Host GUI saw Escape close only the suggestion list while the
+  // draft row stayed — a later bubble handler must not swallow Escape first.
+  input.addEventListener(
+    "keydown",
+    (event) =>
+      pendingKeyDown(event, { input, editor, suggestions, create, dismiss }),
+    true,
   );
-  // Leave the unfinished draft when focus moves into the note body (or any
-  // control outside this row). Suggestion mousedown preventDefault keeps focus
-  // on the input long enough to accept a name without dismissing first.
-  input.addEventListener("blur", () => {
+  // Leave the unfinished draft when focus leaves this row (body click, or any
+  // control outside). Suggestion mousedown preventDefault keeps focus on the
+  // input long enough to accept a name without dismissing first.
+  const dismissIfLeft = (): void => {
     void Promise.resolve().then(() => {
       if (!row.isConnected) {
         return;
@@ -148,6 +157,14 @@ function appendPendingRow(
       }
       dismiss(false);
     });
+  };
+  input.addEventListener("blur", dismissIfLeft);
+  row.addEventListener("focusout", (event) => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && row.contains(next)) {
+      return;
+    }
+    dismissIfLeft();
   });
   row.addEventListener("keydown", (event) => {
     if (event.target === row && event.key === "Escape") {
@@ -188,8 +205,8 @@ function pendingKeyDown(
   ) {
     create();
   } else if (event.key === "Escape") {
-    // Host GUI BH-008: Escape dismisses the unfinished Add-property draft
-    // without writing YAML (Obsidian kept the empty row; we clear it).
+    // Host GUI BH-008: Escape dismisses the whole unfinished draft even when
+    // the name suggestion list is open (not merely hide() + focusBody).
     dismiss(true);
   } else {
     return;
