@@ -56,7 +56,13 @@ export default defineManifest({
         // Vim uses Control on macOS too; Command remains available to the editor.
         mac: `ctrl+${key}`,
         // Cursor's Edit key takes precedence over the host-shortcut consumer.
-        ...(key === "k" ? { when: "!lumiere.markdown.isCursorHost" } : {}),
+        // Formatting owns Ctrl+K (Insert Link). Host consume would noop the
+        // chord before insertLink (BH-036), same pattern as Ctrl+B/I (BH-024).
+        ...(key === "k"
+          ? {
+              when: "!lumiere.markdown.isCursorHost && !lumiere.markdown.plugin.formatting",
+            }
+          : {}),
         // Formatting owns Ctrl+B/I (bold/italic). Host consume would noop the
         // chord before the webview, so Vim page-back/jumplist never yields to
         // toggleBold/toggleItalics (BH-024). Physical PageUp still keyToKeys to
