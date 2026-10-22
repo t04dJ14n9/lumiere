@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isFindKey, keepFindKey, type FindKey } from "./find-keys";
+import { findActionFor, keepFindKey, type FindKey } from "./find-keys";
 
 const key = (overrides: Partial<FindKey> = {}): FindKey => ({
   key: "f",
@@ -11,14 +11,26 @@ const key = (overrides: Partial<FindKey> = {}): FindKey => ({
   ...overrides,
 });
 
-test("Ctrl/Cmd+F is Find; other modifiers and keys are not", () => {
+test("Ctrl/Cmd+F is Find; Ctrl/Cmd+H is Replace; other chords are not", () => {
   for (const isMac of [false, true]) {
     const modifier = { ctrlKey: !isMac, metaKey: isMac };
-    assert.equal(isFindKey(key({ ...modifier }), isMac), true);
-    assert.equal(isFindKey(key({ ...modifier, key: "F" }), isMac), true);
+    assert.equal(findActionFor(key({ ...modifier }), isMac), "find");
+    assert.equal(findActionFor(key({ ...modifier, key: "F" }), isMac), "find");
     assert.equal(
-      isFindKey(key({ ...modifier, key: "а", keyCode: 70 }), isMac),
-      true,
+      findActionFor(key({ ...modifier, key: "а", keyCode: 70 }), isMac),
+      "find",
+    );
+    assert.equal(
+      findActionFor(key({ ...modifier, key: "h" }), isMac),
+      "replace",
+    );
+    assert.equal(
+      findActionFor(key({ ...modifier, key: "H" }), isMac),
+      "replace",
+    );
+    assert.equal(
+      findActionFor(key({ ...modifier, key: "а", keyCode: 72 }), isMac),
+      "replace",
     );
     for (const override of [
       { altKey: true },
@@ -29,16 +41,19 @@ test("Ctrl/Cmd+F is Find; other modifiers and keys are not", () => {
       { key: "e" },
       { key: "а", keyCode: 69 },
     ]) {
-      assert.equal(isFindKey(key({ ...modifier, ...override }), isMac), false);
+      assert.equal(
+        findActionFor(key({ ...modifier, ...override }), isMac),
+        undefined,
+      );
     }
     assert.equal(
-      isFindKey(key({ ctrlKey: isMac, metaKey: !isMac }), isMac),
-      false,
+      findActionFor(key({ ctrlKey: isMac, metaKey: !isMac }), isMac),
+      undefined,
     );
   }
 });
 
-test("capture listener owns Mod+F and skips native fields", () => {
+test("capture listener owns Mod+F/H and skips native fields", () => {
   const calls: string[] = [];
   const listeners = new Map<string, EventListener>();
   const doc = {
@@ -58,8 +73,8 @@ test("capture listener owns Mod+F and skips native fields", () => {
 
   const stop = keepFindKey(
     doc,
-    () => {
-      calls.push("find");
+    (replace) => {
+      calls.push(replace ? "replace" : "find");
     },
     (target) =>
       Boolean(
@@ -97,6 +112,10 @@ test("capture listener owns Mod+F and skips native fields", () => {
   assert.deepEqual(calls, ["find"]);
 
   calls.length = 0;
+  assert.equal(fire({ key: "h" }).prevented, true);
+  assert.deepEqual(calls, ["replace"]);
+
+  calls.length = 0;
   assert.equal(
     fire({ target: { tagName: "INPUT" } as unknown as EventTarget }).prevented,
     false,
@@ -105,4 +124,11 @@ test("capture listener owns Mod+F and skips native fields", () => {
 
   stop();
   assert.equal(listeners.size, 0);
+});
+
+test("missing document is a no-op dispose", () => {
+  const stop = keepFindKey(undefined as unknown as Document, () => {
+    assert.fail("must not open find without a document");
+  });
+  stop();
 });
