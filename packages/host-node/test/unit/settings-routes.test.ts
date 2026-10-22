@@ -32,6 +32,10 @@ const contributed: ContributedSetting[] = [
     },
   },
   {
+    key: "lumiere.markdown.plugins.cursorBridge.enabled",
+    schema: { type: "boolean", default: true },
+  },
+  {
     key: "lumiere.markdown.backlinks.sortOrder",
     schema: {
       enum: ["alphabetical", "byModifiedTime"],
@@ -75,7 +79,11 @@ async function serve(t: test.TestContext) {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-settings-"));
   const file = path.join(dir, "settings.json");
   const settings = createNodeSettings({ contributed, file });
-  const routes = createSettingsRoutes(settings, titles);
+  const routes = createSettingsRoutes(
+    settings,
+    titles,
+    new Set(["lumiere.markdown.plugins.cursorBridge.enabled"]),
+  );
   const server = createServer((req, res) => {
     void routes
       .handle(req, res, "")
@@ -180,4 +188,15 @@ test("search matches every word, and @modified keeps changed settings", () => {
     false,
   );
   assert.equal(matchesSearch(item, ""), true);
+});
+
+test("a setting that means nothing in this host is neither listed nor written", async (t) => {
+  const { url, post } = await serve(t);
+  const listed = (await (await fetch(url)).json()) as { items: SettingItem[] };
+  assert.ok(!listed.items.some((item) => item.key.includes("cursorBridge")));
+  const written = await post({
+    key: "lumiere.markdown.plugins.cursorBridge.enabled",
+    value: false,
+  });
+  assert.equal(written.status, 400);
 });

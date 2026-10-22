@@ -49,6 +49,11 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   capabilities: ["editorProvider", "commands", "keybindings", "navigation"],
+  // They decide how the note shares its file with VS Code's text editor.
+  settingNeeds: {
+    reclaimTextEditor: ["workbench"],
+    warmTextDocument: ["workbench"],
+  },
   contributes: {
     commands: [
       { id: "jumpBack", title: "Go Back in Note", icon: "$(arrow-left)" },

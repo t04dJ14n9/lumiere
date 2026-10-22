@@ -30,7 +30,13 @@ export interface SettingsRoutes {
 export function createSettingsRoutes(
   settings: HostSettings,
   titles: ReadonlyMap<string, string>,
+  /** Settings that mean nothing in this host (`settingsUnavailableIn`): not listed, not written. */
+  unavailable: ReadonlySet<string> = new Set(),
 ): SettingsRoutes {
+  const offered = () =>
+    settings.access
+      .contributed()
+      .filter((setting) => !unavailable.has(setting.key));
   const item = (setting: ContributedSetting) =>
     settingItem(setting, settings.access.inspect(setting.key).value, titles);
   return {
@@ -40,7 +46,7 @@ export function createSettingsRoutes(
       }
       if (req.method === "GET") {
         return json(res, 200, {
-          items: settings.access.contributed().map(item),
+          items: offered().map(item),
         });
       }
       if (req.method !== "POST") {
@@ -53,7 +59,7 @@ export function createSettingsRoutes(
         : key;
       const value = change.reset === true ? undefined : change.value;
       const checked = checkWrite(
-        settings.access.contributed(),
+        offered(),
         short,
         value === undefined ? defaultOf(settings, key) : value,
       );

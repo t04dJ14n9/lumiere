@@ -5,7 +5,12 @@
  * Nothing this module imports may reach `vscode` (see test/unit/layers.test.ts).
  */
 export { bootstrap, type BootstrapOptions } from "./bootstrap";
-export { pluginRank, pluginTitles } from "../plugins/catalog";
+export {
+  pluginRank,
+  pluginTitles,
+  settingsUnavailableIn,
+} from "../plugins/catalog";
+export type { HostNeed } from "../shared/manifest";
 export { checkWrite, SETTING_PREFIX } from "../shared/setting-schema";
 export {
   EffectiveConfiguration,

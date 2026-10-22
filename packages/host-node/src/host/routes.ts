@@ -9,7 +9,11 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Duplex } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { WebSocketServer } from "ws";
-import { pluginTitles } from "@workshop/markdown/portable";
+import {
+  pluginTitles,
+  settingsUnavailableIn,
+} from "@workshop/markdown/portable";
+import { NODE_HOST_OFFERS } from "./inert";
 import { injectShim, pageQuery, socketSource } from "./page";
 import type { PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
@@ -47,7 +51,11 @@ export function createEditorRoutes(
   const roots = new Map<string, string>();
   const sockets = new WebSocketServer({ noServer: true });
   const views = createViewRoutes(host.trees);
-  const settings = createSettingsRoutes(host.settings, pluginTitles());
+  const settings = createSettingsRoutes(
+    host.settings,
+    pluginTitles(),
+    settingsUnavailableIn(NODE_HOST_OFFERS),
+  );
   return {
     async handle(req, res) {
       const url = new URL(req.url ?? "/", "http://host");

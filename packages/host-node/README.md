@@ -29,7 +29,10 @@ any Node web server:
 - `/lumiere/file`: a note's images;
 - `/lumiere/socket`: the page's socket;
 - `/lumiere/views`: the tree views;
-- `/lumiere/settings`: Lumière's settings, for a settings page.
+- `/lumiere/settings`: Lumière's settings, for a settings page. A plugin
+  declares what it needs from its host (`needs` in its manifest: VS Code's
+  window, Git, panels); this host offers none of them yet
+  (`NODE_HOST_OFFERS`), so their settings are left out until it does.
 
 The embedder puts its own authentication in front of them. A page runs in
 the embedder's iframe. Its shim stands in for VS Code's webview API: what
