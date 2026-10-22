@@ -80,3 +80,37 @@ export class FenceFlair extends WidgetType {
     );
   }
 }
+
+/** Class on the opening fence line while the pointer is anywhere in that fence. */
+export const FENCE_HOVERED = "is-fence-hovered";
+
+/**
+ * The opening fence line for a Live Preview code line, or null when the line
+ * is not part of a fenced block (e.g. indented code has no flair).
+ */
+export function fenceOpenLine(from: Element | null): HTMLElement | null {
+  let line: Element | null =
+    from && from.classList.contains("md-code-line") ? from : null;
+  while (line?.classList.contains("md-code-line")) {
+    if (line.classList.contains("md-code-fence-open")) {
+      return line as HTMLElement;
+    }
+    line = line.previousElementSibling;
+  }
+  return null;
+}
+
+/** Mark the opening fence whose body (or strip) holds the pointer. */
+export function setFenceHover(
+  root: ParentNode,
+  open: HTMLElement | null,
+): void {
+  for (const el of root.querySelectorAll(
+    `.md-code-fence-open.${FENCE_HOVERED}`,
+  )) {
+    if (el !== open) {
+      el.classList.remove(FENCE_HOVERED);
+    }
+  }
+  open?.classList.add(FENCE_HOVERED);
+}
