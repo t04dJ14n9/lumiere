@@ -96,10 +96,8 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
 - `associations.ts`: **Use Lumière for Markdown in This Workspace**.
 - `toggle-text-editor.ts`: **Toggle Text Editor** (Ctrl/Cmd+E) between Lumière
-  and the host default text editor.
-- `toggle-text-editor-keys.ts`: capture-phase Mod+E ownership so Vim cannot
-  scroll instead (BH-003); wired from the commands webview.
-- `toggle-text-editor-keys.test.ts`: Mod+E detection and listener units.
+  and the host default text editor. Capture-phase Mod+E ownership (BH-003) lives
+  in `commands/toggle-text-editor-keys.ts`.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
 - `find.ts`, `find-panel.ts`, `find-caret.ts`, `find-count.ts`, `find.css`: in-note find and replace.

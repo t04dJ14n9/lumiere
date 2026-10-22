@@ -4,7 +4,7 @@ import { protocol } from "./protocol";
 import type { Commands } from "./api";
 import { createCommands } from "./registry";
 import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
-import { keepToggleTextEditorKey } from "../editor/toggle-text-editor-keys";
+import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {

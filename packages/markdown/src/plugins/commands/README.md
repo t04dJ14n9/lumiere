@@ -33,9 +33,9 @@ scroll-window (BH-003); the host Toggle Text Editor command runs instead
 - `history-keys.ts`: capture-phase Ctrl/Cmd+Z / Shift+Z / Y ownership so VS Code's
   webview key forwarding cannot double-fire or swallow note undo/redo.
 - `history-keys.test.ts`: shortcut mapping, text-field and property-editor exemption, listener disposal.
-- `../editor/toggle-text-editor-keys.ts`: capture-phase Ctrl/Cmd+E so Vim cannot
+- `toggle-text-editor-keys.ts`: capture-phase Ctrl/Cmd+E so Vim cannot
   scroll-window (BH-003); runs host `toggleTextEditor`.
-- `../editor/toggle-text-editor-keys.test.ts`: Mod+E mapping and native-field skip.
+- `toggle-text-editor-keys.test.ts`: Mod+E mapping and native-field skip.
 
 - `registry.ts`: per-editor unique-ID command map.
 - `registry.test.ts`: command results, duplicate rejection, removal and failures.
