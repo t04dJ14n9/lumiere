@@ -1,4 +1,4 @@
-import { markdownParser as language, parseMarkdown } from "../dialect/index";
+import { markdownParser as language, parseMarkdown } from "../dialect/parser";
 import type { Text } from "@codemirror/state";
 import { footnoteDefinitions } from "./footnote-definitions";
 import {

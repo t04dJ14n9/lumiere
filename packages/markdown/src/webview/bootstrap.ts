@@ -7,16 +7,14 @@ import type { Infer } from "@workshop/core";
 import type { viewState } from "../plugins/editor/protocol";
 import type { Endpoint } from "../shared/rpc/endpoint";
 import { protocol } from "../plugins/editor/protocol";
-import {
-  documentWebview,
-  markersWebview,
-  editorWebview,
-  dialectWebview,
-  commandsWebview,
-  livePreviewWebview,
-  renderWebview,
-  resourcesWebview,
-} from "../plugins/webview";
+import { documentWebview } from "../plugins/document/webview";
+import { markersWebview } from "../plugins/markers/webview";
+import { editorWebview } from "../plugins/editor/webview";
+import { dialectWebview } from "../plugins/dialect/webview";
+import { commandsWebview } from "../plugins/commands/webview";
+import { livePreviewWebview } from "../plugins/livePreview/webview";
+import { renderWebview } from "../plugins/render/webview";
+import { resourcesWebview } from "../plugins/resources/webview";
 export async function bootstrap(
   rpc: Endpoint,
   parent: HTMLElement,
@@ -53,6 +51,7 @@ export async function bootstrap(
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
   await configure(init.features, init.preset === "obsidian");
+  performance.mark("mw:features");
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {

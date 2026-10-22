@@ -1,6 +1,6 @@
 import { findClusterBreak, Prec, type EditorState } from "@codemirror/state";
 import { Direction, EditorView } from "@codemirror/view";
-import { getCM } from "@replit/codemirror-vim";
+import type { VimMode } from "../vim/api";
 
 export interface CellStep {
   row: number;
@@ -14,7 +14,6 @@ export const arrowKeys = [
   "ArrowDown",
 ] as const;
 export type ArrowKey = (typeof arrowKeys)[number];
-type CellVimState = NonNullable<ReturnType<typeof getCM>>["state"]["vim"];
 
 /** Enter from an adjacent line, including the blank prose space created at EOF. */
 export function entersTable(
@@ -41,9 +40,14 @@ export function entersTable(
   );
 }
 
-/** Handle table boundaries before Vim's DOM handler consumes navigation keys. */
+/**
+ * Handle table boundaries before Vim's DOM handler consumes navigation keys.
+ * `vimMode` reads the optional Vim service so this module never imports the
+ * Vim adapter library on the cold path.
+ */
 export function cellNavigation(
   move: (step: CellStep, extend: boolean) => boolean,
+  vimMode?: (view: EditorView) => VimMode | undefined,
 ) {
   return Prec.highest(
     EditorView.domEventHandlers({
@@ -56,11 +60,11 @@ export function cellNavigation(
         ) {
           return false;
         }
-        const key = navigationKey(event.key, getCM(view)?.state.vim);
+        const key = navigationKey(event.key, vimMode?.(view));
         if (!key) {
           return false;
         }
-        const step = cellArrow(view, key, event.shiftKey);
+        const step = cellArrow(view, key, event.shiftKey, vimMode);
         if (!step || !move(step, event.shiftKey)) {
           return false;
         }
@@ -87,6 +91,7 @@ export function cellArrow(
   view: EditorView,
   key: ArrowKey,
   extend: boolean,
+  vimMode?: (view: EditorView) => VimMode | undefined,
 ): CellStep | undefined {
   const { selection, doc } = view.state;
   const caret = selection.main;
@@ -102,7 +107,7 @@ export function cellArrow(
     view.textDirectionAt(caret.head) === Direction.RTL,
   );
   if (step.column) {
-    if (!atHorizontalBoundary(view, step.column, extend)) {
+    if (!atHorizontalBoundary(view, step.column, extend, vimMode)) {
       return undefined;
     }
   } else if (extend) {
@@ -123,7 +128,7 @@ export function cellArrow(
 
 export function navigationKey(
   key: string,
-  vim: CellVimState,
+  vim: VimMode | undefined,
 ): ArrowKey | undefined {
   const motions: Partial<Record<string, ArrowKey>> = {
     h: "ArrowLeft",
@@ -134,13 +139,7 @@ export function navigationKey(
   if (canHopVimRow(key, vim)) {
     return motions[key];
   }
-  if (
-    vim &&
-    (vim.inputState.operator ||
-      vim.inputState.keyBuffer.length ||
-      vim.inputState.prefixRepeat.length ||
-      vim.inputState.motionRepeat.length)
-  ) {
+  if (hasPendingVimInput(vim)) {
     return undefined;
   }
   if (arrowKeys.includes(key as ArrowKey)) {
@@ -152,17 +151,34 @@ export function navigationKey(
   return undefined;
 }
 
-function canHopVimRow(key: string, vim: CellVimState): boolean {
+function hasPendingVimInput(vim: VimMode | undefined): boolean {
+  const input = vim?.inputState;
+  if (!vim || !input) {
+    return false;
+  }
+  return Boolean(
+    input.operator ||
+    input.keyBuffer?.length ||
+    input.prefixRepeat?.length ||
+    input.motionRepeat?.length,
+  );
+}
+
+function canHopVimRow(key: string, vim: VimMode | undefined): boolean {
   if (!vim || vim.insertMode || vim.visualMode) {
+    return false;
+  }
+  const input = vim.inputState;
+  if (!input) {
     return false;
   }
   // Only counts and g may be abandoned by a normal-mode row hop. Operators,
   // visual selections and other prefixes stay with the cell's Vim buffer.
   return (
-    !vim.inputState.operator &&
+    !input.operator &&
     ["j", "k"].includes(key) &&
     // Vim keeps typed digits and the g prefix in its key buffer.
-    /^(?:[1-9]\d*)?g?$/.test(vim.inputState.keyBuffer.join(""))
+    /^(?:[1-9]\d*)?g?$/.test((input.keyBuffer ?? []).join(""))
   );
 }
 
@@ -170,8 +186,9 @@ function atHorizontalBoundary(
   view: EditorView,
   column: number,
   extend: boolean,
+  vimMode?: (view: EditorView) => VimMode | undefined,
 ): boolean {
-  const vim = getCM(view)?.state.vim;
+  const vim = vimMode?.(view);
   const doc = view.state.doc;
   const end =
     vim && !vim.insertMode && !vim.visualMode && !extend

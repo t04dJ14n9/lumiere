@@ -1,2 +1,2 @@
-import { dialectPlugin } from "./definition";
-export const dialectHost = dialectPlugin();
+import { dialectHostPlugin } from "./host-definition";
+export const dialectHost = dialectHostPlugin();

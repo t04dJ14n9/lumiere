@@ -41,6 +41,10 @@ export function createPanel(
     rpc,
     () => host.settings.forNote(shell.document).debugLogging ?? false,
   );
+  // Kick off webview HTML (and editor.js fetch/parse) before panel host
+  // plugins configure, so download overlaps with host work. ready still
+  // waits for owned.settled() and settings prepare.
+  shell.setHTML(webviewHTML(shell));
   configure(owned, shell);
   const reporting = panelReporting(owned, rpc, shell.document, host);
   const panel: EditorPanel = {
@@ -69,7 +73,6 @@ export function createPanel(
   registerSessionHandshake(owned, { shell, session, rpc, host });
   registerClipboard(owned, rpc, host.clipboard);
   registerConfiguration(owned, rpc, shell.document, host);
-  shell.setHTML(webviewHTML(shell));
   return panel;
 }
 
@@ -87,9 +90,16 @@ function registerSessionHandshake(
   owned.effect(() => () => detach?.());
   owned.effect(() =>
     rpc.handle(protocol, "ready", async (_request, token) => {
+      const readyStarted = performance.now();
       owned.emit("editor/loading");
       await owned.settled();
+      const settledMs = Math.round(performance.now() - readyStarted);
       await host.settings.effective.prepare(shell.document.uri);
+      const prepareMs =
+        Math.round(performance.now() - readyStarted) - settledMs;
+      owned.logger.debug(
+        `Panel ready: settled ${settledMs} ms, prepare ${prepareMs} ms`,
+      );
       if (token.cancelled || !owned.isLive) {
         throw new RpcError("Cancelled", "Renderer replaced");
       }
