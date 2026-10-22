@@ -133,7 +133,8 @@ test("callout title click toggles fold without editing (BH-017)", async ({
 test("expanded (+) callout title click collapses without editing (BH-035)", async ({
   page,
 }) => {
-  const callout = "> [!question]+ Expanded, foldable\n> Click the title to collapse.";
+  const callout =
+    "> [!question]+ Expanded, foldable\n> Click the title to collapse.";
   await open(page, `before\n\n${callout}\n\nafter`);
   const body = page.locator(".callout-content p");
   await expect(body).toBeVisible();
