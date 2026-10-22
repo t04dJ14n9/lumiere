@@ -5,6 +5,7 @@ import type { Commands } from "./api";
 import { createCommands } from "./registry";
 import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
 import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
+import { keepQuickOpenKey } from "./quick-open-keys";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
@@ -22,6 +23,7 @@ export const commandsWebview: Plugin = {
     registerHostKeys(ctx, host);
     registerHistoryKeys(ctx, host);
     registerToggleTextEditorKey(ctx, host);
+    registerQuickOpenKey(ctx, host);
   },
 };
 
@@ -32,7 +34,8 @@ type Action =
   | "close"
   | "saveClose"
   | "openAsText"
-  | "toggleTextEditor";
+  | "toggleTextEditor"
+  | "quickOpen";
 
 async function hostAction(ctx: Context, action: Action): Promise<boolean> {
   await ctx.document.flush();
@@ -52,6 +55,7 @@ function registerHostActions(
     "saveClose",
     "openAsText",
     "toggleTextEditor",
+    "quickOpen",
   ] as const) {
     ctx.effect(() => commands.register(action, () => host(action)));
   }
@@ -111,6 +115,23 @@ function registerToggleTextEditorKey(
       ctx.editor.view.dom.ownerDocument,
       () => {
         trigger(ctx, host, "toggleTextEditor");
+      },
+      leavesNativeHistory,
+    ),
+  );
+}
+
+function registerQuickOpenKey(
+  ctx: Context,
+  host: (action: Action) => Promise<boolean>,
+): void {
+  // Capture-phase Mod/Ctrl+P so Vim cannot map <C-p>→k (BH-021). Leaves native
+  // fields and an open suggest list alone (suggest uses Ctrl+P to move).
+  ctx.effect(() =>
+    keepQuickOpenKey(
+      ctx.editor.view.dom.ownerDocument,
+      () => {
+        trigger(ctx, host, "quickOpen");
       },
       leavesNativeHistory,
     ),
