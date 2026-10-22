@@ -224,6 +224,26 @@ test("Go to Heading overrides the symbol shortcut only for enabled Workshop pane
   );
 });
 
+test("Go to Line owns Ctrl+G for Lumière panels (BH-033)", async () => {
+  const { commands, keybindings, menus } = await contributions();
+  const commandId = "lumiere.markdown.goToLine";
+  assert.equal(
+    commands.find((command) => command.command === commandId)?.title,
+    "Go to Line…",
+  );
+  const binding = keybindings.find((binding) => binding.command === commandId)!;
+  assert.equal(binding.key, "ctrl+g");
+  assert.equal(binding.mac, "ctrl+g");
+  assert.equal(
+    binding.when,
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.editorFocus",
+  );
+  assert.equal(
+    menus.commandPalette.find((item) => item.command === commandId)?.when,
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor",
+  );
+});
+
 test("a note's keybindings need the note to have focus, not only to be active", async () => {
   // activeCustomEditorId stays set while focus is in the Explorer or a
   // chat, where Cmd+B must toggle the sidebar rather than bold the note.

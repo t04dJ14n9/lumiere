@@ -24,6 +24,7 @@ import { cursorBridgeHost } from "../../../src/plugins/cursorBridge/host";
 import { ideContextHost } from "../../../src/plugins/ideContext/host";
 import { registerMarkdownAssociation } from "../../../src/plugins/editor/associations";
 import { registerToggleTextEditor } from "../../../src/plugins/editor/toggle-text-editor";
+import { registerGoToLine } from "../../../src/plugins/editor/go-to-line";
 import { registerEditorActions } from "../../../src/plugins/editor/actions-host";
 import { editorHost } from "../../../src/plugins/editor/host";
 import { registerJumpHistory } from "../../../src/plugins/editor/jump-host";
@@ -252,6 +253,7 @@ function directRegistrations(selections: Selections): Plugin {
     apply(ctx) {
       registerMarkdownAssociation(ctx);
       registerToggleTextEditor(ctx, ctx.editors);
+      registerGoToLine(ctx, ctx.editors);
       registerJumpHistory(ctx, ctx.editors);
       registerEditorActions(ctx, ctx.editors, selections);
       registerPluginManagement(ctx, {} as never, {} as never);

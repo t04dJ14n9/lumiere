@@ -2,6 +2,10 @@
 
 ## 0.1.0 (unreleased)
 
+- Ctrl+G Go to Line works in Live Preview / Source again: the chord no longer
+  shows VS Code's "Open a text editor first…" on the custom editor (Host GUI
+  BH-033).
+
 - With Vim on, Ctrl/Cmd+V pastes and Ctrl/Cmd+C copies a selection again:
   capture-phase ownership runs clipboard paste/copy over vim-core's `<C-v>`
   block-visual and `<C-c>` Esc maps (Host GUI BH-032).
