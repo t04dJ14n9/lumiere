@@ -7,11 +7,8 @@
 import { EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
-import {
-  blockDecorations,
-  blockIndex,
-  renderRevision,
-} from "../src/plugins/livePreview/blocks";
+import { blockIndex, renderRevision } from "../src/plugins/livePreview/blocks";
+import { blockDecorations } from "../src/plugins/livePreview/viewport-decorations";
 import { documentTree } from "../src/plugins/livePreview/document-tree";
 import { blockRenderers } from "../src/plugins/livePreview/registry";
 import type { RenderBlock } from "../src/plugins/livePreview/api";
