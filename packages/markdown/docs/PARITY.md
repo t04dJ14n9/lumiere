@@ -78,6 +78,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `toggleSourceMode` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `openAsText` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `toggleTextEditor` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `goToLine` | Go to line | Ctrl+G prompts for a line and jumps in Live Preview / Source (Host GUI BH-033) | Unit + Host GUI BH-033 | not observed |
 | Default editing mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Readable line length | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Strict line breaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -139,6 +140,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.toggleTextEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.goToLine | Go to line | Ctrl+G Go to Line… on custom editor (Host GUI BH-033) | Unit + Host GUI BH-033 | not observed |
 | Command: lumiere.markdown.ideContext.copy | no Obsidian equivalent | Copy deeper IDE-context packet (clipboard-first) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
 | Command: lumiere.markdown.ideContext.send | no Obsidian equivalent | Send IDE-context packet via forced/sole-agent/picker (never silent-guess) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
 | Command: lumiere.markdown.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
