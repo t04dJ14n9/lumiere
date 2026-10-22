@@ -535,6 +535,16 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.outgoingLinks.enableExtraContext",
+        "title": "Show More Context",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.disableExtraContext",
+        "title": "✓ Show More Context",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.outline.expandAll",
         "title": "Expand All",
         "category": "Lumière",
@@ -1802,6 +1812,14 @@
           "when": "false"
         },
         {
+          "command": "lumiere.markdown.outgoingLinks.enableExtraContext",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.disableExtraContext",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.outline.expandAll",
           "when": "false"
         },
@@ -2377,6 +2395,16 @@
           "command": "lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse",
           "group": "outgoingSort@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.enableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && !lumiere.markdown.outgoingLinks.extraContext",
+          "group": "outgoing@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.disableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.extraContext",
+          "group": "outgoing@1"
         },
         {
           "command": "lumiere.markdown.outline.expandAll",
@@ -3182,6 +3210,12 @@
             ],
             "default": "alphabetical",
             "description": "Order of Links, Not created yet, and Unlinked mentions in the Outgoing links view (Obsidian sortOrder). Created-time sorts are omitted: the vault index has mtime only.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.outgoingLinks.extraContext": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show the lines above and below each Unlinked mention match (Obsidian “Show more context”). Off by default.",
             "scope": "resource"
           },
           "lumiere.markdown.outline.followCursor": {

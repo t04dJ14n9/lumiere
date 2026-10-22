@@ -10,6 +10,8 @@ The view follows the active tab and reads the note's resolved and unresolved
 links from the vault index, refreshing when indexing settles. Unlinked
 mentions scan the active note's text for other notes' basenames and aliases
 outside any link (same matcher as Backlinks), only when that section expands.
+**Show More Context** (title toggle) surrounds each unlinked match with the
+previous and next source lines.
 
 ## Files
 
@@ -23,7 +25,8 @@ outside any link (same matcher as Backlinks), only when that section expands.
 - Injects the host services `settings`, `hostCommands`, `views`, `activeEditor`
   and `navigation`, plus `vaults`. Listens to `vault/resolved`.
 - Settings: `lumiere.markdown.plugins.outgoingLinks.enabled`;
-  `lumiere.markdown.outgoingLinks.sortOrder` (default `alphabetical`).
+  `lumiere.markdown.outgoingLinks.sortOrder` (default `alphabetical`);
+  `lumiere.markdown.outgoingLinks.extraContext` (default `false`).
 
 ## Limits and differences from Obsidian
 
