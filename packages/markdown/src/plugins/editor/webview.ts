@@ -128,7 +128,6 @@ export const editorWebview: Plugin<EditorConfig> = {
   },
 };
 
-
 /** Capture Mod/Ctrl+A/X so Select All / Cut beat Vim increment/decrement (BH-029). */
 function registerEditKeyOwnership(ctx: Context, view: EditorView): void {
   ctx.effect(() =>

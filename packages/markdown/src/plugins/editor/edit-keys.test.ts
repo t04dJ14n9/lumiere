@@ -1,10 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  editActionFor,
-  keepEditKeys,
-  type EditKey,
-} from "./edit-keys";
+import { editActionFor, keepEditKeys, type EditKey } from "./edit-keys";
 
 const key = (overrides: Partial<EditKey>): EditKey => ({
   key: "a",
@@ -21,8 +17,14 @@ test("Ctrl/Cmd+A is selectAll; Ctrl/Cmd+X is cut", () => {
     { ctrlKey: false, metaKey: true },
   ] as const) {
     const isMac = modifier.metaKey;
-    assert.equal(editActionFor(key({ ...modifier, key: "a" }), isMac), "selectAll");
-    assert.equal(editActionFor(key({ ...modifier, key: "A" }), isMac), "selectAll");
+    assert.equal(
+      editActionFor(key({ ...modifier, key: "a" }), isMac),
+      "selectAll",
+    );
+    assert.equal(
+      editActionFor(key({ ...modifier, key: "A" }), isMac),
+      "selectAll",
+    );
     assert.equal(
       editActionFor(key({ ...modifier, key: "а", keyCode: 65 }), isMac),
       "selectAll",
@@ -37,9 +39,18 @@ test("Ctrl/Cmd+A is selectAll; Ctrl/Cmd+X is cut", () => {
 });
 
 test("unrelated modifiers and keys are not edit shortcuts", () => {
-  assert.equal(editActionFor(key({ ctrlKey: true, shiftKey: true }), false), undefined);
-  assert.equal(editActionFor(key({ ctrlKey: true, altKey: true }), false), undefined);
-  assert.equal(editActionFor(key({ ctrlKey: true, key: "b" }), false), undefined);
+  assert.equal(
+    editActionFor(key({ ctrlKey: true, shiftKey: true }), false),
+    undefined,
+  );
+  assert.equal(
+    editActionFor(key({ ctrlKey: true, altKey: true }), false),
+    undefined,
+  );
+  assert.equal(
+    editActionFor(key({ ctrlKey: true, key: "b" }), false),
+    undefined,
+  );
   assert.equal(editActionFor(key({ metaKey: true }), false), undefined);
   assert.equal(editActionFor(key({ ctrlKey: true }), true), undefined);
 });
@@ -110,10 +121,7 @@ test("keepEditKeys leaves empty-selection Cut for vim decrement", () => {
   const calls: string[] = [];
   const doc = {
     defaultView: { navigator: { platform: "Linux" } },
-    addEventListener(
-      _type: string,
-      listener: (event: KeyboardEvent) => void,
-    ) {
+    addEventListener(_type: string, listener: (event: KeyboardEvent) => void) {
       (doc as { _listener?: typeof listener })._listener = listener;
     },
     removeEventListener() {},
