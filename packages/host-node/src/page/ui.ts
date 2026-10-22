@@ -4,6 +4,7 @@
  * with the page's `--vscode-*` variables, so they follow the embedder's theme.
  */
 import type { OpenMessage } from "../embedding";
+import { PageMenu } from "./context-menu";
 import {
   safeExternalHref,
   type PageFrame,
@@ -33,11 +34,20 @@ const STYLE = `
 .lumiere-page-prompt button{padding:4px 12px;border-radius:4px;border:1px solid var(--vscode-button-border);font:inherit;cursor:pointer;
   background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground)}
 .lumiere-page-prompt button:first-child{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
+.lumiere-page-menu{position:fixed;z-index:1002;min-width:200px;padding:4px;border-radius:6px;user-select:none;
+  background:var(--vscode-menu-background,var(--vscode-editorWidget-background));color:var(--vscode-menu-foreground,var(--vscode-editorWidget-foreground));
+  border:1px solid var(--vscode-menu-border,var(--vscode-widget-border));box-shadow:0 4px 16px var(--vscode-widget-shadow);font:13px var(--vscode-font-family)}
+.lumiere-page-menu [role=menuitem]{padding:4px 24px 4px 10px;border-radius:4px;cursor:default;white-space:nowrap}
+.lumiere-page-menu [role=menuitem].active:not([aria-disabled]){background:var(--vscode-menu-selectionBackground,var(--vscode-list-activeSelectionBackground));
+  color:var(--vscode-menu-selectionForeground,inherit)}
+.lumiere-page-menu [aria-disabled]{opacity:.45}
+.lumiere-page-menu hr{border:0;border-top:1px solid var(--vscode-menu-separatorBackground,var(--vscode-widget-border));margin:4px 2px}
 `;
 
 export function createUi(send: Send): (request: UiRequest) => void {
   installStyle();
   let picker: Picker | undefined;
+  let menu: PageMenu | undefined;
   return (request) => {
     switch (request.type) {
       case "toast":
@@ -58,6 +68,10 @@ export function createUi(send: Send): (request: UiRequest) => void {
           : undefined;
       case "pick":
         picker = new Picker(request, send);
+        return;
+      case "menu":
+        menu?.close();
+        menu = new PageMenu(request, send);
         return;
       default:
         if (request.type === "ask" || request.type === "input") {

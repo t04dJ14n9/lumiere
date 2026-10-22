@@ -13,6 +13,7 @@ import {
 } from "../embedding";
 import { parseHostFrame, type PageFrame } from "../protocol";
 import { applyTheme, followSystemTheme } from "./theme";
+import { reportContextMenus } from "./context-menu";
 import { createUi } from "./ui";
 
 interface VsCodeApi {
@@ -34,6 +35,7 @@ const send = connect(panelId);
 window.acquireVsCodeApi = () => vsCodeApi(send);
 listenToEmbedder(send);
 reportFocus(send);
+reportContextMenus(send);
 
 /**
  * The embedder's messages arrive as `message` events, like the editor's RPC.

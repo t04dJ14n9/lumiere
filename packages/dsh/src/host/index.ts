@@ -7,7 +7,7 @@ import { homedir } from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Logger } from "@workshop/core";
-import { readContributed, startLumiere } from "@workshop/host-node";
+import { readContributed, readMenus, startLumiere } from "@workshop/host-node";
 import type { DshContext, DshLogger } from "./dsh";
 import { registerRoutes } from "./routes";
 
@@ -22,6 +22,7 @@ export async function apply(ctx: DshContext): Promise<void> {
     identity: { appName: "DeepSeek Harness", uriScheme: "dsh" },
     markdown,
     contributed: await readContributed(path.join(bundle, "contributed.json")),
+    menus: await readMenus(path.join(bundle, "menus.json")),
     data: dataFolder(),
     logger: toLogger(ctx.logger?.("lumiere") ?? console),
   });

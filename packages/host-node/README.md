@@ -36,6 +36,13 @@ the embedder's iframe. Its shim stands in for VS Code's webview API: what
 VS Code would carry between webview and extension travels over the page's
 socket to its panel here.
 
+A right-click in a page shows Lumière's `webview/context` menu as VS Code
+does (`context-menu.ts`): the page reports the clicked element's
+`data-vscode-context`, the host keeps the context keys the plugins set
+(`setContext`) and evaluates each item's when-clause (`when.ts`), the page
+draws the items it is sent with Cut, Copy and Paste, and the host runs the
+chosen command. `menus.json`, written at build time, lists the items.
+
 Paths are checked as VS Code's host checks them (`paths.ts`): inside the
 workspace after `..` is resolved, and still inside through symbolic links.
 The workspace may not be the filesystem root.
@@ -44,7 +51,7 @@ The workspace may not be the filesystem root.
 
 | Module | Between | What |
 | --- | --- | --- |
-| `src/protocol.ts` | page ↔ host (socket) | `rpc` frames (the editor's own RPC) and `ui` frames (prompts, toasts, focus) |
+| `src/protocol.ts` | page ↔ host (socket) | `rpc` frames (the editor's own RPC) and `ui` frames (prompts, toasts, focus, the right-click menu) |
 | `src/embedding.ts` | embedder ↔ page (`postMessage`) | the theme, "open this file", "you are shown" |
 | `src/palette.ts` | embedder → page | an embedder's colour roles as the `--vscode-*` variables |
 | `src/views.ts` | embedder ↔ host (HTTP) | tree snapshots, clicks, visibility, events |
@@ -64,6 +71,7 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/routes.ts`, `src/host/page.ts`, `src/host/static.ts`: the routes above.
 - `src/host/trees.ts`, `src/host/view-routes.ts`: the plugins' tree views and their routes.
 - `src/host/settings-routes.ts`: the settings for a settings page, and changes to them.
+- `src/host/context-menu.ts`, `src/host/when.ts`, `src/page/context-menu.ts`: the right-click menu, its when-clauses, and drawing it.
 - `src/host/vault.ts`: the vault index's file system: listing and watching.
 - `src/host/navigation.ts`: following links, creating notes, revealing in an open page.
 - `src/host/settings.ts`: settings from the contributed defaults and a JSON file.

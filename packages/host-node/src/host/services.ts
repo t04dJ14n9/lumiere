@@ -15,6 +15,7 @@ import type { NoteDocuments } from "./documents";
 import { noDiffViews, noGit, noViews } from "./inert";
 import { createNodeNavigation } from "./navigation";
 import type { PanelHub } from "./panels";
+import type { ContextKeys } from "./context-menu";
 import { createNodeSettings } from "./settings";
 import { nodeViews, type TreeHub } from "./trees";
 import {
@@ -86,6 +87,7 @@ export function createNodeHostServices(
  */
 export function createHostCommands(
   log: (message: string) => void,
+  keys: ContextKeys,
 ): HostCommands {
   const commands = new Map<string, (...args: unknown[]) => unknown>();
   return {
@@ -101,6 +103,11 @@ export function createHostCommands(
       const run = commands.get(id);
       if (run) {
         return run(...args);
+      }
+      // The right-click menu reads these, as VS Code's menus do (context-menu.ts).
+      if (id === "setContext" && typeof args[0] === "string") {
+        keys.set(args[0], args[1]);
+        return undefined;
       }
       if (!isVsCodeOnly(id)) {
         log(`No command ${id} outside VS Code`);

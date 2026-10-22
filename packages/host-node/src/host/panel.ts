@@ -37,7 +37,7 @@ export function questionId(): number {
 }
 
 /** A UI request that waits for the page's answer. */
-type Question = Extract<UiRequest, { type: "ask" | "pick" | "input" }>;
+type Question = Extract<UiRequest, { type: "ask" | "pick" | "input" | "menu" }>;
 type Answer = string | number | null;
 
 export class LivePanel {

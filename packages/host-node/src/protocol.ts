@@ -14,8 +14,15 @@ export type UiRequest =
   | { type: "pick"; id: number; placeholder: string; items: PickRow[] }
   | { type: "pickItems"; id: number; items: PickRow[] }
   | { type: "input"; id: number; prompt: string; value: string; error?: string }
+  /** The right-click menu at (x, y): Lumière's items in groups; answered with a row's index. */
+  | { type: "menu"; id: number; x: number; y: number; groups: MenuRow[][] }
   | { type: "open"; path: string; fragment: string }
   | { type: "external"; href: string };
+
+/** One item of the right-click menu, without its command. */
+export interface MenuRow {
+  label: string;
+}
 
 /** One row of a pick list, without the host's value. */
 export interface PickRow {
@@ -30,7 +37,15 @@ export type UiEvent =
   | { type: "blur" }
   /** An `ask` action, a `pick` row index or `input` text; null when dismissed. */
   | { type: "answer"; id: number; value: string | number | null }
-  | { type: "query"; id: number; query: string };
+  | { type: "query"; id: number; query: string }
+  /**
+   * The reader right-clicked at (x, y). `context` is VS Code's webview
+   * context: the `data-vscode-context` of the element and its parents.
+   */
+  | { type: "contextmenu"; x: number; y: number; context: MenuContext };
+
+/** Simple values only; the host checks the keys and sizes. */
+export type MenuContext = Record<string, string | number | boolean>;
 
 export type HostFrame =
   { ch: "rpc"; data: unknown } | { ch: "ui"; data: UiRequest };
@@ -127,9 +142,42 @@ function parseUiEvent(value: unknown): UiEvent | undefined {
       return isId(value.id) && isText(value.query)
         ? { type: "query", id: value.id, query: value.query }
         : undefined;
+    case "contextmenu":
+      return parseContextMenu(value);
     default:
       return undefined;
   }
+}
+
+const MAX_CONTEXT_KEYS = 32;
+
+function parseContextMenu(value: Record<string, unknown>): UiEvent | undefined {
+  const { x, y, context } = value;
+  if (
+    typeof x !== "number" ||
+    typeof y !== "number" ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !isRecord(context)
+  ) {
+    return undefined;
+  }
+  const entries = Object.entries(context);
+  if (entries.length > MAX_CONTEXT_KEYS) {
+    return undefined;
+  }
+  const kept: MenuContext = {};
+  for (const [key, item] of entries) {
+    if (
+      key.length <= 200 &&
+      (typeof item === "boolean" ||
+        (typeof item === "number" && Number.isFinite(item)) ||
+        (typeof item === "string" && item.length <= 500))
+    ) {
+      kept[key] = item;
+    }
+  }
+  return { type: "contextmenu", x, y, context: kept };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

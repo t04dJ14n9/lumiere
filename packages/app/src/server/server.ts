@@ -15,6 +15,7 @@ import {
   BASE,
   createEditorRoutes,
   readContributed,
+  readMenus,
   serveStatic,
   startLumiere,
 } from "@workshop/host-node";
@@ -51,6 +52,7 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
     contributed: await readContributed(
       path.join(setup.assets, "contributed.json"),
     ),
+    menus: await readMenus(path.join(setup.assets, "menus.json")),
     data: setup.data,
     logger: setup.logger,
   });

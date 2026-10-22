@@ -8,10 +8,16 @@ import * as path from "node:path";
 import { createRoot, type Logger, type RootContext } from "@workshop/core";
 import {
   bootstrap,
+  MARKDOWN_EDITOR,
   pluginRank,
   type ContributedSetting,
   type HostSettings,
 } from "@workshop/markdown/portable";
+import {
+  ContextKeys,
+  registerContextMenus,
+  type MenuContribution,
+} from "./context-menu";
 import { NoteDocuments } from "./documents";
 import { PanelHub } from "./panels";
 import {
@@ -28,6 +34,8 @@ export interface StartOptions {
   readonly markdown: string;
   /** Lumière's settings and defaults, from the extension's `contributes`. */
   readonly contributed: readonly ContributedSetting[];
+  /** Lumière's right-click menu items (`menus.json`, written at build time). */
+  readonly menus?: readonly MenuContribution[];
   /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
   readonly logger: Logger;
@@ -52,7 +60,8 @@ export async function startLumiere(
   const panels = new PanelHub(documents);
   const markdownDist = options.markdown;
   const log = (message: string) => options.logger.warn(message);
-  const commands = createHostCommands(log);
+  const keys = new ContextKeys();
+  const commands = createHostCommands(log, keys);
   const trees = new TreeHub(commands);
   const host = createNodeHostServices({
     commands,
@@ -79,6 +88,14 @@ export async function startLumiere(
     logger: options.logger,
   });
   await bootstrap(host, vault, root);
+  const stopMenus = registerContextMenus({
+    panels,
+    contributions: options.menus ?? [],
+    keys,
+    commands,
+    viewType: MARKDOWN_EDITOR.viewType,
+    log,
+  });
   return {
     panels,
     trees,
@@ -87,6 +104,7 @@ export async function startLumiere(
       roots.add(item.replace(/\/+$/, ""));
     },
     async stop() {
+      stopMenus();
       panels.dispose();
       await root.dispose();
       await documents.dispose();
@@ -100,6 +118,24 @@ export async function readContributed(
 ): Promise<readonly ContributedSetting[]> {
   try {
     return JSON.parse(await readFile(file, "utf8")) as ContributedSetting[];
+  } catch {
+    return [];
+  }
+}
+
+/** Right-click menu items from a `menus.json` written at build time; none if missing. */
+export async function readMenus(
+  file: string,
+): Promise<readonly MenuContribution[]> {
+  try {
+    const value: unknown = JSON.parse(await readFile(file, "utf8"));
+    return Array.isArray(value)
+      ? value.filter(
+          (item): item is MenuContribution =>
+            typeof item?.command === "string" &&
+            typeof item?.title === "string",
+        )
+      : [];
   } catch {
     return [];
   }

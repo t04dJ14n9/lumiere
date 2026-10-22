@@ -6,6 +6,7 @@
  */
 export {
   readContributed,
+  readMenus,
   startLumiere,
   type LumiereHost,
   type StartOptions,
@@ -18,5 +19,6 @@ export {
   type EditorRoutes,
 } from "./routes";
 export type { HostIdentity } from "./services";
+export type { MenuContribution } from "./context-menu";
 export { serveFile, serveStatic } from "./static";
 export { listVault, isInside } from "./vault";
