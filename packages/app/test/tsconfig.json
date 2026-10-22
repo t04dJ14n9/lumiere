@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": [
+    "**/*.ts",
+    "../src/server/**/*.ts",
+    "../src/shell/tabs.ts",
+    "../src/shell/api.ts",
+    "../src/shell/tree.ts"
+  ]
+}

@@ -63,6 +63,28 @@ importers:
 
   packages/agents: {}
 
+  packages/app:
+    dependencies:
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../host-node
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: 19.3.1
+        version: 19.3.1(react@19.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+
   packages/core:
     dependencies:
       cordis:

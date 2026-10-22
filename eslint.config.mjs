@@ -171,8 +171,11 @@ export default tseslint.config(
     rules: size,
   },
   {
-    // The PDF viewer's React UI.
-    files: ["packages/pdf/src/webview/**/*.{ts,tsx}"],
+    // The PDF viewer's React UI and the app's shell.
+    files: [
+      "packages/pdf/src/webview/**/*.{ts,tsx}",
+      "packages/app/src/shell/**/*.{ts,tsx}",
+    ],
     plugins: { "react-hooks": reactHooks },
     rules: {
       "react-hooks/rules-of-hooks": "error",
@@ -210,6 +213,8 @@ export default tseslint.config(
           "./packages/host-node/src/page/tsconfig.json",
           "./packages/dsh/src/host/tsconfig.json",
           "./packages/dsh/src/client/tsconfig.json",
+          "./packages/app/src/server/tsconfig.json",
+          "./packages/app/src/shell/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },
