@@ -40,6 +40,24 @@ test("Enter continues a list and an empty item leaves it", async ({ page }) => {
     .toBe("- one\n- two\nafter");
 });
 
+test("find field appends while the query has matches (BH-010)", async ({
+  page,
+}) => {
+  // Repro: match path used to select-all the find field after each key
+  // (CodeMirror findNext → selectSearchInput), so "p" then "r" became "r".
+  await open(page, "price proper apple\n");
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("ControlOrMeta+f");
+  const find = page.getByRole("textbox", { name: "Find..." });
+  await expect(find).toBeFocused();
+  await page.keyboard.type("p");
+  await expect(find).toHaveValue("p");
+  await expect(page.locator(".mw-find-count")).toHaveText("1 / 5");
+  await page.keyboard.type("r");
+  await expect(find).toHaveValue("pr");
+  await expect(page.locator(".mw-find-count")).toHaveText("1 / 2");
+});
+
 test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
   page,
 }) => {
