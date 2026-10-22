@@ -10,7 +10,8 @@ import {
   rangesIntersect,
   VIEWPORT_BLOCK_MARGIN,
 } from "./deferred-block";
-import { documentTree } from "./document-tree";
+import { documentTree, replaceDocumentTree } from "./document-tree";
+import { parseMarkdown } from "../../markdown/dialect";
 import { blockRenderers } from "./registry";
 import type { RenderBlock } from "./api";
 
@@ -43,7 +44,7 @@ test("below-fold blocks mount DeferredBlockWidget until the hot range covers the
     "\n\nend";
   assert.ok(doc.length > VIEWPORT_BLOCK_MARGIN * 2);
   const decorations = blockDecorations(() => {});
-  const state = EditorState.create({
+  let state = EditorState.create({
     doc,
     extensions: [
       documentTree,
@@ -59,6 +60,13 @@ test("below-fold blocks mount DeferredBlockWidget until the hot range covers the
       }),
     ],
   });
+  // First-paint may only parse the opening band; complete the tree so this
+  // regression still pins live vs deferred across the whole note.
+  if (state.field(documentTree).length < state.doc.length) {
+    state = state.update({
+      effects: replaceDocumentTree.of(parseMarkdown(state.doc)),
+    }).state;
+  }
   let live = 0;
   let deferred = 0;
   state.field(decorations).between(0, doc.length, (_from, _to, value) => {

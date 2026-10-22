@@ -19,7 +19,7 @@ import {
   refreshRender,
 } from "./blocks";
 import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
-import { documentTree } from "./document-tree";
+import { documentTree, documentTreeCompleter } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
@@ -139,6 +139,7 @@ function registerModeCommand(ctx: Context, service: LivePreview): void {
 function engineExtensions(ctx: Context) {
   return [
     documentTree,
+    documentTreeCompleter,
     markdownBlockWidthTracker,
     renderRevision,
     pointerSelectionTracking,

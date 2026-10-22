@@ -4,7 +4,7 @@ import { Decoration, WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
-import { documentTree } from "./document-tree";
+import { documentTree, replaceDocumentTree } from "./document-tree";
 import type { BlockRenderer, RenderBlock } from "./api";
 import { rendererMatcher, visitRendererNodes } from "./block-discovery";
 import {
@@ -33,7 +33,8 @@ export const blockIndex = StateField.define<IndexedBlock[]>({
   create: (state) => index(state),
   update(value, tr) {
     if (
-      tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers)
+      tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers) ||
+      tr.effects.some((effect) => effect.is(replaceDocumentTree))
     ) {
       return index(tr.state);
     }

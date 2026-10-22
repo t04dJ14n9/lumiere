@@ -83,23 +83,18 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
 };
 
 /**
- * Features that affect first meaningful paint / caret readiness. Everything
- * else (math, mermaid, git chrome, video cards, bridges, …) loads after the
- * first animation frame so large notes become interactive sooner.
+ * Visible structure for the first screen. Editing helpers (autoPair,
+ * formatting, folding, footnotes, indentGuides, spellcheck) and heavier
+ * chrome (math, mermaid, git, bridges, …) load after the first animation
+ * frame so large notes become interactive sooner.
  */
 const PAINT_FEATURE_IDS = new Set([
-  "autoPair",
   "callouts",
   "codeBlocks",
-  "folding",
-  "footnotes",
-  "formatting",
-  "indentGuides",
   "lineNumbers",
   "links",
   "properties",
   "smartLists",
-  "spellcheck",
   "tables",
   "tags",
   "tasks",
