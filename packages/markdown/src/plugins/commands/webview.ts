@@ -7,6 +7,7 @@ import { createCommands } from "./registry";
 import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
 import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
 import { keepQuickOpenKey } from "./quick-open-keys";
+import { keepCloseKey } from "./close-keys";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
@@ -25,6 +26,7 @@ export const commandsWebview: Plugin = {
     registerHistoryKeys(ctx, host);
     registerToggleTextEditorKey(ctx, host);
     registerQuickOpenKey(ctx, host);
+    registerCloseKey(ctx, host);
   },
 };
 
@@ -140,4 +142,21 @@ function registerQuickOpenKey(
       () => moveCompletionSelection(false)(view),
     );
   });
+}
+
+function registerCloseKey(
+  ctx: Context,
+  host: (action: Action) => Promise<boolean>,
+): void {
+  // Capture-phase Mod/Ctrl+W so Vim cannot start <C-w> window commands (BH-031)
+  // and the webview shell cannot race the host keybinding. Leaves native fields alone.
+  ctx.effect(() =>
+    keepCloseKey(
+      ctx.editor.view.dom.ownerDocument,
+      () => {
+        trigger(ctx, host, "close");
+      },
+      leavesNativeHistory,
+    ),
+  );
 }
