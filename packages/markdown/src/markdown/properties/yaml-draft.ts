@@ -1,4 +1,5 @@
-import { isAlias, isNode, type Document } from "yaml";
+import type { Document } from "yaml";
+import { loadYaml } from "./load-yaml";
 import {
   propertyYamlInput,
   settablePropertyNode,
@@ -31,9 +32,9 @@ function rawPropertyYamlDraft(
   value: unknown,
   document?: Document,
 ): string | undefined {
-  const isReference = isAlias(node);
+  const isReference = loadYaml().isAlias(node);
   const valueNode = isReference && document ? node.resolve(document) : node;
-  if (!isNode(valueNode) || !valueNode.range) {
+  if (!loadYaml().isNode(valueNode) || !valueNode.range) {
     return undefined;
   }
   // A top-level alias edits a copy of its target, without copying its anchor.

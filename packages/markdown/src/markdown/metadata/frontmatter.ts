@@ -1,21 +1,31 @@
-import { isMap, isSeq, isScalar, parseDocument } from "yaml";
-import { headerParts } from "../properties/frontmatter";
+import type { Document } from "yaml";
+import { headerParts } from "../properties/header-parts";
+import { loadYaml } from "../properties/load-yaml";
 import { wikiTarget } from "../html/helpers";
 import type { NoteMetadata, Position } from "./types";
-/** Walk YAML values, never comments or keys; ranges retain original source offsets. */
+
+type FrontmatterYaml = {
+  body: string;
+  document: Document;
+  offset: number;
+};
+
+/**
+ * Walk YAML values, never comments or keys; ranges retain original source
+ * offsets. Pass `parsed` from `frontmatter().yaml` to skip a second
+ * `parseDocument` on the cold metadata path.
+ */
 export function frontmatterLinks(
   source: string,
   position: (from: number, to: number) => Position,
+  parsed?: FrontmatterYaml,
 ): NoteMetadata["frontmatterLinks"] {
-  const header = headerParts(source);
-  if (!header) {
+  const yaml = parsed ?? parseFrontmatterYaml(source);
+  if (!yaml) {
     return [];
   }
-  const doc = parseDocument(header.body, { uniqueKeys: true });
-  if (doc.errors.length) {
-    return [];
-  }
-  const offset = header.offset;
+  const { isMap, isSeq, isScalar } = loadYaml();
+  const offset = yaml.offset;
   const links: NoteMetadata["frontmatterLinks"] = [];
   function visit(node: unknown, key: string, depth: number): void {
     if (depth > 64) {
@@ -51,6 +61,19 @@ export function frontmatterLinks(
       }
     }
   }
-  visit(doc.contents, "", 0);
+  visit(yaml.document.contents, "", 0);
   return links;
+}
+
+function parseFrontmatterYaml(source: string): FrontmatterYaml | undefined {
+  const header = headerParts(source);
+  if (!header) {
+    return undefined;
+  }
+  const { parseDocument } = loadYaml();
+  const document = parseDocument(header.body, { uniqueKeys: true });
+  if (document.errors.length) {
+    return undefined;
+  }
+  return { body: header.body, document, offset: header.offset };
 }

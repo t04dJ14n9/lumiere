@@ -47,6 +47,15 @@ const builds = [
     format: "cjs",
     target: "node20",
   },
+  {
+    ...shared,
+    // Separate host chunk: loadYaml() requires this only after a `---` fence.
+    entryPoints: ["src/markdown/properties/yaml-runtime.ts"],
+    outfile: "dist/yaml-runtime.cjs",
+    platform: "node",
+    format: "cjs",
+    target: "node20",
+  },
 ];
 const inputs = new Set();
 for (const options of builds) {
