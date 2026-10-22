@@ -18,6 +18,7 @@ import type { HighlightColour } from "../../markdown/dialect/highlight";
 import { fenceLines, lineEdit, linkEdit, ruleEdit, tagEdit } from "./lines";
 import { addCursor } from "./cursors";
 import { linkPasteHandler } from "./paste-link";
+import { keepFormatKeys } from "./format-keys";
 
 export const formattingWebview: Plugin = {
   name: "formatting",
@@ -31,6 +32,7 @@ export const formattingWebview: Plugin = {
     const commands = formattingCommands();
     registerFormattingCommands(ctx, commands);
     registerFormattingKeys(ctx, commands);
+    registerFormatKeyOwnership(ctx, commands);
     ctx.effect(() => ctx.editor.extend(linkPasteHandler));
     ctx.on("suggest/trigger", highlightColourSuggestion);
   },
@@ -124,6 +126,27 @@ function addEditingCommands(commands: Map<string, Command>): void {
       userEvent: "input",
     });
     return true;
+  });
+}
+
+/** Capture Mod/Ctrl+B/I so Vim cannot steal bold/italic (BH-024). */
+function registerFormatKeyOwnership(
+  ctx: Context,
+  commands: Map<string, Command>,
+): void {
+  const bold = commands.get("editor:toggle-bold")!;
+  const italics = commands.get("editor:toggle-italics")!;
+  ctx.effect(() => {
+    const view = ctx.editor.view;
+    // Unit fixtures use a bare EventTarget as view.dom (no ownerDocument).
+    const doc = view.dom.ownerDocument;
+    if (!doc) {
+      return () => {};
+    }
+    return keepFormatKeys(doc, (action) => {
+      const active = ctx.bail("editor/activeView") ?? ctx.editor.view;
+      (action === "bold" ? bold : italics)(active);
+    });
   });
 }
 

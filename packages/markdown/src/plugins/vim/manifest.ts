@@ -51,6 +51,13 @@ export default defineManifest({
       mac: `ctrl+${key}`,
       // Cursor's Edit key takes precedence over the host-shortcut consumer.
       ...(key === "k" ? { when: "!lumiere.markdown.isCursorHost" } : {}),
+      // Formatting owns Ctrl+B/I (bold/italic). Host consume would noop the
+      // chord before the webview, so Vim page-back/jumplist never yields to
+      // toggleBold/toggleItalics (BH-024). Physical PageUp still keyToKeys to
+      // <C-b> inside vim-core without this host binding.
+      ...(key === "b" || key === "i"
+        ? { when: "!lumiere.markdown.plugin.formatting" }
+        : {}),
     })),
   },
 } as const);

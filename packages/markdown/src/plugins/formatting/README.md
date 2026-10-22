@@ -39,6 +39,8 @@ Read-only views reject edits.
 - `manifest.ts`: command and keybinding contributions.
 - `api.ts`: injected formatting service contract.
 - `webview.ts`: service, command catalogue and keymap registrations.
+- `format-keys.ts`: capture-phase Ctrl/Cmd+B/I so Vim cannot page-back / jumplist-steal bold and italic; Vim host consume yields while formatting is on (BH-024).
+- `format-keys.test.ts`: Mod+B/I mapping and native-field skip.
 - `inline.ts`: inline clearing, caret/word wrapping and selection toggling.
 - `spans.ts`: the formatted spans around a selection.
 - `highlight-colour.ts`: the coloured highlight commands.
