@@ -1,12 +1,12 @@
 /**
- * WorkVault-like sheet (nested maps + tall Sources + trailing map).
+ * Large-fixture-like sheet (nested maps + tall Sources + trailing map).
  * Host GUI 2026-10-20: Escape while editing a property key scrolled from the
  * sheet top to frontmatter end (sources / decision_confirmation tail).
  */
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function workVaultLike(sourceCount: number): string {
+function largeFixtureLike(sourceCount: number): string {
   const generated = `generated:\n  by: claude-code/claude-opus-5-5\n  at: '2026-10-19T23:30:00+08:00'`;
   const entries = Array.from({ length: sourceCount }, (_, index) => {
     const title =
@@ -28,8 +28,8 @@ function workVaultLike(sourceCount: number): string {
   ).join("\n\n");
   return `---
 type: Task
-title: AI 活动平台上云
-description: 持续维护的单文件 ExecPlan：当前状态表与 16 个子项的现状和下一步、进展日志、有效决策索引与 137 条决策原文，以及背景、验收、恢复边界和依赖。
+title: Large cold-open fixture
+description: Synthetic tall frontmatter fixture for properties layout tests.
 tags:
 - ai-transformation
 - architecture
@@ -55,10 +55,10 @@ async function constrain(page: Page, width = 720) {
   await page.evaluate(() => window.dispatchEvent(new Event("resize")));
 }
 
-test("WorkVault-like sheet: decision_confirmation must not overlap sources", async ({
+test("large-fixture-like sheet: decision_confirmation must not overlap sources", async ({
   page,
 }) => {
-  await open(page, workVaultLike(108));
+  await open(page, largeFixtureLike(108));
   await constrain(page, 720);
   await expect(page.locator(".hybrid-properties")).toBeVisible();
   await expect(
@@ -119,7 +119,7 @@ test("WorkVault-like sheet: decision_confirmation must not overlap sources", asy
 test("Escape on property key does not jump scroll into the sources/decision overlap", async ({
   page,
 }) => {
-  await open(page, workVaultLike(108));
+  await open(page, largeFixtureLike(108));
   await constrain(page, 720);
   await expect(page.locator(".hybrid-properties")).toBeVisible();
 
@@ -160,10 +160,10 @@ test("Escape on property key does not jump scroll into the sources/decision over
   expect(after.scrollTop, JSON.stringify(after)).toBeLessThan(200);
 });
 
-test("sheet mapped height tracks painted with wrapping WorkVault source titles", async ({
+test("sheet mapped height tracks painted with wrapping large-fixture source titles", async ({
   page,
 }) => {
-  await open(page, workVaultLike(108));
+  await open(page, largeFixtureLike(108));
   await constrain(page, 480); // narrow → more wrap
   await expect(page.locator(".hybrid-properties")).toBeVisible();
   const result = await page.evaluate(async () => {

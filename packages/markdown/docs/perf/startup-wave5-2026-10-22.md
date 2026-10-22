@@ -1,7 +1,7 @@
 # Startup / first-open wave 5 (2026-10-22)
 
 Stacked on wave 4 (`perf/startup-first-open-4` / PR #279). Target: cut cold
-open of large notes (WorkVault `AI 活动平台上云.md` ~663 KB) well under the
+open of large notes (the large cold-open fixture) well under the
 measured ~3.7 s Host GUI TTI toward Obsidian-feel / &lt;1.5 s first interactive
 paint. REA Obsidian recovery remains out of scope.
 
@@ -28,10 +28,10 @@ paint. REA Obsidian recovery remains out of scope.
 
 | Work | Before (wave 4) | After (wave 5) |
 | --- | ---: | ---: |
-| `parseMarkdown` full (AI 活动平台上云.md) | ~95–109 ms | (idle, after paint) |
+| `parseMarkdown` full (the large cold-open fixture) | ~95–109 ms | (idle, after paint) |
 | `parseForFirstPaint` / `documentTree` create | = full | **~0.6–2 ms** |
 
-Host GUI `mw:first-paint` for the WorkVault note remains the judge; do not
+Host GUI `mw:first-paint` for the large fixture remains the judge; do not
 hot-unpack into the shared integ extension while another hunt owns it. Prefer
 the dedicated `test/vscode/perf.spec.ts` profile (`/tmp/markdown-workshop-e2e-*`)
 or an intentional integ unpack + restore.

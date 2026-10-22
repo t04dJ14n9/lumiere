@@ -21,12 +21,12 @@ Measured production build (`node scripts/build.mjs --production`) on this box.
    Activation and no-frontmatter opens skip evaluating the YAML package.
 3. **Single `parseDocument` on metadata** — `frontmatterLinks` accepts the
    document from `frontmatter().yaml`, so vault/editor metadata no longer
-   parses the same fence twice. On WorkVault `AI 活动平台上云.md` (~19.5 KB /
+   parses the same fence twice. On the large cold-open fixture (~19.5 KB /
    393-line frontmatter): ~2.8 ms single vs ~6.6 ms double on this box.
 
 ## Large-note note
 
-That WorkVault note **has** a large frontmatter fence, so YAML still loads on
+That large fixture **has** a large frontmatter fence, so YAML still loads on
 first open; the win there is the deferred host parse of `extension.js` plus
 the avoided second `parseDocument`. Notes without a fence skip YAML entirely.
 

@@ -39,7 +39,7 @@ to a later pass when notes without frontmatter can skip it.
 `scripts/profile-open.ts` still uses monolithic `fake-host.js` and does not
 model deferred workbench/panel hosts or paint-phase feature splits. Prefer
 native `test/vscode/perf.spec.ts` (`mw:main|ready|features|plugins|first-paint`)
-on a large note (e.g. WorkVault `AI 活动平台上云.md`) over SSH for end-to-end
+on a large note (the large cold-open fixture) over SSH for end-to-end
 TTI. Owner: run that before/after once a VS Code harness is available.
 
 ## Correctness

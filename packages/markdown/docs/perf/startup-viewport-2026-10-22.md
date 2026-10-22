@@ -28,7 +28,7 @@ paint (same family of reserves as remount-height work).
 
 ## What you should feel
 
-On a ~663 KB note (e.g. WorkVault `AI 活动平台上云.md`), first paint should
+On the large cold-open fixture, first paint should
 build real widgets only for the opening screen (+ margin). Scrolling near a
 deferred region swaps shells for live widgets; briefly you may see an empty
 reserved box before Mermaid/math/embed HTML finishes (same as today’s async
