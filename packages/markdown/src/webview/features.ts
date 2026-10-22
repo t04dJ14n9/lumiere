@@ -140,11 +140,24 @@ const PAINT_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
 
 export type FeaturePhase = "chrome" | "paint" | "all";
 
-/** Kick off paint-phase chunk fetches while core plugins settle. */
-export function preloadPaintFeatures(): Promise<void> {
+/** Chrome chunks only (Properties / Sources / tags / lineNumbers). */
+export function preloadChromeFeatures(): Promise<void> {
   return Promise.all(
-    [...PAINT_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),
+    [...CHROME_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),
   ).then(() => undefined);
+}
+
+/**
+ * First-screen structure beyond chrome (tables, callouts, …). Does not
+ * include chrome ids so a pending tables download cannot gate Properties.
+ */
+export function preloadPaintFeatures(): Promise<void> {
+  const structure = [...PAINT_FEATURE_IDS].filter(
+    (id) => !CHROME_FEATURE_IDS.has(id),
+  );
+  return Promise.all(structure.map((id) => loadWebviewPlugin(id))).then(
+    () => undefined,
+  );
 }
 
 /**
@@ -152,11 +165,11 @@ export function preloadPaintFeatures(): Promise<void> {
  * with `defaults`, those on by default), each with its parsed configuration.
  * Feature modules load in parallel the first time they are wanted.
  *
- * `phase: "chrome"` starts Properties/Sources/tags/lineNumbers first.
- * `phase: "paint"` adds the rest of the first-screen structure (and does
- * not stop deferred ones that are not loaded yet). `phase: "all"` (default)
- * applies the full wanted set — used after first paint and on settings
- * changes.
+ * `phase: "chrome"` starts Properties/Sources/tags/lineNumbers first and
+ * must not wait on tables/callouts chunk download. `phase: "paint"` adds the
+ * rest of the first-screen structure (and does not stop deferred ones that
+ * are not loaded yet). `phase: "all"` (default) applies the full wanted set
+ * — used after first paint and on settings changes.
  */
 export function featureController(root: BaseContext) {
   const switches = new PluginSwitch(root);

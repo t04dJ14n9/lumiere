@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { webviewHTML } from "../../../src/plugins/editor/webview-html";
+import {
+  BOOT_TEXT_CHARS,
+  bootMarkup,
+  webviewHTML,
+} from "../../../src/plugins/editor/webview-html";
 import type { PanelShell } from "../../../src/shared/host";
 
 function shell(trusted: boolean): PanelShell {
@@ -48,4 +52,20 @@ test("each page gets a fresh script nonce", () => {
     policy(true).get("script-src"),
     policy(true).get("script-src"),
   );
+});
+
+test("boot markup escapes HTML and stays within the opening band", () => {
+  const html = bootMarkup(
+    `# Hi <script>alert(1)</script>\n` + "x".repeat(BOOT_TEXT_CHARS),
+  );
+  assert.match(html, /^<pre id="mw-boot">/);
+  assert.match(html, /# Hi &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.ok(!html.includes("<script>alert"));
+  assert.ok(html.length < BOOT_TEXT_CHARS * 2);
+});
+
+test("webview HTML embeds boot text when provided", () => {
+  const html = webviewHTML(shell(true), { bootText: "Hello & <world>" });
+  assert.match(html, /id="mw-boot"/);
+  assert.match(html, /Hello &amp; &lt;world&gt;/);
 });

@@ -23,7 +23,6 @@ const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   linksHost,
   tasksHost,
   propertiesHost,
-  sourcesPropertyHost,
   tagsHost,
   cursorBridgePanelHost,
 ];
@@ -39,6 +38,8 @@ const DEFERRED_PANEL_HOSTS: readonly PanelHost[] = [
   suggestHost,
   searchHost,
   onlineVideosHost,
+  // Open-resource RPC only; first paint of Sources uses webview markup.
+  sourcesPropertyHost,
 ];
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */

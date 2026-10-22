@@ -135,6 +135,9 @@ function createEditorView(
   },
 ): EditorView {
   const { settings, pluginExtensions, modeClass } = compartments;
+  // Replace the HTML boot skeleton in the same turn CM6 mounts so glyphs
+  // never drop out between module ready and the editor view.
+  config.parent.querySelector("#mw-boot")?.remove();
   return new EditorView({
     parent: config.parent,
     state: EditorState.create({

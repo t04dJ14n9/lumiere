@@ -1,7 +1,7 @@
 import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
-import { preloadPaintFeatures } from "./features";
+import { preloadChromeFeatures, preloadPaintFeatures } from "./features";
 import { registerEditorSettings } from "./editor-settings";
 import { createRoot, type RootContext } from "@workshop/core";
 import type { Infer } from "@workshop/core";
@@ -56,7 +56,10 @@ export async function bootstrap(
   }
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
-  // Overlap paint-chunk download with core settle (Properties is ~68 KB).
+  // Chrome (Properties) must not wait on tables/callouts download. Start both
+  // preloads as soon as we know the Obsidian preset, overlapping core settle.
+  const chromeChunks =
+    init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
   const paintChunks =
     init.preset === "obsidian" ? preloadPaintFeatures() : Promise.resolve();
   await root.settled();
@@ -68,6 +71,7 @@ export async function bootstrap(
   scheduleFeaturePhases({
     root,
     configure,
+    chromeChunks,
     paintChunks,
     features: init.features,
     defaults: init.preset === "obsidian",
@@ -76,22 +80,27 @@ export async function bootstrap(
   return root;
 }
 
-/** Glyphs first, then Properties chrome, paint structure, then the rest. */
+/**
+ * Glyphs first (rAF), then Properties as soon as chrome chunks are ready —
+ * without waiting on tables. Paint structure and the deferred set follow.
+ */
 function scheduleFeaturePhases(options: {
   root: RootContext;
   configure: Configure;
+  chromeChunks: Promise<void>;
   paintChunks: Promise<void>;
   features: FeatureSettings;
   defaults: boolean;
 }): void {
-  const { root, configure, paintChunks, features, defaults } = options;
+  const { root, configure, chromeChunks, paintChunks, features, defaults } =
+    options;
   requestAnimationFrame(() => {
     performance.mark("mw:first-paint");
-    void paintChunks
+    void chromeChunks
       .then(() => configure(features, defaults, "chrome"))
       .then(() => {
         performance.mark("mw:properties");
-        return configure(features, defaults, "paint");
+        return paintChunks.then(() => configure(features, defaults, "paint"));
       })
       .then(() => {
         performance.mark("mw:features");
