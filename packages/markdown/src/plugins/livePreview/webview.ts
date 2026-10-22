@@ -15,10 +15,10 @@ import { blockRenderers, inlineRenderers } from "./registry";
 import {
   blockIndex,
   visiblePosition,
-  blockDecorations,
   renderRevision,
   refreshRender,
 } from "./blocks";
+import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
 import { documentTree } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
@@ -147,6 +147,7 @@ function engineExtensions(ctx: Context) {
     ruleClick,
     hybridInline,
     blockIndex,
+    ...blockViewportSupport,
     blockDecorations((error) =>
       ctx.logger.error("Block renderer failed", error),
     ),

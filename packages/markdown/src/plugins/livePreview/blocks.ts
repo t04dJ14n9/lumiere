@@ -1,10 +1,7 @@
 import { StateEffect, StateField, type EditorState } from "@codemirror/state";
-import {
-  isRevealFrozen,
-  revealFreezeToggled,
-} from "../../webview/ui/pointer-selection";
 import type { Range } from "@codemirror/state";
-import { Decoration, EditorView, WidgetType } from "@codemirror/view";
+import { Decoration, WidgetType } from "@codemirror/view";
+import type { EditorView } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
 import { documentTree } from "./document-tree";
@@ -12,11 +9,10 @@ import type { BlockRenderer, RenderBlock } from "./api";
 import { rendererMatcher, visitRendererNodes } from "./block-discovery";
 import {
   changedRegion,
-  changesMetadata,
   renderInvalidations,
   type Region,
 } from "./invalidation";
-type IndexedBlock = RenderBlock & { renderer: BlockRenderer };
+export type IndexedBlock = RenderBlock & { renderer: BlockRenderer };
 export const refreshRender = StateEffect.define<null>();
 export const renderRevision = StateField.define<number>({
   create: () => 0,
@@ -229,7 +225,7 @@ export function editingDecorations(
   return lines;
 }
 
-function blockDecoration(
+export function blockDecoration(
   state: Parameters<typeof revealed>[0],
   block: RenderBlock & { renderer: BlockRenderer },
   report: (error: unknown) => void,
@@ -259,43 +255,6 @@ function blockDecoration(
 }
 
 /**
- * Decorations for every block. A transaction that changes metadata (an
- * effect, a reconfiguration, the renderers) redraws every block. Otherwise
- * only blocks that are new to the index (found again, or shifted by an
- * edit above them) or that the selection entered or left are decorated
- * again (`renderInvalidations`); the rest keep their decorations. Widgets
- * whose source did not change keep their DOM either way (`GuardedWidget.eq`).
- */
-export function blockDecorations(report: (error: unknown) => void) {
-  const build = (state: Parameters<typeof revealed>[0]): DecorationSet =>
-    Decoration.set(
-      state
-        .field(blockIndex)
-        .flatMap((block) => blockDecoration(state, block, report)),
-      true,
-    );
-  return StateField.define<DecorationSet>({
-    create: build,
-    update(value, tr) {
-      if (changesMetadata(tr) || !tr.startState.field(blockIndex, false)) {
-        return build(tr.state);
-      }
-      // Pointer / Vim-visual freezes reveal: keep widgets so tall blocks do not reflow.
-      const freeze = revealFreezeToggled(tr.startState, tr.state);
-      if (
-        !tr.docChanged &&
-        !freeze &&
-        (isRevealFrozen(tr.state) || !tr.selection)
-      ) {
-        return value;
-      }
-      return redecorate(value, tr, report) ?? build(tr.state);
-    },
-    provide: (field) => EditorView.decorations.from(field),
-  });
-}
-
-/**
  * Decorate again only the spans that may have changed: the lines
  * `renderInvalidations` names, and after a text change everything from the
  * changed region on (blocks there are new objects, shifted ones included,
@@ -305,10 +264,16 @@ export function blockDecorations(report: (error: unknown) => void) {
  * it). `undefined` (decorate everything) when most blocks are dirty or the
  * index was rebuilt whole.
  */
-function redecorate(
+export function redecorate(
   value: DecorationSet,
   tr: Parameters<typeof renderInvalidations>[0],
   report: (error: unknown) => void,
+  decorate: (
+    state: Parameters<typeof revealed>[0],
+    block: IndexedBlock,
+    report: (error: unknown) => void,
+  ) => Range<Decoration>[] = (state, block, reportError) =>
+    blockDecoration(state, block, reportError),
 ): DecorationSet | undefined {
   const blocks = tr.state.field(blockIndex);
   const doc = tr.state.doc;
@@ -338,7 +303,7 @@ function redecorate(
       filterFrom: span.from,
       filterTo: span.to,
       filter: (from, to) => from < span.from || to > span.to,
-      add: dirty.flatMap((block) => blockDecoration(tr.state, block, report)),
+      add: dirty.flatMap((block) => decorate(tr.state, block, report)),
       sort: true,
     });
   }
