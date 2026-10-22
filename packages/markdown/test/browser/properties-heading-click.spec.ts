@@ -7,7 +7,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-const HEADING = "# AI 活动平台上云";
+const HEADING = "# Large cold-open fixture";
 
 function body(): string {
   return Array.from(
@@ -81,13 +81,13 @@ test("clicking a heading below a visible Properties block selects that heading",
     const frame = () => scroller.getBoundingClientRect();
     const heading = () =>
       [...document.querySelectorAll(".cm-line")].find((line) =>
-        line.textContent?.includes("活动平台"),
+        line.textContent?.includes("Large cold-open"),
       );
     const glyph = (line: Element) => {
       const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
       while (walker.nextNode()) {
         const text = walker.currentNode as Text;
-        if (text.data.includes("活")) {
+        if (text.data.includes("Large")) {
           return text;
         }
       }
@@ -109,7 +109,10 @@ test("clicking a heading below a visible Properties block selects that heading",
       throw new Error("heading missing after scroll");
     }
     const node = glyph(line);
-    const at = node.data.indexOf("活");
+    const at = node.data.indexOf("Large");
+    if (at < 0) {
+      throw new Error(`heading glyph missing: ${node.data}`);
+    }
     const range = document.createRange();
     range.setStart(node, at);
     range.setEnd(node, at + 1);
@@ -152,7 +155,7 @@ test("clicking a heading below a visible Properties block selects that heading",
   ).toBeLessThanOrEqual(1);
   expect(
     after.text === HEADING ||
-      after.text.includes("活动") ||
+      after.text.includes("Large cold-open") ||
       after.text.trim() === "",
     JSON.stringify(after),
   ).toBe(true);
