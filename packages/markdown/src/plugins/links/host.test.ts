@@ -121,7 +121,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     undefined,
   ]);
   assert.equal((opens.at(-2) as { source: string }).source, panel.document.uri);
-  // Cmd-click: a tab of its own; a plain click: the current group.
+  // open({ tab }) still supports a kept tab; Mod-click now follows here (BH-020).
   for (const [tab, place] of [
     [true, "tab"],
     [false, "here"],

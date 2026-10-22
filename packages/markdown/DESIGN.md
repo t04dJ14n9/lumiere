@@ -1022,14 +1022,14 @@ corresponds to. "Source" names the module on the source branch.
 
 Short specifications, beyond the source's tested behaviour:
 
-- **links**: plain click opens a rendered link; Cmd/Ctrl-click opens it, or
-  revealed source, in a tab of its own (one VS Code keeps, not a preview; as
-  Obsidian's new tab); a click that ends a text selection only selects. Unresolved
+- **links**: plain click on a rendered link reveals its source and places the
+  caret (does not navigate); Cmd/Ctrl-click follows in the same editor; a click
+  that ends a text selection only selects. Unresolved
   wikilinks get `is-unresolved` styling while not revealed, from
   `vault.unresolvedLinks` (the host pushes the note's set when it changes after
   each re-resolution, through `VaultIndex.onDidResolve`: panel kernels do not
   see the window's `vault/resolved` event). Opening goes through `links/open` (§16). Cmd/Ctrl+Alt+click
-  opens to the side.
+  opens to the side. New tab remains `editor:open-link-in-new-leaf` (not Mod-click).
 - **suggest**: sources are `[[` files and frontmatter `aliases` and unresolved
   link texts; `[[Note#` headings; `[[Note#^` and `[[^^` blocks; `#` tags.
   Scoring uses Obsidian's fuzzy formula (study §8; `src/shared/fuzzy.ts`

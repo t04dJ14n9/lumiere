@@ -346,10 +346,10 @@ title, then set `lumiere.markdown.plugins.inlineTitle.enabled` to true.
 
 `Links.md`.
 
-1. Off the caret, a wikilink shows its label; a plain click follows it.
-   With the caret in its source, a plain click edits and Mod-click follows;
-   Mod+Alt-click opens it to the side. Selecting across a link does not
-   follow it.
+1. Off the caret, a wikilink shows its label; a plain click reveals its
+   source and places the caret (does not navigate). Mod-click follows in the
+   same editor; Mod+Alt-click opens it to the side. Selecting across a link
+   does not follow it.
 2. Follow heading, block (`#^key-point`) and same-note links: the target
    scrolls into view. **Follow Link** and **Open Link to Side** work with
    the caret in link syntax.
