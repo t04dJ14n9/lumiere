@@ -143,6 +143,20 @@ function appendPendingRow(
       pendingKeyDown(event, { input, editor, suggestions, create, dismiss }),
     true,
   );
+  bindPendingDraftDismiss(row, input, dismiss);
+  input.focus();
+  void editor
+    ?.names?.()
+    .then((names) => suggestions.receive(names))
+    .catch(() => {});
+}
+
+/** Blur / focusout / row Escape|Delete — remove unfinished Add-property draft. */
+function bindPendingDraftDismiss(
+  row: HTMLElement,
+  input: HTMLInputElement,
+  dismiss: (focusBody: boolean) => void,
+): void {
   // Leave the unfinished draft when focus leaves this row (body click, or any
   // control outside). Suggestion mousedown preventDefault keeps focus on the
   // input long enough to accept a name without dismissing first.
@@ -152,7 +166,7 @@ function appendPendingRow(
         return;
       }
       const active = input.ownerDocument.activeElement;
-      if (active != null && row.contains(active)) {
+      if (active !== null && row.contains(active)) {
         return;
       }
       dismiss(false);
@@ -176,11 +190,6 @@ function appendPendingRow(
       dismiss(false);
     }
   });
-  input.focus();
-  void editor
-    ?.names?.()
-    .then((names) => suggestions.receive(names))
-    .catch(() => {});
 }
 
 function pendingKeyDown(
