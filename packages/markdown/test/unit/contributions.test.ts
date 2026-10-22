@@ -111,10 +111,7 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
   for (const chord of ["ctrl+b", "ctrl+i"]) {
     const binding = vim.find((item) => item.key === chord);
     assert.ok(binding, chord);
-    assert.match(
-      binding!.when ?? "",
-      /!lumiere\.markdown\.plugin\.formatting/,
-    );
+    assert.match(binding!.when ?? "", /!lumiere\.markdown\.plugin\.formatting/);
   }
   assert.ok(
     keybindings.some(
