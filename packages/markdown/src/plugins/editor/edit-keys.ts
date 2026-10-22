@@ -1,12 +1,16 @@
 /**
  * Ctrl/Cmd+A → Select All (BH-029).
  * Ctrl/Cmd+X → Cut when there is a selection (BH-029).
+ * Ctrl/Cmd+C → Copy when there is a selection (BH-032).
+ * Ctrl/Cmd+V → Paste (BH-032).
  *
- * `@replit/codemirror-vim` maps `<C-a>` → increment and `<C-x>` → decrement, so
- * with Vim on CM/browser Select All and cut never run. Capture-phase ownership
- * matches BH-023 / BH-028: preventDefault + stop so Vim cannot steal the chord.
- * Empty-selection Ctrl+X is left alone so vim-core can still decrement. Native
- * text fields keep the chords.
+ * `@replit/codemirror-vim` maps `<C-a>` → increment, `<C-x>` → decrement,
+ * `<C-c>` → Esc, and `<C-v>` → block visual, so with Vim on CM/browser Select
+ * All, cut, copy and paste never run. Capture-phase ownership matches BH-023 /
+ * BH-028 / BH-031: preventDefault + stop so Vim cannot steal the chord. Empty-
+ * selection Ctrl+X is left alone so vim-core can still decrement; empty
+ * Ctrl+C is left alone so vim-core can still Esc. Native text fields keep the
+ * chords.
  */
 
 export interface EditKey {
@@ -18,11 +22,12 @@ export interface EditKey {
   shiftKey: boolean;
 }
 
-export type EditAction = "selectAll" | "cut";
+export type EditAction = "selectAll" | "cut" | "copy" | "paste";
 
 /**
- * Map a keydown to Select All (A / keyCode 65) or Cut (X / keyCode 88).
- * Physical codes cover non-Latin layouts the way history-keys covers Z/Y.
+ * Map a keydown to Select All (A / 65), Cut (X / 88), Copy (C / 67), or Paste
+ * (V / 86). Physical codes cover non-Latin layouts the way history-keys covers
+ * Z/Y.
  */
 export function editActionFor(
   event: EditKey,
@@ -41,10 +46,16 @@ export function editActionFor(
   if (key === "x" || event.keyCode === 88) {
     return "cut";
   }
+  if (key === "c" || event.keyCode === 67) {
+    return "copy";
+  }
+  if (key === "v" || event.keyCode === 86) {
+    return "paste";
+  }
   return undefined;
 }
 
-/** INPUT/TEXTAREA, property fields, and table cell editors keep native Ctrl+A/X. */
+/** INPUT/TEXTAREA, property fields, and table cell editors keep native clipboard chords. */
 export function leavesNativeEdit(target: EventTarget | null): boolean {
   if (!target || !("tagName" in target)) {
     return isNestedNativeEditor(target);
@@ -92,11 +103,15 @@ export interface EditKeyHandlers {
   selectAll: () => void;
   /** Return true when Cut ran (selection was non-empty). */
   cut: () => boolean;
+  /** Return true when Copy ran (selection was non-empty). */
+  copy: () => boolean;
+  /** Return true when Paste ran. */
+  paste: () => boolean;
 }
 
 /**
- * Own Mod/Ctrl+A always, and Mod/Ctrl+X when Cut succeeds (non-empty
- * selection), so Vim cannot increment / decrement steal those shortcuts.
+ * Own Mod/Ctrl+A always, Mod/Ctrl+V when Paste succeeds, and Mod/Ctrl+X/C when
+ * Cut/Copy succeed (non-empty selection), so Vim cannot steal those shortcuts.
  */
 export function keepEditKeys(
   target: Document,
@@ -120,6 +135,15 @@ export function keepEditKeys(
     if (action === "cut") {
       // Let empty-selection Ctrl+X reach vim-core decrement.
       if (!handlers.cut()) {
+        return;
+      }
+    } else if (action === "copy") {
+      // Let empty-selection Ctrl+C reach vim-core Esc.
+      if (!handlers.copy()) {
+        return;
+      }
+    } else if (action === "paste") {
+      if (!handlers.paste()) {
         return;
       }
     } else {

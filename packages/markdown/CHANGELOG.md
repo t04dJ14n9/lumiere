@@ -2,6 +2,10 @@
 
 ## 0.1.0 (unreleased)
 
+- With Vim on, Ctrl/Cmd+V pastes and Ctrl/Cmd+C copies a selection again:
+  capture-phase ownership runs clipboard paste/copy over vim-core's `<C-v>`
+  block-visual and `<C-c>` Esc maps (Host GUI BH-032).
+
 - With Vim on, Ctrl/Cmd+W closes the active editor again: capture-phase
   ownership runs host close over vim-core's `<C-w>` window prefix (Host GUI BH-031).
 
