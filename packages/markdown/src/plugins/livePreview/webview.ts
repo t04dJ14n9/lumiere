@@ -15,11 +15,11 @@ import { blockRenderers, inlineRenderers } from "./registry";
 import {
   blockIndex,
   visiblePosition,
-  blockDecorations,
   renderRevision,
   refreshRender,
 } from "./blocks";
-import { documentTree } from "./document-tree";
+import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
+import { documentTree, documentTreeCompleter } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
@@ -139,6 +139,7 @@ function registerModeCommand(ctx: Context, service: LivePreview): void {
 function engineExtensions(ctx: Context) {
   return [
     documentTree,
+    documentTreeCompleter,
     markdownBlockWidthTracker,
     renderRevision,
     pointerSelectionTracking,
@@ -147,6 +148,7 @@ function engineExtensions(ctx: Context) {
     ruleClick,
     hybridInline,
     blockIndex,
+    ...blockViewportSupport,
     blockDecorations((error) =>
       ctx.logger.error("Block renderer failed", error),
     ),

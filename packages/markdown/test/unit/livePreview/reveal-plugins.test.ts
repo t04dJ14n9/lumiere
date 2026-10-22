@@ -8,10 +8,8 @@ import {
 import type { DecorationSet } from "@codemirror/view";
 import { documentTree } from "../../../src/plugins/livePreview/document-tree";
 import { inlineDecorations } from "../../../src/plugins/livePreview/inline";
-import {
-  blockDecorations,
-  blockIndex,
-} from "../../../src/plugins/livePreview/blocks";
+import { blockIndex } from "../../../src/plugins/livePreview/blocks";
+import { blockDecorations } from "../../../src/plugins/livePreview/viewport-decorations";
 import {
   blockRenderers,
   inlineRenderers,

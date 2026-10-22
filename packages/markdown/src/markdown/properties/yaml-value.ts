@@ -1,5 +1,5 @@
-import { isNode, isScalar, stringify } from "yaml";
-import type { headerParts } from "./frontmatter";
+import { loadYaml } from "./load-yaml";
+import type { headerParts } from "./header-parts";
 import type { PropertyScalar } from "./values";
 
 export interface PropertyChange {
@@ -11,17 +11,19 @@ export interface PropertyChange {
 type Header = NonNullable<ReturnType<typeof headerParts>>;
 
 export const yamlValue = (value: unknown): string =>
-  stringify(value, {
-    collectionStyle: "flow",
-    flowCollectionPadding: false,
-    lineWidth: 0,
-    aliasDuplicateObjects: false,
-    defaultKeyType: "PLAIN",
-  }).trimEnd();
+  loadYaml()
+    .stringify(value, {
+      collectionStyle: "flow",
+      flowCollectionPadding: false,
+      lineWidth: 0,
+      aliasDuplicateObjects: false,
+      defaultKeyType: "PLAIN",
+    })
+    .trimEnd();
 
 /** A block list item: quoted only where YAML needs it (a comma does not). */
 const blockItem = (value: unknown): string =>
-  stringify(value, { lineWidth: 0 }).trimEnd();
+  loadYaml().stringify(value, { lineWidth: 0 }).trimEnd();
 
 /** Whether a value is a list of scalars, which Obsidian writes as a block list. */
 const isScalarList = (value: unknown): value is readonly unknown[] =>
@@ -50,11 +52,13 @@ function afterColon(body: string, start: number): number | undefined {
 
 /** Property names stay plain unless YAML requires quoting. */
 export const yamlKey = (key: string): string =>
-  stringify(key, {
-    lineWidth: 0,
-    defaultStringType: "PLAIN",
-    defaultKeyType: "PLAIN",
-  }).trimEnd();
+  loadYaml()
+    .stringify(key, {
+      lineWidth: 0,
+      defaultStringType: "PLAIN",
+      defaultKeyType: "PLAIN",
+    })
+    .trimEnd();
 
 export const scalarValue = (value: unknown): value is PropertyScalar =>
   value === null ||
@@ -162,7 +166,7 @@ export function setPropertyChange(
   node: unknown,
   value: unknown,
 ): PropertyChange | undefined {
-  if (!isNode(node) || !node.range) {
+  if (!loadYaml().isNode(node) || !node.range) {
     return undefined;
   }
   const list = blockListChange(
@@ -180,7 +184,7 @@ export function setPropertyChange(
     // Mid-line replacements cannot use a plain multiline scalar.
     insert = JSON.stringify(value);
   } else if (
-    isScalar(node) &&
+    loadYaml().isScalar(node) &&
     typeof value === typeof node.value &&
     typeof value === "string"
   ) {

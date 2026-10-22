@@ -98,6 +98,8 @@ declare module "@workshop/core" {
     /** @mode emit */ "editor/configure": () => void;
     /** @mode emit */ "editor/pluginsChanged": (panel: PanelPort) => void;
     /** @mode emit */ "editor/loading": () => void;
+    /** Ready payload built; deferred panel hosts may start. @mode emit */
+    "editor/session-ready": () => void;
     /** @mode emit */ "editor/ready": (panel: PanelPort) => void;
     /** @mode emit */ "editor/opened": (panel: PanelPort) => void;
     /** @mode emit */ "editor/closed": (panel: PanelPort) => void;

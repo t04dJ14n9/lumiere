@@ -4,12 +4,8 @@ import { EditorSelection, EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
-import {
-  blockDecorations,
-  blockIndex,
-  refreshRender,
-  renderRevision,
-} from "./blocks";
+import { blockIndex, refreshRender, renderRevision } from "./blocks";
+import { blockDecorations } from "./viewport-decorations";
 import { documentTree } from "./document-tree";
 import { renderInvalidations } from "./invalidation";
 import { blockRenderers } from "./registry";

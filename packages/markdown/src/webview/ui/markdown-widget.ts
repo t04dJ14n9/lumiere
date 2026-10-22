@@ -154,12 +154,14 @@ export class MarkdownBlock extends WidgetType {
     if (this.editing.guardMargin) {
       bindFenceClickGuard(view, shell, this.block, events.signal);
     }
+    let cancelRender = () => {};
     this.lifetimes.set(shell, () => {
       live = false;
+      cancelRender();
       events.abort();
       void pass?.dispose();
     });
-    beginMarkdownBlockRender({
+    cancelRender = scheduleMarkdownBlockRender({
       view,
       shell,
       body,
@@ -212,6 +214,67 @@ export class MarkdownBlock extends WidgetType {
   override get estimatedHeight(): number {
     return markdownBlockEstimatedHeight(this.block.source);
   }
+}
+
+/**
+ * First paint returns the shell + height reserve immediately; Mermaid /
+ * MathJax / embed HTML start on idle (or the next frames) so a wide draw
+ * margin mounting many blocks does not stall the opening frame.
+ */
+function scheduleMarkdownBlockRender(options: {
+  view: EditorView;
+  shell: HTMLElement;
+  body: HTMLElement;
+  block: RenderBlock;
+  render: RenderService;
+  isLive: () => boolean;
+  setPass: (pass: RenderPass) => void;
+}): () => void {
+  let cancelled = false;
+  const start = () => {
+    if (cancelled || !options.isLive()) {
+      return;
+    }
+    beginMarkdownBlockRender(options);
+  };
+  const idle = (
+    globalThis as typeof globalThis & {
+      requestIdleCallback?: (
+        callback: () => void,
+        opts?: { timeout: number },
+      ) => number;
+      cancelIdleCallback?: (id: number) => void;
+    }
+  ).requestIdleCallback;
+  const cancelIdle = (
+    globalThis as typeof globalThis & {
+      cancelIdleCallback?: (id: number) => void;
+    }
+  ).cancelIdleCallback;
+  if (typeof idle === "function") {
+    const id = idle(start, { timeout: 120 });
+    return () => {
+      cancelled = true;
+      cancelIdle?.(id);
+    };
+  }
+  if (typeof requestAnimationFrame === "function") {
+    const outer = requestAnimationFrame(() => {
+      if (cancelled) {
+        return;
+      }
+      requestAnimationFrame(start);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(outer);
+    };
+  }
+  // Unit tests (no window timers): render synchronously so Edit/click still work.
+  start();
+  return () => {
+    cancelled = true;
+  };
 }
 
 function beginMarkdownBlockRender(options: {

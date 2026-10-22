@@ -82,6 +82,24 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
   vim: () => import("../plugins/vim/webview").then((m) => m.vimWebview),
 };
 
+/**
+ * Visible structure for the first screen. Editing helpers (autoPair,
+ * formatting, folding, footnotes, indentGuides, spellcheck) and heavier
+ * chrome (math, mermaid, git, bridges, …) load after the first animation
+ * frame so large notes become interactive sooner.
+ */
+const PAINT_FEATURE_IDS = new Set([
+  "callouts",
+  "codeBlocks",
+  "lineNumbers",
+  "links",
+  "properties",
+  "smartLists",
+  "tables",
+  "tags",
+  "tasks",
+]);
+
 const loaded = new Map<string, Plugin<unknown>>();
 
 async function loadWebviewPlugin(
@@ -104,10 +122,20 @@ const WEBVIEW_FEATURE_IDS = features
   .filter((manifest) => manifest.surfaces.includes("webview"))
   .map((manifest) => manifest.id);
 
+const PAINT_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
+  PAINT_FEATURE_IDS.has(id),
+);
+
+export type FeaturePhase = "paint" | "all";
+
 /**
  * The webview's feature switch: runs the features `settings` turns on (or,
  * with `defaults`, those on by default), each with its parsed configuration.
  * Feature modules load in parallel the first time they are wanted.
+ *
+ * `phase: "paint"` starts only first-paint features (and does not stop
+ * deferred ones that are not loaded yet). `phase: "all"` (default) applies
+ * the full wanted set — used after first paint and on settings changes.
  */
 export function featureController(root: BaseContext) {
   const switches = new PluginSwitch(root);
@@ -115,10 +143,17 @@ export function featureController(root: BaseContext) {
   // older wanted set after a newer one finished loading. Do not root.track
   // this queue: it awaits settled(), which would deadlock on itself.
   let updates = Promise.resolve();
-  return (settings: FeatureSettings, defaults = false): Promise<void> => {
+  return (
+    settings: FeatureSettings,
+    defaults = false,
+    phase: FeaturePhase = "all",
+  ): Promise<void> => {
     const run = async () => {
       const wantedManifests = features.filter((manifest) => {
         if (!manifest.surfaces.includes("webview")) {
+          return false;
+        }
+        if (phase === "paint" && !PAINT_FEATURE_IDS.has(manifest.id)) {
           return false;
         }
         const setting = settings[manifest.id];
@@ -127,7 +162,9 @@ export function featureController(root: BaseContext) {
       await Promise.all(
         wantedManifests.map((manifest) => loadWebviewPlugin(manifest.id)),
       );
-      await switches.update(WEBVIEW_FEATURE_IDS, () =>
+      const managed =
+        phase === "paint" ? PAINT_MANAGED_IDS : WEBVIEW_FEATURE_IDS;
+      await switches.update(managed, () =>
         wantedPlugins(wantedManifests, settings),
       );
     };

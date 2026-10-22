@@ -1,5 +1,5 @@
-import { isMap, isNode, isSeq, parseDocument } from "yaml";
-import type { headerParts } from "./frontmatter";
+import { loadYaml } from "./load-yaml";
+import type { headerParts } from "./header-parts";
 import { valueStart, type PropertyChange } from "./yaml-value";
 
 /** Keep the validated draft as text; decoding and serializing would lose comments. */
@@ -9,7 +9,7 @@ export function setPropertyYamlChange(
   node: unknown,
   draft: string,
 ): PropertyChange | undefined {
-  if (!isNode(node) || !node.range) {
+  if (!loadYaml().isNode(node) || !node.range) {
     return undefined;
   }
   const start = valueStart(header.body, node.range[0], node.anchor);
@@ -17,9 +17,10 @@ export function setPropertyYamlChange(
   const prefix = header.body.slice(lineStart, start);
   const inline = /\S/.test(prefix);
   const text = draft.replace(/\r\n/g, "\n");
-  const contents = parseDocument(text).contents;
+  const contents = loadYaml().parseDocument(text).contents;
   const blockCollection =
-    (isMap(contents) || isSeq(contents)) && !contents.flow;
+    (loadYaml().isMap(contents) || loadYaml().isSeq(contents)) &&
+    !contents.flow;
   const startsOnNewLine = inline && (blockCollection || /^\s*#/.test(text));
   const indent = /^ */.exec(prefix)![0] + (startsOnNewLine ? "  " : "");
   let insert = text

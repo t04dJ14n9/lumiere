@@ -50,15 +50,25 @@ export async function bootstrap(
   }
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
-  await configure(init.features, init.preset === "obsidian");
-  performance.mark("mw:features");
+  // Core editor + Live Preview chrome first — interactive before feature chunks.
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {
     throw failed.error;
   }
   performance.mark("mw:plugins");
-  requestAnimationFrame(() => performance.mark("mw:first-paint"));
+  requestAnimationFrame(() => {
+    performance.mark("mw:first-paint");
+    // Paint features (tables, callouts, …) then the rest after the first frame.
+    void configure(init.features, init.preset === "obsidian", "paint")
+      .then(() => {
+        performance.mark("mw:features");
+        return configure(init.features, init.preset === "obsidian", "all");
+      })
+      .catch((error: unknown) =>
+        root.logger.error("Deferred features failed", error),
+      );
+  });
   rpc.notify(protocol, "initialized", {});
   return root;
 }

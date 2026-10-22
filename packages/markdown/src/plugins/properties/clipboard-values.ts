@@ -1,4 +1,4 @@
-import { parseDocument } from "yaml";
+import { loadYaml } from "../../markdown/properties/load-yaml";
 
 /** Menu paste uses the injected plain clipboard; keyboard paste keeps its MIME payload. */
 export function clipboardProperties(
@@ -8,7 +8,7 @@ export function clipboardProperties(
     return undefined;
   }
   try {
-    const document = parseDocument(text, { uniqueKeys: true });
+    const document = loadYaml().parseDocument(text, { uniqueKeys: true });
     if (document.errors.length) {
       return undefined;
     }

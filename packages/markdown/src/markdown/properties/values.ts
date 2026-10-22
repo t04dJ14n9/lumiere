@@ -1,12 +1,5 @@
-import {
-  isAlias,
-  isMap,
-  isScalar,
-  isSeq,
-  parseDocument,
-  visit,
-  type Document,
-} from "yaml";
+import type { Document } from "yaml";
+import { loadYaml } from "./load-yaml";
 import type { PropertyKind } from "./types";
 export type PropertyScalar = string | number | boolean | null;
 /** Scalars, scalar lists, and nested YAML maps/lists that Properties can set. */
@@ -51,6 +44,7 @@ export function propertyInput(
 
 /** True when distinct YAML keys would collapse to one JS property name. */
 function hasCollidingJsKeys(node: unknown): boolean {
+  const { isSeq, isMap, isScalar } = loadYaml();
   if (isSeq(node)) {
     return node.items.some((item) => hasCollidingJsKeys(item));
   }
@@ -84,6 +78,7 @@ export function settablePropertyNode(
   document?: Document,
   seen = new Set<unknown>(),
 ): boolean {
+  const { visit, isScalar, isAlias } = loadYaml();
   if (seen.has(node)) {
     return true;
   }
@@ -119,6 +114,7 @@ export function propertyYamlInput(text: string): PropertyValue | undefined {
     return null;
   }
   try {
+    const { parseDocument } = loadYaml();
     const document = parseDocument(text, { uniqueKeys: true });
     if (document.errors.length) {
       return undefined;

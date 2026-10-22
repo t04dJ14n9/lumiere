@@ -78,7 +78,7 @@ function extractMetadata(doc: Text): NoteMetadata {
   result.aliases = aliasValues(
     header?.values?.aliases ?? header?.values?.alias,
   );
-  result.frontmatterLinks = frontmatterLinks(source, position);
+  result.frontmatterLinks = frontmatterLinks(source, position, header?.yaml);
   return result;
 }
 
