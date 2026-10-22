@@ -31,6 +31,7 @@ export interface EditorRoutes {
   handle(req: IncomingMessage, res: ServerResponse): Promise<boolean>;
   /** Take a page's socket upgrade; false when the request is not one. */
   upgrade(req: IncomingMessage, socket: Duplex, head: Buffer): boolean;
+  /** End every page's socket; the routes take no more. */
   close(): void;
 }
 
@@ -87,7 +88,14 @@ export function createEditorRoutes(
       });
       return true;
     },
-    close: () => sockets.close(),
+    close() {
+      // A server's close() waits for every connection to end, and pages keep
+      // their sockets open: end them, or the server never stops.
+      for (const client of sockets.clients) {
+        client.terminate();
+      }
+      sockets.close();
+    },
   };
 }
 
