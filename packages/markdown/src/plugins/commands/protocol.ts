@@ -8,7 +8,6 @@ export const action = Schema.union([
   "saveClose",
   "openAsText",
   "toggleTextEditor",
-  "quickOpen",
 ]);
 export const protocol = defineProtocol("commands", {
   requests: {

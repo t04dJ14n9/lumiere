@@ -73,12 +73,6 @@ function runPanelAction(
       .execute(contributionId("toggleTextEditor"))
       .then(() => true);
   }
-  // Quick Open needs no document flush; open the picker over the active panel.
-  if (action === "quickOpen") {
-    return ctx.hostCommands
-      .execute("workbench.action.quickOpen")
-      .then(() => true);
-  }
   return panel.session.withAction(async () => {
     await ctx.serial("document/willSave", panel.session);
     await panel.session.flush();
