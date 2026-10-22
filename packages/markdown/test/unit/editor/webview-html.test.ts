@@ -49,3 +49,21 @@ test("each page gets a fresh script nonce", () => {
     policy(true).get("script-src"),
   );
 });
+
+test("HTML modulepreloads editor.js and chrome.js in the head", () => {
+  const html = webviewHTML(shell(true));
+  assert.match(
+    html,
+    /<link rel="modulepreload" href="vscode-resource:\/webview\/editor\.js">/,
+  );
+  assert.match(
+    html,
+    /<link rel="modulepreload" href="vscode-resource:\/webview\/chrome\.js">/,
+  );
+  // Preloads must precede the editor script so fetch overlaps HTML/CSS parse.
+  const chromePreload = html.indexOf(
+    'rel="modulepreload" href="vscode-resource:/webview/chrome.js"',
+  );
+  const editorScript = html.indexOf('<script type="module"');
+  assert.ok(chromePreload >= 0 && chromePreload < editorScript);
+});

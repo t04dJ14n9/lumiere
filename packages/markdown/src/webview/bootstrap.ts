@@ -58,6 +58,7 @@ export async function bootstrap(
   const configure = pluginReporting(root, rpc);
   // Chrome (Properties) must not wait on tables/callouts download. Start both
   // preloads as soon as we know the Obsidian preset, overlapping core settle.
+  // HTML also modulepreloads webview/chrome.js so chunks often hit cache here.
   const chromeChunks =
     init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
   const paintChunks =
@@ -81,8 +82,10 @@ export async function bootstrap(
 }
 
 /**
- * Glyphs first (rAF), then Properties as soon as chrome chunks are ready —
- * without waiting on tables. Paint structure and the deferred set follow.
+ * Properties chrome starts as soon as its chunks are ready — do not wait for
+ * the first-paint rAF (that gap was ~one frame plus any leftover chunk wait).
+ * Glyphs still mark on rAF from core Live Preview. Paint structure and the
+ * deferred set follow Properties. No HTML boot skeleton (regressed #285).
  */
 function scheduleFeaturePhases(options: {
   root: RootContext;
@@ -96,18 +99,18 @@ function scheduleFeaturePhases(options: {
     options;
   requestAnimationFrame(() => {
     performance.mark("mw:first-paint");
-    void chromeChunks
-      .then(() => configure(features, defaults, "chrome"))
-      .then(() => {
-        performance.mark("mw:properties");
-        return paintChunks.then(() => configure(features, defaults, "paint"));
-      })
-      .then(() => {
-        performance.mark("mw:features");
-        return configure(features, defaults, "all");
-      })
-      .catch((error: unknown) =>
-        root.logger.error("Deferred features failed", error),
-      );
   });
+  void chromeChunks
+    .then(() => configure(features, defaults, "chrome"))
+    .then(() => {
+      performance.mark("mw:properties");
+      return paintChunks.then(() => configure(features, defaults, "paint"));
+    })
+    .then(() => {
+      performance.mark("mw:features");
+      return configure(features, defaults, "all");
+    })
+    .catch((error: unknown) =>
+      root.logger.error("Deferred features failed", error),
+    );
 }
