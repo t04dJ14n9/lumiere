@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "shell",
+  "description": "What Lumière's shell may ask of the app: the folder picker and the menu's events. The shell is served by Lumière's own server on a loopback port (packages/app/src/shell/tauri.ts lists the calls). Keep this list as short as that file.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:*"]
+  },
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "dialog:allow-open"
+  ]
+}

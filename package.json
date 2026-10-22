@@ -3535,6 +3535,7 @@
     "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts && playwright test -c packages/pdf/test/vscode/playwright.config.ts",
     "contributions": "tsx scripts/contributions.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
+    "check:desktop": "pnpm --filter @workshop/desktop check",
     "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
     "notices": "node scripts/third-party-notices.mjs",
     "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --pre-release --no-dependencies --no-rewrite-relative-links",

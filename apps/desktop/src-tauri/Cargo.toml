@@ -1,0 +1,21 @@
+[package]
+name = "lumiere-desktop"
+version = "0.1.5"
+description = "Lumière as a desktop app: a window around Lumière's own server"
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[lib]
+name = "lumiere_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+tauri-plugin-dialog = "2.8"
+tauri-plugin-single-instance = "2.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

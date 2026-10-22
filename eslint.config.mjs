@@ -144,6 +144,9 @@ export default tseslint.config(
       "packages/markdown/docs/vim-caret-measurements/**",
       // PDFs generated for the PDF tests.
       "packages/pdf/test/fixtures/generated/**",
+      // The desktop app's Rust build output and generated schemas.
+      "apps/desktop/src-tauri/target/**",
+      "apps/desktop/src-tauri/gen/**",
     ],
   },
   js.configs.recommended,
@@ -228,6 +231,17 @@ export default tseslint.config(
     },
   },
   {
+    // The desktop app's own page, shown when its server does not start.
+    files: ["apps/desktop/src/**/*.js"],
+    languageOptions: {
+      globals: {
+        document: "readonly",
+        location: "readonly",
+        URLSearchParams: "readonly",
+      },
+    },
+  },
+  {
     files: ["**/*.mjs"],
     languageOptions: {
       globals: {
@@ -235,6 +249,7 @@ export default tseslint.config(
         console: "readonly",
         Buffer: "readonly",
         URL: "readonly",
+        fetch: "readonly",
       },
     },
   },
