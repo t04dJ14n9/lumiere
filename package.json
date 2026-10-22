@@ -212,6 +212,11 @@
         "category": "Lumi\u00e8re"
       },
       {
+        "command": "lumiere.markdown.goToLine",
+        "title": "Go to Line\u2026",
+        "category": "Lumi\u00e8re"
+      },
+      {
         "command": "lumiere.markdown.insertEmbed",
         "title": "Insert Embed",
         "category": "Lumi\u00e8re"
@@ -1128,6 +1133,12 @@
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
+        "command": "lumiere.markdown.goToLine",
+        "key": "ctrl+g",
+        "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.editorFocus"
+      },
+      {
         "command": "lumiere.markdown.toggleTextEditor",
         "key": "ctrl+e",
         "mac": "cmd+e",
@@ -1536,6 +1547,10 @@
         {
           "command": "lumiere.markdown.toggleTextEditor",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' || (editorLangId == 'markdown' && !activeCustomEditorId)"
+        },
+        {
+          "command": "lumiere.markdown.goToLine",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
         },
         {
           "command": "lumiere.markdown.insertEmbed",

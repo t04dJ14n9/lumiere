@@ -1,4 +1,5 @@
 import { registerJumpHistory } from "./jump-host";
+import { registerGoToLine } from "./go-to-line";
 import { registerEditorActions } from "./actions-host";
 import { registerMarkdownAssociation } from "./associations";
 import { registerToggleTextEditor } from "./toggle-text-editor";
@@ -166,6 +167,7 @@ function provideEditorServices(
   ctx.provide("selections", selections);
   registerEditorActions(ctx, editors, selections);
   registerJumpHistory(ctx, editors);
+  registerGoToLine(ctx, editors);
   return editors;
 }
 

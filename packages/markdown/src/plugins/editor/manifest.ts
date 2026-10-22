@@ -70,8 +70,21 @@ export default defineManifest({
         scope: "workbench",
         when: "activeCustomEditorId == 'lumiere.markdown.editor' || (editorLangId == 'markdown' && !activeCustomEditorId)",
       },
+      {
+        id: "goToLine",
+        title: "Go to Line…",
+        // BH-033: VS Code's gotoLine needs a text editor; custom editors get
+        // "Open a text editor first…". Own Ctrl+G like the PDF viewer.
+      },
     ],
     keybindings: [
+      // BH-033: Ctrl+G Go to Line (mac also Ctrl+G; Cmd+G stays Find Next).
+      {
+        id: "goToLine",
+        key: "ctrl+g",
+        mac: "ctrl+g",
+        scope: "editor",
+      },
       // Lumière focused: Ctrl/Cmd+E → default text editor.
       {
         id: "toggleTextEditor",
