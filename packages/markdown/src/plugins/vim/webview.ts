@@ -102,6 +102,17 @@ function registerShortcutConsumer(ctx: Context): void {
   ctx.effect(() =>
     ctx.commands.register("vim:consume-host-shortcut", () => true),
   );
+  // BH-034: host keybinding blocks files.newUntitledFile; replay <C-n> so
+  // vim-core's keyToKey → j (and insert-mode completion) still run.
+  ctx.effect(() =>
+    ctx.commands.register("vim:handle-ctrl-n", () => {
+      const cm = getCM(ctx.editor.view);
+      if (cm) {
+        Vim.handleKey(cm, "<C-n>", "api");
+      }
+      return true;
+    }),
+  );
 }
 
 function registerNativeActions(ctx: Context): void {

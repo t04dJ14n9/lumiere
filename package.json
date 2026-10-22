@@ -813,6 +813,11 @@
         "category": "Lumi\u00e8re"
       },
       {
+        "command": "lumiere.markdown.handleVimCtrlN",
+        "title": "Vim Ctrl+N",
+        "category": "Lumi\u00e8re"
+      },
+      {
         "command": "lumiere.markdown.wiki.copyForAgent",
         "title": "Copy Wiki Reference for Agent",
         "category": "Lumi\u00e8re"
@@ -1251,12 +1256,6 @@
       },
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+n",
-        "mac": "ctrl+n",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+b",
         "mac": "ctrl+b",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
@@ -1272,6 +1271,12 @@
         "key": "ctrl+k",
         "mac": "ctrl+k",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.handleVimCtrlN",
+        "key": "ctrl+n",
+        "mac": "ctrl+n",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
         "command": "lumiere.pdf.previousPageKeepingPlace",
@@ -2013,6 +2018,10 @@
         },
         {
           "command": "lumiere.markdown.consumeVimHostShortcut",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.handleVimCtrlN",
           "when": "false"
         },
         {
