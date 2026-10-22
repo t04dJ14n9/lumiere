@@ -4,5 +4,11 @@
     "lib": ["ES2022", "DOM"],
     "types": []
   },
-  "include": ["**/*.ts", "../protocol.ts", "../embedding.ts", "../palette.ts"]
+  "include": [
+    "**/*.ts",
+    "../protocol.ts",
+    "../embedding.ts",
+    "../palette.ts",
+    "../views.ts"
+  ]
 }

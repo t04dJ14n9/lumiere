@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/host/index.ts",
     "./embedding": "./src/embedding.ts",
-    "./palette": "./src/palette.ts"
+    "./palette": "./src/palette.ts",
+    "./views": "./src/views.ts"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

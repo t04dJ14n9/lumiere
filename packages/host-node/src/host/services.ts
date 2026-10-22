@@ -16,6 +16,7 @@ import { noDiffViews, noGit, noViews } from "./inert";
 import { createNodeNavigation } from "./navigation";
 import type { PanelHub } from "./panels";
 import { createNodeSettings } from "./settings";
+import { nodeViews, type TreeHub } from "./trees";
 import {
   createActiveEditor,
   createClipboard,
@@ -46,6 +47,10 @@ export interface NodeServicesOptions {
   /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
   readonly log: (message: string) => void;
+  /** The plugins' commands (createHostCommands); tree nodes run them too. */
+  readonly commands: HostCommands;
+  /** The plugins' tree views, which the embedder shows (trees.ts). */
+  readonly trees: TreeHub;
 }
 
 export function createNodeHostServices(
@@ -58,10 +63,10 @@ export function createNodeHostServices(
   });
   return {
     hostDocuments: documents,
-    hostCommands: createHostCommands(log),
+    hostCommands: options.commands,
     clipboard: createClipboard(panels),
     dialogs: createDialogs(panels, log),
-    views: noViews,
+    views: nodeViews(options.trees, noViews),
     activeEditor: createActiveEditor(panels),
     settings,
     workspace: createHostWorkspace(roots),
@@ -97,12 +102,25 @@ export function createHostCommands(
       if (run) {
         return run(...args);
       }
-      if (!id.startsWith("setContext") && !id.startsWith("workbench.")) {
+      if (!isVsCodeOnly(id)) {
         log(`No command ${id} outside VS Code`);
       }
       return undefined;
     },
   };
+}
+
+/**
+ * VS Code's own commands: context keys, the workbench, and the commands it
+ * makes for every view (`<view>.focus`, `outline.removeView`). The embedder
+ * decides what is on screen, so these have nothing to do here.
+ */
+function isVsCodeOnly(id: string): boolean {
+  return (
+    id.startsWith("setContext") ||
+    id.startsWith("workbench.") ||
+    /\.(focus|removeView|resetViewLocation)$/.test(id)
+  );
 }
 
 /**

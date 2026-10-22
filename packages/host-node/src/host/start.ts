@@ -13,7 +13,12 @@ import {
 } from "@workshop/markdown/portable";
 import { NoteDocuments } from "./documents";
 import { PanelHub } from "./panels";
-import { createNodeHostServices, type HostIdentity } from "./services";
+import {
+  createHostCommands,
+  createNodeHostServices,
+  type HostIdentity,
+} from "./services";
+import { TreeHub } from "./trees";
 import { createNodeVaultSystem } from "./vault";
 
 export interface StartOptions {
@@ -29,6 +34,8 @@ export interface StartOptions {
 
 export interface LumiereHost {
   readonly panels: PanelHub;
+  /** The plugins' tree views (Outline, Backlinks…), for the embedder to show. */
+  readonly trees: TreeHub;
   /** A workspace a note was opened from; vaults are found inside these. */
   addRoot(root: string): void;
   stop(): Promise<void>;
@@ -42,7 +49,11 @@ export async function startLumiere(
   const panels = new PanelHub(documents);
   const markdownDist = options.markdown;
   const log = (message: string) => options.logger.warn(message);
+  const commands = createHostCommands(log);
+  const trees = new TreeHub(commands);
   const host = createNodeHostServices({
+    commands,
+    trees,
     identity: options.identity,
     documents,
     panels,
@@ -67,6 +78,7 @@ export async function startLumiere(
   await bootstrap(host, vault, root);
   return {
     panels,
+    trees,
     addRoot: (item) => {
       roots.add(item.replace(/\/+$/, ""));
     },

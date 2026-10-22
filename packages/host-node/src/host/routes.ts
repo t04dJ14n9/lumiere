@@ -1,6 +1,7 @@
 /**
  * The editor's pages and files, for any web server: a note's editor page,
- * the built editor, the page shim, a note's images and the page's socket.
+ * the built editor, the page shim, a note's images, the page's socket, and
+ * the plugins' tree views (view-routes.ts).
  * Authentication is the caller's: DSH checks its own, the app its token.
  */
 import { realpath } from "node:fs/promises";
@@ -13,6 +14,7 @@ import type { PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
 import type { LumiereHost } from "./start";
 import { serveFile, serveStatic } from "./static";
+import { createViewRoutes } from "./view-routes";
 
 /** Every route below lives under this path. */
 export const BASE = "/lumiere";
@@ -42,6 +44,7 @@ export function createEditorRoutes(
   // Each panel's workspace root: what its page may read files from.
   const roots = new Map<string, string>();
   const sockets = new WebSocketServer({ noServer: true });
+  const views = createViewRoutes(host.trees);
   return {
     async handle(req, res) {
       const url = new URL(req.url ?? "/", "http://host");
@@ -56,38 +59,15 @@ export function createEditorRoutes(
         await serveFile(res, assets.shim);
       } else if (rest === "/file") {
         await serveResource(res, url, roots);
+      } else if (rest === "/views" || rest?.startsWith("/views/")) {
+        return views.handle(req, res, rest.slice("/views".length));
       } else {
         return false;
       }
       return true;
     },
-    upgrade(req, socket, head) {
-      const url = new URL(req.url ?? "/", "http://host");
-      const panel = host.panels.get(url.searchParams.get("panel") ?? "");
-      if (url.pathname !== SOCKET_PATH || !panel) {
-        return false;
-      }
-      sockets.handleUpgrade(req, socket, head, (ws) => {
-        host.panels.attach(panel.id, {
-          send: (text) => ws.send(text),
-          onMessage: (listener) => {
-            const receive = (data: unknown) => listener(String(data));
-            ws.on("message", receive);
-            return () => {
-              ws.off("message", receive);
-            };
-          },
-          onClose: (listener) => {
-            ws.on("close", listener);
-            return () => {
-              ws.off("close", listener);
-            };
-          },
-          close: () => ws.close(),
-        });
-      });
-      return true;
-    },
+    upgrade: (req, socket, head) =>
+      acceptSocket({ host, sockets, req, socket, head }),
     close() {
       // A server's close() waits for every connection to end, and pages keep
       // their sockets open: end them, or the server never stops.
@@ -95,8 +75,52 @@ export function createEditorRoutes(
         client.terminate();
       }
       sockets.close();
+      views.close();
     },
   };
+}
+
+interface SocketRequest {
+  readonly host: LumiereHost;
+  readonly sockets: WebSocketServer;
+  readonly req: IncomingMessage;
+  readonly socket: Duplex;
+  readonly head: Buffer;
+}
+
+/** A page's socket to its panel; false when the request is not one. */
+function acceptSocket({
+  host,
+  sockets,
+  req,
+  socket,
+  head,
+}: SocketRequest): boolean {
+  const url = new URL(req.url ?? "/", "http://host");
+  const panel = host.panels.get(url.searchParams.get("panel") ?? "");
+  if (url.pathname !== SOCKET_PATH || !panel) {
+    return false;
+  }
+  sockets.handleUpgrade(req, socket, head, (ws) => {
+    host.panels.attach(panel.id, {
+      send: (text) => ws.send(text),
+      onMessage: (listener) => {
+        const receive = (data: unknown) => listener(String(data));
+        ws.on("message", receive);
+        return () => {
+          ws.off("message", receive);
+        };
+      },
+      onClose: (listener) => {
+        ws.on("close", listener);
+        return () => {
+          ws.off("close", listener);
+        };
+      },
+      close: () => ws.close(),
+    });
+  });
+  return true;
 }
 
 interface PageRequest {
