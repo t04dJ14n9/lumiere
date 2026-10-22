@@ -13,6 +13,7 @@ const FORBIDDEN_BY_HOST = {
 const HOST_NODE_ENTRIES = [
   "@workshop/host-node",
   "@workshop/host-node/embedding",
+  "@workshop/host-node/palette",
 ];
 function crossesHostLayer(file, source, target) {
   const owner = file.match(/\/packages\/(host-node|dsh|app)\//)?.[1];

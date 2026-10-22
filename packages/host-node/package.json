@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/host/index.ts",
-    "./embedding": "./src/embedding.ts"
+    "./embedding": "./src/embedding.ts",
+    "./palette": "./src/palette.ts"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
