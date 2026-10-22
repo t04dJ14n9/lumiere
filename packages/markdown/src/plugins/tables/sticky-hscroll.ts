@@ -48,10 +48,7 @@ export function stickyThumbMetrics(
   if (maxLeft <= 0 || clientWidth <= 0) {
     return { thumbWidth: clientWidth, thumbLeft: 0, maxLeft: 0 };
   }
-  const thumbWidth = Math.max(
-    24,
-    (clientWidth / scrollWidth) * clientWidth,
-  );
+  const thumbWidth = Math.max(24, (clientWidth / scrollWidth) * clientWidth);
   const travel = clientWidth - thumbWidth;
   const thumbLeft = travel <= 0 ? 0 : (scrollLeft / maxLeft) * travel;
   return { thumbWidth, thumbLeft, maxLeft };
@@ -112,21 +109,15 @@ export class TableStickyHScroll {
       (event) => this.onTrackDown(event),
       { signal: this.events.signal },
     );
-    window.addEventListener(
-      "pointermove",
-      (event) => this.onDrag(event),
-      { signal: this.events.signal },
-    );
-    window.addEventListener(
-      "pointerup",
-      () => this.endDrag(),
-      { signal: this.events.signal },
-    );
-    window.addEventListener(
-      "pointercancel",
-      () => this.endDrag(),
-      { signal: this.events.signal },
-    );
+    window.addEventListener("pointermove", (event) => this.onDrag(event), {
+      signal: this.events.signal,
+    });
+    window.addEventListener("pointerup", () => this.endDrag(), {
+      signal: this.events.signal,
+    });
+    window.addEventListener("pointercancel", () => this.endDrag(), {
+      signal: this.events.signal,
+    });
     this.schedule();
   }
 
