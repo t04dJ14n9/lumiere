@@ -2,7 +2,7 @@
  * VS Code's workspace services, over Node's file system: the workspaces
  * notes were opened from, file operations, and small persistent state.
  */
-import { readFileSync, watch } from "node:fs";
+import { readFileSync } from "node:fs";
 import {
   cp,
   lstat,
@@ -26,6 +26,7 @@ import {
   writeAtomic,
   writeThroughFile,
 } from "./paths";
+import { watchFile } from "./watch";
 
 export function createHostWorkspace(
   roots: () => readonly string[],
@@ -120,13 +121,8 @@ function watchContained(
       if (stopped) {
         return;
       }
-      const watcher = watch(path.dirname(file), (_event, name) => {
-        if (name === null || name.toString() === path.basename(file)) {
-          listener();
-        }
-      });
-      watcher.on("error", () => watcher.close());
-      close = () => watcher.close();
+      // The file, or folders above it, may not exist yet (watch.ts).
+      close = watchFile(file, listener);
     })
     .catch(() => {
       // Outside the workspace, or gone: there is nothing to watch.
