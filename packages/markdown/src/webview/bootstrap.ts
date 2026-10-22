@@ -56,12 +56,16 @@ export async function bootstrap(
   }
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
-  // Chrome (Properties) must not wait on tables/callouts download. Start both
-  // preloads as soon as we know the Obsidian preset, overlapping core settle.
+  // Sheet (Properties/Sources) must not share the settle-window wire with
+  // tables/callouts. Start chrome preload as soon as we know the Obsidian
+  // preset; paint structure starts only at first-paint rAF (wave 13 — not
+  // the closed #288 wait-for-chrome-resolve serialize).
   const chromeChunks =
     init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
-  const paintChunks =
-    init.preset === "obsidian" ? preloadPaintFeatures() : Promise.resolve();
+  const startPaint =
+    init.preset === "obsidian"
+      ? preloadPaintFeatures
+      : (): Promise<void> => Promise.resolve();
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {
@@ -72,7 +76,7 @@ export async function bootstrap(
     root,
     configure,
     chromeChunks,
-    paintChunks,
+    startPaint,
     features: init.features,
     defaults: init.preset === "obsidian",
   });
@@ -81,21 +85,26 @@ export async function bootstrap(
 }
 
 /**
- * Glyphs first (rAF), then Properties as soon as chrome chunks are ready —
- * without waiting on tables. Paint structure and the deferred set follow.
+ * Glyphs first (rAF), then Properties as soon as sheet chunks are ready —
+ * without waiting on tables/tags. Paint structure fetch starts on this same
+ * frame (after chrome had the settle window alone) and configures next.
  */
 function scheduleFeaturePhases(options: {
   root: RootContext;
   configure: Configure;
   chromeChunks: Promise<void>;
-  paintChunks: Promise<void>;
+  startPaint: () => Promise<void>;
   features: FeatureSettings;
   defaults: boolean;
 }): void {
-  const { root, configure, chromeChunks, paintChunks, features, defaults } =
+  const { root, configure, chromeChunks, startPaint, features, defaults } =
     options;
   requestAnimationFrame(() => {
     performance.mark("mw:first-paint");
+    // Kick paint download now — chrome already had exclusive settle time.
+    // Do not wait for chromeChunks.resolve (#288); overlap paint fetch with
+    // sheet configure CPU once the sheet graph is warm.
+    const paintChunks = startPaint();
     void chromeChunks
       .then(() => configure(features, defaults, "chrome"))
       .then(() => {
