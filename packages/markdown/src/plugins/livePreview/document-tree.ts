@@ -75,7 +75,11 @@ export const documentTreeCompleter = ViewPlugin.fromClass(
   class {
     private done = false;
     constructor(view: EditorView) {
-      this.schedule(view);
+      // Defer past the first paint frame so full-doc Lezer work cannot contend
+      // with glyphs (#289: growing sync first-paint parse regressed TTI).
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.schedule(view));
+      });
     }
     update(update: ViewUpdate) {
       if (this.done) {
@@ -112,7 +116,9 @@ export const documentTreeCompleter = ViewPlugin.fromClass(
         }
       ).requestIdleCallback;
       if (typeof idle === "function") {
-        idle(run, { timeout: 120 });
+        // After first paint, finish soon — heading reveal via the
+        // Frontmatter placeholder waits on a complete fence node.
+        idle(run, { timeout: 32 });
       } else {
         requestAnimationFrame(() => requestAnimationFrame(run));
       }
