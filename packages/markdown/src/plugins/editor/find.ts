@@ -12,7 +12,7 @@ import {
 } from "@codemirror/search";
 import { FindPanel } from "./find-panel";
 
-/** Open the in-note Find (or Replace) bar; used by Mod-f keymap and BH-023 capture. */
+/** Open the in-note Find (or Replace) bar; used by Mod-f/h keymaps and BH-023/025 capture. */
 export function openFind(view: EditorView, replace = false): boolean {
   if (!searchPanelOpen(view.state)) {
     openSearchPanel(view);

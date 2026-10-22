@@ -126,11 +126,11 @@ export const editorWebview: Plugin<EditorConfig> = {
   },
 };
 
-/** Capture Mod/Ctrl+F so Vim cannot page-forward (BH-023). */
+/** Capture Mod/Ctrl+F/H so Find/Replace beat Vim and the workbench (BH-023/025). */
 function registerFindKeyOwnership(ctx: Context, view: EditorView): void {
   ctx.effect(() =>
-    keepFindKey(view.dom.ownerDocument, () => {
-      openFind(view);
+    keepFindKey(view.dom.ownerDocument, (replace) => {
+      openFind(view, replace);
     }),
   );
 }

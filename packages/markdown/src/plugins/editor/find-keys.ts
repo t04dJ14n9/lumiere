@@ -1,11 +1,14 @@
 /**
- * Ctrl/Cmd+F → in-note Find bar (BH-023).
+ * Ctrl/Cmd+F → Find; Ctrl/Cmd+H → Replace (BH-023 / BH-025).
  *
  * `@replit/codemirror-vim` maps `<C-f>` → page-forward by default, so with Vim
  * on the CM Mod-f keymap never runs and Find stays closed. Capture-phase
- * ownership matches BH-003 / BH-021: preventDefault + stop so Vim cannot page
- * and the workbench cannot open its empty custom-editor Find. Physical PageDown
- * still reaches vim-core (it is not Ctrl+F). Native text fields keep Ctrl+F.
+ * ownership matches BH-003 / BH-021 / BH-024: preventDefault + stop so Vim
+ * cannot page and the workbench cannot open its empty custom-editor Find.
+ * Ctrl/Cmd+H is owned the same way so Replace opens with the replace row
+ * (BH-025); vim-core does not map `<C-h>`, but without capture the chord can
+ * still lose to the shell or leave Find-only. Physical PageDown still reaches
+ * vim-core (it is not Ctrl+F). Native text fields keep Ctrl+F / Ctrl+H.
  */
 
 export interface FindKey {
@@ -17,22 +20,33 @@ export interface FindKey {
   shiftKey: boolean;
 }
 
+export type FindAction = "find" | "replace";
+
 /**
- * Map a keydown to Ctrl/Cmd+F. Physical KeyF (keyCode 70) covers non-Latin
- * layouts the way history-keys covers Z/Y.
+ * Map a keydown to Find (F / keyCode 70) or Replace (H / keyCode 72). Physical
+ * codes cover non-Latin layouts the way history-keys covers Z/Y.
  */
-export function isFindKey(event: FindKey, isMac: boolean): boolean {
+export function findActionFor(
+  event: FindKey,
+  isMac: boolean,
+): FindAction | undefined {
   const modifier = isMac
     ? event.metaKey && !event.ctrlKey
     : event.ctrlKey && !event.metaKey;
   if (!modifier || event.altKey || event.shiftKey) {
-    return false;
+    return undefined;
   }
   const key = event.key.toLowerCase();
-  return key === "f" || event.keyCode === 70;
+  if (key === "f" || event.keyCode === 70) {
+    return "find";
+  }
+  if (key === "h" || event.keyCode === 72) {
+    return "replace";
+  }
+  return undefined;
 }
 
-/** INPUT/TEXTAREA and property contenteditables keep native Ctrl+F. */
+/** INPUT/TEXTAREA and property contenteditables keep native Ctrl+F / Ctrl+H. */
 export function leavesNativeFind(target: EventTarget | null): boolean {
   if (!target || !("tagName" in target)) {
     return isPropertyNativeEditor(target);
@@ -73,14 +87,17 @@ function elementForClosest(target: EventTarget | null): Element | null {
 }
 
 /**
- * Own Mod/Ctrl+F in capture phase so Vim cannot page-forward and the shell
- * cannot open workbench Find over a custom editor.
+ * Own Mod/Ctrl+F and Mod/Ctrl+H in capture phase so Find/Replace beat Vim and
+ * the workbench empty custom-editor find widget.
  */
 export function keepFindKey(
   target: Document,
-  onFind: () => void,
+  onAction: (replace: boolean) => void,
   leavesNative: (target: EventTarget | null) => boolean = leavesNativeFind,
 ): () => void {
+  if (!target || typeof target.addEventListener !== "function") {
+    return () => {};
+  }
   const isMac = /Mac|iPhone|iPad/.test(
     target.defaultView?.navigator.platform ?? "",
   );
@@ -88,12 +105,13 @@ export function keepFindKey(
     if (leavesNative(event.target)) {
       return;
     }
-    if (!isFindKey(event, isMac)) {
+    const action = findActionFor(event, isMac);
+    if (!action) {
       return;
     }
     event.preventDefault();
     event.stopPropagation();
-    onFind();
+    onAction(action === "replace");
   };
   target.addEventListener("keydown", listener, true);
   return () => target.removeEventListener("keydown", listener, true);
