@@ -33,7 +33,6 @@ export default defineManifest({
       "o",
       "b",
       "i",
-      "shift+x",
       "k",
       "alt+0",
       "alt+1",
@@ -42,10 +41,11 @@ export default defineManifest({
       "alt+4",
       "alt+5",
       "alt+6",
-      "shift+t",
       // BH-026: do not consume ctrl+shift+h — VS Code Replace in Files
       // (workbench.action.replaceInFiles). Vim-core has no <C-S-h> map; the
       // host noop left the chord dead while Vim is on.
+      // BH-027: same for ctrl+shift+x (Extensions) and ctrl+shift+t (Reopen
+      // Closed Editor). Vim-core has <C-x>/<C-t>/X, not <C-S-x>/<C-S-t>.
     ].map((key) => ({
       id: "consumeVimHostShortcut",
       key: `ctrl+${key}`,
