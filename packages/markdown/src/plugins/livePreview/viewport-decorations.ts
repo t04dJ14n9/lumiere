@@ -17,8 +17,8 @@ import {
   DeferredBlockWidget,
   expandVisibleRanges,
   rangesIntersect,
-  VIEWPORT_BLOCK_MARGIN,
 } from "./deferred-block";
+import { firstPaintParseEnd } from "./document-tree";
 import { changesMetadata } from "./invalidation";
 /** Viewport (+ margin) the block decorator treats as live. */
 export const setBlockHotRanges =
@@ -34,9 +34,7 @@ export const setBlockHotRanges =
 export const blockHotRanges = StateField.define<
   readonly { from: number; to: number }[]
 >({
-  create: (state) => [
-    { from: 0, to: Math.min(state.doc.length, VIEWPORT_BLOCK_MARGIN * 2) },
-  ],
+  create: (state) => [{ from: 0, to: firstPaintParseEnd(state.doc) }],
   update(value, tr) {
     for (const effect of tr.effects) {
       if (effect.is(setBlockHotRanges)) {

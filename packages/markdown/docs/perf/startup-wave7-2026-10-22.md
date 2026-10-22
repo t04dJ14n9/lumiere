@@ -1,7 +1,7 @@
 # Startup / first-open wave 7 (2026-10-22)
 
 Stacked on wave 6 after #284 merged to `main` (`804b45d8`; tip was `303acc87`).
-Host GUI on that tip (WorkVault `AI 活动平台上云.md` ~663 KB):
+Host GUI on that tip (the large cold-open fixture):
 
 | Milestone | Time |
 | --- | ---: |

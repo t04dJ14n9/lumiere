@@ -15,10 +15,10 @@ the Properties widget waits on:
 1. **Dynamic import of `properties` (~68 KB webview chunk)** started only
    inside the post-rAF paint phase, racing tables (~57 KB), callouts, etc.
 2. **`sourcesProperty` deferred to the post-paint "all" phase** (and its host
-   half deferred until `editor/session-ready`), so WorkVault notes first paint
+   half deferred until `editor/session-ready`), so large fixture notes first paint
    Sources as Unknown JSON (~29 KB row) then remount the typed stack.
 3. **Collapsed Sources still emitted every hidden article** (~108 rows in
-   WorkVault) into the DOM for "Showing N of M" unhide — large HTML + bind
+   the large fixture) into the DOM for "Showing N of M" unhide — large HTML + bind
    cost on first interactive frame.
 4. **`PropertyWidget` ran `renderProperties` twice** on create (`estimatedHeight`
    then `toDOM`) — ~15–30 ms each for that note's frontmatter.
@@ -43,7 +43,7 @@ the Properties widget waits on:
 5. **One `renderProperties` per widget** — cache sheet markup for
    `estimatedHeight` + `toDOM` (`propertiesHeightFromMarkup`).
 
-## Measured on this box (Node, WorkVault note frontmatter)
+## Measured on this box (Node, large-fixture note frontmatter)
 
 | Work | Wave 5 | Wave 6 |
 | --- | ---: | ---: |
