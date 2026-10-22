@@ -95,6 +95,9 @@ export function keepFormatKeys(
   onFormat: (action: FormatAction) => void,
   leavesNative: (target: EventTarget | null) => boolean = leavesNativeFormat,
 ): () => void {
+  if (!target || typeof target.addEventListener !== "function") {
+    return () => {};
+  }
   const isMac = /Mac|iPhone|iPad/.test(
     target.defaultView?.navigator.platform ?? "",
   );

@@ -124,3 +124,10 @@ test("capture listener owns Mod+B/I and skips native fields", () => {
   stop();
   assert.equal(listeners.size, 0);
 });
+
+test("missing document is a no-op dispose", () => {
+  const stop = keepFormatKeys(undefined as unknown as Document, () => {
+    assert.fail("must not format without a document");
+  });
+  stop();
+});

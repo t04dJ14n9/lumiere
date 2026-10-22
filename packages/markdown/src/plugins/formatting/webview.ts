@@ -138,7 +138,12 @@ function registerFormatKeyOwnership(
   const italics = commands.get("editor:toggle-italics")!;
   ctx.effect(() => {
     const view = ctx.editor.view;
-    return keepFormatKeys(view.dom.ownerDocument, (action) => {
+    // Unit fixtures use a bare EventTarget as view.dom (no ownerDocument).
+    const doc = view.dom.ownerDocument;
+    if (!doc) {
+      return () => {};
+    }
+    return keepFormatKeys(doc, (action) => {
       const active = ctx.bail("editor/activeView") ?? ctx.editor.view;
       (action === "bold" ? bold : italics)(active);
     });
