@@ -17,30 +17,35 @@ const PLACEHOLDER_HEIGHT = 69;
 const FRONTMATTER_PROBE_MAX = 64 * 1024;
 
 /**
- * True when the Lezer Frontmatter node spans a complete `---` / `---` fence.
- * Truncated first-paint trees cut mid-YAML (`node.to` before the closing
- * fence); matching those would hide only the opening band and leave the rest
- * of the fence as raw glyphs.
+ * End of a complete `---` / `---` fence at document start, or undefined.
+ * Uses yaml-free `headerParts` (string probe) — not a larger Lezer first-paint
+ * budget (#289 regress). Truncated first-paint Frontmatter nodes still qualify
+ * when the closing marker sits past `node.to`; callers must decorate through
+ * this end via `range()` so the rest of the fence is not left as raw glyphs.
  */
+export function frontmatterFenceEnd(
+  state: EditorState,
+  node: SyntaxNodeRef,
+): number | undefined {
+  if (node.name !== "Frontmatter" || node.from !== 0) {
+    return undefined;
+  }
+  const header = headerParts(
+    state.doc.sliceString(0, Math.min(state.doc.length, FRONTMATTER_PROBE_MAX)),
+  );
+  return header?.end;
+}
 
+/**
+ * True when the note opens with a complete YAML fence the placeholder can
+ * collapse. Accepts truncated first-paint Frontmatter nodes when `headerParts`
+ * still finds the closing marker further down (pair with `range()`).
+ */
 export function completeFrontmatter(
   state: EditorState,
   node: SyntaxNodeRef,
 ): boolean {
-  if (node.name !== "Frontmatter" || node.from !== 0) {
-    return false;
-  }
-  // Probe the note (not just node.to): a truncated first-paint Frontmatter
-  // node ends mid-YAML while headerParts on the real fence still finds the
-  // closing marker further down. Lezer's node.to omits the trailing EOL that
-  // headerParts includes in `end`.
-  const header = headerParts(
-    state.doc.sliceString(0, Math.min(state.doc.length, FRONTMATTER_PROBE_MAX)),
-  );
-  if (!header) {
-    return false;
-  }
-  return node.to >= header.end - header.eol.length;
+  return frontmatterFenceEnd(state, node) !== undefined;
 }
 
 /** Properties (or any later chrome) owns Frontmatter once registered. */
@@ -52,8 +57,9 @@ export function propertiesRendererRegistered(state: EditorState): boolean {
 
 /**
  * Collapse a complete YAML fence before the Properties feature chunk
- * configures. Heading + body enter the viewport from core Live Preview alone;
- * Properties replaces this widget when its renderer registers.
+ * configures — including on truncated first-paint trees (wave 14). Heading +
+ * body enter the viewport from core Live Preview alone; Properties replaces
+ * this widget when its renderer registers.
  */
 export function frontmatterPlaceholderRenderer(): BlockRenderer {
   return {
@@ -62,6 +68,12 @@ export function frontmatterPlaceholderRenderer(): BlockRenderer {
     editing: "widget",
     match: (node, state) =>
       !propertiesRendererRegistered(state) && completeFrontmatter(state, node),
+    // Cover header.end even when Lezer's Frontmatter node is mid-YAML so the
+    // remainder of the fence is not left as raw glyphs (no FIRST_PAINT widen).
+    range: (node, state) => {
+      const end = frontmatterFenceEnd(state, node);
+      return { from: 0, to: end ?? node.to };
+    },
     widget: () => new FrontmatterPlaceholder(),
   };
 }

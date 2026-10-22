@@ -43,6 +43,12 @@ export class DeferredBlockWidget extends WidgetType {
  * MarkdownBlock estimator (math / Mermaid / callout / HTML / embeds).
  */
 export function deferredBlockHeight(block: RenderBlock): number {
+  // Match FrontmatterPlaceholder / collapsed Properties chrome (~69 px).
+  // Do not estimate from the YAML source string (tall fences would reserve
+  // thousands of pixels when the block leaves the hot band).
+  if (block.kind === "frontmatter-placeholder") {
+    return 69;
+  }
   if (block.kind === "Table") {
     const rows = block.source
       .split("\n")
