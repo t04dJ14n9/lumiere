@@ -1,12 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { Vaults, type VaultEvent } from "../../src/server/vaults";
 
 async function scratch(t: test.TestContext): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), "lumiere-vaults-"));
+  // The real path, as vaults are known by theirs (macOS: /var → /private/var).
+  const dir = await realpath(
+    await mkdtemp(path.join(tmpdir(), "lumiere-vaults-")),
+  );
   t.after(() => rm(dir, { recursive: true, force: true }));
   return dir;
 }
@@ -108,4 +119,26 @@ test("a vault's files are listed by kind, sorted by path", async (t) => {
     { path: "data.csv", kind: "other" },
     { path: "pic.PNG", kind: "image" },
   ]);
+});
+
+test("a vault reached through a symlink is known by its real path", async (t) => {
+  const dir = await scratch(t);
+  await mkdir(path.join(dir, "real", "sub"), { recursive: true });
+  await writeFile(path.join(dir, "real", "sub", "n.md"), "");
+  await symlink(path.join(dir, "real"), path.join(dir, "alias"));
+  const vaults = new Vaults(path.join(dir, "vaults.json"));
+  const events: VaultEvent[] = [];
+  vaults.onEvent((event) => events.push(event));
+
+  assert.equal(
+    await vaults.add(path.join(dir, "alias")),
+    path.join(dir, "real"),
+  );
+  await vaults.show(path.join(dir, "alias", "sub", "n.md"));
+  assert.deepEqual(events.at(-1), {
+    type: "open",
+    vault: path.join(dir, "real"),
+    path: "sub/n.md",
+  });
+  assert.deepEqual(vaults.list().open, [path.join(dir, "real")]);
 });

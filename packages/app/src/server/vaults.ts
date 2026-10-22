@@ -2,7 +2,7 @@
  * The vaults the app has open (folders of notes), the ones opened before,
  * and what is in each, for the shell's file tree.
  */
-import { readFile, mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { listVault } from "@workshop/host-node";
@@ -51,8 +51,10 @@ export class Vaults {
 
   /** Open a folder as a vault; it must be an existing absolute directory. */
   async add(folder: string): Promise<string> {
-    const vault = path.resolve(folder);
-    if (!path.isAbsolute(folder) || !(await isDirectory(vault))) {
+    // By its real path: host-node opens notes by theirs, so a vault reached
+    // through a symlink must be known by where it really is.
+    const vault = await realPath(folder);
+    if (!path.isAbsolute(folder) || !vault || !(await isDirectory(vault))) {
       throw new Error(`Not a folder: ${folder}`);
     }
     if (!this.open.has(vault)) {
@@ -68,7 +70,7 @@ export class Vaults {
    * open vault that holds it, or with its own folder as a new vault.
    */
   async show(target: string): Promise<void> {
-    const resolved = path.resolve(target);
+    const resolved = (await realPath(target)) ?? path.resolve(target);
     if (await isDirectory(resolved)) {
       await this.add(resolved);
       return;
@@ -136,6 +138,10 @@ function kindOf(file: string): FileEntry["kind"] {
   return /^\.(png|jpe?g|gif|webp|svg|avif)$/.test(extension)
     ? "image"
     : "other";
+}
+
+async function realPath(target: string): Promise<string | undefined> {
+  return realpath(path.resolve(target)).catch(() => undefined);
 }
 
 async function isDirectory(target: string): Promise<boolean> {

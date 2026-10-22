@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { request as httpRequest } from "node:http";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { startServer, type RunningServer } from "../../src/server/server";
@@ -55,7 +55,9 @@ function send(
 async function fixture(
   t: test.TestContext,
 ): Promise<{ server: RunningServer; vault: string; cookie: string }> {
-  const dir = await mkdtemp(path.join(tmpdir(), "lumiere-server-"));
+  const dir = await realpath(
+    await mkdtemp(path.join(tmpdir(), "lumiere-server-")),
+  );
   const assets = path.join(dir, "assets");
   const vault = path.join(dir, "vault");
   await mkdir(path.join(assets, "shell"), { recursive: true });
