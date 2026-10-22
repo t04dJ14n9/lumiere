@@ -8,6 +8,9 @@
 
 ## Unreleased
 
+- **Toggle Text Editor** (Ctrl/Cmd+E): after switching Lumière ↔ the host text
+  editor, close the leave-behind sibling tab of the same file so only one tab
+  remains (BH-011 / BH-003). Dirty tabs are left alone.
 - **Toggle Text Editor** (Ctrl/Cmd+E): switch the active Markdown note between
   Lumière and the host's built-in text editor. Deliberately not Obsidian's
   Live Preview ↔ Source binding; that remains the unbound Toggle Live

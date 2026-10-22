@@ -130,4 +130,10 @@ export interface ActiveEditor {
   /** The text and selection of a note open in a text editor. */
   textEditor(uri: string): { text: string; selection: string } | undefined;
   onTextSelectionChanged(listener: () => void): Disposer;
+  /**
+   * After Toggle Text Editor's `openWith`, close the leave-behind tab of the
+   * other view for this URI in the active group (BH-011). Dirty tabs stay.
+   * `keep` is the view that should remain: host text or Lumière.
+   */
+  closeSiblingTabs(uri: string, keep: "text" | "lumiere"): Promise<void>;
 }
