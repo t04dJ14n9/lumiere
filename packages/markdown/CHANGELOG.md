@@ -2,6 +2,10 @@
 
 ## 0.1.0 (unreleased)
 
+- Selecting a `|W` wikilink image no longer draws a long caret/selection bar
+  below the card: the block paint reserve is released after measure, and the
+  caret is hidden while the image is selected (Host GUI BH-007).
+
 - Inline math on a list item's first line renders in Live Preview; it was
   blank, or drawn over the text before it.
 - Math that needs MathJax's on-demand glyphs renders offline: `\mathbb`,

@@ -318,6 +318,13 @@ const selectedClass = ViewPlugin.define((view) => {
       setImageSelectedChrome(image, true);
     }
     marked = images;
+    // Obsidian shows the outline only; a caret at the embed would use the
+    // widget's (often overestimated) height and paint a long bar below.
+    if (images.length) {
+      view.dom.dataset.mwImageSelected = "";
+    } else {
+      delete view.dom.dataset.mwImageSelected;
+    }
   };
   // A resized image is drawn again once its file loads, replacing elements:
   // mark whatever is drawn while one is selected.
@@ -346,6 +353,7 @@ const selectedClass = ViewPlugin.define((view) => {
       for (const image of marked) {
         setImageSelectedChrome(image, false);
       }
+      delete view.dom.dataset.mwImageSelected;
     },
   };
 });
