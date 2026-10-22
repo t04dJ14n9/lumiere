@@ -88,7 +88,6 @@ test("Vim i after clicking rendered block math inserts in the body", async ({
 for (const [name, header, selector] of [
   ["generated title", "> [!note]", ".callout-title-text"],
   ["custom title", "> [!note] A custom title", ".callout-title-text"],
-  ["folded title", "> [!note]- A folded title", ".callout-title-text"],
   ["body", "> [!note] A custom title", ".callout-content p"],
 ] as const) {
   test(`callout ${name} click selects source where typing lands`, async ({
@@ -113,6 +112,23 @@ for (const [name, header, selector] of [
       .toBe("before\n\nxyz\n\nafter");
   });
 }
+
+test("callout title click toggles fold without editing (BH-017)", async ({
+  page,
+}) => {
+  const callout = "> [!note]- Folded\n> Body";
+  await open(page, `before\n\n${callout}\n\nafter`);
+  const body = page.locator(".callout-content p");
+  await expect(body).toBeHidden();
+  await page.locator(".callout-title-text").click();
+  await expect(body).toBeVisible();
+  await expect(page.locator(".hybrid-callout")).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`before\n\n${callout}\n\nafter`);
+  await page.locator(".callout-title-text").click();
+  await expect(body).toBeHidden();
+});
 
 test("callout fold button toggles without editing, then its body accepts input", async ({
   page,

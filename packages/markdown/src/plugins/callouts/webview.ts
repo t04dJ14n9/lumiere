@@ -40,7 +40,6 @@ function registerCalloutRenderer(ctx: Context): void {
         new MarkdownBlock(block, ctx.render, {
           reveal: "click",
           guardMargin: true,
-          editSummary: true,
         }),
     }),
   );
@@ -113,12 +112,6 @@ export function bindDisclosure({
       }
       event.preventDefault();
       event.stopPropagation();
-      if (
-        event.target instanceof Element &&
-        event.target.closest(".callout-title-text, .callout-icon")
-      ) {
-        return;
-      }
       details.open = !details.open;
       remember();
     },
