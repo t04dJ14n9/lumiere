@@ -23,7 +23,7 @@ selected, and Tab with the alias / size segment selected (as Obsidian's
 `editSelectedImageAlias`), until the caret leaves it; Backspace or Delete
 removes the embed; Escape leaves source edit and re-selects the image
 (Obsidian), or clears the outline; a click elsewhere or any edit also lets
-it go (`image-selection.ts`, `image-size.ts`).
+it go (`image-selection.ts`, `image-size.ts`). While selected, the caret is hidden so a tall `|W` height reserve cannot paint a bar below the card.
 
 ## Files
 

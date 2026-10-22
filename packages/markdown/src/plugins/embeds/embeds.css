@@ -205,6 +205,13 @@ img.md-image-selected {
   outline-offset: 1px;
 }
 
+/* Selected image: outline only (Obsidian). Hide the caret — at a block
+   embed it inherits the widget height (including a tall |W| minHeight
+   reserve) and draws a long bar below the card. */
+#app .cm-editor[data-mw-image-selected] > .cm-scroller > .mw-caret-layer {
+  visibility: hidden;
+}
+
 /* Obsidian image-embed host + resize-corner chevron (app.css ~11969–12070).
    VS Code theme tokens; pointer-events none — resize stays on +/− keys. */
 .image-embed {

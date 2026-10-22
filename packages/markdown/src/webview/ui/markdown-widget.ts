@@ -164,6 +164,14 @@ export class MarkdownBlock extends WidgetType {
         sourceLine: view.state.doc.lineAt(this.block.from).number - 1,
         measure: () => {
           if (live) {
+            // Drop the paint reserve once content has height so a short |W|
+            // image is not left with empty shell below (caret/selection chrome).
+            if (
+              shell.style.minHeight &&
+              body.getBoundingClientRect().height > 0
+            ) {
+              shell.style.minHeight = "";
+            }
             view.requestMeasure();
           }
         },
