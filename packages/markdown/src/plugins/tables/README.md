@@ -65,7 +65,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `word-motion.test.ts`, `word-navigation.test.ts`: Unicode, direction-preserving edges, counts, mode guards, mappings and macro replay.
 - `vim-entry.ts`: deferred normal-mode source entry with transaction and mode guards.
 - `clipboard.ts`: text/grid copy, paste and formatting, including stale-paste checks.
-- `toolbar.ts`: add-row/column controls and contextual menu lifetime.
+- `toolbar.ts`: add-row/column controls and contextual menu lifetime. Horizontal pans on the add-row strip scroll `.table-scroll` and do not insert (BH-019); a true click still adds a row.
 - `menu.ts`: menu items and their operation/focus targets.
 - `handles.ts`: row/column grips, drag feedback and drop handling.
 - `hit-test.ts`: cell and axis hit testing.
@@ -83,6 +83,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `test/unit/features/table-wheel.test.ts`: table wheel restore cancellation and in-flight boundary chaining through plugin wiring.
 - `tables-copy.spec.ts` (browser): handle, row, rectangle and single-cell TSV shortcuts.
 - `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim.
+- `tables-add-buttons.spec.ts` (browser): Obsidian-like 16px add strips; BH-019 horizontal pan on the add-row strip does not serialize/pad.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
 - `tables-selection-colors.spec.ts` (browser): selected inline code, bold, links and math colors in dark and light themes.
