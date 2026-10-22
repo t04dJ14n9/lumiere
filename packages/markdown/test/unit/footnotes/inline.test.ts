@@ -38,6 +38,8 @@ function decorate(selection: EditorSelection) {
   const numbers: string[] = [];
   const faint: string[] = [];
   const markers: string[] = [];
+  const inlineBodies: string[] = [];
+  const hidden: string[] = [];
   const lines: { line: number; cls: string }[] = [];
   const replaced: string[] = [];
   inlineDecorations(state, [{ from: 0, to: source.length }]).between(
@@ -58,6 +60,17 @@ function decorate(selection: EditorSelection) {
       if (value.spec.class === "mw-footnote-marker") {
         markers.push(state.sliceDoc(from, to));
       }
+      if (value.spec.class === "mw-footnote-inline-body") {
+        inlineBodies.push(state.sliceDoc(from, to));
+      }
+      // Empty replace (hide): no widget and no mark/line class.
+      if (
+        value.spec.widget === undefined &&
+        value.spec.class === undefined &&
+        from < to
+      ) {
+        hidden.push(state.sliceDoc(from, to));
+      }
       if (String(value.spec.class).startsWith("mw-footnote-def")) {
         lines.push({
           line: state.doc.lineAt(from).number,
@@ -66,7 +79,16 @@ function decorate(selection: EditorSelection) {
       }
     },
   );
-  return { references, numbers, faint, markers, lines, replaced };
+  return {
+    references,
+    numbers,
+    faint,
+    markers,
+    inlineBodies,
+    hidden,
+    lines,
+    replaced,
+  };
 }
 
 const caret = (at: number) => EditorSelection.single(at);
@@ -93,6 +115,16 @@ test("a caret inside an inline footnote fades only its brackets", () => {
   const { references, faint } = decorate(caret(source.indexOf("text.]")));
   assert.deepEqual(references, ["1", "2", "1"]);
   assert.deepEqual(faint, ["^[", "]"]);
+});
+
+test("an inline footnote keeps its body visible after the LaTeX number (BH-012)", () => {
+  const { references, inlineBodies, hidden, faint } = decorate(
+    caret(source.length),
+  );
+  assert.deepEqual(references, ["1", "2", "3", "1"]);
+  assert.deepEqual(inlineBodies, ["Inline text."]);
+  assert.deepEqual(hidden, ["]"]);
+  assert.deepEqual(faint, []);
 });
 
 test("a selection over the whole note keeps references rendered and reveals definitions", () => {

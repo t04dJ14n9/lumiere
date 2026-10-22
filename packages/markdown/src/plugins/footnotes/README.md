@@ -4,13 +4,14 @@ Footnotes in LaTeX paper style, a deliberate departure from Obsidian's Live
 Preview: a reference (`[^1]`, `[^note]` or an inline `^[text]`) shows as a
 superscript number in the text colour, numbered in order of first reference
 (named labels too; a repeated reference reuses its number), in Live Preview
-and inside rendered blocks. Selections, Ctrl+A included, keep it rendered;
-only a caret inside its source shows the faint `[^label]` for editing.
-Hovering or focusing it previews the footnote; clicking jumps to the
-definition (an inline footnote puts the caret in itself). A definition shows
-the same number before its text, set a little smaller; a selection touching its
-first line shows the faint `[^label]:` source. Insert Footnote adds a reference
-and definition in one edit.
+and inside rendered blocks. An inline `^[text]` keeps its body visible after
+the number (brackets hide; Obsidian shows the whole `^[text]` as superscript).
+Selections, Ctrl+A included, keep it rendered; only a caret inside its source
+shows the faint `[^label]` for editing. Hovering or focusing it previews the
+footnote; clicking jumps to the definition (an inline footnote puts the caret
+in itself). A definition shows the same number before its text, set a little
+smaller; a selection touching its first line shows the faint `[^label]:`
+source. Insert Footnote adds a reference and definition in one edit.
 
 ## How it works
 
