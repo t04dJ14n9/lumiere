@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import type { FileTextEdits, HostDocuments } from "../../shared/host";
 import { renameFile } from "../file-rename";
-import { cleanEditedUris } from "../rename-save";
+import { cleanEditedUris, expectedOpenEditorText } from "../rename-save";
 import type { NativeDocuments } from "./native-documents";
 
 /** VS Code's text documents, wrapped as `HostDocument`s by `documents`. */
@@ -73,35 +73,78 @@ const onWillRename: HostDocuments["onWillRename"] = (listener) =>
       }));
       event.waitUntil(
         listener(renames).then((files) => {
-          saveAfterRename(files);
-          return workspaceEdit(files);
+          // BH-014: WorkspaceEdits returned from onWillRename are applied by
+          // VS Code's file-operation participant (often behind Show Preview).
+          // Open CustomTextEditor buffers frequently never receive that edit,
+          // and saving on onDidRenameFiles races the participant. Apply open
+          // notes ourselves after the rename; keep closed notes in waitUntil
+          // so they still rewrite on disk with the rename.
+          const openText = (uri: string) =>
+            vscode.workspace.textDocuments
+              .find((document) => document.uri.toString() === uri)
+              ?.getText();
+          const open = expectedOpenEditorText(files, openText);
+          const closed = files.filter((file) => !open.has(file.uri));
+          scheduleOpenEditorLinkUpdates(files, open);
+          return workspaceEdit(closed);
         }),
       );
     }),
   );
 
 /**
- * Obsidian writes link updates straight to disk. Save the notes the update
- * edited once the rename lands, unless they already had unsaved changes, so
- * a closed editor's "Don't Save" can't leave a stale edited buffer behind.
+ * After the rename lands, rewrite each open note to the planned text and save
+ * it when it had no unsaved edits of its own (Obsidian writes link updates to
+ * disk).
  */
-function saveAfterRename(files: readonly FileTextEdits[]): void {
-  const uris = cleanEditedUris(files, (uri) =>
-    vscode.workspace.textDocuments.some(
-      (document) => document.uri.toString() === uri && document.isDirty,
-    ),
-  );
-  if (uris.length === 0) {
+function scheduleOpenEditorLinkUpdates(
+  files: readonly FileTextEdits[],
+  expected: ReadonlyMap<string, string>,
+): void {
+  if (expected.size === 0) {
     return;
   }
+  const clean = new Set(
+    cleanEditedUris(
+      files.filter((file) => expected.has(file.uri)),
+      (uri) =>
+        vscode.workspace.textDocuments.some(
+          (document) => document.uri.toString() === uri && document.isDirty,
+        ),
+    ),
+  );
   const done = vscode.workspace.onDidRenameFiles(() => {
     done.dispose();
-    for (const document of vscode.workspace.textDocuments) {
-      if (uris.includes(document.uri.toString()) && document.isDirty) {
-        void document.save();
-      }
-    }
+    void applyOpenEditorLinkUpdates(files, expected, clean);
   });
+}
+
+async function applyOpenEditorLinkUpdates(
+  files: readonly FileTextEdits[],
+  expected: ReadonlyMap<string, string>,
+  clean: ReadonlySet<string>,
+): Promise<void> {
+  for (const [uri, want] of expected) {
+    const document = vscode.workspace.textDocuments.find(
+      (open) => open.uri.toString() === uri,
+    );
+    if (!document) {
+      continue;
+    }
+    if (document.getText() === want) {
+      if (clean.has(uri) && document.isDirty) {
+        await document.save();
+      }
+      continue;
+    }
+    const file = files.find((entry) => entry.uri === uri);
+    if (!file || !(await vscode.workspace.applyEdit(workspaceEdit([file])))) {
+      continue;
+    }
+    if (clean.has(uri)) {
+      await document.save();
+    }
+  }
 }
 
 function workspaceEdit(files: readonly FileTextEdits[]): vscode.WorkspaceEdit {
