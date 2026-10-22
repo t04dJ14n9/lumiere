@@ -2,7 +2,7 @@
   "name": "lumiere",
   "displayName": "Lumière: Markdown Editor and PDF Reader",
   "description": "Obsidian-style Live Preview for Markdown and a PDF reader, in VS Code and Cursor, with links your AI agent can follow.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "t04dj14n9",
   "license": "MIT",
   "icon": "media/icon.png",
