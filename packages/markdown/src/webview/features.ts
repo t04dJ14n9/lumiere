@@ -88,10 +88,7 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
  * Wave 13: tags/lineNumbers moved to the paint set — they are not needed for
  * Properties-ready after the wave-12 body-first placeholder.
  */
-const CHROME_FEATURE_IDS = new Set([
-  "properties",
-  "sourcesProperty",
-]);
+const CHROME_FEATURE_IDS = new Set(["properties", "sourcesProperty"]);
 
 /**
  * Visible structure for the first screen after the Properties sheet. Includes
