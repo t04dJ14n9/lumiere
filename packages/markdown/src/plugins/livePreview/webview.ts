@@ -20,6 +20,7 @@ import {
 } from "./blocks";
 import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
 import { documentTree, documentTreeCompleter } from "./document-tree";
+import { frontmatterPlaceholderRenderer } from "./frontmatter-placeholder";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
@@ -124,6 +125,13 @@ function registerFallbackBlocks(ctx: Context): void {
       }),
       { slot: "base" },
     ),
+  );
+  // Collapse a complete YAML fence before Properties chrome configures so
+  // heading/body can enter the viewport from core Live Preview (wave 12).
+  ctx.effect(() =>
+    ctx.editor.extend(blockRenderers.of(frontmatterPlaceholderRenderer()), {
+      slot: "base",
+    }),
   );
 }
 
