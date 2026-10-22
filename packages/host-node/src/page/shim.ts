@@ -6,7 +6,11 @@
  * the app shell) sends the theme (embedding.ts). Runs before the editor's
  * module (host/page.ts puts it first).
  */
-import { isEmbeddingMessage, parseThemeMessage } from "../embedding";
+import {
+  isEmbeddingMessage,
+  isShownMessage,
+  parseThemeMessage,
+} from "../embedding";
 import { parseHostFrame, type PageFrame } from "../protocol";
 import { applyTheme, followSystemTheme } from "./theme";
 import { createUi } from "./ui";
@@ -28,27 +32,30 @@ const panelId =
     ?.content ?? "";
 const send = connect(panelId);
 window.acquireVsCodeApi = () => vsCodeApi(send);
-listenToEmbedder();
+listenToEmbedder(send);
 reportFocus(send);
 
 /**
  * The embedder's messages arrive as `message` events, like the editor's RPC.
  * This listener is registered first and keeps them from the editor.
  */
-function listenToEmbedder(): void {
+function listenToEmbedder(send: (frame: PageFrame) => void): void {
   const stopFollowingSystem = followSystemTheme();
   window.addEventListener("message", (event) => {
     if (!isEmbeddingMessage(event.data)) {
       return;
     }
     event.stopImmediatePropagation();
-    const theme =
-      event.source === window.parent && event.origin === location.origin
-        ? parseThemeMessage(event.data)
-        : undefined;
+    if (event.source !== window.parent || event.origin !== location.origin) {
+      return;
+    }
+    const theme = parseThemeMessage(event.data);
     if (theme) {
       stopFollowingSystem();
       applyTheme(theme);
+    } else if (isShownMessage(event.data)) {
+      // Shown is active, as when the reader clicks in (reportFocus).
+      send({ ch: "ui", data: { type: "focus" } });
     }
   });
 }

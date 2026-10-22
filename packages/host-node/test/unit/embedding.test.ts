@@ -59,3 +59,18 @@ test("embedding messages are told apart from the editor's RPC envelopes", () => 
   assert.equal(isEmbeddingMessage({ id: 1, method: "x" }), false);
   assert.equal(isEmbeddingMessage("text"), false);
 });
+
+test("the shown message is told apart from the others", async () => {
+  const { isShownMessage, SHOWN } = await import("../../src/embedding");
+  assert.equal(isShownMessage(SHOWN), true);
+  assert.equal(isShownMessage({ lumiere: "shown" }), true);
+  assert.equal(isEmbeddingMessage(SHOWN), true);
+  for (const other of [
+    { lumiere: "theme" },
+    { lumiere: "open" },
+    "shown",
+    null,
+  ]) {
+    assert.equal(isShownMessage(other), false, JSON.stringify(other));
+  }
+});

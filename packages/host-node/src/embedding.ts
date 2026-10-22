@@ -23,7 +23,19 @@ export interface OpenMessage {
   readonly fragment: string;
 }
 
-export type EmbedderMessage = ThemeMessage;
+/**
+ * The embedder shows this page (its tab was opened or chosen). The host then
+ * takes the page's note as the active one, as VS Code does when a tab is
+ * chosen, without waiting for the reader to click into it: Outline and the
+ * other views follow the shown tab.
+ */
+export interface ShownMessage {
+  readonly lumiere: "shown";
+}
+
+export const SHOWN: ShownMessage = { lumiere: "shown" };
+
+export type EmbedderMessage = ThemeMessage | ShownMessage;
 export type PageMessage = OpenMessage;
 
 const VARIABLE = /^--vscode-[A-Za-z0-9-]+$/;
@@ -67,6 +79,11 @@ export function parseOpenMessage(data: unknown): OpenMessage | undefined {
     return undefined;
   }
   return { lumiere: "open", path: data.path, fragment: data.fragment };
+}
+
+/** Whether `data` is the embedder saying it shows this page. */
+export function isShownMessage(data: unknown): data is ShownMessage {
+  return isRecord(data) && data.lumiere === "shown";
 }
 
 /** Whether `data` is any embedding message, which the editor must not see. */

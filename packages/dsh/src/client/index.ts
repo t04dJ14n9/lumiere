@@ -4,7 +4,7 @@
  * DSH's read-only Markdown preview, which stays in the viewer menu. Written
  * against DSH's plugin module format: React comes from DSH's module table.
  */
-import { parseOpenMessage } from "@workshop/host-node/embedding";
+import { parseOpenMessage, SHOWN } from "@workshop/host-node/embedding";
 import { insideWorkspace, sessionAddress, workspaceRoot } from "./address";
 import { onDshThemeChange, readDshTheme } from "./theme";
 
@@ -134,6 +134,8 @@ function noteBody(React: ReactLike, open: (address: string) => void) {
       onLoad: () => {
         hasLoaded.current = true;
         sendTheme(frame.current);
+        // The note in front is the active one (embedding.ts, ShownMessage).
+        frame.current?.contentWindow?.postMessage(SHOWN, location.origin);
         props.content.loaded?.(file?.version ?? "lumiere");
       },
       onError: () => props.content.failed?.(),
