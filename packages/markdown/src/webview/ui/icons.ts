@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Text,
   FileQuestion,
+  Plus,
   type IconNode,
 } from "lucide";
 import {
@@ -100,12 +101,17 @@ export function propertyIcon(
 }
 
 export function propertyFlairIcon(
-  kind: "pencil" | "warning" | "collapse",
+  kind: "pencil" | "warning" | "collapse" | "plus",
 ): string {
   const icons = {
     pencil: Pencil,
     warning: TriangleAlert,
     collapse: ChevronRight,
+    plus: Plus,
   };
-  return iconHTML(icons[kind], "property-icon");
+  const html = iconHTML(icons[kind], "property-icon");
+  if (kind === "plus") {
+    return html.replace("<svg", `<svg data-lucide="plus"`);
+  }
+  return html;
 }

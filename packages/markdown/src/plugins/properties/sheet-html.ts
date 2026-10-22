@@ -80,7 +80,7 @@ export function renderProperties(
       }),
     )
     .join("");
-  return `<div class="properties metadata-container${options.collapsed ? " is-collapsed" : ""}"><div class="metadata-properties-heading" data-properties-heading tabindex="0" role="button" aria-expanded="${!options.collapsed}"><span class="metadata-collapse-indicator">${propertyFlairIcon("collapse")}</span><span>Properties</span></div><div class="metadata-content"${options.collapsed ? " hidden" : ""}><div class="metadata-properties">${rows}</div><button type="button" data-property-add><span aria-hidden="true">＋</span> Add property</button></div><p class="property-message" aria-live="polite"></p></div>`;
+  return `<div class="properties metadata-container${options.collapsed ? " is-collapsed" : ""}"><div class="metadata-properties-heading" data-properties-heading tabindex="0" role="button" aria-expanded="${!options.collapsed}"><span class="metadata-collapse-indicator collapse-indicator collapse-icon">${propertyFlairIcon("collapse")}</span><span class="metadata-properties-title">Properties</span></div><div class="metadata-content"${options.collapsed ? " hidden" : ""}><div class="metadata-properties">${rows}</div><button type="button" class="metadata-add-button text-icon-button" data-property-add>${propertyFlairIcon("plus")} Add property</button></div><p class="property-message" aria-live="polite"></p></div>`;
 }
 
 function propertyBody(
