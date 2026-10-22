@@ -94,15 +94,12 @@ export class TableController {
     this.grid.render();
     this.handles = this.createHandles();
     this.handles.refresh();
-    this.mountSticky();
+    this.sticky = this.createSticky();
+    this.grid.root.prepend(this.sticky.root);
   }
 
-  private mountSticky(): void {
-    this.sticky = new TableStickyHScroll(
-      this.grid.scroll,
-      this.grid.outer.scrollDOM,
-    );
-    this.grid.root.prepend(this.sticky.root);
+  private createSticky(): TableStickyHScroll {
+    return new TableStickyHScroll(this.grid.scroll, this.grid.outer.scrollDOM);
   }
 
   private createProjection(environment: TableEnvironment): CellProjection {
