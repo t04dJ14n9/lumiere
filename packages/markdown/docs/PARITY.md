@@ -387,3 +387,4 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.backlinks.enableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.backlinks.disableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.backlinks.extraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.math.macros | not observed | not manually observed | Manual scenario pending | not observed |

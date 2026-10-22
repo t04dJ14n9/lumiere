@@ -3140,6 +3140,16 @@
             "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workshop remembers a deck.",
             "scope": "resource"
           },
+          "lumiere.markdown.math.macros": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "default": {},
+            "description": "MathJax TeX macros (name → replacement), as in Obsidian’s MathJax macros setting. Use #1…#9 for arguments.",
+            "scope": "resource"
+          },
           "lumiere.markdown.obsidianCompat.configFolder": {
             "type": "string",
             "default": ".obsidian",
