@@ -122,3 +122,13 @@ export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
 );
 
 export { pluginRank } from "./plugin-order";
+
+/** Each plugin's title by its id ("lineNumbers" → "Line Numbers"), for settings pages. */
+export function pluginTitles(): ReadonlyMap<string, string> {
+  return new Map(
+    [...features, ...workbenchFeatures].map((manifest) => [
+      manifest.id,
+      manifest.title,
+    ]),
+  );
+}

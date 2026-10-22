@@ -28,7 +28,8 @@ any Node web server:
 - `/lumiere/page/shim.js`: the page shim;
 - `/lumiere/file`: a note's images;
 - `/lumiere/socket`: the page's socket;
-- `/lumiere/views`: the tree views.
+- `/lumiere/views`: the tree views;
+- `/lumiere/settings`: Lumière's settings, for a settings page.
 
 The embedder puts its own authentication in front of them. A page runs in
 the embedder's iframe. Its shim stands in for VS Code's webview API: what
@@ -47,9 +48,10 @@ The workspace may not be the filesystem root.
 | `src/embedding.ts` | embedder ↔ page (`postMessage`) | the theme, "open this file", "you are shown" |
 | `src/palette.ts` | embedder → page | an embedder's colour roles as the `--vscode-*` variables |
 | `src/views.ts` | embedder ↔ host (HTTP) | tree snapshots, clicks, visibility, events |
+| `src/settings.ts` | embedder ↔ host (HTTP) | every setting with its value, group and title; changes, checked as VS Code's commands check them |
 
-The last three are browser-safe entries (`@workshop/host-node/embedding`,
-`/palette`, `/views`) for an embedder's page. Its Node half imports the main
+The last four are browser-safe entries (`@workshop/host-node/embedding`,
+`/palette`, `/views`, `/settings`) for an embedder's page. Its Node half imports the main
 entry. The `architecture/boundaries` lint rule allows no other import, and
 forbids this package from importing `vscode` or any embedder.
 
@@ -61,6 +63,7 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/panels.ts`, `src/host/panel.ts`: editor pages as panels, and their sockets.
 - `src/host/routes.ts`, `src/host/page.ts`, `src/host/static.ts`: the routes above.
 - `src/host/trees.ts`, `src/host/view-routes.ts`: the plugins' tree views and their routes.
+- `src/host/settings-routes.ts`: the settings for a settings page, and changes to them.
 - `src/host/vault.ts`: the vault index's file system: listing and watching.
 - `src/host/navigation.ts`: following links, creating notes, revealing in an open page.
 - `src/host/settings.ts`: settings from the contributed defaults and a JSON file.

@@ -9,6 +9,7 @@
     "../protocol.ts",
     "../embedding.ts",
     "../palette.ts",
-    "../views.ts"
+    "../views.ts",
+    "../settings.ts"
   ]
 }

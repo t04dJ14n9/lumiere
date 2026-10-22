@@ -8,7 +8,8 @@
     ".": "./src/host/index.ts",
     "./embedding": "./src/embedding.ts",
     "./palette": "./src/palette.ts",
-    "./views": "./src/views.ts"
+    "./views": "./src/views.ts",
+    "./settings": "./src/settings.ts"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

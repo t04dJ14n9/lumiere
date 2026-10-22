@@ -1,7 +1,7 @@
 /**
  * The editor's pages and files, for any web server: a note's editor page,
- * the built editor, the page shim, a note's images, the page's socket, and
- * the plugins' tree views (view-routes.ts).
+ * the built editor, the page shim, a note's images, the page's socket, the
+ * plugins' tree views (view-routes.ts) and the settings (settings-routes.ts).
  * Authentication is the caller's: DSH checks its own, the app its token.
  */
 import { realpath } from "node:fs/promises";
@@ -9,11 +9,13 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Duplex } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { WebSocketServer } from "ws";
+import { pluginTitles } from "@workshop/markdown/portable";
 import { injectShim, pageQuery, socketSource } from "./page";
 import type { PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
 import type { LumiereHost } from "./start";
 import { serveFile, serveStatic } from "./static";
+import { createSettingsRoutes } from "./settings-routes";
 import { createViewRoutes } from "./view-routes";
 
 /** Every route below lives under this path. */
@@ -45,6 +47,7 @@ export function createEditorRoutes(
   const roots = new Map<string, string>();
   const sockets = new WebSocketServer({ noServer: true });
   const views = createViewRoutes(host.trees);
+  const settings = createSettingsRoutes(host.settings, pluginTitles());
   return {
     async handle(req, res) {
       const url = new URL(req.url ?? "/", "http://host");
@@ -61,6 +64,8 @@ export function createEditorRoutes(
         await serveResource(res, url, roots);
       } else if (rest === "/views" || rest?.startsWith("/views/")) {
         return views.handle(req, res, rest.slice("/views".length));
+      } else if (rest === "/settings") {
+        return settings.handle(req, res, "");
       } else {
         return false;
       }

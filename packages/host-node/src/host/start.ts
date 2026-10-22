@@ -10,6 +10,7 @@ import {
   bootstrap,
   pluginRank,
   type ContributedSetting,
+  type HostSettings,
 } from "@workshop/markdown/portable";
 import { NoteDocuments } from "./documents";
 import { PanelHub } from "./panels";
@@ -36,6 +37,8 @@ export interface LumiereHost {
   readonly panels: PanelHub;
   /** The plugins' tree views (Outline, Backlinks…), for the embedder to show. */
   readonly trees: TreeHub;
+  /** Lumière's settings, for the embedder's settings page. */
+  readonly settings: HostSettings;
   /** A workspace a note was opened from; vaults are found inside these. */
   addRoot(root: string): void;
   stop(): Promise<void>;
@@ -79,6 +82,7 @@ export async function startLumiere(
   return {
     panels,
     trees,
+    settings: host.settings,
     addRoot: (item) => {
       roots.add(item.replace(/\/+$/, ""));
     },
