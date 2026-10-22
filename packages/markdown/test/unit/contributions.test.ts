@@ -118,6 +118,15 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     !vim.some((binding) => binding.key === "ctrl+shift+h"),
     "consumeVimHostShortcut must not bind ctrl+shift+h",
   );
+  // BH-027: Ctrl+Shift+X → Extensions; Ctrl+Shift+T → Reopen Closed Editor.
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+shift+x"),
+    "consumeVimHostShortcut must not bind ctrl+shift+x",
+  );
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+shift+t"),
+    "consumeVimHostShortcut must not bind ctrl+shift+t",
+  );
   assert.ok(
     keybindings.some(
       (binding) =>
