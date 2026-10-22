@@ -136,9 +136,16 @@ function registerQuickOpenKey(
         trigger(ctx, host, "quickOpen");
       },
       leavesNativeHistory,
-      () =>
-        completionStatus(ctx.editor.view.state) === "active" ||
-        !!doc.querySelector(".cm-tooltip-autocomplete"),
+      () => {
+        // "pending" | "active" both mean Ctrl+P must move the list (not Quick Open).
+        const status = completionStatus(ctx.editor.view.state);
+        return (
+          status !== null ||
+          !!doc.querySelector(
+            ".cm-tooltip-autocomplete, .cm-tooltip.cm-tooltip-autocomplete",
+          )
+        );
+      },
     );
   });
 }

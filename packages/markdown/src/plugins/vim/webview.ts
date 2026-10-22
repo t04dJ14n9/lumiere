@@ -52,6 +52,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     registerNativeActions(ctx);
     registerExCommands(ctx);
     registerVimExtension(ctx);
+    // BH-021: default <C-p>→k steals Quick Open and races suggest Ctrl+P.
+    releaseQuickOpenFromVim(ctx);
   },
 };
 
@@ -210,4 +212,15 @@ function vimExtensions(ctx: Context, status: boolean) {
       },
     }),
   ];
+}
+
+/** Drop vim-core's <C-p>→k so host Quick Open / suggest Ctrl+P can run (BH-021). */
+function releaseQuickOpenFromVim(ctx: Context): void {
+  ctx.effect(() => {
+    Vim.unmap("<C-p>");
+    return () => {
+      // Restore the library default when this vim fiber stops.
+      Vim.map("<C-p>", "k");
+    };
+  });
 }

@@ -102,7 +102,7 @@ API, so stopped callbacks are deactivated rather than removed. Text, save and
 undo remain VS Code's. Mode transfer preserves selection; exact Vim/IME
 interaction parity awaits the owner's manual testing.
 
-The host-shortcut consumer is hidden from the command palette. Its collision
+Default `<C-p>` → `k` is unmapped while Vim is on so Ctrl+P stays Quick Open / suggest navigation (BH-021). The host-shortcut consumer is hidden from the command palette. Its collision
 bindings use Control on macOS as well as other platforms, leaving Command
 shortcuts to the editor. No verify shortcut is assigned.
 
