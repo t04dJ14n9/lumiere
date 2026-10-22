@@ -1,13 +1,15 @@
 /**
  * Ctrl/Cmd+B / Ctrl/Cmd+I → bold / italic (BH-024).
+ * Ctrl/Cmd+D → select next occurrence (BH-028).
  *
- * `@replit/codemirror-vim` maps `<C-b>` → page-back and `<C-i>` → jumplist
- * forward, so with Vim on the CM Mod-b / Mod-i keymaps never run. Capture-phase
- * ownership matches BH-003 / BH-021 / BH-023: preventDefault + stop so Vim
- * cannot steal the chord. The Vim host `consumeVimHostShortcut` binding for
- * Ctrl+B/I is gated off while formatting is enabled so the host cannot noop
- * the chord before the webview. Physical PageUp still reaches vim-core via
- * its keyToKey → `<C-b>` path (it is not Ctrl+B). Native text fields keep the
+ * `@replit/codemirror-vim` maps `<C-b>` → page-back, `<C-i>` → jumplist
+ * forward, and `<C-d>` → half-page scroll, so with Vim on the CM Mod-b / Mod-i /
+ * Mod-d keymaps never run. Capture-phase ownership matches BH-003 / BH-021 /
+ * BH-023: preventDefault + stop so Vim cannot steal the chord. The Vim host
+ * `consumeVimHostShortcut` binding for Ctrl+B/I is gated off while formatting
+ * is enabled so the host cannot noop the chord before the webview. Ctrl+D is
+ * not in the host consume list. Physical PageUp still reaches vim-core via its
+ * keyToKey → `<C-b>` path (it is not Ctrl+B). Native text fields keep the
  * chords.
  */
 
@@ -20,11 +22,12 @@ export interface FormatKey {
   shiftKey: boolean;
 }
 
-export type FormatAction = "bold" | "italics";
+export type FormatAction = "bold" | "italics" | "selectNext";
 
 /**
- * Map a keydown to bold (B / keyCode 66) or italics (I / keyCode 73). Physical
- * codes cover non-Latin layouts the way history-keys covers Z/Y.
+ * Map a keydown to bold (B / keyCode 66), italics (I / keyCode 73), or select
+ * next (D / keyCode 68). Physical codes cover non-Latin layouts the way
+ * history-keys covers Z/Y.
  */
 export function formatActionFor(
   event: FormatKey,
@@ -42,6 +45,9 @@ export function formatActionFor(
   }
   if (key === "i" || event.keyCode === 73) {
     return "italics";
+  }
+  if (key === "d" || event.keyCode === 68) {
+    return "selectNext";
   }
   return undefined;
 }
@@ -87,8 +93,8 @@ function elementForClosest(target: EventTarget | null): Element | null {
 }
 
 /**
- * Own Mod/Ctrl+B and Mod/Ctrl+I in capture phase so Vim cannot page-back /
- * jumplist-steal formatting shortcuts.
+ * Own Mod/Ctrl+B, Mod/Ctrl+I, and Mod/Ctrl+D in capture phase so Vim cannot
+ * page-back / jumplist / half-page-scroll steal formatting shortcuts.
  */
 export function keepFormatKeys(
   target: Document,

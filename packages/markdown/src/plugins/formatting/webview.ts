@@ -129,7 +129,7 @@ function addEditingCommands(commands: Map<string, Command>): void {
   });
 }
 
-/** Capture Mod/Ctrl+B/I so Vim cannot steal bold/italic (BH-024). */
+/** Capture Mod/Ctrl+B/I/D so Vim cannot steal bold/italic/select-next (BH-024/028). */
 function registerFormatKeyOwnership(
   ctx: Context,
   commands: Map<string, Command>,
@@ -145,6 +145,10 @@ function registerFormatKeyOwnership(
     }
     return keepFormatKeys(doc, (action) => {
       const active = ctx.bail("editor/activeView") ?? ctx.editor.view;
+      if (action === "selectNext") {
+        selectNextOccurrence(active);
+        return;
+      }
       (action === "bold" ? bold : italics)(active);
     });
   });
