@@ -97,6 +97,8 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     (binding) => binding.command === "lumiere.markdown.consumeVimHostShortcut",
   );
   assert.ok(vim.some((binding) => binding.mac === "ctrl+o"));
+  // BH-034: Ctrl+N must not open Untitled; vim-core maps <C-n>→j.
+  assert.ok(vim.some((binding) => binding.key === "ctrl+n"));
   assert.ok(vim.some((binding) => binding.mac === "ctrl+i"));
   for (const binding of vim) {
     assert.equal(binding.mac, binding.key);

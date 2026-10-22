@@ -31,6 +31,9 @@ export default defineManifest({
     ],
     keybindings: [
       "o",
+      // BH-034: consume ctrl+n so workbench New Untitled File cannot steal
+      // vim-core's <C-n>→j (same pattern as ctrl+o → jumplist).
+      "n",
       "b",
       "i",
       "k",

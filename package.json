@@ -1251,6 +1251,12 @@
       },
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
+        "key": "ctrl+n",
+        "mac": "ctrl+n",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+b",
         "mac": "ctrl+b",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
