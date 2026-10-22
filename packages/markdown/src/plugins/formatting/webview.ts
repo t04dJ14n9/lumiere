@@ -167,6 +167,15 @@ function registerFormattingCommands(
   }
 }
 
+/** Obsidian Set Heading 0–6 (BH-030). Host also binds ctrl/cmd+alt+N. */
+function headingKeyBindings(commands: Map<string, Command>) {
+  return Array.from({ length: 7 }, (_, level) => ({
+    key: `Mod-Alt-${level}`,
+    run: commands.get(`editor:set-heading-${level}`)!,
+    stopPropagation: true,
+  }));
+}
+
 function registerFormattingKeys(
   ctx: Context,
   commands: Map<string, Command>,
@@ -198,6 +207,7 @@ function registerFormattingKeys(
           run: commands.get("editor:toggle-comments")!,
           stopPropagation: true,
         },
+        ...headingKeyBindings(commands),
         // VS Code's keys for more carets: Obsidian binds none.
         {
           key: "Mod-Alt-ArrowUp",

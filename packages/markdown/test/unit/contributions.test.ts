@@ -127,6 +127,23 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     !vim.some((binding) => binding.key === "ctrl+shift+t"),
     "consumeVimHostShortcut must not bind ctrl+shift+t",
   );
+  // BH-030: Ctrl+Alt+0..6 → Set Heading; vim-core has no <C-A-N>.
+  for (let level = 0; level <= 6; level++) {
+    const chord = `ctrl+alt+${level}`;
+    assert.ok(
+      !vim.some((binding) => binding.key === chord),
+      `consumeVimHostShortcut must not bind ${chord}`,
+    );
+    assert.ok(
+      keybindings.some(
+        (binding) =>
+          binding.command === `lumiere.markdown.setHeading${level}` &&
+          binding.key === chord &&
+          binding.mac === `cmd+alt+${level}`,
+      ),
+      `setHeading${level} must bind ${chord} / cmd+alt+${level}`,
+    );
+  }
   assert.ok(
     keybindings.some(
       (binding) =>
