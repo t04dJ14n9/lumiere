@@ -2,6 +2,7 @@ import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
 import { preloadChromeFeatures, preloadPaintFeatures } from "./features";
+import { preloadYaml } from "../markdown/properties/load-yaml";
 import { registerEditorSettings } from "./editor-settings";
 import { createRoot, type RootContext } from "@workshop/core";
 import type { Infer } from "@workshop/core";
@@ -58,10 +59,15 @@ export async function bootstrap(
   const configure = pluginReporting(root, rpc);
   // Chrome (Properties) must not wait on tables/callouts download. Start both
   // preloads as soon as we know the Obsidian preset, overlapping core settle.
+  // YAML must be warm before settled(): Live Preview metadata() parses
+  // frontmatter synchronously on first EditorView decorations.
+  const yamlReady =
+    init.preset === "obsidian" ? preloadYaml() : Promise.resolve();
   const chromeChunks =
     init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
   const paintChunks =
     init.preset === "obsidian" ? preloadPaintFeatures() : Promise.resolve();
+  await yamlReady;
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {
@@ -81,8 +87,10 @@ export async function bootstrap(
 }
 
 /**
- * Glyphs first (rAF), then Properties as soon as chrome chunks are ready —
- * without waiting on tables. Paint structure and the deferred set follow.
+ * Properties chrome starts as soon as its chunks (and YAML) are ready — do
+ * not wait for the first-paint rAF. Glyphs still mark on rAF from core Live
+ * Preview. No HTML boot skeleton and no modulepreload chrome entry (#286
+ * regressed interactive ~0.3 s on that path).
  */
 function scheduleFeaturePhases(options: {
   root: RootContext;
@@ -96,18 +104,18 @@ function scheduleFeaturePhases(options: {
     options;
   requestAnimationFrame(() => {
     performance.mark("mw:first-paint");
-    void chromeChunks
-      .then(() => configure(features, defaults, "chrome"))
-      .then(() => {
-        performance.mark("mw:properties");
-        return paintChunks.then(() => configure(features, defaults, "paint"));
-      })
-      .then(() => {
-        performance.mark("mw:features");
-        return configure(features, defaults, "all");
-      })
-      .catch((error: unknown) =>
-        root.logger.error("Deferred features failed", error),
-      );
   });
+  void chromeChunks
+    .then(() => configure(features, defaults, "chrome"))
+    .then(() => {
+      performance.mark("mw:properties");
+      return paintChunks.then(() => configure(features, defaults, "paint"));
+    })
+    .then(() => {
+      performance.mark("mw:features");
+      return configure(features, defaults, "all");
+    })
+    .catch((error: unknown) =>
+      root.logger.error("Deferred features failed", error),
+    );
 }

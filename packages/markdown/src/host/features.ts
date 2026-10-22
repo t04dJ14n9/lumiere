@@ -25,13 +25,13 @@ const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   propertiesHost,
   sourcesPropertyHost,
   tagsHost,
-  cursorBridgePanelHost,
 ];
 
 /**
  * Host halves that only answer later RPC (blame, search, suggest, video
- * cards, …). Started after the ready response so they do not block first
- * paint on large notes or slow SSH FS.
+ * cards, Edit/Chat handoff, …). Started after the ready response so they do
+ * not block first paint on large notes or slow SSH FS. cursorBridge is not
+ * needed for Properties+heading+body interactive.
  */
 const DEFERRED_PANEL_HOSTS: readonly PanelHost[] = [
   gitGutterHost,
@@ -39,6 +39,7 @@ const DEFERRED_PANEL_HOSTS: readonly PanelHost[] = [
   suggestHost,
   searchHost,
   onlineVideosHost,
+  cursorBridgePanelHost,
 ];
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
