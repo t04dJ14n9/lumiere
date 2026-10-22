@@ -216,6 +216,16 @@ class PropertyMapEdits {
     ) {
       return undefined;
     }
+    const stored = this.items.flatMap((item) =>
+      isScalar(item.key) && typeof item.key.value === "string"
+        ? [item.key.value]
+        : [],
+    );
+    // Obsidian drops the empty `---` fence when the last property is removed
+    // (BH-013); leaving `---\n---` would count as body and inflate stats.
+    if (stored.length > 0 && stored.every((key) => keys.includes(key))) {
+      return dropFrontmatterFence(this.header);
+    }
     if (isMap(this.document.contents) && this.document.contents.flow) {
       keys.forEach((key) => this.document.delete(key));
       return this.wholeMap();
@@ -250,6 +260,11 @@ class PropertyMapEdits {
       ];
     });
   }
+}
+
+/** Remove the opening fence, body and closing fence (always at offset 0). */
+function dropFrontmatterFence(header: Header): PropertyChange[] {
+  return [{ from: 0, to: header.end, insert: "" }];
 }
 
 function newPropertyLine(
@@ -336,9 +351,23 @@ function verifyChanges(
 ): PropertyChange[] | undefined {
   try {
     const before = frontmatter(source)?.values;
-    const checked = frontmatter(applyChanges(source, changes));
+    if (!before) {
+      return undefined;
+    }
+    const result = applyChanges(source, changes);
+    const checked = frontmatter(result);
     const after = checked?.values;
-    if (!before || !after || checked?.error) {
+    // Last property removed: the empty fence is gone, so there is no header.
+    if (
+      edit.type === "remove" &&
+      after === undefined &&
+      checked === undefined
+    ) {
+      return Object.keys(before).every((key) => edit.keys.includes(key))
+        ? changes
+        : undefined;
+    }
+    if (!after || checked?.error) {
       return undefined;
     }
     if (edit.type === "set" && !sameWritten(after[edit.key], edit.value)) {
