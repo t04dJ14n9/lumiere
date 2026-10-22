@@ -33,7 +33,9 @@ with the caret mid-line. Home (Cmd+Left on macOS), with Shift to select, goes
 first to the start of a list item's, task's or quote's text, then to the line
 start (`line-start.ts`).
 Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's: it
-shows "N / M" for the selected match (counting stops at 1000), Enter and
+shows "N / M" for the selected match (counting stops at 1000), typing extends
+the query at the caret even when the current query already has matches
+(CodeMirror's findNext would otherwise select-all the field), Enter and
 Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,
 Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
 Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
@@ -97,7 +99,7 @@ editor and VSCodeVim (`docs/vim-caret.md`).
   and the host default text editor.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
-- `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
+- `find.ts`, `find-panel.ts`, `find-caret.ts`, `find-count.ts`, `find.css`: in-note find and replace.
 - `select-all.ts`: stops VS Code's own Select All from undoing the
   editor's Ctrl/Cmd+A (VS Code forwards every webview keydown).
 - `focus-report.ts`: reports the webview's focus for
