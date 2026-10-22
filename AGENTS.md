@@ -10,6 +10,10 @@ workspace. Everything is a plugin:
 | `packages/markdown` | Lumière: Obsidian-like Live Preview | its DESIGN.md, IMPLEMENTATION_PLAN.md |
 | `packages/pdf` | Lumière PDF: EmbedPDF viewer with agent links | its README.md, AGENTS.md |
 | `src/extension.ts` | The composition root: one plugin tree for both | |
+| `packages/host-node` | The plugins' host outside VS Code: services, editor routes, tree views | its README.md |
+| `packages/dsh` | Lumière in DeepSeek Harness, on host-node | its README.md |
+| `packages/app` | Lumière's own server and Typora-like window, on host-node | its README.md |
+| `apps/desktop` | The Tauri desktop app around `packages/app` | its README.md, [docs/HOSTS_PLAN.md](docs/HOSTS_PLAN.md) |
 
 If the task is a user / third-party custom plugin, read
 [packages/markdown/AGENT.md](packages/markdown/AGENT.md) and implement it as a
@@ -34,6 +38,11 @@ If the task is a user / third-party custom plugin, read
   `dialogs`, `settings`, `workspace`, …); their VS Code adapters live in
   `src/host/services`. Inject the narrowest service that does the job, and
   fake it in tests with `fakeHost(overrides)`.
+- Outside VS Code the same services come from `packages/host-node`, which
+  knows no embedder. DSH, the app and the desktop app add only what is
+  theirs. Put each change in the layer docs/HOSTS_PLAN.md section 3 names: a
+  Markdown fix goes in the plugin, never in one host. The contracts between
+  the layers (docs/HOSTS_PLAN.md section 4) change on both sides in one PR.
 - The `TextDocument` owns text, saving and undo. Webviews only synchronize.
 - Webviews are untrusted. Every message has a schema and is validated in
   both directions; the host re-checks paths and containment.

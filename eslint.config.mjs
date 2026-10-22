@@ -2,6 +2,45 @@ import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 import path from "node:path";
+// The hosts outside VS Code (docs/HOSTS_PLAN.md, section 3): host-node knows
+// no embedder; each embedder knows host-node only by its public entries.
+const HOST_PACKAGES = ["host-node", "dsh", "app"];
+const FORBIDDEN_BY_HOST = {
+  "host-node": ["vscode", "@workshop/dsh", "@workshop/app", "@tauri-apps/"],
+  dsh: ["vscode", "@workshop/app", "@tauri-apps/"],
+  app: ["vscode", "@workshop/dsh"],
+};
+const HOST_NODE_ENTRIES = [
+  "@workshop/host-node",
+  "@workshop/host-node/embedding",
+  "@workshop/host-node/palette",
+  "@workshop/host-node/views",
+  "@workshop/host-node/settings",
+];
+function crossesHostLayer(file, source, target) {
+  const owner = file.match(/\/packages\/(host-node|dsh|app)\//)?.[1];
+  if (!owner) {
+    return false;
+  }
+  if (
+    FORBIDDEN_BY_HOST[owner].some(
+      (name) =>
+        source === name ||
+        source.startsWith(name.endsWith("/") ? name : name + "/"),
+    )
+  ) {
+    return true;
+  }
+  const into = target.match(/\/packages\/(host-node|dsh|app)\//)?.[1];
+  if (into && into !== owner && HOST_PACKAGES.includes(into)) {
+    return true;
+  }
+  return (
+    owner !== "host-node" &&
+    source.startsWith("@workshop/host-node") &&
+    !HOST_NODE_ENTRIES.includes(source)
+  );
+}
 // Same baseline as PDF Workbench, with architecture boundaries for this project.
 const boundaries = {
   meta: {
@@ -44,6 +83,7 @@ const boundaries = {
           /\/src\/webview\//.test(target) &&
           !target.includes("/src/webview/ui/");
       }
+      invalid ||= crossesHostLayer(file, source, target);
       if (invalid) {
         context.report({ node, messageId: "boundary", data: { source } });
       }
@@ -105,6 +145,9 @@ export default tseslint.config(
       "packages/markdown/docs/vim-caret-measurements/**",
       // PDFs generated for the PDF tests.
       "packages/pdf/test/fixtures/generated/**",
+      // The desktop app's Rust build output and generated schemas.
+      "apps/desktop/src-tauri/target/**",
+      "apps/desktop/src-tauri/gen/**",
     ],
   },
   js.configs.recommended,
@@ -132,8 +175,11 @@ export default tseslint.config(
     rules: size,
   },
   {
-    // The PDF viewer's React UI.
-    files: ["packages/pdf/src/webview/**/*.{ts,tsx}"],
+    // The PDF viewer's React UI and the app's shell.
+    files: [
+      "packages/pdf/src/webview/**/*.{ts,tsx}",
+      "packages/app/src/shell/**/*.{ts,tsx}",
+    ],
     plugins: { "react-hooks": reactHooks },
     rules: {
       "react-hooks/rules-of-hooks": "error",
@@ -167,9 +213,12 @@ export default tseslint.config(
           "./packages/pdf/src/extension/tsconfig.json",
           "./packages/pdf/src/webview/tsconfig.json",
           "./packages/pdf/src/bridge-stdio/tsconfig.json",
+          "./packages/host-node/src/host/tsconfig.json",
+          "./packages/host-node/src/page/tsconfig.json",
           "./packages/dsh/src/host/tsconfig.json",
           "./packages/dsh/src/client/tsconfig.json",
-          "./packages/dsh/src/webview/tsconfig.json",
+          "./packages/app/src/server/tsconfig.json",
+          "./packages/app/src/shell/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },
@@ -183,6 +232,17 @@ export default tseslint.config(
     },
   },
   {
+    // The desktop app's own page, shown when its server does not start.
+    files: ["apps/desktop/src/**/*.js"],
+    languageOptions: {
+      globals: {
+        document: "readonly",
+        location: "readonly",
+        URLSearchParams: "readonly",
+      },
+    },
+  },
+  {
     files: ["**/*.mjs"],
     languageOptions: {
       globals: {
@@ -190,6 +250,7 @@ export default tseslint.config(
         console: "readonly",
         Buffer: "readonly",
         URL: "readonly",
+        fetch: "readonly",
       },
     },
   },

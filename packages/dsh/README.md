@@ -32,22 +32,16 @@ once the new page connects.
 
 ## Files
 
-- `src/host/index.ts`: the DSH plugin: starts Lumière and registers its routes.
-- `src/host/start.ts`: Lumière's plugin tree over DSH's host services.
-- `src/host/services.ts`: every host service the plugins inject, as DSH provides it.
-- `src/host/documents.ts`: notes on disk, edited in memory and saved after a pause.
-- `src/host/panels.ts`, `src/host/panel.ts`: editor pages as panels, and their sockets.
-- `src/host/routes.ts`, `src/host/page.ts`: the editor page, assets, note files and the socket.
-- `src/host/vault.ts`: the vault index's file system, listing and watching.
-- `src/host/navigation.ts`: following links, creating notes, opening tabs.
-- `src/host/settings.ts`: settings from the contributed defaults and a JSON file.
-- `src/host/ui-services.ts`: dialogs, clipboard and the active editor, drawn by the page.
-- `src/host/workspace.ts`: workspace files and state.
-- `src/host/inert.ts`: Git, diffs, views and panels, which DSH has no counterpart for yet.
+The Node host itself (documents, panels, settings, navigation, the page shim
+and the routes) is `@workshop/host-node`, shared with Lumière's desktop app.
+What is DSH's:
+
+- `src/host/index.ts`: the DSH plugin: starts Lumière and mounts its routes.
+- `src/host/routes.ts`: host-node's routes on DSH's web server, behind DSH's authentication.
 - `src/host/dsh.ts`: the parts of DSH's plugin context used here.
-- `src/client/index.ts`, `src/client/address.ts`: the browser half and DSH's file addresses.
-- `src/webview/shim.ts`, `src/webview/ui.ts`, `src/webview/theme.ts`, `src/webview/theme-dom.ts`: the page's stand-in for VS Code.
-- `src/protocol.ts`: what the page and the host send each other.
+- `src/client/index.ts`: the browser half: the document preview and following links.
+- `src/client/address.ts`: DSH's file addresses.
+- `src/client/theme.ts`: DSH's theme tokens as host-node's palette.
 - `scripts/build.mjs`: builds the installable bundle into `dist/bundle`.
 
 ## Services, routes and settings
@@ -55,7 +49,7 @@ once the new page connects.
 The host half injects DSH's `webServer` and `connection`; the browser half
 `documentPreviews`, `slots` and `sidebarRight`. Routes, all behind DSH's
 authentication: `/lumiere/editor` (a note's page), `/lumiere/m/*` (the
-editor), `/lumiere/d/*` (the shim), `/lumiere/file` (a note's images, inside
+editor), `/lumiere/page/shim.js` (the shim), `/lumiere/file` (a note's images, inside
 its workspace only — `..` and a symbolic link that leaves the workspace are
 refused) and the `/lumiere/socket` upgrade. Settings use the
 `lumiere.markdown.*` keys and defaults of the VS Code extension and are kept
@@ -76,8 +70,11 @@ plugins. Restart DSH after rebuilding.
 ## Limits and differences from VS Code
 
 - Markdown only: PDFs still open in DSH's own viewer.
-- No Git features (blame, gutter, diffs), no tree views (backlinks, outline,
-  tags), no graph panel and no status bar: DSH has no counterpart yet.
+- No Git features (blame, gutter, diffs), no graph panel and no status bar:
+  DSH has no counterpart yet.
+- Outline, Backlinks and Tags are served by the host (`/lumiere/views`) but
+  not yet shown in DSH: each would be a DSH sidebar tab drawing a tree from
+  `@workshop/host-node/views`, as the desktop app's sidebar does.
 - Commands have no palette or keybindings in DSH yet; what Lumière does
   through clicks, links, the editor and its context menus works.
 - Copy Link for Agent copies to the clipboard: paste into DSH's chat.

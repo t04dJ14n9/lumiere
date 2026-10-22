@@ -2,22 +2,19 @@
   "name": "@workshop/dsh",
   "version": "0.0.0",
   "private": true,
-  "description": "Lumière in DeepSeek Harness: a host for the Markdown plugins, a preview plugin for DSH's sidebar, and the bundle DSH installs.",
+  "description": "Lumi\u00e8re in DeepSeek Harness: a host for the Markdown plugins, a preview plugin for DSH's sidebar, and the bundle DSH installs.",
   "type": "module",
   "exports": {
     "./host": "./src/host/index.ts"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p src/host && tsc -p src/client && tsc -p src/webview && tsc -p test",
+    "typecheck": "tsc -p src/host && tsc -p src/client && tsc -p test",
     "test": "tsx --test \"test/unit/**/*.test.ts\""
   },
   "dependencies": {
     "@workshop/core": "workspace:*",
-    "@workshop/markdown": "workspace:*",
-    "ws": "8.22.0"
-  },
-  "devDependencies": {
-    "@types/ws": "8.18.2"
+    "@workshop/host-node": "workspace:*",
+    "@workshop/markdown": "workspace:*"
   }
 }

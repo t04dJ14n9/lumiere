@@ -9,3 +9,8 @@ pnpm-lock.yaml
 **/contributes.json
 *.md
 **/test/fixtures/
+# The desktop app's Rust build output, generated schemas and bundle inputs.
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/resources/
+apps/desktop/.cache/

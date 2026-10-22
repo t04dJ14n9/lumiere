@@ -1,0 +1,485 @@
+/* The shell's chrome, styled with the --vscode-* variables of the app's theme (theme.ts). */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  font: 13px var(--vscode-font-family);
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+button.primary {
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+button.primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+.app {
+  display: grid;
+  /* The columns follow which panels show (Workspace.tsx). */
+  grid-template-columns: 260px minmax(0, 1fr) 240px;
+  height: 100%;
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--vscode-editorWidget-background);
+  border-right: 1px solid var(--vscode-panel-border);
+}
+.vault-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.vault-bar select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: inherit;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+}
+.vault-bar button {
+  width: 28px;
+  border-radius: 6px;
+}
+.vault-bar button:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.file-tree {
+  flex: 1;
+  overflow: auto;
+  padding: 6px 4px;
+}
+.file-tree ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 12px;
+}
+.file-tree > ul {
+  padding-left: 0;
+}
+.tree-folder,
+.tree-file {
+  display: block;
+  width: 100%;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-folder {
+  color: var(--vscode-descriptionForeground);
+}
+.tree-folder::before {
+  content: "▾ ";
+}
+.tree-folder[aria-expanded="false"]::before {
+  content: "▸ ";
+}
+.tree-file:hover:not(:disabled),
+.tree-folder:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.tree-file[aria-current="page"] {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+.editors {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.tab-strip {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+}
+.tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+.layout-buttons {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+}
+.layout-buttons button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  color: var(--vscode-descriptionForeground);
+}
+.layout-buttons button:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px 7px 12px;
+  border-right: 1px solid var(--vscode-panel-border);
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--vscode-descriptionForeground);
+}
+.tab[aria-selected="true"] {
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+}
+.tab-close {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.tab-close:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+/*
+ * The tabs' bodies are stacked, and a hidden one is invisible rather than
+ * removed from layout: an editor page keeps measuring its lines while hidden,
+ * so a setting changed meanwhile shows correctly the moment its tab does.
+ */
+.tab-bodies {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.tab-bodies > * {
+  position: absolute;
+  inset: 0;
+}
+.tab-bodies > [hidden] {
+  display: revert;
+  visibility: hidden;
+}
+.editor-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--vscode-editor-background);
+}
+.tab-bodies > .empty {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+.vault-picker {
+  max-width: 460px;
+  margin: 18vh auto 0;
+  padding: 0 24px;
+}
+.vault-picker h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+.vault-picker p {
+  color: var(--vscode-descriptionForeground);
+}
+.vault-picker form {
+  display: flex;
+  gap: 8px;
+}
+.vault-picker input {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: inherit;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+}
+.vault-picker h2 {
+  margin-top: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+.recent {
+  list-style: none;
+  padding: 0;
+}
+.recent button {
+  padding: 4px 0;
+  color: var(--vscode-textLink-foreground);
+}
+.error-banner {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  max-width: 80%;
+  padding: 6px 8px 6px 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  border-radius: 6px;
+  background: var(
+    --vscode-editorWidget-background,
+    var(--vscode-editor-background)
+  );
+  color: var(--vscode-errorForeground);
+}
+.tree-panel {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 0;
+}
+.tree-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+}
+.tree-row[aria-current="location"] {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+.tree-row:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.tree-twisty {
+  flex: none;
+  width: 16px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+.tree-label {
+  flex: 1;
+  overflow: hidden;
+  padding: 3px 4px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tree-label:disabled {
+  opacity: 1;
+}
+.tree-description {
+  margin-left: 6px;
+  color: var(--vscode-descriptionForeground);
+}
+.tree-message {
+  margin: 8px 12px;
+  color: var(--vscode-descriptionForeground);
+}
+.sidebar-open {
+  margin: 16px;
+}
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--vscode-editorWidget-background);
+  border-left: 1px solid var(--vscode-panel-border);
+}
+.panel-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 35px;
+  padding: 0 6px 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.panel-header button {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.panel-header button:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.settings-editor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--vscode-editor-background);
+}
+.tab-bodies > .settings-editor[hidden] {
+  display: flex;
+}
+.settings-search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.settings-search input {
+  flex: 1;
+  max-width: 720px;
+  padding: 6px 10px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  font: inherit;
+  color: inherit;
+  background: var(--vscode-input-background);
+}
+.settings-search input:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  border-color: var(--vscode-focusBorder);
+}
+.settings-count {
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+.settings-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.settings-toc {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 180px;
+  padding: 12px 0 12px 16px;
+  overflow-y: auto;
+}
+.settings-toc button {
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-align: left;
+  color: var(--vscode-descriptionForeground);
+}
+.settings-toc button:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+.settings-list {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 24px 48px;
+  overflow-y: auto;
+}
+.settings-list h2 {
+  margin: 20px 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.setting {
+  max-width: 760px;
+  padding: 10px 12px 12px;
+  border-left: 2px solid transparent;
+}
+.setting:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.setting[data-modified] {
+  border-left-color: var(--vscode-focusBorder);
+}
+.setting-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.setting-reset {
+  font-size: 12px;
+  color: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
+}
+.setting-reset:hover {
+  text-decoration: underline;
+}
+.setting-description {
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.45;
+}
+.setting-description code {
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 12px;
+  background: var(--vscode-list-hoverBackground);
+}
+.setting-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+.setting-checkbox input {
+  flex: none;
+  margin: 3px 0 0;
+}
+.setting-control {
+  margin-top: 8px;
+}
+.setting-control input,
+.setting-control select,
+.setting-control textarea {
+  min-width: 240px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  font: inherit;
+  color: inherit;
+  background: var(--vscode-input-background);
+}
+.setting-control textarea {
+  width: 100%;
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: 12px;
+}
+.setting-hint {
+  margin: 6px 0 0;
+  color: var(--vscode-descriptionForeground);
+}
+.setting-problem {
+  margin: 6px 0 0;
+  color: var(--vscode-errorForeground);
+}
+.setting-key {
+  display: none;
+}
+.settings-none {
+  margin-top: 24px;
+  color: var(--vscode-descriptionForeground);
+}

@@ -1,0 +1,6 @@
+# Built by scripts/build-sidecar.mjs and Tauri.
+.cache/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/
+src-tauri/resources/

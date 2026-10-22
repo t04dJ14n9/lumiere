@@ -18,6 +18,7 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host"],
   capabilities: ["commands", "fileWrites"],
+  needs: ["workbench"],
   config,
   contributes: {
     commands: [

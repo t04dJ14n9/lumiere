@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumière</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font:
+          14px system-ui,
+          sans-serif;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      main {
+        max-width: 32rem;
+        padding: 24px;
+      }
+      pre {
+        white-space: pre-wrap;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Shown only when Lumière's server could not start (src-tauri/src/lib.rs);
+      every other window is the server's own page.
+    -->
+    <main>
+      <h1>Lumière could not start</h1>
+      <pre id="reason"></pre>
+      <p>
+        Quit and open Lumière again. If this keeps happening, report the text
+        above.
+      </p>
+    </main>
+    <script src="fallback.js"></script>
+  </body>
+</html>
