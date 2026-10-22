@@ -1,5 +1,4 @@
 import { findClusterBreak } from "@codemirror/state";
-import { CodeMirror } from "@replit/codemirror-vim";
 import type { CellPosition } from "../../markdown/tables/model";
 
 export type WordMotion = "w" | "W" | "e" | "E" | "b" | "B" | "ge" | "gE";
@@ -82,13 +81,26 @@ function cellWords(
   return words;
 }
 
+/** Same definition as @replit/codemirror-vim's CodeMirror.isWordChar. */
+const wordChar = (() => {
+  try {
+    return new RegExp("[\\w\\p{Alphabetic}\\p{Number}_]", "u");
+  } catch {
+    return /[\w]/;
+  }
+})();
+
+function isWordChar(ch: string): boolean {
+  return wordChar.test(ch);
+}
+
 function wordClass(cluster: string, bigWord: boolean): number {
   if (/\s/u.test(cluster)) {
     return 0;
   }
-  // Use the adapter's Unicode alphabetic/number definition, including CJK.
+  // Match Vim's Unicode alphabetic/number definition, including CJK.
   // Inspect a code point so astral letters and combining graphemes stay whole.
-  return bigWord || CodeMirror.isWordChar([...cluster][0] ?? "") ? 1 : 2;
+  return bigWord || isWordChar([...cluster][0] ?? "") ? 1 : 2;
 }
 
 function compare(left: WordTarget, right: WordTarget): number {

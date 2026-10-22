@@ -1,5 +1,5 @@
 import { Text } from "@codemirror/state";
-import { parseMarkdown, markdownParser } from "../dialect";
+import { parseMarkdown, markdownParser } from "../dialect/parser";
 import { frontmatter } from "../properties";
 import { validTag } from "../tags/grammar";
 import { extractFootnotes, type Footnote } from "./footnote-extract";

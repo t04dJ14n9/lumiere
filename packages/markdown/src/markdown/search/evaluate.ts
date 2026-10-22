@@ -1,4 +1,4 @@
-import { markdownParser as language } from "../dialect";
+import { markdownParser as language } from "../dialect/parser";
 import { parseDocument } from "yaml";
 
 import { noteTags } from "../metadata/tags";

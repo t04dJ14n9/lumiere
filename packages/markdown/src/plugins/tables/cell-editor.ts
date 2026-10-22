@@ -2,7 +2,6 @@ import { defaultKeymap } from "@codemirror/commands";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import type { Transaction } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
-import { getCM } from "@replit/codemirror-vim";
 import type { Cell, CellPosition, Table } from "../../markdown/tables/model";
 import { difference } from "../../shared/document/wire";
 import type { InputGrouping } from "../document/api";
@@ -78,7 +77,10 @@ export class CellEditor {
         extensions: [
           options.environment.language,
           cellSyntax,
-          cellNavigation((step, extend) => options.arrow(step, extend)),
+          cellNavigation(
+            (step, extend) => options.arrow(step, extend),
+            (view) => options.environment.vim?.mode(view),
+          ),
           this.groups.extension,
           cellKeymap(options),
           // Nested cells are not `.mw-editor`, so stock drawSelection stays
@@ -126,23 +128,36 @@ export class CellEditor {
   private bindMode(): void {
     this.unbindMode?.();
     delete this.unbindMode;
-    const inner = getCM(this.view);
-    if (!inner?.state.vim) {
+    if (!this.vimEnabled || !this.environment.vim) {
       return;
     }
-    this.environment.vim?.sync(this.outer, this.view);
-    const sync = (): void => this.environment.vim?.sync(this.view, this.outer);
-    inner.on("vim-mode-change", sync);
-    const words = installCellWordNavigation(
-      this.view,
-      inner,
-      this.word,
-      this.documentLine,
-    );
+    const view = this.view;
+    const outer = this.outer;
+    const environment = this.environment;
+    const word = this.word;
+    const documentLine = this.documentLine;
+    let cancelled = false;
     this.unbindMode = () => {
-      words.destroy();
-      inner.off("vim-mode-change", sync);
+      cancelled = true;
     };
+    // Load the Vim adapter only when a cell actually enables Vim.
+    void import("@replit/codemirror-vim").then(({ getCM }) => {
+      if (cancelled) {
+        return;
+      }
+      const inner = getCM(view);
+      if (!inner?.state.vim) {
+        return;
+      }
+      environment.vim?.sync(outer, view);
+      const sync = (): void => environment.vim?.sync(view, outer);
+      inner.on("vim-mode-change", sync);
+      const words = installCellWordNavigation(view, inner, word, documentLine);
+      this.unbindMode = () => {
+        words.destroy();
+        inner.off("vim-mode-change", sync);
+      };
+    });
   }
 
   label(position: CellPosition): void {
