@@ -100,6 +100,7 @@ test("capture listener owns Mod+B/I and skips native fields", () => {
         prevented = true;
       },
       stopPropagation() {},
+      stopImmediatePropagation() {},
       ...init,
     };
     listener!(event as unknown as Event);

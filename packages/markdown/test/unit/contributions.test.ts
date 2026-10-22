@@ -107,6 +107,15 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     );
     assert.ok(!binding.mac?.includes("cmd"));
   }
+  // BH-024: formatting owns Ctrl+B/I; consume must yield when formatting is on.
+  for (const chord of ["ctrl+b", "ctrl+i"]) {
+    const binding = vim.find((item) => item.key === chord);
+    assert.ok(binding, chord);
+    assert.match(
+      binding!.when ?? "",
+      /!lumiere\.markdown\.plugin\.formatting/,
+    );
+  }
   assert.ok(
     keybindings.some(
       (binding) =>

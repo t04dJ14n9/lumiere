@@ -4,8 +4,10 @@
  * `@replit/codemirror-vim` maps `<C-b>` → page-back and `<C-i>` → jumplist
  * forward, so with Vim on the CM Mod-b / Mod-i keymaps never run. Capture-phase
  * ownership matches BH-003 / BH-021 / BH-023: preventDefault + stop so Vim
- * cannot steal the chord. Physical PageUp still reaches vim-core via its
- * keyToKey → `<C-b>` path (it is not Ctrl+B). Native text fields keep the
+ * cannot steal the chord. The Vim host `consumeVimHostShortcut` binding for
+ * Ctrl+B/I is gated off while formatting is enabled so the host cannot noop
+ * the chord before the webview. Physical PageUp still reaches vim-core via
+ * its keyToKey → `<C-b>` path (it is not Ctrl+B). Native text fields keep the
  * chords.
  */
 
@@ -106,6 +108,7 @@ export function keepFormatKeys(
     }
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation();
     onFormat(action);
   };
   target.addEventListener("keydown", listener, true);

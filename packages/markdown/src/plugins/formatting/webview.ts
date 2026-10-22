@@ -139,7 +139,8 @@ function registerFormatKeyOwnership(
   ctx.effect(() => {
     const view = ctx.editor.view;
     return keepFormatKeys(view.dom.ownerDocument, (action) => {
-      (action === "bold" ? bold : italics)(view);
+      const active = ctx.bail("editor/activeView") ?? ctx.editor.view;
+      (action === "bold" ? bold : italics)(active);
     });
   });
 }
