@@ -100,8 +100,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Default location for new attachments | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Excluded files | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | (no equivalent) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **links**: plain click opens a rendered link | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Cmd/Ctrl-click opens revealed   source | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **links**: plain click reveals a rendered link (BH-020) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Cmd/Ctrl-click follows in the same editor (BH-020) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | a click that ends a text selection only selects | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Unresolved   wikilinks get `is-unresolved` styling while not revealed, from   `vault.unresolvedLinks` (the host pushes the note's set when it changes after   each re-resolution, through `VaultIndex.onDidResolve`: panel kernels do not   see the window's `vault/resolved` event) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Opening goes through `links/open` (§16) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

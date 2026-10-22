@@ -50,7 +50,7 @@ test("Mod-Enter follows PDF wiki #page= and markdown viewrect fragments", async 
     .toBe("paper.pdf#page=5&viewrect=1,2,3,4");
 });
 
-test("click PDF wiki #page= under tall Sources opens with fragment", async ({
+test("Mod-click PDF wiki #page= under tall Sources opens with fragment", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
@@ -62,7 +62,8 @@ test("click PDF wiki #page= under tall Sources opens with fragment", async ({
   );
   const link = page.locator('[data-href="paper.pdf#page=7"]').first();
   await expect(link).toBeVisible({ timeout: 5000 });
-  await link.click();
+  // BH-020: plain click reveals; Mod-click follows.
+  await link.click({ modifiers: ["ControlOrMeta"] });
   await expect
     .poll(() => page.evaluate(() => window.harness.opened.at(-1)))
     .toBe("paper.pdf#page=7");
