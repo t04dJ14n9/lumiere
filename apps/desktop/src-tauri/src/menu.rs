@@ -1,6 +1,13 @@
-//! The app menu: the platform's standard menus, with "Open Folder…" in File.
+//! The app menu: the platform's standard menus, with Lumière's commands in
+//! them, under VS Code's keys:
+//! - Settings… (⌘,) in the app menu on macOS, in File elsewhere;
+//! - Open Folder… (⌘O) in File;
+//! - Toggle Sidebar (⌘B), Toggle Outline (⌥⌘B) and Color Theme in View.
+//!
 //! A command the page handles is sent to it as a `lumiere://menu` event whose
-//! payload is the command's id (packages/app/src/shell/tauri.ts, `MenuCommand`).
+//! payload is the command's id (packages/app/src/shell/tauri.ts,
+//! `MENU_COMMANDS`; keep the two lists the same). A key the editor page uses
+//! itself, such as ⌘B for Bold while typing, reaches the page first.
 
 use tauri::menu::{Menu, MenuEvent, MenuItem, MenuItemKind, PredefinedMenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -10,23 +17,22 @@ use crate::MAIN_WINDOW;
 /// The event the page listens to (tauri.ts, `MENU_EVENT`).
 pub const MENU_EVENT: &str = "lumiere://menu";
 
-/// Commands the page handles, by menu item id (tauri.ts, `MenuCommand`).
-const PAGE_COMMANDS: &[&str] = &["open-vault"];
+/// Commands the page handles, by menu item id (tauri.ts, `MENU_COMMANDS`).
+const PAGE_COMMANDS: &[&str] = &[
+    "open-vault",
+    "open-settings",
+    "toggle-sidebar",
+    "toggle-outline",
+    "theme-system",
+    "theme-light",
+    "theme-dark",
+];
 
 pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let menu = Menu::default(app)?;
-    let open_vault =
-        MenuItem::with_id(app, "open-vault", "Open Folder…", true, Some("CmdOrCtrl+O"))?;
-    match file_menu(&menu)? {
-        Some(file) => {
-            file.prepend(&PredefinedMenuItem::separator(app)?)?;
-            file.prepend(&open_vault)?;
-        }
-        None => {
-            let file = Submenu::with_items(app, "File", true, &[&open_vault])?;
-            menu.insert(&file, 1)?;
-        }
-    }
+    add_file_items(app, &menu)?;
+    add_settings(app, &menu)?;
+    add_view_items(app, &menu)?;
     Ok(menu)
 }
 
@@ -39,14 +45,101 @@ pub fn handle<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
     }
 }
 
-/// The standard menu's File submenu, where there is one.
-fn file_menu<R: Runtime>(menu: &Menu<R>) -> tauri::Result<Option<Submenu<R>>> {
-    for item in menu.items()? {
-        if let MenuItemKind::Submenu(submenu) = item {
-            if submenu.text()? == "File" {
-                return Ok(Some(submenu));
+fn add_file_items<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Result<()> {
+    let open_vault = item(app, "open-vault", "Open Folder…", "CmdOrCtrl+O")?;
+    let file = submenu(app, menu, "File", 1)?;
+    file.prepend(&PredefinedMenuItem::separator(app)?)?;
+    file.prepend(&open_vault)?;
+    Ok(())
+}
+
+/// macOS keeps Settings in the app menu, after About; elsewhere it ends File.
+fn add_settings<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Result<()> {
+    let settings = item(app, "open-settings", "Settings…", "CmdOrCtrl+,")?;
+    if cfg!(target_os = "macos") {
+        if let Some(MenuItemKind::Submenu(app_menu)) = menu.items()?.into_iter().next() {
+            app_menu.insert(&PredefinedMenuItem::separator(app)?, 1)?;
+            app_menu.insert(&settings, 2)?;
+            return Ok(());
+        }
+    }
+    let file = submenu(app, menu, "File", 1)?;
+    file.append(&PredefinedMenuItem::separator(app)?)?;
+    file.append(&settings)?;
+    Ok(())
+}
+
+fn add_view_items<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Result<()> {
+    let theme = Submenu::with_items(
+        app,
+        "Color Theme",
+        true,
+        &[
+            &MenuItem::with_id(app, "theme-system", "Follow System", true, None::<&str>)?,
+            &MenuItem::with_id(app, "theme-light", "Light", true, None::<&str>)?,
+            &MenuItem::with_id(app, "theme-dark", "Dark", true, None::<&str>)?,
+        ],
+    )?;
+    let view = submenu(app, menu, "View", 3)?;
+    view.prepend(&PredefinedMenuItem::separator(app)?)?;
+    view.prepend(&theme)?;
+    view.prepend(&PredefinedMenuItem::separator(app)?)?;
+    view.prepend(&item(
+        app,
+        "toggle-outline",
+        "Toggle Outline",
+        "Alt+CmdOrCtrl+B",
+    )?)?;
+    view.prepend(&item(
+        app,
+        "toggle-sidebar",
+        "Toggle Sidebar",
+        "CmdOrCtrl+B",
+    )?)?;
+    Ok(())
+}
+
+fn item<R: Runtime>(
+    app: &AppHandle<R>,
+    id: &str,
+    text: &str,
+    accelerator: &str,
+) -> tauri::Result<MenuItem<R>> {
+    MenuItem::with_id(app, id, text, true, Some(accelerator))
+}
+
+/// The standard menu's submenu called `text`, or a new one inserted at `position`.
+fn submenu<R: Runtime>(
+    app: &AppHandle<R>,
+    menu: &Menu<R>,
+    text: &str,
+    position: usize,
+) -> tauri::Result<Submenu<R>> {
+    for kind in menu.items()? {
+        if let MenuItemKind::Submenu(existing) = kind {
+            if existing.text()? == text {
+                return Ok(existing);
             }
         }
     }
-    Ok(None)
+    let created = Submenu::new(app, text, true)?;
+    menu.insert(&created, position)?;
+    Ok(created)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PAGE_COMMANDS;
+
+    /// The page's list (tauri.ts, `MENU_COMMANDS`), so the two cannot drift apart unseen.
+    #[test]
+    fn the_page_knows_every_menu_command() {
+        let page = include_str!("../../../../packages/app/src/shell/tauri.ts");
+        for command in PAGE_COMMANDS {
+            assert!(
+                page.contains(&format!("\"{command}\"")),
+                "tauri.ts does not list {command}"
+            );
+        }
+    }
 }

@@ -1,8 +1,11 @@
 # Lumière desktop app
 
 A light Markdown (and later PDF) reader and editor in a window of its own,
-in the spirit of Typora: a sidebar with the vault's files or the note's
-outline, and notes in tabs. It is the same editor as the VS Code extension.
+in the spirit of Typora, laid out as VS Code: the vault's files on the left,
+the note's outline on the right, notes in tabs. The menu and keys are VS
+Code's: Settings… (⌘,), Open Folder… (⌘O), Toggle Sidebar (⌘B), Toggle
+Outline (⌥⌘B), and View > Color Theme. It is the same editor as the VS Code
+extension.
 
 ## How it is put together
 
@@ -87,5 +90,7 @@ See `docs/HOSTS_PLAN.md` (milestones M4 and M5) for the order. In short:
 - signing, notarisation, the bundle identifier and the real icon (owner
   decisions; `src-tauri/icons/source.png` is a placeholder);
 - the browser tests for the window (`packages/app/test/e2e`);
-- Backlinks and Tags as sidebar tabs: each is one `TreePanel` with a view id
-  from `@workshop/host-node/views`.
+- Backlinks and Tags under the outline: each is one `TreePanel` with a view
+  id from `@workshop/host-node/views`.
+- 18 of Lumière's 100 settings have no description in their manifests, so
+  Settings shows them bare (VS Code does too).

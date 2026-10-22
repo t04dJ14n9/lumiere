@@ -24,8 +24,9 @@ One Lumière, three hosts, the same plugins in each:
 | Lumière desktop | Tauri around Lumière's own server (`apps/desktop`, `packages/app`) | skeleton works on macOS |
 
 The desktop app is meant to feel like Typora: a light reader and editor for
-Markdown and PDF, with a sidebar of files or the note's outline, notes in
-tabs, and little else. It is not an IDE. Agents, Git and the terminal stay
+Markdown and PDF, laid out as VS Code: files on the left, the note's outline
+on the right, notes in tabs, Settings with ⌘, and a light or dark theme, and
+little else. It is not an IDE. Agents, Git and the terminal stay
 in VS Code and Cursor.
 
 ## 2. Where things stand
@@ -60,12 +61,15 @@ What exists, each part with unit tests:
   - file watching where folders do not exist yet;
   - stopping while pages are open.
 - **`packages/app`**: Lumière's own server and the Typora-like window:
-  - files or outline in the sidebar, notes in tabs;
+  - files on the left, the outline on the right, notes and Settings in
+    tabs, Color Theme, and the layout kept between launches;
   - a token, Host and Origin check on every request;
   - the contract `apps/desktop` depends on.
 - **`apps/desktop`**: the Tauri 2 shell:
   - starts the server and opens its window;
-  - Open Folder… in the menu, and the native folder picker;
+  - the menu: Settings… (⌘,), Open Folder… (⌘O), Toggle Sidebar (⌘B),
+    Toggle Outline (⌥⌘B), Color Theme;
+  - the native folder picker, and a dark title bar with a dark theme;
   - notes from Finder, the command line or a second launch;
   - single instance;
   - stops the server on quit;
@@ -187,7 +191,6 @@ push. `pnpm check:desktop` also passes when `apps/desktop` changed.
     - a status bar from `views.status()` (word count);
     - a command palette from `contributes.commands`, with Go to Heading and
       the quick switcher;
-    - a settings page from the contributed schema;
     - a WebKit run of the Markdown browser suite.
 - **M5, PDF in tabs (Claude):**
   - give `packages/pdf` a host-services seam like Markdown's: a portable
@@ -250,20 +253,31 @@ The pass, in the Tauri window:
    - Mod-click follows it into a new tab.
    - A link to a missing note creates it.
    - An external link opens the system browser.
-4. **Outline.**
-   - The Outline tab shows the shown note's headings and follows tab
-     switches.
+4. **Outline**, in the right panel.
+   - It shows the shown note's headings and follows tab switches.
    - Clicking a heading scrolls to it.
    - Moving the caret highlights its section.
    - Expanding and collapsing work.
-5. **Theme.** Switch macOS between light and dark: the window and the editor
-   follow together.
-6. **Finder.**
+5. **Theme.**
+   - With Color Theme on Follow System, switch macOS between light and dark:
+     the window, its title bar and the editor follow together.
+   - View > Color Theme > Dark, and Light: the same, whatever macOS says.
+     The choice is still there after a relaunch.
+6. **Settings and keys** (VS Code's).
+   - ⌘, opens Settings, from the window and from inside a note.
+   - Search finds settings; `@modified` lists the changed ones.
+   - A change applies to open notes at once (Readable Line Length, Font
+     Size), and Reset puts the default back.
+   - A refused value (Font Size 99) says why under the field.
+   - ⌘B hides and shows the files; inside a note ⌘B is Bold instead.
+   - ⌥⌘B hides and shows the outline.
+   - The layout is the same after a relaunch.
+7. **Finder.**
    - In a bundled build, Open With > Lumière on a `.md` file opens it in a
      tab.
    - With the app already running, the same file goes to the running window.
-7. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
-8. **Errors.** Rename the vault folder while it is open, or start with a
+8. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
+9. **Errors.** Rename the vault folder while it is open, or start with a
    broken `LUMIERE_SERVER`: a message appears, never a blank window.
 
 Report each problem as an issue or a PR. For each fix:
