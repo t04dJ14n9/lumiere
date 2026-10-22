@@ -22,10 +22,11 @@ export function restoreFindCaret(
   field: {
     setSelectionRange(start: number, end: number): void;
   },
-  active: EventTarget | null,
+  /** Active element, or a test double; compared by identity to `field`. */
+  focused: unknown,
   caret: FindCaret,
 ): void {
-  if (active === field) {
+  if (focused === field) {
     field.setSelectionRange(caret.start, caret.end);
   }
 }
