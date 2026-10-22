@@ -2,6 +2,9 @@
 
 ## 0.1.0 (unreleased)
 
+- With Vim on, Ctrl/Cmd+W closes the active editor again: capture-phase
+  ownership runs host close over vim-core's `<C-w>` window prefix (Host GUI BH-031).
+
 - Selecting a `|W` wikilink image no longer draws a long caret/selection bar
   below the card: the block paint reserve is released after measure, and the
   caret is hidden while the image is selected (Host GUI BH-007).
