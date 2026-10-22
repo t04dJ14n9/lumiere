@@ -1,5 +1,5 @@
 /**
- * Workspace path checks for the DSH host. The same rules as VS Code's
+ * Workspace path checks for the Node host. The same rules as VS Code's
  * `contained`: a file URI is inside a root only after `..` and percent-encoding
  * are resolved, and an existing symlink must still land inside that root.
  * A string prefix is not enough: `file:///vault/../etc/passwd` starts with the

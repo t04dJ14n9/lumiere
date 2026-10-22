@@ -5,6 +5,13 @@ For Claude Desktop with computer use, testing on the owner's Mac. Written
 full scenario list is [packages/markdown/docs/MANUAL_TEST_PLAN.md](../packages/markdown/docs/MANUAL_TEST_PLAN.md);
 this page picks the checks that matter most and says how to run them here.
 
+## Grok Bot's current work — 2026-10-22
+
+Testing and fixing Lumière in DeepSeek Harness and the new desktop app:
+see [HOSTS_PLAN.md](HOSTS_PLAN.md), section 6, on branch
+`claude/lumiere-desktop` (stacked on PR #265). The Cursor notes below still
+hold for the extension.
+
 ## Handoff to Grok Bot — 2026-10-18, 06:10 PDT
 
 The owner stopped all Claude sessions and handed debugging to Grok Bot. This

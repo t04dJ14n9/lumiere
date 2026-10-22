@@ -8,6 +8,17 @@
 
 ## Unreleased
 
+- **Lumière desktop (preview)**: Lumière's editor in a window of its own, in
+  the spirit of Typora (`apps/desktop`, Tauri). A sidebar shows the vault's
+  files or the shown note's outline, and notes open in tabs. Open Folder…
+  uses the native picker, and Markdown files open from Finder or the
+  command line. Unsaved notes are written when you quit. The same window
+  also runs in a browser (`packages/app`). PDFs do not open there yet.
+- **DeepSeek Harness**: Obsidian settings in `.obsidian/app.json` now apply,
+  including when the folder is created after the vault opens.
+- Fixed outside VS Code: the host could not stop while a note's page was
+  open.
+
 - **Toggle Text Editor** (Ctrl/Cmd+E): after switching Lumière ↔ the host text
   editor, close the leave-behind sibling tab of the same file so only one tab
   remains (BH-011 / BH-003). Dirty tabs are left alone.
