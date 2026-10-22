@@ -140,7 +140,11 @@ const PAINT_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
 
 export type FeaturePhase = "chrome" | "paint" | "all";
 
-/** Chrome chunks only (Properties / Sources / tags / lineNumbers). */
+/**
+ * Chrome chunks only (Properties / Sources / tags / lineNumbers).
+ * HTML modulepreloads `webview/chrome.js`, whose static graph matches these
+ * dynamic imports, so chunks are often already on disk/cache here.
+ */
 export function preloadChromeFeatures(): Promise<void> {
   return Promise.all(
     [...CHROME_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),

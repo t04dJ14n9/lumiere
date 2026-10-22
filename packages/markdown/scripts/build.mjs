@@ -27,6 +27,8 @@ const builds = [
     ...shared,
     entryPoints: {
       editor: "src/webview/main.ts",
+      // Fixed URL for modulepreload while editor.js loads (wave 8).
+      chrome: "src/webview/chrome.ts",
       diff: "src/webview/diff/main.ts",
       graph: "src/webview/graph/main.ts",
       "graph-layout": "src/webview/graph/layout-worker.ts",
