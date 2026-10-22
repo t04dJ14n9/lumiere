@@ -355,11 +355,16 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.backlinks.sortByAlphabeticalReverse | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.backlinks.sortByModifiedTime | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.backlinks.sortByModifiedTimeReverse | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByAlphabetical | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByModifiedTime | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.toggle | not observed | not manually observed | Unit command routing and shortcut guard tests; relocated-view manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
+| Setting: lumiere.markdown.outgoingLinks.sortOrder | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |

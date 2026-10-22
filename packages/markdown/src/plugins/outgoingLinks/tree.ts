@@ -10,6 +10,34 @@ export const OPEN_COMMAND = contributionId("outgoingLinks.open");
 /** Create and open a note for an unresolved outbound linkpath. */
 export const CREATE_COMMAND = contributionId("outgoingLinks.create");
 
+/** Obsidian OutgoingLink sortOrder values we can honour (index has mtime, not ctime). */
+export const SORT_ORDERS = [
+  "alphabetical",
+  "alphabeticalReverse",
+  "byModifiedTime",
+  "byModifiedTimeReverse",
+] as const;
+export type OutgoingSortOrder = (typeof SORT_ORDERS)[number];
+
+export const SORT_SETTING = "outgoingLinks.sortOrder";
+export const SORT_ALPHABETICAL_CONTEXT = `${VIEW_ID}.sortAlphabetical`;
+export const SORT_ALPHABETICAL_REVERSE_CONTEXT = `${VIEW_ID}.sortAlphabeticalReverse`;
+export const SORT_MODIFIED_CONTEXT = `${VIEW_ID}.sortByModifiedTime`;
+export const SORT_MODIFIED_REVERSE_CONTEXT = `${VIEW_ID}.sortByModifiedTimeReverse`;
+
+export const SORT_BY_ALPHABETICAL = `${VIEW_ID}.sortByAlphabetical`;
+export const SORT_BY_ALPHABETICAL_REVERSE = `${VIEW_ID}.sortByAlphabeticalReverse`;
+export const SORT_BY_MODIFIED = `${VIEW_ID}.sortByModifiedTime`;
+export const SORT_BY_MODIFIED_REVERSE = `${VIEW_ID}.sortByModifiedTimeReverse`;
+
+/** Checked label cycles forward through Obsidian's sort orders. */
+export const NEXT_SORT: Record<OutgoingSortOrder, OutgoingSortOrder> = {
+  alphabetical: "alphabeticalReverse",
+  alphabeticalReverse: "byModifiedTime",
+  byModifiedTime: "byModifiedTimeReverse",
+  byModifiedTimeReverse: "alphabetical",
+};
+
 /**
  * The Outgoing links view for the active note: files it links to, links whose
  * note does not exist yet, and (on expand) other notes mentioned by name
@@ -21,7 +49,10 @@ export class OutgoingLinksTree implements TreeSource {
   private readonly lines = new Map<string, MentionLine[]>();
   private unlinkedPaths?: Promise<string[]>;
 
-  constructor(private readonly vaults: Vaults) {}
+  constructor(
+    private readonly vaults: Vaults,
+    private readonly sortOrder: () => OutgoingSortOrder = () => "alphabetical",
+  ) {}
 
   async setNote(uri: string | undefined): Promise<void> {
     this.lines.clear();
@@ -96,8 +127,9 @@ export class OutgoingLinksTree implements TreeSource {
 
   private linkNodes(): TreeNode[] {
     const { path, vault } = this.note!;
+    const mtimeOf = (target: string) => vault.index.file(target)?.mtime ?? 0;
     return [...vault.index.resolvedLinks(path)]
-      .sort(([a], [b]) => compareOutgoingPaths(a, b))
+      .sort(([a], [b]) => compareOutgoingPaths(a, b, this.sortOrder(), mtimeOf))
       .map(([target, count]) => {
         const uri = vault.index.file(target)?.uri ?? target;
         return {
@@ -112,8 +144,9 @@ export class OutgoingLinksTree implements TreeSource {
 
   private unresolvedNodes(): TreeNode[] {
     const { path, vault } = this.note!;
+    // Unresolved paths have no file mtime — name order within the chosen mode.
     return [...vault.index.unresolvedLinks(path)]
-      .sort(([a], [b]) => compareOutgoingPaths(a, b))
+      .sort(([a], [b]) => compareOutgoingPaths(a, b, this.sortOrder(), () => 0))
       .map(([linkpath, count]) => ({
         id: `unresolved:${linkpath}`,
         label: linkpath,
@@ -178,7 +211,11 @@ export class OutgoingLinksTree implements TreeSource {
         paths.push(file.path);
       }
     }
-    return sortOutgoingPaths(paths);
+    return sortOutgoingPaths(
+      paths,
+      this.sortOrder(),
+      (path) => index.file(path)?.mtime ?? 0,
+    );
   }
 }
 
@@ -186,14 +223,38 @@ function countText(folder: string, count: number): string {
   return [folder, count > 1 ? `×${count}` : ""].filter(Boolean).join("  ");
 }
 
-/** Obsidian outgoing default alphabetical sort (basename, then path). */
-export function compareOutgoingPaths(a: string, b: string): number {
-  return (
-    stemOf(a).localeCompare(stemOf(b), undefined, { sensitivity: "base" }) ||
-    a.localeCompare(b)
-  );
+export function parseSortOrder(value: unknown): OutgoingSortOrder {
+  return SORT_ORDERS.includes(value as OutgoingSortOrder)
+    ? (value as OutgoingSortOrder)
+    : "alphabetical";
 }
 
-export function sortOutgoingPaths(paths: readonly string[]): string[] {
-  return [...paths].sort(compareOutgoingPaths);
+/** Obsidian outgoing alphabetical basename compare (default sortOrder). */
+export function compareOutgoingPaths(
+  a: string,
+  b: string,
+  order: OutgoingSortOrder = "alphabetical",
+  mtimeOf: (path: string) => number = () => 0,
+): number {
+  const byName =
+    stemOf(a).localeCompare(stemOf(b), undefined, { sensitivity: "base" }) ||
+    a.localeCompare(b);
+  switch (order) {
+    case "alphabetical":
+      return byName;
+    case "alphabeticalReverse":
+      return -byName;
+    case "byModifiedTime":
+      return mtimeOf(b) - mtimeOf(a) || byName;
+    case "byModifiedTimeReverse":
+      return mtimeOf(a) - mtimeOf(b) || byName;
+  }
+}
+
+export function sortOutgoingPaths(
+  paths: readonly string[],
+  order: OutgoingSortOrder = "alphabetical",
+  mtimeOf: (path: string) => number = () => 0,
+): string[] {
+  return [...paths].sort((a, b) => compareOutgoingPaths(a, b, order, mtimeOf));
 }
