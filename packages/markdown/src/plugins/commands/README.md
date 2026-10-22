@@ -20,8 +20,7 @@ to native DOM undo (not CodeMirror's contenteditable). Save stays on the
 CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Save.
 Ctrl/Cmd+E is owned the same way so `@replit/codemirror-vim` cannot treat it as
 scroll-window (BH-003); the host Toggle Text Editor command runs instead
-(Lumière product choice over Obsidian-vim scroll). Vim unmaps default `<C-p>` → `k` while enabled (BH-021) so Ctrl+P reaches Quick Open
-or an open suggest list instead of line-up.
+(Lumière product choice over Obsidian-vim scroll). Ctrl/Cmd+P is owned in capture phase (BH-021): try suggest `moveCompletionSelection` first, else host Quick Open. Vim also unmaps `<C-p>` → `k` so line-up cannot win.
 
 ## Files
 

@@ -1,3 +1,4 @@
+import { moveCompletionSelection } from "@codemirror/autocomplete";
 import { keymap } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
 import { protocol } from "./protocol";
@@ -5,6 +6,7 @@ import type { Commands } from "./api";
 import { createCommands } from "./registry";
 import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
 import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
+import { keepQuickOpenKey } from "./quick-open-keys";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
@@ -22,6 +24,7 @@ export const commandsWebview: Plugin = {
     registerHostKeys(ctx, host);
     registerHistoryKeys(ctx, host);
     registerToggleTextEditorKey(ctx, host);
+    registerQuickOpenKey(ctx, host);
   },
 };
 
@@ -32,7 +35,8 @@ type Action =
   | "close"
   | "saveClose"
   | "openAsText"
-  | "toggleTextEditor";
+  | "toggleTextEditor"
+  | "quickOpen";
 
 async function hostAction(ctx: Context, action: Action): Promise<boolean> {
   await ctx.document.flush();
@@ -52,6 +56,7 @@ function registerHostActions(
     "saveClose",
     "openAsText",
     "toggleTextEditor",
+    "quickOpen",
   ] as const) {
     ctx.effect(() => commands.register(action, () => host(action)));
   }
@@ -115,4 +120,24 @@ function registerToggleTextEditorKey(
       leavesNativeHistory,
     ),
   );
+}
+
+function registerQuickOpenKey(
+  ctx: Context,
+  host: (action: Action) => Promise<boolean>,
+): void {
+  // Capture Mod/Ctrl+P (BH-021). Prefer an open suggest list via
+  // moveCompletionSelection; otherwise host Quick Open. Vim also unmaps
+  // <C-p>→k so normal-mode line-up cannot win first.
+  ctx.effect(() => {
+    const view = ctx.editor.view;
+    return keepQuickOpenKey(
+      view.dom.ownerDocument,
+      () => {
+        trigger(ctx, host, "quickOpen");
+      },
+      leavesNativeHistory,
+      () => moveCompletionSelection(false)(view),
+    );
+  });
 }
