@@ -89,39 +89,36 @@ test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
     .toContain("!");
 });
 
-test("block math: a click selects the formula and keeps the preview below its source, as in Obsidian", async ({
+test("block math: a click selects the formula and shows source only (BH-009)", async ({
   page,
 }) => {
   // Offsets: "$$" at 8, the formula "x^2" at 11–14, "after" at 19.
   await open(page, "before\n\n$$\nx^2\n$$\n\nafter");
   const math = page.locator(".hybrid-math");
-  const source = page.locator(".cm-line.md-math-source");
+  const delimiters = page.locator(".md-math-delimiter");
   await expect(math).toHaveCount(1);
   await math.click();
   await expect
     .poll(() => page.evaluate(() => window.harness.capture()))
     .toMatchObject({ from: 11, to: 14 });
-  await expect(source).toHaveCount(3);
-  await expect(math).toHaveCount(1);
-  const closing = (await source.last().boundingBox())!;
-  const preview = (await math.boundingBox())!;
-  expect(preview.y).toBeGreaterThanOrEqual(closing.y + closing.height - 1);
-  // The source reads as highlighted TeX, its $$ in the accent colour.
-  await expect(source.locator(".md-math-delimiter")).toHaveCount(2);
-  await expect(source.locator(".md-math-command")).toHaveText("^");
-  await expect(source.locator(".md-math-number")).toHaveText("2");
-  // Typing replaces the formula, and the preview follows.
+  // Source replaces the widget — no stacked preview under the $$ lines.
+  await expect(math).toHaveCount(0);
+  await expect(delimiters).toHaveCount(2);
+  await expect(page.locator(".md-math-command")).toHaveText("^");
+  await expect(page.locator(".md-math-number")).toHaveText("2");
+  // Typing replaces the formula body.
   await page.keyboard.insertText("y");
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("before\n\n$$\ny\n$$\n\nafter");
-  // Leaving hides the source; arrowing in from above shows it again.
+  // Leaving restores the render; arrowing in from above shows source again.
   await page.evaluate(() => window.harness.reveal(0));
-  await expect(source).toHaveCount(0);
+  await expect(math).toHaveCount(1);
+  await expect(delimiters).toHaveCount(0);
   await page.evaluate(() => window.harness.reveal(7));
   await page.keyboard.press("ArrowDown");
-  await expect(source).toHaveCount(3);
-  await expect(math).toHaveCount(1);
+  await expect(math).toHaveCount(0);
+  await expect(delimiters).toHaveCount(2);
 });
 
 test("mermaid margin click stays rendered after inserting a line above", async ({

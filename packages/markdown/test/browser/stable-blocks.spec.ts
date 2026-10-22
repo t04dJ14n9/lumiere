@@ -133,35 +133,20 @@ for (const [name, block] of Object.entries(inPlace)) {
   });
 }
 
-test("block math keeps its preview height while its source is shown above it", async ({
+test("block math replaces its preview with source while the caret is inside (BH-009)", async ({
   page,
 }) => {
-  // As in Obsidian, editing adds the source lines above the unchanged render.
   await open(page, "Before\n\n$$\n\\frac{a}{b}\n$$\n\nAfter");
-  // Fractional line heights: measure rects, not rounded offsets.
-  const measure = () =>
-    page.evaluate(() => {
-      const height = (element: Element) =>
-        element.getBoundingClientRect().height;
-      const after = [...document.querySelectorAll(".cm-line")].find(
-        (line) => line.textContent === "After",
-      )!;
-      const source = [
-        ...document.querySelectorAll(".cm-line.md-math-source"),
-      ].reduce((sum, line) => sum + height(line), 0);
-      return {
-        after: after.getBoundingClientRect().top,
-        source,
-        math: height(document.querySelector(".hybrid-math")!),
-      };
-    });
-  const outside = await caretAt(page, 0).then(measure);
-  expect(outside.source).toBe(0);
+  const math = page.locator(".hybrid-math");
+  const delimiters = page.locator(".md-math-delimiter");
+  await expect(math).toHaveCount(1);
+  await expect(delimiters).toHaveCount(0);
   await caretAt(page, 10);
-  const inside = await measure();
-  expect(inside.source).toBeGreaterThan(0);
-  expect(inside.math).toBeCloseTo(outside.math, 1);
-  expect(inside.after).toBeCloseTo(outside.after + inside.source, 0);
+  await expect(math).toHaveCount(0);
+  await expect(delimiters).toHaveCount(2);
+  await caretAt(page, 0);
+  await expect(math).toHaveCount(1);
+  await expect(delimiters).toHaveCount(0);
 });
 
 /** The test vault's Code.md, where the owner saw lines 7→8 jump. */

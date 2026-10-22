@@ -19,7 +19,7 @@ For every case the caret was moved to every character offset (`editor.setCursor`
 6. **Block-level exceptions** (revealed when the caret is anywhere in the block):
    - fenced code: the opening fence line (with language) and the closing fence are both shown; the body is always raw;
    - callouts: a rendered widget until the caret enters it; then every line becomes source (`> [!note] title`), with `>` shown only on the caret's line and inline elements still per-element;
-   - display math `$$ … $$`: widget until the caret is inside, then the whole source, with the rendered formula kept below it (measured 2026-10-17: same height as before, under the closing `$$`);
+   - display math `$$ … $$`: widget until the caret is inside, then the whole source, with the rendered formula kept below it (measured 2026-10-17: same height as before, under the closing `$$`). **Lumière differs (BH-009 / BH-004):** revealed display math is source only — no stacked preview under the `$$` lines;
    - HTML blocks: widget until the caret is inside, then the whole source.
 7. **Task items**: `- [ ]` is revealed only when the caret touches that range (columns 0 to 5 inclusive, so not after the space); the item text never changes.
 8. **Footnote definitions** `[^1]: text`: the `[^1]:` marker is revealed when the caret is on the line (a rendered number otherwise); inline elements in it follow rule 1.
