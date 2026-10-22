@@ -198,6 +198,42 @@ function registerFormattingKeys(
           run: commands.get("editor:toggle-comments")!,
           stopPropagation: true,
         },
+        // Obsidian Set Heading 0–6 (BH-030). Host also binds ctrl/cmd+alt+N.
+        {
+          key: "Mod-Alt-0",
+          run: commands.get("editor:set-heading-0")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-Alt-1",
+          run: commands.get("editor:set-heading-1")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-Alt-2",
+          run: commands.get("editor:set-heading-2")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-Alt-3",
+          run: commands.get("editor:set-heading-3")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-Alt-4",
+          run: commands.get("editor:set-heading-4")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-Alt-5",
+          run: commands.get("editor:set-heading-5")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-Alt-6",
+          run: commands.get("editor:set-heading-6")!,
+          stopPropagation: true,
+        },
         // VS Code's keys for more carets: Obsidian binds none.
         {
           key: "Mod-Alt-ArrowUp",

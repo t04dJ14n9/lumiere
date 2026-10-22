@@ -34,13 +34,9 @@ export default defineManifest({
       "b",
       "i",
       "k",
-      "alt+0",
-      "alt+1",
-      "alt+2",
-      "alt+3",
-      "alt+4",
-      "alt+5",
-      "alt+6",
+      // BH-030: do not consume ctrl+alt+0..6 — Obsidian Set Heading 0–6
+      // (formatting owns those chords). Vim-core has no <C-A-N> map; the
+      // host noop left Ctrl+Alt+N dead while Vim is on.
       // BH-026: do not consume ctrl+shift+h — VS Code Replace in Files
       // (workbench.action.replaceInFiles). Vim-core has no <C-S-h> map; the
       // host noop left the chord dead while Vim is on.
