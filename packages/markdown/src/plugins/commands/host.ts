@@ -4,9 +4,10 @@ import { contributionId } from "../../shared/setting-schema";
 import type { Context, PluginHandle, Plugin, Infer } from "@workshop/core";
 import type { EditorPanel } from "../editor/api";
 import { protocol, type action as actionSchema } from "./protocol";
+import { toggleTextEditor } from "../editor/toggle-text-editor";
 export const commandsHost: Plugin<{ features: readonly Manifest[] }> = {
   name: "commands",
-  inject: { required: ["hostCommands", "settings", "editors"] },
+  inject: { required: ["hostCommands", "settings", "editors", "activeEditor"] },
   apply(ctx, config) {
     featureCommands(ctx, config.features);
     registerPanelActions(ctx);
@@ -66,6 +67,15 @@ function runPanelAction(
   panel: EditorPanel,
   action: Infer<typeof actionSchema>,
 ): Promise<boolean> {
+  // Toggle owns its own flush + sibling-tab close (BH-011); do not wrap again.
+  if (action === "toggleTextEditor") {
+    return toggleTextEditor({
+      editors: ctx.editors,
+      activeEditor: ctx.activeEditor,
+      hostCommands: ctx.hostCommands,
+      serial: ctx.serial.bind(ctx) as Context["serial"],
+    }).then(() => true);
+  }
   return panel.session.withAction(async () => {
     await ctx.serial("document/willSave", panel.session);
     await panel.session.flush();
