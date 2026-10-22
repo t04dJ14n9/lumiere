@@ -34,6 +34,25 @@ function createFormulas(macros: Record<string, MathMacro>) {
   });
 }
 
+/** esbuild code-splitting emits MathJax CJS as `export default <exports>` only. */
+function cjsNamed<T>(mod: Record<string, unknown>, name: string): T {
+  const direct = mod[name];
+  if (typeof direct === "function") {
+    return direct as T;
+  }
+  const def = mod.default;
+  if (def && typeof def === "object") {
+    const nested = (def as Record<string, unknown>)[name];
+    if (typeof nested === "function") {
+      return nested as T;
+    }
+  }
+  if (typeof def === "function") {
+    return def as T;
+  }
+  throw new TypeError(`MathJax ${name} is not a function`);
+}
+
 async function ensureBrowser(): Promise<void> {
   if (formulas && adaptor) {
     return;
@@ -41,10 +60,20 @@ async function ensureBrowser(): Promise<void> {
   browserReady ??= (async () => {
     // browserAdaptor needs `window`/`document` — only load in a real webview,
     // never at module import (Node unit tests import this graph).
-    const { browserAdaptor } =
-      await import("@mathjax/src/cjs/adaptors/browserAdaptor.js");
-    const { RegisterHTMLHandler } =
-      await import("@mathjax/src/cjs/handlers/html.js");
+    // Dynamic import + esbuild splitting yields default-export-only chunks;
+    // named destructuring leaves `browserAdaptor` undefined → "n is not a function".
+    const browserMod = await import(
+      "@mathjax/src/cjs/adaptors/browserAdaptor.js"
+    );
+    const htmlMod = await import("@mathjax/src/cjs/handlers/html.js");
+    const browserAdaptor = cjsNamed<() => unknown>(
+      browserMod as Record<string, unknown>,
+      "browserAdaptor",
+    );
+    const RegisterHTMLHandler = cjsNamed<(a: unknown) => void>(
+      htmlMod as Record<string, unknown>,
+      "RegisterHTMLHandler",
+    );
     const a = browserAdaptor();
     RegisterHTMLHandler(a);
     adaptor = a as { outerHTML(node: unknown): string };
