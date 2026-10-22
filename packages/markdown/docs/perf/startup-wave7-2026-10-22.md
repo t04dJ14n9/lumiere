@@ -21,28 +21,48 @@ gap toward Obsidian-feel / clearly under ~1 s interactive when feasible.
    links, … and `scheduleFeaturePhases` awaited that promise *before*
    `configure(..., "chrome")`. Properties (~67 KB) was ready early but still
    queued behind tables download + parse.
-2. **`sourcesPropertyHost` on the critical panel set** — promoted in wave 6
-   for open-RPC readiness, but `ready` awaits `owned.settled()`. The host half
-   is only needed when the user clicks a Source; first paint uses webview
-   markup alone. Critical settle delayed the ready payload → delayed CM6.
-3. **Blank `#app` until `editor.js` parsed** — BH-018 painted the editor
-   background, but no glyphs until the module booted and CM6 mounted (~0.8 s
-   on Host GUI).
 
-## Strategy
+## Strategy (kept)
 
 1. **Split chrome vs paint-structure preload** — `preloadChromeFeatures()`
    loads only `properties` / `sourcesProperty` / `tags` / `lineNumbers`.
    `preloadPaintFeatures()` loads the remaining first-screen structure.
    After `mw:first-paint`, chrome configure waits on **chrome chunks only**;
    paint configure waits on the structure promise.
-2. **Defer `sourcesPropertyHost` again** until `editor/session-ready` (same
-   as wave 2–5). Webview chrome phase still starts `sourcesProperty` for the
-   sheet.
-3. **HTML boot skeleton** — `webviewHTML` embeds a line-aligned prefix of
-   `session.text` (`BOOT_TEXT_CHARS` = 10 000) in `#mw-boot` so the opening
-   band paints while `editor.js` downloads. Cleared in the same turn
-   `EditorView` mounts so glyphs do not drop out.
+
+`sourcesPropertyHost` stays on the critical panel set (wave 6) so Sources
+open RPC is ready with the sheet.
+
+## Host GUI remasure of first tip (`ff9c7d16`) — REGRESSED
+
+| Milestone | #284 | #285 first tip |
+| --- | ---: | ---: |
+| First glyphs | ~0.8 s | ~0.7 s |
+| Live Preview interactive | **~1.4 s** | ~1.5 s |
+| Properties gap after glyphs | ~0.6 s | ~0.8 s |
+
+### Hypothesis
+
+Two extras on that tip hurt interactive more than the chrome split helped:
+
+1. **`#mw-boot` HTML skeleton** — embedding ~10 KB of escaped opening-band
+   text made first “glyphs” look earlier (boot `<pre>`, not CM6), then
+   removing `#mw-boot` and mounting `EditorView` thrashed layout on the same
+   turn Properties chrome needed. Absolute Properties time moved ~1.4 s →
+   ~1.5 s; the gap widened because glyphs moved earlier while chrome got
+   slightly later.
+2. **Deferring `sourcesPropertyHost` again** — wave 6 promoted it so open
+   RPC is ready with the sheet. Putting it back on deferred did not recover
+   interactive; keep wave 6’s critical placement.
+
+### Fix (follow-up on this PR)
+
+- **Revert** the boot skeleton (`webviewHTML` / `#mw-boot` / clear-on-mount)
+  and the `sourcesPropertyHost` deferral.
+- **Keep** the chrome vs paint-structure preload split only.
+
+Coordinator Host GUI remasure on the new tip decides merge. Do not merge on
+interactive > #284 (~1.4 s).
 
 ## Marks
 
@@ -51,8 +71,5 @@ gap toward Obsidian-feel / clearly under ~1 s interactive when feasible.
 
 ## Correctness
 
-- Sources open RPC still works once the deferred host starts (session-ready).
-- Boot text is HTML-escaped; large notes only ship the opening band in the
-  initial document.
-- Unit: `webview-html.test.ts` (boot escape + embed), existing Sources /
-  properties tests.
+- Sources open RPC stays on the critical host set with the sheet.
+- Unit: `webview-html.test.ts` (CSP), existing Sources / properties tests.

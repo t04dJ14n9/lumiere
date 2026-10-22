@@ -43,9 +43,8 @@ export function createPanel(
   );
   // Kick off webview HTML (and editor.js fetch/parse) before panel host
   // plugins configure, so download overlaps with host work. ready still
-  // waits for owned.settled() and settings prepare. Opening-band boot text
-  // paints glyphs while the module loads (cleared when CM6 mounts).
-  shell.setHTML(webviewHTML(shell, { bootText: session.text }));
+  // waits for owned.settled() and settings prepare.
+  shell.setHTML(webviewHTML(shell));
   configure(owned, shell);
   const reporting = panelReporting(owned, rpc, shell.document, host);
   const panel: EditorPanel = {
