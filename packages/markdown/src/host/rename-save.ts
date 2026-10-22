@@ -48,9 +48,9 @@ export function applyLineColEdits(
 }
 
 /**
- * Planned final text for each open note a rename is about to rewrite. Used
- * after the rename to tell whether VS Code's onWill WorkspaceEdit landed on a
- * custom-editor buffer (BH-014) and to re-apply when it did not.
+ * Planned final text for notes open in a Lumière custom editor. Used after
+ * the rename to apply link updates that VS Code's onWill WorkspaceEdit does
+ * not land on CustomTextEditor buffers (BH-014).
  */
 export function expectedOpenEditorText(
   files: readonly FileTextEdits[],
@@ -68,4 +68,26 @@ export function expectedOpenEditorText(
     expected.set(file.uri, applyLineColEdits(text, file.edits));
   }
   return expected;
+}
+
+/**
+ * Split link-update edits into notes open in Lumière (apply+save ourselves)
+ * and closed notes (waitUntil WorkspaceEdit + saveAfterRename so disk is
+ * written without a manual Save — Obsidian parity).
+ */
+export function partitionLinkUpdateFiles(
+  files: readonly FileTextEdits[],
+  lumiereOpenUris: ReadonlySet<string>,
+  openText: (uri: string) => string | undefined,
+): {
+  open: Map<string, string>;
+  closed: FileTextEdits[];
+} {
+  const open = expectedOpenEditorText(files, (uri) =>
+    lumiereOpenUris.has(uri) ? openText(uri) : undefined,
+  );
+  return {
+    open,
+    closed: files.filter((file) => !open.has(file.uri)),
+  };
 }

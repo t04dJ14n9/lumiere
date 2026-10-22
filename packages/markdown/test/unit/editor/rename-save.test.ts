@@ -5,6 +5,7 @@ import {
   cleanEditedUris,
   expectedOpenEditorText,
   offsetAt,
+  partitionLinkUpdateFiles,
 } from "../../../src/host/rename-save";
 
 const edit = {
@@ -106,5 +107,67 @@ test("expectedOpenEditorText covers only notes that are open (BH-014)", () => {
   assert.deepEqual(
     [...expected.entries()],
     [["file:///linker.md", "[[Open]]"]],
+  );
+});
+
+test("partitionLinkUpdateFiles keeps closed notes for waitUntil disk save", () => {
+  const files = [
+    {
+      uri: "file:///open.md",
+      edits: [
+        {
+          start: { line: 0, col: 2 },
+          end: { line: 0, col: 5 },
+          text: "Open",
+        },
+      ],
+    },
+    {
+      uri: "file:///closed.md",
+      edits: [
+        {
+          start: { line: 0, col: 0 },
+          end: { line: 0, col: 3 },
+          text: "new",
+        },
+      ],
+    },
+    { uri: "file:///empty.md", edits: [] },
+  ];
+  const { open, closed } = partitionLinkUpdateFiles(
+    files,
+    new Set(["file:///open.md"]),
+    (uri) => (uri === "file:///open.md" ? "[[Old]]" : "[[Old]]"),
+  );
+  assert.deepEqual([...open.entries()], [["file:///open.md", "[[Open]]"]]);
+  assert.deepEqual(
+    closed.map((file) => file.uri),
+    ["file:///closed.md", "file:///empty.md"],
+  );
+});
+
+test("a textDocument that is not a Lumière tab stays on the closed disk path", () => {
+  const files = [
+    {
+      uri: "file:///warmed.md",
+      edits: [
+        {
+          start: { line: 0, col: 0 },
+          end: { line: 0, col: 3 },
+          text: "new",
+        },
+      ],
+    },
+  ];
+  // Warmed / leftover TextDocument text exists, but no Lumière tab → closed.
+  const { open, closed } = partitionLinkUpdateFiles(
+    files,
+    new Set(),
+    () => "old",
+  );
+  assert.equal(open.size, 0);
+  assert.deepEqual(
+    closed.map((file) => file.uri),
+    ["file:///warmed.md"],
   );
 });
