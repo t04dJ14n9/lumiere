@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -12,7 +19,9 @@ import {
 } from "../../src/host/paths";
 
 async function directory(t: test.TestContext, prefix: string) {
-  const dir = await mkdtemp(path.join(tmpdir(), prefix));
+  // The real path: on macOS the temporary folder is behind a symlink
+  // (/var → /private/var), and resolved notes come back real.
+  const dir = await realpath(await mkdtemp(path.join(tmpdir(), prefix)));
   t.after(() => rm(dir, { recursive: true, force: true }));
   return dir;
 }
