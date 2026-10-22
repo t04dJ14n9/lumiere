@@ -11,7 +11,7 @@ const key = (overrides: Partial<FormatKey> = {}): FormatKey => ({
   ...overrides,
 });
 
-test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics", () => {
+test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics; Ctrl/Cmd+D is selectNext", () => {
   for (const isMac of [false, true]) {
     const modifier = { ctrlKey: !isMac, metaKey: isMac };
     assert.equal(formatActionFor(key({ ...modifier }), isMac), "bold");
@@ -35,6 +35,18 @@ test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics", () => {
       formatActionFor(key({ ...modifier, key: "а", keyCode: 73 }), isMac),
       "italics",
     );
+    assert.equal(
+      formatActionFor(key({ ...modifier, key: "d" }), isMac),
+      "selectNext",
+    );
+    assert.equal(
+      formatActionFor(key({ ...modifier, key: "D" }), isMac),
+      "selectNext",
+    );
+    assert.equal(
+      formatActionFor(key({ ...modifier, key: "а", keyCode: 68 }), isMac),
+      "selectNext",
+    );
     for (const override of [
       { altKey: true },
       { shiftKey: true },
@@ -51,7 +63,7 @@ test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics", () => {
   }
 });
 
-test("capture listener owns Mod+B/I and skips native fields", () => {
+test("capture listener owns Mod+B/I/D and skips native fields", () => {
   const calls: string[] = [];
   const listeners = new Map<string, EventListener>();
   const doc = {
@@ -113,6 +125,10 @@ test("capture listener owns Mod+B/I and skips native fields", () => {
   calls.length = 0;
   assert.equal(fire({ key: "i" }).prevented, true);
   assert.deepEqual(calls, ["italics"]);
+
+  calls.length = 0;
+  assert.equal(fire({ key: "d" }).prevented, true);
+  assert.deepEqual(calls, ["selectNext"]);
 
   calls.length = 0;
   assert.equal(
