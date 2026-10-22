@@ -1,4 +1,7 @@
 import { prismPlugin } from "./prism.mjs";
+import { stripDeadYamlStaticImport } from "./strip-dead-yaml-static.mjs";
+
+
 // Builds Lumière's assets into this package's dist/: the editor,
 // diff and graph webviews, the vault and search workers, and the public API
 // declarations. The extension host is bundled by the repository root
@@ -36,7 +39,10 @@ const builds = [
     format: "esm",
     splitting: true,
     target: "chrome120",
-    plugins: [prismPlugin],
+    // Dead-strip sync require("yaml") in loadYaml so Properties does not
+    // statically pull the ~119 KB yaml package (see preloadYaml).
+    define: { __LUMIERE_WEBVIEW__: "true" },
+    plugins: [prismPlugin, stripDeadYamlStaticImport()],
   },
   {
     ...shared,

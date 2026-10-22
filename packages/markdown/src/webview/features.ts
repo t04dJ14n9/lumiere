@@ -2,6 +2,7 @@ import type { BaseContext, Infer, Plugin } from "@workshop/core";
 import type { featureSettings } from "../shared/features";
 import { PluginSwitch, type WantedPlugin } from "../shared/plugin-switch";
 import { features } from "../plugins/catalog";
+import { preloadYaml } from "../markdown/properties/load-yaml";
 
 type FeatureSettings = Infer<typeof featureSettings>;
 
@@ -142,9 +143,12 @@ export type FeaturePhase = "chrome" | "paint" | "all";
 
 /** Chrome chunks only (Properties / Sources / tags / lineNumbers). */
 export function preloadChromeFeatures(): Promise<void> {
-  return Promise.all(
-    [...CHROME_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),
-  ).then(() => undefined);
+  // YAML is a dynamic webview chunk (not a static dep of Properties). Warm it
+  // in parallel so Properties can download/eval while yaml fetches.
+  return Promise.all([
+    preloadYaml(),
+    ...[...CHROME_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),
+  ]).then(() => undefined);
 }
 
 /**
