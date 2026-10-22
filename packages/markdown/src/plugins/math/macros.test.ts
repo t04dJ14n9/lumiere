@@ -5,11 +5,10 @@ import { TeX } from "@mathjax/src/cjs/input/tex.js";
 import { SVG } from "@mathjax/src/cjs/output/svg.js";
 import { liteAdaptor } from "@mathjax/src/cjs/adaptors/liteAdaptor.js";
 import { RegisterHTMLHandler } from "@mathjax/src/cjs/handlers/html.js";
-import "@mathjax/src/cjs/input/tex/ams/AmsConfiguration.js";
-import "@mathjax/src/cjs/input/tex/newcommand/NewcommandConfiguration.js";
-import "@mathjax/src/cjs/input/tex/configmacros/ConfigMacrosConfiguration.js";
 import { macrosEqual, normalizeMacros } from "./macros";
 import { config } from "./manifest";
+// Same registration as production mathjax.ts — catches dropped side-effect imports.
+import { TEX_PACKAGES } from "./tex-packages";
 
 test("normalizeMacros keeps TeX names and derives argument counts from #n", () => {
   assert.deepEqual(
@@ -55,7 +54,7 @@ test("configmacros expands normalized user macros", async () => {
   });
   const formulas = mathjax.document("", {
     InputJax: new TeX({
-      packages: ["base", "ams", "newcommand", "configmacros"],
+      packages: [...TEX_PACKAGES],
       macros,
     }),
     OutputJax: new SVG({ fontCache: "local" }),
@@ -67,4 +66,33 @@ test("configmacros expands normalized user macros", async () => {
     assert.equal(/data-mjx-error/.test(svg), false, tex);
     assert.match(svg, /svg/i);
   }
+});
+
+test("TEX_PACKAGES registers configmacros so TeX accepts macros option", () => {
+  // Mirrors Host GUI: without ConfigMacrosConfiguration, MathJax logs
+  // `Invalid option "macros" (no default value)` and user macros never apply.
+  const warnings: string[] = [];
+  const prev = console.warn;
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args.map(String).join(" "));
+  };
+  try {
+    const jax = new TeX({
+      packages: [...TEX_PACKAGES],
+      macros: { RR: "{\\bf R}", dd: ["{\\mathrm{d}#1}", 1] },
+    });
+    assert.ok(jax);
+  } finally {
+    console.warn = prev;
+  }
+  assert.equal(
+    warnings.some((w) => /Invalid option ["']macros["']/i.test(w)),
+    false,
+    `unexpected MathJax macros warning: ${warnings.join(" | ")}`,
+  );
+  assert.equal(
+    warnings.some((w) => /Package '.*(ams|newcommand|mathtools|configmacros).*' not found/i.test(w)),
+    false,
+    `unexpected missing package warning: ${warnings.join(" | ")}`,
+  );
 });

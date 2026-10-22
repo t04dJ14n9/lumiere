@@ -3,17 +3,7 @@ import { TeX } from "@mathjax/src/cjs/input/tex.js";
 import { SVG } from "@mathjax/src/cjs/output/svg.js";
 import { loadDynamicFont } from "./fonts";
 import { macrosEqual, normalizeMacros, type MathMacro } from "./macros";
-
-const PACKAGES = [
-  "base",
-  "ams",
-  "newcommand",
-  "mathtools",
-  "cancel",
-  "color",
-  "noundefined",
-  "configmacros",
-] as const;
+import { TEX_PACKAGES } from "./tex-packages";
 
 // Without a loader, a formula that needs one of the font's dynamic files
 // (\mathbb, \ell, …) fails with "dynamic file … failed to load".
@@ -27,7 +17,7 @@ let browserReady: Promise<void> | undefined;
 function createFormulas(macros: Record<string, MathMacro>) {
   return mathjax.document(document, {
     InputJax: new TeX({
-      packages: [...PACKAGES],
+      packages: [...TEX_PACKAGES],
       macros,
     }),
     OutputJax: new SVG({ fontCache: "local" }),
