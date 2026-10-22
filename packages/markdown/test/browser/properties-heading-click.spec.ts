@@ -87,7 +87,7 @@ test("clicking a heading below a visible Properties block selects that heading",
       const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
       while (walker.nextNode()) {
         const text = walker.currentNode as Text;
-        if (text.data.includes("L")) {
+        if (text.data.includes("Large")) {
           return text;
         }
       }
@@ -109,7 +109,10 @@ test("clicking a heading below a visible Properties block selects that heading",
       throw new Error("heading missing after scroll");
     }
     const node = glyph(line);
-    const at = node.data.indexOf("活");
+    const at = node.data.indexOf("Large");
+    if (at < 0) {
+      throw new Error(`heading glyph missing: ${node.data}`);
+    }
     const range = document.createRange();
     range.setStart(node, at);
     range.setEnd(node, at + 1);
@@ -152,7 +155,7 @@ test("clicking a heading below a visible Properties block selects that heading",
   ).toBeLessThanOrEqual(1);
   expect(
     after.text === HEADING ||
-      after.text.includes("活动") ||
+      after.text.includes("Large cold-open") ||
       after.text.trim() === "",
     JSON.stringify(after),
   ).toBe(true);
