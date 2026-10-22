@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { selectedCells } from "./selection";
+import { addStripClickCommits } from "./toolbar";
 
 const root = new URL("../../..", import.meta.url).pathname;
 const css = readFileSync(
@@ -107,5 +108,48 @@ test("the cell editor's scroller is content-sized instead of CodeMirror's 100% h
   assert.match(
     css,
     /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*height: auto;/,
+  );
+});
+
+test("add-strip click inserts only when armed and not dragged (BH-019)", () => {
+  assert.equal(
+    addStripClickCommits({
+      dragged: false,
+      opacity: "1",
+      focusVisible: false,
+    }),
+    true,
+  );
+  assert.equal(
+    addStripClickCommits({
+      dragged: false,
+      opacity: "0",
+      focusVisible: true,
+    }),
+    true,
+  );
+  assert.equal(
+    addStripClickCommits({
+      dragged: false,
+      opacity: "0",
+      focusVisible: false,
+    }),
+    false,
+  );
+  assert.equal(
+    addStripClickCommits({
+      dragged: true,
+      opacity: "1",
+      focusVisible: false,
+    }),
+    false,
+  );
+  assert.equal(
+    addStripClickCommits({
+      dragged: true,
+      opacity: "1",
+      focusVisible: true,
+    }),
+    false,
   );
 });
