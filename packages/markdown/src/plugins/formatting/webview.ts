@@ -167,7 +167,6 @@ function registerFormattingCommands(
   }
 }
 
-
 /** Obsidian Set Heading 0–6 (BH-030). Host also binds ctrl/cmd+alt+N. */
 function headingKeyBindings(commands: Map<string, Command>) {
   return Array.from({ length: 7 }, (_, level) => ({
