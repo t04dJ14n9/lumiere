@@ -21,6 +21,7 @@ import { TableClipboard } from "./clipboard";
 import { TableToolbar } from "./toolbar";
 import { TableHandles } from "./handles";
 import { activeTables, tableSelectionChanges } from "./state";
+import { TableStickyHScroll } from "./sticky-hscroll";
 import { forwardTableWheel } from "./wheel-scroll";
 
 /** Wires table interactions and reconciles snapshots from the outer document. */
@@ -32,6 +33,7 @@ export class TableController {
   private readonly clipboard: TableClipboard;
   private readonly toolbar: TableToolbar;
   private readonly handles: TableHandles;
+  private sticky: TableStickyHScroll;
   private readonly events = new AbortController();
   private requested?: CellPosition;
 
@@ -92,6 +94,11 @@ export class TableController {
     this.grid.render();
     this.handles = this.createHandles();
     this.handles.refresh();
+    this.sticky = new TableStickyHScroll(
+      this.grid.scroll,
+      this.grid.outer.scrollDOM,
+    );
+    this.grid.root.prepend(this.sticky.root);
   }
 
   private createProjection(environment: TableEnvironment): CellProjection {
@@ -320,6 +327,10 @@ export class TableController {
     }
     this.highlight();
     this.handles.refresh();
+    if (this.sticky && this.grid.outer.scrollDOM) {
+      // Note scroller is stable per editor; re-measure after layout changes.
+      this.sticky.measure();
+    }
   }
 
   private refreshCells(shapeChanged: boolean, moved?: CellPosition): void {
@@ -362,6 +373,7 @@ export class TableController {
   destroy(): void {
     this.selected.drag.destroy();
     this.handles.destroy();
+    this.sticky.destroy();
     this.toolbar.close();
     this.events.abort();
     if (activeTables.get(this.grid.outer) === this) {

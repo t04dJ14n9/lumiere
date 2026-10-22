@@ -22,7 +22,10 @@ active through intermediate scroll events and release on arrival or `scrollend`.
 Real vertical table wheel input cancels saved-view scroll restoration through
 the editor's public input event, including when the tick chains at an edge.
 Horizontal and Shift-wheel gestures stay with the table's
-overflow box. The selection and focus stay in place during scrolling.
+overflow box. Tall wide tables also mount a sticky mirror of that
+horizontal scrollbar (BH-016) while the native bar is below the note
+viewport, so columns stay reachable without scrolling to the foot; the
+mirror hides once the native bar is on screen. The selection and focus stay in place during scrolling.
 Grid Ctrl+C/Cmd+C snapshots the selected rectangle as TSV and writes through
 Editor's validated host clipboard service, preserving grid focus and selection.
 Native copy events and menu commands use the same TSV serialization; ordinary
@@ -58,6 +61,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `wheel-scroll.test.ts`: wheel directions, units, horizontal gestures and note limits.
 - `wheel-motion.ts`: per-panel instant wheel destinations, reversal and cancellation.
 - `wheel-motion.test.ts`: ticks, fractional deltas, reversal, boundaries and reduced motion.
+- `sticky-hscroll.ts`: sticky custom horizontal scrollbar for tall wide tables (BH-016).
+- `sticky-hscroll.test.ts`: visibility, sticky-top, and thumb-metric unit cases.
+- `tables-sticky-hscroll.spec.ts` (browser): sticky bar at header, pan sync, hide at foot.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
 - `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.
