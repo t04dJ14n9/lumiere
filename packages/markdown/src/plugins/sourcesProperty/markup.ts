@@ -8,7 +8,11 @@ import {
 /** @deprecated Prefer options.previewCount (default properties.listPreviewCount = 3). */
 export const FIRST_SOURCE_ROWS = DEFAULT_LIST_PREVIEW_COUNT;
 
-/** Stacked Sources rows with open links. Disclosure never drops a row from the markup. */
+/**
+ * Stacked Sources rows with open links. Collapsed sheets emit only the
+ * preview window; "Showing N of M" remounts with `expanded: true` so cold
+ * open does not parse/insert every hidden article (WorkVault ~100+ Sources).
+ */
 export function renderSources(
   value: unknown,
   values: Record<string, unknown>,
@@ -19,9 +23,8 @@ export function renderSources(
   const preview = clampPreview(
     options.previewCount ?? DEFAULT_LIST_PREVIEW_COUNT,
   );
-  const body = rows
-    .map((row) => sourceRow(row, !expanded && row.index >= preview))
-    .join("");
+  const visible = expanded ? rows : rows.slice(0, preview);
+  const body = visible.map((row) => sourceRow(row)).join("");
   const more =
     !expanded && rows.length > preview
       ? `<button type="button" data-source-more>Showing ${preview} of ${rows.length}</button>`
@@ -29,12 +32,8 @@ export function renderSources(
   return `<div class="source-rows" data-source-rows>${body}${more}</div>`;
 }
 
-function sourceRow(
-  row: ReturnType<typeof sourceRows>[number],
-  extra: boolean,
-): string {
-  const hidden = extra ? " hidden data-source-extra" : "";
-  return `<article class="source-row"${hidden} data-source-index="${row.index}"><p class="source-title">${escape(row.title || row.resourceLabel)}</p>${resourceLine(row)}${idLine(row)}${usageLine(row)}${metaLine(row)}${rawLine(row)}</article>`;
+function sourceRow(row: ReturnType<typeof sourceRows>[number]): string {
+  return `<article class="source-row" data-source-index="${row.index}"><p class="source-title">${escape(row.title || row.resourceLabel)}</p>${resourceLine(row)}${idLine(row)}${usageLine(row)}${metaLine(row)}${rawLine(row)}</article>`;
 }
 
 function resourceLine(row: ReturnType<typeof sourceRows>[number]): string {

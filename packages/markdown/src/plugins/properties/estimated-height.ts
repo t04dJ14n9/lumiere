@@ -73,10 +73,11 @@ export function propertiesEstimatedHeight(input: {
     ...(input.expandedLists ? { expandedLists: input.expandedLists } : {}),
     ...(input.renderValue ? { renderValue: input.renderValue } : {}),
   });
-  return markupHeight(markup);
+  return propertiesHeightFromMarkup(markup);
 }
 
-function markupHeight(markup: string): number {
+/** Height from already-built sheet markup (avoids a second renderProperties). */
+export function propertiesHeightFromMarkup(markup: string): number {
   if (markup.length === 0) {
     return 0;
   }

@@ -5,7 +5,7 @@ export type BindSourcesOptions = {
   onExpand?(): void;
 };
 
-/** Clicks on a Sources block. Show-all only reveals rows already in the markup. */
+/** Clicks on a Sources block. Show-all remounts via onExpand (preview → full). */
 export function bindSources(
   root: ParentNode,
   signal: AbortSignal,
@@ -40,9 +40,10 @@ function showAll(
   button: HTMLButtonElement,
   onExpand: BindSourcesOptions["onExpand"],
 ): void {
-  // Resolve the view before detaching the button.
+  // Resolve the view before detaching the button / remounting the sheet.
   const view = EditorView.findFromDOM(button);
   const block = button.closest("[data-source-rows]");
+  // Legacy path: older markup kept extras hidden in-DOM. Prefer remount.
   block?.querySelectorAll<HTMLElement>("[data-source-extra]").forEach((row) => {
     row.hidden = false;
   });

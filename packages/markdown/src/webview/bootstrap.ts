@@ -1,8 +1,9 @@
 import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
+import { preloadPaintFeatures } from "./features";
 import { registerEditorSettings } from "./editor-settings";
-import { createRoot } from "@workshop/core";
+import { createRoot, type RootContext } from "@workshop/core";
 import type { Infer } from "@workshop/core";
 import type { viewState } from "../plugins/editor/protocol";
 import type { Endpoint } from "../shared/rpc/endpoint";
@@ -15,6 +16,11 @@ import { commandsWebview } from "../plugins/commands/webview";
 import { livePreviewWebview } from "../plugins/livePreview/webview";
 import { renderWebview } from "../plugins/render/webview";
 import { resourcesWebview } from "../plugins/resources/webview";
+import type { featureSettings } from "../shared/features";
+
+type FeatureSettings = Infer<typeof featureSettings>;
+type Configure = ReturnType<typeof pluginReporting>;
+
 export async function bootstrap(
   rpc: Endpoint,
   parent: HTMLElement,
@@ -50,25 +56,49 @@ export async function bootstrap(
   }
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
-  // Core editor + Live Preview chrome first — interactive before feature chunks.
+  // Overlap paint-chunk download with core settle (Properties is ~68 KB).
+  const paintChunks =
+    init.preset === "obsidian" ? preloadPaintFeatures() : Promise.resolve();
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {
     throw failed.error;
   }
   performance.mark("mw:plugins");
+  scheduleFeaturePhases({
+    root,
+    configure,
+    paintChunks,
+    features: init.features,
+    defaults: init.preset === "obsidian",
+  });
+  rpc.notify(protocol, "initialized", {});
+  return root;
+}
+
+/** Glyphs first, then Properties chrome, paint structure, then the rest. */
+function scheduleFeaturePhases(options: {
+  root: RootContext;
+  configure: Configure;
+  paintChunks: Promise<void>;
+  features: FeatureSettings;
+  defaults: boolean;
+}): void {
+  const { root, configure, paintChunks, features, defaults } = options;
   requestAnimationFrame(() => {
     performance.mark("mw:first-paint");
-    // Paint features (tables, callouts, …) then the rest after the first frame.
-    void configure(init.features, init.preset === "obsidian", "paint")
+    void paintChunks
+      .then(() => configure(features, defaults, "chrome"))
+      .then(() => {
+        performance.mark("mw:properties");
+        return configure(features, defaults, "paint");
+      })
       .then(() => {
         performance.mark("mw:features");
-        return configure(init.features, init.preset === "obsidian", "all");
+        return configure(features, defaults, "all");
       })
       .catch((error: unknown) =>
         root.logger.error("Deferred features failed", error),
       );
   });
-  rpc.notify(protocol, "initialized", {});
-  return root;
 }

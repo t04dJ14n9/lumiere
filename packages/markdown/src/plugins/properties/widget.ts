@@ -11,11 +11,14 @@ import { bindPropertyFields } from "./fields";
 import { bindPropertyLists } from "./lists";
 import { bindPropertyControls } from "./controls";
 import { keepSelectAllInField } from "./select-all";
-import { propertiesEstimatedHeight } from "./estimated-height";
+import { propertiesHeightFromMarkup } from "./estimated-height";
 
 const lifetimes = new WeakMap<HTMLElement, () => void>();
 
 export class PropertyWidget extends WidgetType {
+  private cachedMarkup?: string;
+  private cachedHeight?: number;
+
   constructor(
     readonly source: string,
     readonly context: PropertyContext,
@@ -40,9 +43,7 @@ export class PropertyWidget extends WidgetType {
     }
     const container = document.createElement("div");
     wrapper.append(container);
-    container.innerHTML = sanitize(
-      propertyMarkup(this.source, this.context, this.allowEmpty),
-    );
+    container.innerHTML = sanitize(this.sheetMarkup());
     rememberPropertyRows(container);
     this.context.bindRenderedProperties?.(container);
     bindPropertyFields(container, this.source, this.context);
@@ -93,6 +94,9 @@ export class PropertyWidget extends WidgetType {
     if (this.hidden || previous.hidden) {
       return this.hidden === previous.hidden;
     }
+    // Source/context change invalidates the create-time markup cache.
+    delete this.cachedMarkup;
+    delete this.cachedHeight;
     const ok =
       !!dom.firstElementChild &&
       reconcileProperties(
@@ -125,21 +129,26 @@ export class PropertyWidget extends WidgetType {
    * Without this the height map treats the whole frontmatter as one line.
    */
   override get estimatedHeight(): number {
-    const listPreviewCount = this.context.listPreviewCount?.();
-    const expandedLists = this.context.expandedLists?.();
-    return propertiesEstimatedHeight({
-      source: this.source,
-      hidden: this.hidden,
-      collapsed: this.context.propertyEditor?.collapsed?.() ?? false,
-      allowEmpty: this.allowEmpty,
-      ...(listPreviewCount !== undefined ? { listPreviewCount } : {}),
-      ...(expandedLists ? { expandedLists } : {}),
-      ...(this.context.propertyEditor?.types
-        ? { types: this.context.propertyEditor.types() }
-        : {}),
-      ...(this.context.renderProperty
-        ? { renderValue: this.context.renderProperty }
-        : {}),
-    });
+    if (this.hidden) {
+      return 0;
+    }
+    if (this.cachedHeight !== undefined) {
+      return this.cachedHeight;
+    }
+    this.cachedHeight = propertiesHeightFromMarkup(this.sheetMarkup());
+    return this.cachedHeight;
+  }
+
+  /** One renderProperties per widget lifetime for height + toDOM. */
+  private sheetMarkup(): string {
+    if (this.cachedMarkup !== undefined) {
+      return this.cachedMarkup;
+    }
+    this.cachedMarkup = propertyMarkup(
+      this.source,
+      this.context,
+      this.allowEmpty,
+    );
+    return this.cachedMarkup;
   }
 }

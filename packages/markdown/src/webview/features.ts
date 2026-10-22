@@ -83,20 +83,28 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
 };
 
 /**
- * Visible structure for the first screen. Editing helpers (autoPair,
- * formatting, folding, footnotes, indentGuides, spellcheck) and heavier
- * chrome (math, mermaid, git, bridges, …) load after the first animation
- * frame so large notes become interactive sooner.
+ * Properties frame first: sheet + Sources (WorkVault) + light chrome so the
+ * interactive Properties+heading+body band does not wait on tables/callouts.
+ */
+const CHROME_FEATURE_IDS = new Set([
+  "lineNumbers",
+  "properties",
+  "sourcesProperty",
+  "tags",
+]);
+
+/**
+ * Visible structure for the first screen after chrome. Editing helpers and
+ * heavier chrome (math, mermaid, git, bridges, …) load after the first
+ * animation frame so large notes become interactive sooner.
  */
 const PAINT_FEATURE_IDS = new Set([
+  ...CHROME_FEATURE_IDS,
   "callouts",
   "codeBlocks",
-  "lineNumbers",
   "links",
-  "properties",
   "smartLists",
   "tables",
-  "tags",
   "tasks",
 ]);
 
@@ -122,20 +130,33 @@ const WEBVIEW_FEATURE_IDS = features
   .filter((manifest) => manifest.surfaces.includes("webview"))
   .map((manifest) => manifest.id);
 
+const CHROME_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
+  CHROME_FEATURE_IDS.has(id),
+);
+
 const PAINT_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
   PAINT_FEATURE_IDS.has(id),
 );
 
-export type FeaturePhase = "paint" | "all";
+export type FeaturePhase = "chrome" | "paint" | "all";
+
+/** Kick off paint-phase chunk fetches while core plugins settle. */
+export function preloadPaintFeatures(): Promise<void> {
+  return Promise.all(
+    [...PAINT_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),
+  ).then(() => undefined);
+}
 
 /**
  * The webview's feature switch: runs the features `settings` turns on (or,
  * with `defaults`, those on by default), each with its parsed configuration.
  * Feature modules load in parallel the first time they are wanted.
  *
- * `phase: "paint"` starts only first-paint features (and does not stop
- * deferred ones that are not loaded yet). `phase: "all"` (default) applies
- * the full wanted set — used after first paint and on settings changes.
+ * `phase: "chrome"` starts Properties/Sources/tags/lineNumbers first.
+ * `phase: "paint"` adds the rest of the first-screen structure (and does
+ * not stop deferred ones that are not loaded yet). `phase: "all"` (default)
+ * applies the full wanted set — used after first paint and on settings
+ * changes.
  */
 export function featureController(root: BaseContext) {
   const switches = new PluginSwitch(root);
@@ -153,6 +174,9 @@ export function featureController(root: BaseContext) {
         if (!manifest.surfaces.includes("webview")) {
           return false;
         }
+        if (phase === "chrome" && !CHROME_FEATURE_IDS.has(manifest.id)) {
+          return false;
+        }
         if (phase === "paint" && !PAINT_FEATURE_IDS.has(manifest.id)) {
           return false;
         }
@@ -162,8 +186,12 @@ export function featureController(root: BaseContext) {
       await Promise.all(
         wantedManifests.map((manifest) => loadWebviewPlugin(manifest.id)),
       );
-      const managed =
-        phase === "paint" ? PAINT_MANAGED_IDS : WEBVIEW_FEATURE_IDS;
+      let managed = WEBVIEW_FEATURE_IDS;
+      if (phase === "chrome") {
+        managed = CHROME_MANAGED_IDS;
+      } else if (phase === "paint") {
+        managed = PAINT_MANAGED_IDS;
+      }
       await switches.update(managed, () =>
         wantedPlugins(wantedManifests, settings),
       );
