@@ -6,11 +6,11 @@
 import { useEffect, useRef } from "react";
 import { parseOpenMessage, SHOWN } from "@workshop/host-node/embedding";
 import { editorUrl } from "../api";
-import type { Tab } from "../tabs";
+import type { NoteTab } from "../tabs";
 import { currentThemeMessage, onThemeChange } from "../theme";
 
 export interface EditorFrameProps {
-  readonly tab: Tab;
+  readonly tab: NoteTab;
   readonly visible: boolean;
   /** The page asked to show another file (absolute path), e.g. a followed link. */
   readonly onOpen: (path: string) => void;

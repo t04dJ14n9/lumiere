@@ -9,6 +9,9 @@ import type { TreeItem, TreeSnapshot } from "@workshop/host-node/views";
 import { ancestors, expandTo, isExpanded, type Toggled } from "../tree-state";
 import { views } from "../views";
 
+/** Changes this close together are read as one. */
+const REFRESH_DELAY_MS = 30;
+
 export interface TreePanelProps {
   readonly viewId: string;
   /** Whether the panel is on screen; the host hears it too. */
@@ -29,9 +32,7 @@ export function TreePanel({
   const [current, setCurrent] = useState<string>();
   const list = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    report(views.setVisible(viewId, visible));
-  }, [viewId, visible, report]);
+  useVisibility(viewId, visible, report);
   useEffect(
     () =>
       views.events((event) => {
@@ -80,6 +81,22 @@ export function TreePanel({
   );
 }
 
+/** Tell the host whether the tree is on screen: some plugins follow the caret only then. */
+function useVisibility(
+  viewId: string,
+  visible: boolean,
+  report: (work: Promise<unknown>) => void,
+): void {
+  useEffect(() => {
+    report(views.setVisible(viewId, visible));
+    return () => {
+      if (visible) {
+        report(views.setVisible(viewId, false));
+      }
+    };
+  }, [viewId, visible, report]);
+}
+
 /** The tree, read again whenever its plugin says it changed. */
 function useSnapshot(
   viewId: string,
@@ -90,17 +107,19 @@ function useSnapshot(
     let live = true;
     let pending = false;
     const load = () => {
-      // Several changes in a row read the tree once.
+      // Several changes in a row read the tree once. A timer, not an
+      // animation frame: WebKit runs no frames while the window is covered,
+      // and the outline must be right when it is uncovered.
       if (pending) {
         return;
       }
       pending = true;
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         pending = false;
         report(
           views.snapshot(viewId).then((next) => live && setSnapshot(next)),
         );
-      });
+      }, REFRESH_DELAY_MS);
     };
     load();
     const stop = views.events((event) => {

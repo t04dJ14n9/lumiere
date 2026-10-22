@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   noTabs,
+  SETTINGS_TAB,
   tabId,
   tabsReducer,
+  tabTitle,
   type TabsState,
 } from "../../src/shell/tabs";
 
@@ -15,8 +17,8 @@ test("opening a file twice shows its one tab", () => {
   state = open(state, "b.md");
   state = open(state, "a.md");
   assert.deepEqual(
-    state.tabs.map((tab) => tab.path),
-    ["a.md", "b.md"],
+    state.tabs.map((tab) => tabTitle(tab)),
+    ["a", "b"],
   );
   assert.equal(state.active, tabId("/v", "a.md"));
   // The same path in another vault is another tab.
@@ -43,4 +45,18 @@ test("closing a hidden tab keeps the shown one; unknown ids change nothing", () 
   assert.equal(state.active, tabId("/v", "b.md"));
   assert.equal(tabsReducer(state, { type: "close", id: "nope" }), state);
   assert.equal(tabsReducer(state, { type: "activate", id: "nope" }), state);
+});
+
+test("Settings opens once, as a tab beside the notes, and closes like one", () => {
+  let state = open(noTabs, "a.md");
+  state = tabsReducer(state, { type: "openSettings" });
+  state = tabsReducer(state, { type: "activate", id: tabId("/v", "a.md") });
+  state = tabsReducer(state, { type: "openSettings" });
+  assert.deepEqual(
+    state.tabs.map((tab) => tabTitle(tab)),
+    ["a", "Settings"],
+  );
+  assert.equal(state.active, SETTINGS_TAB);
+  state = tabsReducer(state, { type: "close", id: SETTINGS_TAB });
+  assert.equal(state.active, tabId("/v", "a.md"));
 });

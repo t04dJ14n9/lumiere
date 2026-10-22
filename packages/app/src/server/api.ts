@@ -5,6 +5,7 @@
  * from Finder) reaches the window.
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
+import type { UiStore } from "./ui-state";
 import type { VaultEvent, Vaults } from "./vaults";
 
 /** Request bodies are small JSON objects. */
@@ -19,7 +20,7 @@ export interface Api {
   close(): void;
 }
 
-export function createApi(vaults: Vaults, version: string): Api {
+export function createApi(vaults: Vaults, ui: UiStore, version: string): Api {
   const streams = new Set<ServerResponse>();
   // Notes to open that came before any window listened (the desktop app
   // passes a note from Finder while its window is still loading).
@@ -43,6 +44,10 @@ export function createApi(vaults: Vaults, version: string): Api {
       switch (route) {
         case "GET /api/health":
           return json(res, 200, { ok: true, version });
+        case "GET /api/ui":
+          return json(res, 200, ui.get());
+        case "POST /api/ui":
+          return json(res, 200, await ui.update(await jsonBody(req)));
         case "GET /api/vaults":
           return json(res, 200, vaults.list());
         case "POST /api/vaults":
@@ -84,8 +89,8 @@ function json(res: ServerResponse, status: number, body: unknown): true {
   return true;
 }
 
-/** `{"path": "/absolute/path"}` from the request body. */
-async function pathBody(req: IncomingMessage): Promise<string> {
+/** A small JSON request body. */
+async function jsonBody(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req) {
@@ -95,7 +100,12 @@ async function pathBody(req: IncomingMessage): Promise<string> {
     }
     chunks.push(chunk as Buffer);
   }
-  const body: unknown = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+}
+
+/** `{"path": "/absolute/path"}` from the request body. */
+async function pathBody(req: IncomingMessage): Promise<string> {
+  const body = await jsonBody(req);
   const value = (body as { path?: unknown } | null)?.path;
   if (typeof value !== "string" || value === "") {
     throw new Error('Expected {"path": "<absolute path>"}');

@@ -20,6 +20,7 @@ import {
 } from "@workshop/host-node";
 import { createApi, type Api } from "./api";
 import { admit } from "./auth";
+import { UiStore } from "./ui-state";
 import { Vaults } from "./vaults";
 
 export interface ServerSetup {
@@ -57,12 +58,7 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
     markdown,
     shim: path.join(setup.assets, "page", "shim.js"),
   });
-  const vaults = new Vaults(path.join(setup.data, "vaults.json"));
-  await vaults.load();
-  for (const vault of setup.vaults) {
-    await vaults.add(vault);
-  }
-  const api = createApi(vaults, setup.version);
+  const api = createApi(...(await loadState(setup)), setup.version);
   const shell = path.join(setup.assets, "shell");
   let port = setup.port;
   const auth = () => ({ token: setup.token, port });
@@ -103,6 +99,18 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
       return stopping;
     },
   };
+}
+
+/** The vaults (the recent ones, and those given at start) and the window's layout. */
+async function loadState(setup: ServerSetup): Promise<[Vaults, UiStore]> {
+  const vaults = new Vaults(path.join(setup.data, "vaults.json"));
+  await vaults.load();
+  for (const vault of setup.vaults) {
+    await vaults.add(vault);
+  }
+  const ui = new UiStore(path.join(setup.data, "window.json"));
+  await ui.load();
+  return [vaults, ui];
 }
 
 interface Request {

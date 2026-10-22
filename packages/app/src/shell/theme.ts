@@ -1,7 +1,8 @@
 /**
- * The app's own light and dark themes, as Lumière palettes. The shell
- * styles itself with the same `--vscode-*` variables it sends each editor
- * page, so the chrome and the notes always match.
+ * The window's light and dark themes, as Lumière palettes. The window styles
+ * itself with the same `--vscode-*` variables it sends each editor page, so
+ * the chrome and the notes always match. Which one shows is the reader's
+ * Color Theme: the system's, or always light, or always dark.
  */
 import type { ThemeMessage } from "@workshop/host-node/embedding";
 import {
@@ -9,6 +10,8 @@ import {
   vscodeVariables,
   type Palette,
 } from "@workshop/host-node/palette";
+import type { ColorTheme } from "../shared/ui-state";
+import { setAppTheme } from "./tauri";
 
 const FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif`;
 
@@ -56,18 +59,41 @@ export const DARK: Palette = {
   success: "#57ab5a",
 };
 
+let preference: ColorTheme = "system";
+const listeners = new Set<() => void>();
 const system = () => matchMedia("(prefers-color-scheme: dark)");
 
-/** The theme for the system's light or dark setting. */
+/** The palette for a Color Theme, given whether the system is dark. */
+export function paletteFor(theme: ColorTheme, systemIsDark: boolean): Palette {
+  if (theme === "system") {
+    return systemIsDark ? DARK : LIGHT;
+  }
+  return theme === "dark" ? DARK : LIGHT;
+}
+
 export function currentPalette(): Palette {
-  return system().matches ? DARK : LIGHT;
+  return paletteFor(preference, system().matches);
 }
 
 export function currentThemeMessage(): ThemeMessage {
   return themeMessage(currentPalette());
 }
 
-/** Style the shell itself with the palette's variables. */
+/**
+ * The reader chose a Color Theme. In the desktop app the window's title bar
+ * and menus follow it too, and with "system" the app goes back to the
+ * system's appearance.
+ */
+export function setColorTheme(theme: ColorTheme): void {
+  if (theme === preference) {
+    return;
+  }
+  preference = theme;
+  void setAppTheme(theme === "system" ? null : theme);
+  notify();
+}
+
+/** Style the window itself with the palette's variables. */
 export function applyShellTheme(): void {
   const palette = currentPalette();
   const root = document.documentElement;
@@ -77,8 +103,24 @@ export function applyShellTheme(): void {
   root.style.colorScheme = palette.dark ? "dark" : "light";
 }
 
+/** The palette changed: the reader's choice, or the system's while following it. */
 export function onThemeChange(listener: () => void): () => void {
   const query = system();
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
+  const followSystem = () => {
+    if (preference === "system") {
+      listener();
+    }
+  };
+  listeners.add(listener);
+  query.addEventListener("change", followSystem);
+  return () => {
+    listeners.delete(listener);
+    query.removeEventListener("change", followSystem);
+  };
+}
+
+function notify(): void {
+  for (const listener of listeners) {
+    listener();
+  }
 }

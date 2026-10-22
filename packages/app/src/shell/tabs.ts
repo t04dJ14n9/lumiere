@@ -1,12 +1,23 @@
-/** The shell's tabs: which files are open, in order, and which one shows. */
+/**
+ * The window's tabs: which notes are open, in order, and which tab shows.
+ * Settings opens as a tab too, as in VS Code.
+ */
 
-export interface Tab {
+export interface NoteTab {
+  readonly kind: "note";
   readonly id: string;
   /** The vault folder (absolute). */
   readonly vault: string;
   /** The file, relative to the vault, with `/`. */
   readonly path: string;
 }
+
+export interface SettingsTab {
+  readonly kind: "settings";
+  readonly id: typeof SETTINGS_TAB;
+}
+
+export type Tab = NoteTab | SettingsTab;
 
 export interface TabsState {
   readonly tabs: readonly Tab[];
@@ -15,8 +26,11 @@ export interface TabsState {
 
 export type TabsAction =
   | { readonly type: "open"; readonly vault: string; readonly path: string }
+  | { readonly type: "openSettings" }
   | { readonly type: "close"; readonly id: string }
   | { readonly type: "activate"; readonly id: string };
+
+export const SETTINGS_TAB = "settings";
 
 export const noTabs: TabsState = { tabs: [], active: undefined };
 
@@ -24,31 +38,52 @@ export function tabId(vault: string, path: string): string {
   return `${vault}\u0000${path}`;
 }
 
+/** What a tab is called in the tab strip. */
+export function tabTitle(tab: Tab): string {
+  return tab.kind === "settings"
+    ? "Settings"
+    : tab.path
+        .slice(tab.path.lastIndexOf("/") + 1)
+        .replace(/\.(md|markdown)$/i, "");
+}
+
 export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
-    case "open": {
-      const id = tabId(action.vault, action.path);
-      const tabs = state.tabs.some((tab) => tab.id === id)
-        ? state.tabs
-        : [...state.tabs, { id, vault: action.vault, path: action.path }];
-      return { tabs, active: id };
-    }
+    case "open":
+      return show(state, {
+        kind: "note",
+        id: tabId(action.vault, action.path),
+        vault: action.vault,
+        path: action.path,
+      });
+    case "openSettings":
+      return show(state, { kind: "settings", id: SETTINGS_TAB });
     case "activate":
       return state.tabs.some((tab) => tab.id === action.id)
         ? { ...state, active: action.id }
         : state;
-    case "close": {
-      const index = state.tabs.findIndex((tab) => tab.id === action.id);
-      if (index < 0) {
-        return state;
-      }
-      const tabs = state.tabs.filter((tab) => tab.id !== action.id);
-      if (state.active !== action.id) {
-        return { tabs, active: state.active };
-      }
-      // Closing the shown tab shows its right neighbour, else its left one.
-      const next = tabs[Math.min(index, tabs.length - 1)];
-      return { tabs, active: next?.id };
-    }
+    case "close":
+      return close(state, action.id);
   }
+}
+
+/** Show a tab, opening it after the others when it is not open yet. */
+function show(state: TabsState, tab: Tab): TabsState {
+  const tabs = state.tabs.some((item) => item.id === tab.id)
+    ? state.tabs
+    : [...state.tabs, tab];
+  return { tabs, active: tab.id };
+}
+
+/** Closing the shown tab shows its right neighbour, else its left one. */
+function close(state: TabsState, id: string): TabsState {
+  const index = state.tabs.findIndex((tab) => tab.id === id);
+  if (index < 0) {
+    return state;
+  }
+  const tabs = state.tabs.filter((tab) => tab.id !== id);
+  if (state.active !== id) {
+    return { tabs, active: state.active };
+  }
+  return { tabs, active: tabs[Math.min(index, tabs.length - 1)]?.id };
 }

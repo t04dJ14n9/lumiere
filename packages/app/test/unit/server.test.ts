@@ -316,3 +316,38 @@ test("the plugins' tree views are served behind the token", async (t) => {
   );
   assert.equal((await send(server.port, "/lumiere/views")).status, 401);
 });
+
+test("the window's layout and theme are kept, and only valid changes apply", async (t) => {
+  const { server, cookie } = await fixture(t);
+  const headers = { cookie, "content-type": "application/json" };
+  assert.deepEqual(
+    JSON.parse(
+      (await send(server.port, "/api/ui", { headers: { cookie } })).body,
+    ),
+    {
+      sidebar: true,
+      outline: true,
+      theme: "system",
+    },
+  );
+  const changed = await send(server.port, "/api/ui", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ outline: false, theme: "dark", sidebar: "maybe" }),
+  });
+  assert.deepEqual(JSON.parse(changed.body), {
+    sidebar: true,
+    outline: false,
+    theme: "dark",
+  });
+  assert.deepEqual(
+    JSON.parse(
+      (await send(server.port, "/api/ui", { headers: { cookie } })).body,
+    ),
+    {
+      sidebar: true,
+      outline: false,
+      theme: "dark",
+    },
+  );
+});

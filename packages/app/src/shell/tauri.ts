@@ -1,13 +1,23 @@
 /**
  * What the shell uses of the desktop app (apps/desktop), and nothing more:
- * the native folder picker and the app menu's commands. In a browser there
- * is no Tauri and every feature has a fallback. The desktop app enables
+ * the native folder picker, the app menu's commands and the app's theme.
+ * In a browser there is no Tauri and every feature has a fallback. The desktop app enables
  * `window.__TAURI__` (withGlobalTauri) and allows exactly these calls for
  * the server's origin (apps/desktop/src-tauri/capabilities).
  */
 
-/** The app menu's commands (apps/desktop/src-tauri/src/menu.rs). */
-export type MenuCommand = "open-vault";
+/** The app menu's commands (apps/desktop/src-tauri/src/menu.rs, `PAGE_COMMANDS`). */
+export const MENU_COMMANDS = [
+  "open-vault",
+  "open-settings",
+  "toggle-sidebar",
+  "toggle-outline",
+  "theme-system",
+  "theme-light",
+  "theme-dark",
+] as const;
+
+export type MenuCommand = (typeof MENU_COMMANDS)[number];
 
 /** Tauri events the shell listens to; the desktop app emits them. */
 export const MENU_EVENT = "lumiere://menu";
@@ -19,6 +29,9 @@ interface TauriGlobal {
       multiple: boolean;
       title: string;
     }): Promise<string | string[] | null>;
+  };
+  readonly app?: {
+    setTheme(theme: "light" | "dark" | null): Promise<void>;
   };
   readonly event: {
     listen<T>(
@@ -44,6 +57,20 @@ export async function pickFolder(): Promise<string | undefined> {
     title: "Open a folder of notes",
   });
   return typeof picked === "string" ? picked : undefined;
+}
+
+/**
+ * The app's appearance (title bar, menus, dialogs): light, dark, or null for
+ * the system's. Never rejects; outside the app it does nothing.
+ */
+export async function setAppTheme(
+  theme: "light" | "dark" | null,
+): Promise<void> {
+  try {
+    await tauri()?.app?.setTheme(theme);
+  } catch {
+    // An older app without the permission keeps the system's title bar.
+  }
 }
 
 export function onMenuCommand(
