@@ -16,7 +16,6 @@ import { ViewContributions } from "./contributions";
 import { createMenu } from "../../webview/ui/menu";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
-import { defaultKeymap } from "@codemirror/commands";
 import { getSyncedVersion, sendableUpdates } from "@codemirror/collab";
 import type { Context, Plugin, Infer } from "@workshop/core";
 import type {} from "../document/api";
@@ -30,6 +29,8 @@ import { lineStartKeymap } from "./line-start";
 import { findExtension, openFind } from "./find";
 import { keepFindKey } from "./find-keys";
 import { keepSelectAllInEditor } from "./select-all";
+import { keepEditKeys } from "./edit-keys";
+import { defaultKeymap, selectAll } from "@codemirror/commands";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
@@ -111,6 +112,7 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerJumpRecorder(ctx, editor, presentation);
     registerReveal(ctx, view);
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
+    registerEditKeyOwnership(ctx, view);
     registerFindKeyOwnership(ctx, view);
     ctx.effect(() =>
       reportWebviewFocus(window, (hasFocus) =>
@@ -125,6 +127,28 @@ export const editorWebview: Plugin<EditorConfig> = {
     view.focus();
   },
 };
+
+
+/** Capture Mod/Ctrl+A/X so Select All / Cut beat Vim increment/decrement (BH-029). */
+function registerEditKeyOwnership(ctx: Context, view: EditorView): void {
+  ctx.effect(() =>
+    keepEditKeys(view.dom.ownerDocument, {
+      selectAll: () => {
+        selectAll(view);
+      },
+      cut: () => {
+        if (view.state.readOnly) {
+          return false;
+        }
+        if (view.state.selection.ranges.every((range) => range.empty)) {
+          return false;
+        }
+        view.focus();
+        return view.dom.ownerDocument.execCommand("cut");
+      },
+    }),
+  );
+}
 
 /** Capture Mod/Ctrl+F/H so Find/Replace beat Vim and the workbench (BH-023/025). */
 function registerFindKeyOwnership(ctx: Context, view: EditorView): void {
