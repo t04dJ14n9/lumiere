@@ -32,6 +32,46 @@ export function isFindKey(event: FindKey, isMac: boolean): boolean {
   return key === "f" || event.keyCode === 70;
 }
 
+/** INPUT/TEXTAREA and property contenteditables keep native Ctrl+F. */
+export function leavesNativeFind(target: EventTarget | null): boolean {
+  if (!target || !("tagName" in target)) {
+    return isPropertyNativeEditor(target);
+  }
+  const tag = String(
+    (target as { tagName?: string }).tagName ?? "",
+  ).toUpperCase();
+  if (tag === "INPUT" || tag === "TEXTAREA") {
+    return true;
+  }
+  return isPropertyNativeEditor(target);
+}
+
+function isPropertyNativeEditor(target: EventTarget | null): boolean {
+  const element = elementForClosest(target);
+  if (!element || typeof element.closest !== "function") {
+    return false;
+  }
+  return !!element.closest("[data-property-input], [data-property-list-input]");
+}
+
+function elementForClosest(target: EventTarget | null): Element | null {
+  if (!target || typeof target !== "object") {
+    return null;
+  }
+  const node = target as Partial<Node> & {
+    nodeType?: number;
+    parentElement?: Element | null;
+    closest?: Element["closest"];
+  };
+  if (typeof node.closest === "function") {
+    return node as Element;
+  }
+  if (node.nodeType === 3 && node.parentElement) {
+    return node.parentElement;
+  }
+  return null;
+}
+
 /**
  * Own Mod/Ctrl+F in capture phase so Vim cannot page-forward and the shell
  * cannot open workbench Find over a custom editor.
@@ -39,7 +79,7 @@ export function isFindKey(event: FindKey, isMac: boolean): boolean {
 export function keepFindKey(
   target: Document,
   onFind: () => void,
-  leavesNative: (target: EventTarget | null) => boolean,
+  leavesNative: (target: EventTarget | null) => boolean = leavesNativeFind,
 ): () => void {
   const isMac = /Mac|iPhone|iPad/.test(
     target.defaultView?.navigator.platform ?? "",

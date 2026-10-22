@@ -29,7 +29,6 @@ import { indentationKeymap } from "./indentation";
 import { lineStartKeymap } from "./line-start";
 import { findExtension, openFind } from "./find";
 import { keepFindKey } from "./find-keys";
-import { leavesNativeHistory } from "../commands/history-keys";
 import { keepSelectAllInEditor } from "./select-all";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
@@ -112,17 +111,7 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerJumpRecorder(ctx, editor, presentation);
     registerReveal(ctx, view);
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
-    // Capture Mod/Ctrl+F so Vim cannot page-forward (BH-023) and workbench
-    // Find cannot open empty over this custom editor.
-    ctx.effect(() =>
-      keepFindKey(
-        view.dom.ownerDocument,
-        () => {
-          openFind(view);
-        },
-        leavesNativeHistory,
-      ),
-    );
+    registerFindKeyOwnership(ctx, view);
     ctx.effect(() =>
       reportWebviewFocus(window, (hasFocus) =>
         ctx.rpc.notify(
@@ -136,6 +125,15 @@ export const editorWebview: Plugin<EditorConfig> = {
     view.focus();
   },
 };
+
+/** Capture Mod/Ctrl+F so Vim cannot page-forward (BH-023). */
+function registerFindKeyOwnership(ctx: Context, view: EditorView): void {
+  ctx.effect(() =>
+    keepFindKey(view.dom.ownerDocument, () => {
+      openFind(view);
+    }),
+  );
+}
 
 function createEditorView(
   ctx: Context,
