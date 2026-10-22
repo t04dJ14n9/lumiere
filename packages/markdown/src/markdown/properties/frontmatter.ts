@@ -1,26 +1,9 @@
-import { isMap, isScalar, isSeq, parseDocument } from "yaml";
+import type { Document } from "yaml";
+import { headerParts } from "./header-parts";
+import { loadYaml } from "./load-yaml";
 import { settablePropertyNode } from "./values";
-export function headerParts(source: string) {
-  const opening = /^---\r?\n/.exec(source);
-  if (!opening) {
-    return undefined;
-  }
-  const rest = source.slice(opening[0].length);
-  const closing = /^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/m.exec(rest);
-  if (!closing) {
-    return undefined;
-  }
-  const offset = opening[0].length;
-  const body = rest.slice(0, closing.index);
-  const end = offset + closing.index + closing[0].length;
-  return {
-    body,
-    offset,
-    end,
-    raw: source.slice(0, end),
-    eol: opening[0].endsWith("\r\n") ? "\r\n" : "\n",
-  };
-}
+
+export { headerParts } from "./header-parts";
 
 export function frontmatter(source: string):
   | {
@@ -29,7 +12,7 @@ export function frontmatter(source: string):
       values?: Record<string, unknown>;
       editableKeys?: string[];
       editableLists?: string[];
-      yaml?: { body: string; document: ReturnType<typeof parseDocument> };
+      yaml?: { body: string; document: Document; offset: number };
       error?: string;
     }
   | undefined {
@@ -37,6 +20,7 @@ export function frontmatter(source: string):
   if (!header) {
     return undefined;
   }
+  const { parseDocument, isMap, isScalar } = loadYaml();
   try {
     const document = parseDocument(header.body, { uniqueKeys: true });
     if (document.errors.length) {
@@ -59,7 +43,7 @@ export function frontmatter(source: string):
       raw: header.raw,
       end: header.end,
       values: (value as Record<string, unknown>) ?? {},
-      yaml: { body: header.body, document },
+      yaml: { body: header.body, document, offset: header.offset },
       editableKeys,
       editableLists: isMap(document.contents)
         ? document.contents.items.flatMap((pair) =>
@@ -77,6 +61,7 @@ export function frontmatter(source: string):
 }
 
 function editableScalar(node: unknown): boolean {
+  const { isScalar } = loadYaml();
   return (
     isScalar(node) &&
     settablePropertyNode(node) &&
@@ -89,6 +74,7 @@ function editableScalar(node: unknown): boolean {
 }
 
 export function editableList(node: unknown): boolean {
+  const { isSeq, isScalar } = loadYaml();
   return (
     isSeq(node) &&
     !node.tag &&

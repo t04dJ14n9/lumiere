@@ -1,13 +1,6 @@
-import {
-  isAlias,
-  isNode,
-  parseDocument,
-  stringify,
-  visit,
-  type Document,
-  type Node,
-} from "yaml";
-import type { headerParts } from "./frontmatter";
+import type { Document, Node } from "yaml";
+import { loadYaml } from "./load-yaml";
+import type { headerParts } from "./header-parts";
 import { setPropertyChange, type PropertyChange } from "./yaml-value";
 import { setPropertyYamlChange } from "./yaml-source-edit";
 import { settablePropertyNode } from "./values";
@@ -16,22 +9,24 @@ import { settablePropertyNode } from "./values";
 function inlineYamlValue(value: unknown): string {
   // Quote strings as JSON to avoid multiline inserts at nested alias sites,
   // while YAML serialization preserves non-finite numbers in collections too.
-  return stringify(value, {
-    collectionStyle: "flow",
-    flowCollectionPadding: false,
-    lineWidth: 0,
-    aliasDuplicateObjects: false,
-    defaultKeyType: "PLAIN",
-    defaultStringType: "QUOTE_DOUBLE",
-    doubleQuotedAsJSON: true,
-  }).trimEnd();
+  return loadYaml()
+    .stringify(value, {
+      collectionStyle: "flow",
+      flowCollectionPadding: false,
+      lineWidth: 0,
+      aliasDuplicateObjects: false,
+      defaultKeyType: "PLAIN",
+      defaultStringType: "QUOTE_DOUBLE",
+      doubleQuotedAsJSON: true,
+    })
+    .trimEnd();
 }
 
 type Header = NonNullable<ReturnType<typeof headerParts>>;
 
 function anchoredTargets(body: string, node: Node): Map<Node, string> {
   const originals = new Map<number, Node>();
-  visit(node, {
+  loadYaml().visit(node, {
     Node(_key, child) {
       if (child.anchor && child.range) {
         originals.set(child.range[0], child);
@@ -44,8 +39,8 @@ function anchoredTargets(body: string, node: Node): Map<Node, string> {
   }
   // The caller's AST may already contain rounded Numbers. Reparse the source
   // with exact integers, including descendants and aliases to other subtrees.
-  const exact = parseDocument(body, { intAsBigInt: true });
-  visit(exact, {
+  const exact = loadYaml().parseDocument(body, { intAsBigInt: true });
+  loadYaml().visit(exact, {
     Scalar(_key, scalar) {
       // BigInt has no negative zero; YAML and Number retain its sign.
       if (scalar.value === 0n && scalar.source?.startsWith("-")) {
@@ -53,7 +48,7 @@ function anchoredTargets(body: string, node: Node): Map<Node, string> {
       }
     },
   });
-  visit(exact, {
+  loadYaml().visit(exact, {
     Node(_key, child) {
       const original =
         child.anchor && child.range && originals.get(child.range[0]);
@@ -93,7 +88,7 @@ export function aliasPreservationChanges(
   document: Document,
   node: unknown,
 ): PropertyChange[] {
-  if (!isNode(node) || !node.range) {
+  if (!loadYaml().isNode(node) || !node.range) {
     return [];
   }
   const targets = anchoredTargets(header.body, node);
@@ -102,9 +97,9 @@ export function aliasPreservationChanges(
   }
   const replaced = node.range;
   const changes: PropertyChange[] = [];
-  visit(document, {
+  loadYaml().visit(document, {
     Alias(_key, alias) {
-      if (!isAlias(alias) || !alias.range) {
+      if (!loadYaml().isAlias(alias) || !alias.range) {
         return;
       }
       if (alias.range[0] >= replaced[0] && alias.range[1] <= replaced[1]) {

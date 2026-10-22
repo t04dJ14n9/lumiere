@@ -1,4 +1,5 @@
-import { isMap, isNode, isScalar, parseDocument } from "yaml";
+import type { Document } from "yaml";
+import { loadYaml } from "./load-yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import { orderPropertyBody } from "./order";
 import { validPropertyName } from "./types";
@@ -57,10 +58,10 @@ export function propertyChanges(
   if (!header) {
     return createHeader(source, edit);
   }
-  const document = parseDocument(header.body, { uniqueKeys: true });
+  const document = loadYaml().parseDocument(header.body, { uniqueKeys: true });
   if (
     document.errors.length ||
-    (document.contents !== null && !isMap(document.contents))
+    (document.contents !== null && !loadYaml().isMap(document.contents))
   ) {
     return undefined;
   }
@@ -125,11 +126,13 @@ function createHeader(
 class PropertyMapEdits {
   constructor(
     private readonly header: Header,
-    private readonly document: ReturnType<typeof parseDocument>,
+    private readonly document: Document,
   ) {}
 
   private get items() {
-    return isMap(this.document.contents) ? this.document.contents.items : [];
+    return loadYaml().isMap(this.document.contents)
+      ? this.document.contents.items
+      : [];
   }
 
   changes(source: string, edit: KeyEdit): PropertyChange[] | undefined {
@@ -142,7 +145,8 @@ class PropertyMapEdits {
         return this.remove(edit.keys);
       case "set": {
         const pair = this.items.find(
-          (pair) => isScalar(pair.key) && pair.key.value === edit.key,
+          (pair) =>
+            loadYaml().isScalar(pair.key) && pair.key.value === edit.key,
         );
         return setPropertyChanges({
           source,
@@ -173,7 +177,10 @@ class PropertyMapEdits {
     if (this.document.has(edit.key)) {
       return undefined;
     }
-    if (isMap(this.document.contents) && this.document.contents.flow) {
+    if (
+      loadYaml().isMap(this.document.contents) &&
+      this.document.contents.flow
+    ) {
       this.document.set(edit.key, edit.value ?? null);
       return this.wholeMap();
     }
@@ -191,11 +198,11 @@ class PropertyMapEdits {
     edit: Extract<KeyEdit, { type: "rename" }>,
   ): PropertyChange[] | undefined {
     const pair = this.items.find(
-      (pair) => isScalar(pair.key) && pair.key.value === edit.key,
+      (pair) => loadYaml().isScalar(pair.key) && pair.key.value === edit.key,
     );
     if (
       !pair ||
-      !isScalar(pair.key) ||
+      !loadYaml().isScalar(pair.key) ||
       !pair.key.range ||
       (edit.key !== edit.name && this.document.has(edit.name))
     ) {
@@ -217,7 +224,7 @@ class PropertyMapEdits {
       return undefined;
     }
     const stored = this.items.flatMap((item) =>
-      isScalar(item.key) && typeof item.key.value === "string"
+      loadYaml().isScalar(item.key) && typeof item.key.value === "string"
         ? [item.key.value]
         : [],
     );
@@ -226,13 +233,16 @@ class PropertyMapEdits {
     if (stored.length > 0 && stored.every((key) => keys.includes(key))) {
       return dropFrontmatterFence(this.header);
     }
-    if (isMap(this.document.contents) && this.document.contents.flow) {
+    if (
+      loadYaml().isMap(this.document.contents) &&
+      this.document.contents.flow
+    ) {
       keys.forEach((key) => this.document.delete(key));
       return this.wholeMap();
     }
     return this.items.flatMap((item) => {
       if (
-        !isScalar(item.key) ||
+        !loadYaml().isScalar(item.key) ||
         typeof item.key.value !== "string" ||
         !keys.includes(item.key.value) ||
         !item.key.range
@@ -242,7 +252,7 @@ class PropertyMapEdits {
       const start =
         this.header.body.lastIndexOf("\n", item.key.range[0] - 1) + 1;
       let end =
-        isNode(item.value) && item.value.range
+        loadYaml().isNode(item.value) && item.value.range
           ? item.value.range[2]
           : item.key.range[2];
       if (this.header.body[end] === "\r") {

@@ -1,4 +1,4 @@
-import { isSeq, isScalar, parseDocument, stringify } from "yaml";
+import { loadYaml } from "./load-yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import type { PropertyScalar } from "./values";
 export function listPropertyChange(
@@ -11,19 +11,21 @@ export function listPropertyChange(
     return undefined;
   }
   const offset = header.offset;
-  const document = parseDocument(header.body);
+  const document = loadYaml().parseDocument(header.body);
   const node = document.get(key, true);
-  if (!isSeq(node) || !node.range) {
+  if (!loadYaml().isSeq(node) || !node.range) {
     return undefined;
   }
   const from = offset + node.range[0];
   const to = offset + node.range[1];
   const lineEnding = source.includes("\r\n") ? "\r\n" : "\n";
-  let insert = stringify(value, {
-    collectionStyle: "flow",
-    flowCollectionPadding: false,
-    lineWidth: 0,
-  }).trimEnd();
+  let insert = loadYaml()
+    .stringify(value, {
+      collectionStyle: "flow",
+      flowCollectionPadding: false,
+      lineWidth: 0,
+    })
+    .trimEnd();
   if (source.slice(from, to).endsWith("\n")) {
     insert += lineEnding;
   }
@@ -38,13 +40,13 @@ export function scalarPropertyChange(
   if (!header) {
     return undefined;
   }
-  const document = parseDocument(header.body, { uniqueKeys: true });
+  const document = loadYaml().parseDocument(header.body, { uniqueKeys: true });
   if (document.errors.length) {
     return;
   }
   const node = document.get(key, true);
   if (
-    !isScalar(node) ||
+    !loadYaml().isScalar(node) ||
     typeof node.value !== typeof value ||
     !node.range ||
     /BLOCK/.test(node.type ?? "")
@@ -55,7 +57,7 @@ export function scalarPropertyChange(
     return;
   }
   const insert = scalarText(value, node.type);
-  const candidate = parseDocument(
+  const candidate = loadYaml().parseDocument(
     header.body.slice(0, node.range[0]) +
       insert +
       header.body.slice(node.range[1]),
@@ -64,7 +66,7 @@ export function scalarPropertyChange(
   const checked = candidate.get(key, true);
   if (
     candidate.errors.length ||
-    !isScalar(checked) ||
+    !loadYaml().isScalar(checked) ||
     !Object.is(checked.value, value)
   ) {
     return;
@@ -90,5 +92,5 @@ function scalarText(value: PropertyScalar, style: string | undefined): string {
   if (style === "QUOTE_DOUBLE" || /[\r\n]/.test(value)) {
     return JSON.stringify(value);
   }
-  return stringify(value, { lineWidth: 0 }).trimEnd();
+  return loadYaml().stringify(value, { lineWidth: 0 }).trimEnd();
 }
