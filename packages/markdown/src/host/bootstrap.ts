@@ -136,5 +136,27 @@ function startWindowFeatures(
       plugin: plugin as Plugin,
       ...(plugin.name === "okfCore" ? { config: { facade: okf } } : {}),
     })),
+    {
+      // Needed before the first panel's settings.prepare / link open path.
+      // Everything else waits for editor/ready so activation settles fast.
+      defer: [
+        "backlinks",
+        "outgoingLinks",
+        "outline",
+        "quickSwitcher",
+        "wordCount",
+        "bridge",
+        "ideContext",
+        "wiki",
+        "assets",
+        "scratch",
+        "gitDiffEditor",
+        "marp",
+        "tags",
+        "okfCore",
+        "graph",
+        "linkUpdates",
+      ],
+    },
   );
 }
