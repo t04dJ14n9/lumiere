@@ -113,6 +113,20 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     assert.ok(binding, chord);
     assert.match(binding!.when ?? "", /!lumiere\.markdown\.plugin\.formatting/);
   }
+  // BH-034: Ctrl+N owned by handleVimCtrlN (blocks Untitled; replays <C-n>).
+  assert.ok(
+    keybindings.some(
+      (binding) =>
+        binding.command === "lumiere.markdown.handleVimCtrlN" &&
+        binding.key === "ctrl+n" &&
+        binding.mac === "ctrl+n",
+    ),
+    "handleVimCtrlN must bind ctrl+n",
+  );
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+n"),
+    "consumeVimHostShortcut must not bind ctrl+n (handleVimCtrlN owns it)",
+  );
   // BH-026: Ctrl+Shift+H must reach workbench Replace in Files (not consumed).
   assert.ok(
     !vim.some((binding) => binding.key === "ctrl+shift+h"),
