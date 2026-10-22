@@ -1,5 +1,6 @@
 /**
- * The window's tabs: which notes are open, in order, and which tab shows.
+ * The window's tabs: which notes are open, in order, which one shows, and
+ * the order they were used in (for ⌃⇥, which goes back to the last one).
  * Settings opens as a tab too, as in VS Code.
  */
 
@@ -22,17 +23,23 @@ export type Tab = NoteTab | SettingsTab;
 export interface TabsState {
   readonly tabs: readonly Tab[];
   readonly active: string | undefined;
+  /** Tab ids, the most recently shown first. */
+  readonly recent: readonly string[];
 }
 
 export type TabsAction =
   | { readonly type: "open"; readonly vault: string; readonly path: string }
   | { readonly type: "openSettings" }
   | { readonly type: "close"; readonly id: string }
-  | { readonly type: "activate"; readonly id: string };
+  | { readonly type: "activate"; readonly id: string }
+  /** The tab beside the shown one: 1 to the right, -1 to the left, wrapping. */
+  | { readonly type: "step"; readonly by: 1 | -1 }
+  /** The tab shown before this one. */
+  | { readonly type: "last" };
 
 export const SETTINGS_TAB = "settings";
 
-export const noTabs: TabsState = { tabs: [], active: undefined };
+export const noTabs: TabsState = { tabs: [], active: undefined, recent: [] };
 
 export function tabId(vault: string, path: string): string {
   return `${vault}\u0000${path}`;
@@ -67,9 +74,11 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "openSettings":
       return show(state, { kind: "settings", id: SETTINGS_TAB });
     case "activate":
-      return state.tabs.some((tab) => tab.id === action.id)
-        ? { ...state, active: action.id }
-        : state;
+      return activate(state, action.id);
+    case "step":
+      return activate(state, beside(state, action.by));
+    case "last":
+      return activate(state, state.recent[1]);
     case "close":
       return close(state, action.id);
   }
@@ -80,7 +89,27 @@ function show(state: TabsState, tab: Tab): TabsState {
   const tabs = state.tabs.some((item) => item.id === tab.id)
     ? state.tabs
     : [...state.tabs, tab];
-  return { tabs, active: tab.id };
+  return activate({ ...state, tabs }, tab.id);
+}
+
+function activate(state: TabsState, id: string | undefined): TabsState {
+  if (id === undefined || !state.tabs.some((tab) => tab.id === id)) {
+    return state;
+  }
+  return {
+    ...state,
+    active: id,
+    recent: [id, ...state.recent.filter((item) => item !== id)],
+  };
+}
+
+function beside(state: TabsState, by: 1 | -1): string | undefined {
+  const index = state.tabs.findIndex((tab) => tab.id === state.active);
+  if (index < 0) {
+    return undefined;
+  }
+  const count = state.tabs.length;
+  return state.tabs[(index + by + count) % count]?.id;
 }
 
 /** Closing the shown tab shows its right neighbour, else its left one. */
@@ -90,8 +119,12 @@ function close(state: TabsState, id: string): TabsState {
     return state;
   }
   const tabs = state.tabs.filter((tab) => tab.id !== id);
+  const recent = state.recent.filter((item) => item !== id);
   if (state.active !== id) {
-    return { tabs, active: state.active };
+    return { tabs, active: state.active, recent };
   }
-  return { tabs, active: tabs[Math.min(index, tabs.length - 1)]?.id };
+  const next = tabs[Math.min(index, tabs.length - 1)]?.id;
+  return next === undefined
+    ? noTabs
+    : activate({ tabs, active: undefined, recent }, next);
 }

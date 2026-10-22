@@ -248,22 +248,29 @@ The pass, in the Tauri window:
    - Undo and redo work.
    - Copy, cut and paste work, from the Edit menu and with the keys.
    - IME (Chinese) input works.
-3. **Links.**
+3. **Right-click.**
+   - With text selected, the menu offers Copy Link for Agent first, then
+     formatting, highlight colours, and Cut, Copy and Paste.
+   - Copy Link for Agent puts `@note.md#line` and the passage on the
+     clipboard.
+   - Without a selection, the selection items are missing.
+   - Tables and properties keep their own menus.
+4. **Links.**
    - A plain click on a wikilink reveals its source.
    - Mod-click follows it into a new tab.
    - A link to a missing note creates it.
    - An external link opens the system browser.
-4. **Outline**, in the right panel.
+5. **Outline**, in the right panel.
    - It shows the shown note's headings and follows tab switches.
    - Clicking a heading scrolls to it.
    - Moving the caret highlights its section.
    - Expanding and collapsing work.
-5. **Theme.**
+6. **Theme.**
    - With Color Theme on Follow System, switch macOS between light and dark:
      the window, its title bar and the editor follow together.
    - View > Color Theme > Dark, and Light: the same, whatever macOS says.
      The choice is still there after a relaunch.
-6. **Settings and keys** (VS Code's).
+7. **Settings and keys** (VS Code's).
    - ⌘, opens Settings, from the window and from inside a note.
    - Search finds settings; `@modified` lists the changed ones.
    - A change applies to open notes at once (Readable Line Length, Font
@@ -273,13 +280,15 @@ The pass, in the Tauri window:
      last one; ⇧⌘W closes the window.
    - ⌘B hides and shows the files; inside a note ⌘B is Bold instead.
    - ⌥⌘B hides and shows the outline.
+   - ⌃⇥ goes back to the last tab, also while typing in a note; ⇧⌘] and
+     ⇧⌘[ (or ⌥⌘→ and ⌥⌘← around the note) go to the next and previous.
    - The layout is the same after a relaunch.
-7. **Finder.**
+8. **Finder.**
    - In a bundled build, Open With > Lumière on a `.md` file opens it in a
      tab.
    - With the app already running, the same file goes to the running window.
-8. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
-9. **Errors.** Rename the vault folder while it is open, or start with a
+9. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
+10. **Errors.** Rename the vault folder while it is open, or start with a
    broken `LUMIERE_SERVER`: a message appears, never a blank window.
 
 Report each problem as an issue or a PR. For each fix:

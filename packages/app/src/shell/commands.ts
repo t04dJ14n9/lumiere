@@ -1,8 +1,8 @@
 /**
  * The window's commands, from the app menu (apps/desktop's menu.rs) or the
- * keyboard. VS Code's keys: ⌘, Settings, ⌘W the tab, ⌘B the files sidebar,
- * ⌥⌘B the outline, ⌘O Open Folder. A key the editor page uses (⌘B is Bold while
- * typing) stays the editor's: the page sees it first.
+ * keyboard, with VS Code's keys (KEYS below). A key the editor page uses
+ * itself (⌘B is Bold while typing) stays the editor's: the page sees it
+ * first, and only keys it leaves reach the window or the app menu.
  */
 import { useEffect, useRef } from "react";
 import type { MenuCommand } from "./tauri";
@@ -17,28 +17,55 @@ interface KeyPress {
   readonly shiftKey: boolean;
 }
 
-/** The command a key press runs in the window, if any. */
+/**
+ * `mod` is ⌘ on macOS and Ctrl elsewhere; `ctrl` is the Control key on
+ * every platform (⌃⇥ is Ctrl+Tab on a Mac too).
+ */
+interface Binding {
+  readonly code: string;
+  readonly mods: readonly ("mod" | "ctrl" | "alt" | "shift")[];
+  readonly command: MenuCommand;
+}
+
+export const KEYS: readonly Binding[] = [
+  { code: "Comma", mods: ["mod"], command: "open-settings" },
+  { code: "KeyO", mods: ["mod"], command: "open-vault" },
+  { code: "KeyW", mods: ["mod"], command: "close-tab" },
+  { code: "KeyB", mods: ["mod"], command: "toggle-sidebar" },
+  { code: "KeyB", mods: ["mod", "alt"], command: "toggle-outline" },
+  { code: "Tab", mods: ["ctrl"], command: "last-tab" },
+  { code: "BracketRight", mods: ["mod", "shift"], command: "next-tab" },
+  { code: "BracketLeft", mods: ["mod", "shift"], command: "previous-tab" },
+  { code: "ArrowRight", mods: ["mod", "alt"], command: "next-tab" },
+  { code: "ArrowLeft", mods: ["mod", "alt"], command: "previous-tab" },
+  { code: "PageDown", mods: ["ctrl"], command: "next-tab" },
+  { code: "PageUp", mods: ["ctrl"], command: "previous-tab" },
+];
+
+/** The command a key press runs in the window, if any: its modifiers must match exactly. */
 export function shortcutCommand(
   key: KeyPress,
   isMac: boolean,
 ): MenuCommand | undefined {
-  const mod = isMac ? key.metaKey && !key.ctrlKey : key.ctrlKey && !key.metaKey;
-  if (!mod || key.shiftKey) {
-    return undefined;
-  }
-  if (key.code === "KeyB") {
-    return key.altKey ? "toggle-outline" : "toggle-sidebar";
-  }
-  if (key.altKey) {
-    return undefined;
-  }
-  if (key.code === "Comma") {
-    return "open-settings";
-  }
-  if (key.code === "KeyW") {
-    return "close-tab";
-  }
-  return key.code === "KeyO" ? "open-vault" : undefined;
+  const pressed = [
+    key.metaKey && "meta",
+    key.ctrlKey && "ctrl",
+    key.altKey && "alt",
+    key.shiftKey && "shift",
+  ].filter(Boolean);
+  return KEYS.find((binding) => {
+    if (binding.code !== key.code) {
+      return false;
+    }
+    const modKey = isMac ? "meta" : "ctrl";
+    const needed = new Set<string>(
+      binding.mods.map((mod) => (mod === "mod" ? modKey : mod)),
+    );
+    return (
+      needed.size === pressed.length &&
+      pressed.every((mod) => needed.has(String(mod)))
+    );
+  })?.command;
 }
 
 /** Keys pressed in the window itself (not inside an editor page) run commands. */

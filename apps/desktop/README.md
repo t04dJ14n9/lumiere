@@ -5,7 +5,8 @@ in the spirit of Typora, laid out as VS Code: the vault's files on the left,
 the note's outline on the right, notes in tabs. The menu and keys are VS
 Code's: Settings… (⌘,), Open Folder… (⌘O), Close Tab (⌘W; the window when
 it is the last tab), Close Window (⇧⌘W), Toggle Sidebar (⌘B), Toggle Outline
-(⌥⌘B), and View > Color Theme. It is the same editor as the VS Code
+(⌥⌘B), View > Color Theme, and in Window: Show Next Tab (⇧⌘]), Show
+Previous Tab (⇧⌘[) and Switch to Last Tab (⌃⇥). It is the same editor as the VS Code
 extension.
 
 ## How it is put together

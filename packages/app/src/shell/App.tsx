@@ -87,6 +87,9 @@ function windowCommands({
         void closeWindow();
       }
     },
+    "next-tab": () => dispatch({ type: "step", by: 1 }),
+    "previous-tab": () => dispatch({ type: "step", by: -1 }),
+    "last-tab": () => dispatch({ type: "last" }),
     "toggle-sidebar": () => ui.update({ sidebar: !ui.state.sidebar }),
     "toggle-outline": () => ui.update({ outline: !ui.state.outline }),
     "theme-system": () => ui.update({ theme: "system" }),

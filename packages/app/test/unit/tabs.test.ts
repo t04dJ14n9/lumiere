@@ -71,3 +71,33 @@ test("⌘W closes the shown tab while there are others, and leaves the last to t
   const back = tabsReducer(two, { type: "activate", id: tabId("/v", "a.md") });
   assert.equal(tabToClose(back), tabId("/v", "a.md"));
 });
+
+test("⌃⇥ goes back to the tab shown before, so it switches between two", () => {
+  let state = ["a.md", "b.md", "c.md"].reduce(
+    (s, path) => open(s, path),
+    noTabs,
+  );
+  state = tabsReducer(state, { type: "activate", id: tabId("/v", "a.md") });
+  state = tabsReducer(state, { type: "last" });
+  assert.equal(state.active, tabId("/v", "c.md"));
+  state = tabsReducer(state, { type: "last" });
+  assert.equal(state.active, tabId("/v", "a.md"));
+  // Closing the shown tab forgets it: back to the one before.
+  state = tabsReducer(state, { type: "close", id: tabId("/v", "a.md") });
+  state = tabsReducer(state, { type: "last" });
+  assert.notEqual(state.active, tabId("/v", "a.md"));
+  assert.equal(tabsReducer(noTabs, { type: "last" }), noTabs);
+});
+
+test("next and previous step through the tabs in order, wrapping", () => {
+  let state = ["a.md", "b.md", "c.md"].reduce(
+    (s, path) => open(s, path),
+    noTabs,
+  );
+  state = tabsReducer(state, { type: "step", by: 1 });
+  assert.equal(state.active, tabId("/v", "a.md"));
+  state = tabsReducer(state, { type: "step", by: -1 });
+  assert.equal(state.active, tabId("/v", "c.md"));
+  state = tabsReducer(state, { type: "step", by: -1 });
+  assert.equal(state.active, tabId("/v", "b.md"));
+});

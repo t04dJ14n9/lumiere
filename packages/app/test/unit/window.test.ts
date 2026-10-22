@@ -78,6 +78,40 @@ test("VS Code's keys: ⌘, Settings, ⌘B sidebar, ⌥⌘B outline, ⌘O Open Fo
   assert.equal(shortcutCommand(press("KeyK", { meta: true }), true), undefined);
 });
 
+test("tab keys: ⌃⇥ the last tab, ⌘⇧] / ⌘⇧[ and ⌥⌘→ / ⌥⌘← next and previous", () => {
+  assert.equal(shortcutCommand(press("Tab", { ctrl: true }), true), "last-tab");
+  assert.equal(
+    shortcutCommand(press("Tab", { ctrl: true }), false),
+    "last-tab",
+  );
+  assert.equal(
+    shortcutCommand(press("BracketRight", { meta: true, shift: true }), true),
+    "next-tab",
+  );
+  assert.equal(
+    shortcutCommand(press("BracketLeft", { meta: true, shift: true }), true),
+    "previous-tab",
+  );
+  assert.equal(
+    shortcutCommand(press("ArrowRight", { meta: true, alt: true }), true),
+    "next-tab",
+  );
+  assert.equal(
+    shortcutCommand(press("ArrowLeft", { meta: true, alt: true }), true),
+    "previous-tab",
+  );
+  assert.equal(
+    shortcutCommand(press("PageDown", { ctrl: true }), false),
+    "next-tab",
+  );
+  // ⌘⇥ is macOS's app switcher; ⌘→ moves the caret.
+  assert.equal(shortcutCommand(press("Tab", { meta: true }), true), undefined);
+  assert.equal(
+    shortcutCommand(press("ArrowRight", { meta: true }), true),
+    undefined,
+  );
+});
+
 test("the saved layout keeps only known fields of the right type", () => {
   assert.deepEqual(readUiState(undefined), DEFAULT_UI_STATE);
   assert.deepEqual(readUiState({ outline: false, theme: "dark", extra: 1 }), {

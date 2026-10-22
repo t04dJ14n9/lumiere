@@ -2,7 +2,9 @@
 //! them, under VS Code's keys:
 //! - Settings… (⌘,) in the app menu on macOS, in File elsewhere;
 //! - Open Folder… (⌘O), Close Tab (⌘W) and Close Window (⇧⌘W) in File;
-//! - Toggle Sidebar (⌘B), Toggle Outline (⌥⌘B) and Color Theme in View.
+//! - Toggle Sidebar (⌘B), Toggle Outline (⌥⌘B) and Color Theme in View;
+//! - Show Next Tab (⇧⌘]), Show Previous Tab (⇧⌘[) and Switch to Last Tab
+//!   (⌃⇥) in Window.
 //!
 //! A command the page handles is sent to it as a `lumiere://menu` event whose
 //! payload is the command's id (packages/app/src/shell/tauri.ts,
@@ -22,6 +24,9 @@ const PAGE_COMMANDS: &[&str] = &[
     "open-vault",
     "open-settings",
     "close-tab",
+    "next-tab",
+    "previous-tab",
+    "last-tab",
     "toggle-sidebar",
     "toggle-outline",
     "theme-system",
@@ -34,6 +39,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     add_file_items(app, &menu)?;
     add_settings(app, &menu)?;
     add_view_items(app, &menu)?;
+    add_tab_items(app, &menu)?;
     Ok(menu)
 }
 
@@ -119,6 +125,26 @@ fn add_view_items<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Resu
         "Toggle Sidebar",
         "CmdOrCtrl+B",
     )?)?;
+    Ok(())
+}
+
+/// The window's own ⌥⌘→ and ⌥⌘← work too, in the window around the note.
+fn add_tab_items<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Result<()> {
+    let window = submenu(app, menu, "Window", 4)?;
+    window.append(&PredefinedMenuItem::separator(app)?)?;
+    window.append(&item(
+        app,
+        "next-tab",
+        "Show Next Tab",
+        "CmdOrCtrl+Shift+]",
+    )?)?;
+    window.append(&item(
+        app,
+        "previous-tab",
+        "Show Previous Tab",
+        "CmdOrCtrl+Shift+[",
+    )?)?;
+    window.append(&item(app, "last-tab", "Switch to Last Tab", "Ctrl+Tab")?)?;
     Ok(())
 }
 
