@@ -44,10 +44,10 @@ export function editActionFor(
   return undefined;
 }
 
-/** INPUT/TEXTAREA and property contenteditables keep native Ctrl+A/X. */
+/** INPUT/TEXTAREA, property fields, and table cell editors keep native Ctrl+A/X. */
 export function leavesNativeEdit(target: EventTarget | null): boolean {
   if (!target || !("tagName" in target)) {
-    return isPropertyNativeEditor(target);
+    return isNestedNativeEditor(target);
   }
   const tag = String(
     (target as { tagName?: string }).tagName ?? "",
@@ -55,15 +55,19 @@ export function leavesNativeEdit(target: EventTarget | null): boolean {
   if (tag === "INPUT" || tag === "TEXTAREA") {
     return true;
   }
-  return isPropertyNativeEditor(target);
+  return isNestedNativeEditor(target);
 }
 
-function isPropertyNativeEditor(target: EventTarget | null): boolean {
+function isNestedNativeEditor(target: EventTarget | null): boolean {
   const element = elementForClosest(target);
   if (!element || typeof element.closest !== "function") {
     return false;
   }
-  return !!element.closest("[data-property-input], [data-property-list-input]");
+  // Table cells are nested CM editors; note-level Select All/Cut must not steal
+  // their Ctrl+A/X (browser tables-parity / tables-measured specs).
+  return !!element.closest(
+    "[data-property-input], [data-property-list-input], .table-cell-content",
+  );
 }
 
 function elementForClosest(target: EventTarget | null): Element | null {

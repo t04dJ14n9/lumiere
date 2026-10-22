@@ -155,3 +155,48 @@ test("keepEditKeys leaves empty-selection Cut for vim decrement", () => {
   } as unknown as KeyboardEvent);
   assert.deepEqual(calls, ["cut-miss"]);
 });
+
+test("keepEditKeys leaves table cell editors for nested CM Select All", () => {
+  const calls: string[] = [];
+  const doc = {
+    defaultView: { navigator: { platform: "Linux" } },
+    addEventListener(_type: string, listener: (event: KeyboardEvent) => void) {
+      (doc as { _listener?: typeof listener })._listener = listener;
+    },
+    removeEventListener() {},
+  } as unknown as Document;
+
+  keepEditKeys(doc, {
+    selectAll: () => calls.push("selectAll"),
+    cut: () => {
+      calls.push("cut");
+      return true;
+    },
+  });
+  const listener = (doc as unknown as { _listener: (e: KeyboardEvent) => void })
+    ._listener;
+  const cell = {
+    tagName: "DIV",
+    closest(selector: string) {
+      return selector.includes("table-cell-content") ? cell : null;
+    },
+  };
+  listener({
+    key: "a",
+    ctrlKey: true,
+    metaKey: false,
+    altKey: false,
+    shiftKey: false,
+    target: cell,
+    preventDefault() {
+      calls.push("prevent");
+    },
+    stopPropagation() {
+      calls.push("stop");
+    },
+    stopImmediatePropagation() {
+      calls.push("stopImmediate");
+    },
+  } as unknown as KeyboardEvent);
+  assert.deepEqual(calls, []);
+});
