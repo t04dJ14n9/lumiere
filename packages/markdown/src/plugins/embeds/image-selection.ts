@@ -17,6 +17,9 @@ import {
   writtenWidth,
 } from "./image-size";
 import { setImageSelectedChrome } from "./image-resize-corner";
+import { imageKeyFromEvent } from "./image-selection-keys";
+
+export { imageKeyFromEvent } from "./image-selection-keys";
 
 interface Range {
   from: number;
@@ -303,31 +306,106 @@ export function escapeImage(view: EditorView): boolean {
   return true;
 }
 
+/**
+ * Run the selected-image action for a keymap id. Used by the CM keymap and by
+ * a capture-phase keydown so @replit/codemirror-vim (domEventHandlers) cannot
+ * swallow Space / `=` / … while an image is selected (BH-006).
+ */
+export function runSelectedImageKey(view: EditorView, key: string): boolean {
+  switch (key) {
+    case "+":
+    case "=":
+      return resize(view, 1);
+    case "-":
+      return resize(view, -1);
+    case "0":
+      return resize(view, 0);
+    case "Space":
+      return inspectSelected(view);
+    case "Enter":
+      return editSource(view, "target");
+    case "Tab":
+      return editSource(view, "alias");
+    case "Backspace":
+    case "Delete":
+      return remove(view);
+    case "Escape":
+      return escapeImage(view);
+    case "ArrowRight":
+      return arrow(view, true);
+    case "ArrowLeft":
+      return arrow(view, false);
+    default:
+      return false;
+  }
+}
+
+/** Apply / clear Obsidian selected-image chrome for the current range. */
+function syncSelectedChrome(
+  view: EditorView,
+  marked: HTMLImageElement[],
+): HTMLImageElement[] {
+  const range = view.state.field(selectedImage);
+  const images = range ? imagesOf(view, range) : [];
+  for (const image of marked) {
+    if (!images.includes(image)) {
+      setImageSelectedChrome(image, false);
+    }
+  }
+  for (const image of images) {
+    setImageSelectedChrome(image, true);
+  }
+  // Outline only — a caret at the embed paints a tall bar below (height).
+  if (images.length) {
+    view.dom.dataset.mwImageSelected = "";
+  } else {
+    delete view.dom.dataset.mwImageSelected;
+  }
+  return images;
+}
+
+/**
+ * Capture-phase keydown so Vim's domEventHandler cannot swallow Space/= while
+ * an image is selected (BH-006). CM Prec.highest keymap alone is too late.
+ */
+function captureSelectedImageKeydown(
+  view: EditorView,
+  event: KeyboardEvent,
+): void {
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.target !== view.contentDOM
+  ) {
+    return;
+  }
+  const selected = view.state.field(selectedImage);
+  const editing = view.state.field(editingImage);
+  if (!selected && !editing) {
+    return;
+  }
+  const key = imageKeyFromEvent(event);
+  if (!key) {
+    return;
+  }
+  // Source edit: only Escape is ours; Space must insert a space.
+  if (editing && !selected && key !== "Escape") {
+    return;
+  }
+  if (!runSelectedImageKey(view, key)) {
+    return;
+  }
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+
 /** Shows which image is selected. */
 const selectedClass = ViewPlugin.define((view) => {
   let marked: HTMLImageElement[] = [];
   const mark = () => {
-    const range = view.state.field(selectedImage);
-    const images = range ? imagesOf(view, range) : [];
-    for (const image of marked) {
-      if (!images.includes(image)) {
-        setImageSelectedChrome(image, false);
-      }
-    }
-    for (const image of images) {
-      setImageSelectedChrome(image, true);
-    }
-    marked = images;
-    // Obsidian shows the outline only; a caret at the embed would use the
-    // widget's (often overestimated) height and paint a long bar below.
-    if (images.length) {
-      view.dom.dataset.mwImageSelected = "";
-    } else {
-      delete view.dom.dataset.mwImageSelected;
-    }
+    marked = syncSelectedChrome(view, marked);
   };
-  // A resized image is drawn again once its file loads, replacing elements:
-  // mark whatever is drawn while one is selected.
+  // Resized images redraw once the file loads — remake chrome then.
   const redrawn = new MutationObserver(() => {
     if (view.state.field(selectedImage) || marked.length) {
       mark();
@@ -335,13 +413,15 @@ const selectedClass = ViewPlugin.define((view) => {
   });
   redrawn.observe(view.contentDOM, { childList: true, subtree: true });
   const onClick = (event: MouseEvent) => selectOnClick(view, event);
+  const onKeydown = (event: KeyboardEvent) =>
+    captureSelectedImageKeydown(view, event);
   view.contentDOM.addEventListener("mousedown", onClick, { capture: true });
+  view.contentDOM.addEventListener("keydown", onKeydown, true);
   return {
     update(update) {
       const before = update.startState.field(selectedImage);
       const after = update.state.field(selectedImage);
       if (before !== after || (after && update.docChanged)) {
-        // After the widgets are drawn for this update.
         view.requestMeasure({ read: () => null, write: mark });
       }
     },
@@ -350,6 +430,7 @@ const selectedClass = ViewPlugin.define((view) => {
       view.contentDOM.removeEventListener("mousedown", onClick, {
         capture: true,
       });
+      view.contentDOM.removeEventListener("keydown", onKeydown, true);
       for (const image of marked) {
         setImageSelectedChrome(image, false);
       }
@@ -367,7 +448,8 @@ const selectedClass = ViewPlugin.define((view) => {
  * `editSelectedImageAlias`), Backspace or Delete removes it, and Escape
  * leaves source edit (re-selecting) or clears the outline. Selection also
  * paints Obsidian's `.image-resize-corner` chevron chrome (CSS);
- * drag-to-resize is still `+`/`-` only.
+ * drag-to-resize is still `+`/`-` only. Keys also bind in a capture-phase
+ * keydown so Vim cannot swallow them while the image is selected (BH-006).
  */
 export function imageSelection(): Extension {
   return [
@@ -375,21 +457,27 @@ export function imageSelection(): Extension {
     editingImage,
     selectedClass,
     Prec.highest(
-      keymap.of([
-        { key: "+", run: (view) => resize(view, 1) },
-        // Obsidian binds both + and = to grow (REA image keymap).
-        { key: "=", run: (view) => resize(view, 1) },
-        { key: "-", run: (view) => resize(view, -1) },
-        { key: "0", run: (view) => resize(view, 0) },
-        { key: "Space", run: inspectSelected },
-        { key: "Enter", run: (view) => editSource(view, "target") },
-        { key: "Tab", run: (view) => editSource(view, "alias") },
-        { key: "Backspace", run: remove },
-        { key: "Delete", run: remove },
-        { key: "Escape", run: escapeImage },
-        { key: "ArrowRight", run: (view) => arrow(view, true) },
-        { key: "ArrowLeft", run: (view) => arrow(view, false) },
-      ]),
+      keymap.of(
+        (
+          [
+            "+",
+            "=",
+            "-",
+            "0",
+            "Space",
+            "Enter",
+            "Tab",
+            "Backspace",
+            "Delete",
+            "Escape",
+            "ArrowRight",
+            "ArrowLeft",
+          ] as const
+        ).map((key) => ({
+          key,
+          run: (view: EditorView) => runSelectedImageKey(view, key),
+        })),
+      ),
     ),
   ];
 }
