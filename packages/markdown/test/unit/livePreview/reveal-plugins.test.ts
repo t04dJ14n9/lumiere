@@ -168,7 +168,17 @@ test("Obsidian callout reveals its block, only selected quote lines, and indepen
   }
 });
 
-test("Obsidian display math reveals whole source and keeps its editing preview", async () => {
+function blockWidgetCount(set: DecorationSet): number {
+  let count = 0;
+  set.between(0, 1e9, (_from, _to, value) => {
+    if (value.spec.widget) {
+      count++;
+    }
+  });
+  return count;
+}
+
+test("display math reveals whole source while the caret is inside (BH-009)", async () => {
   const f = fixture();
   try {
     f.root.plugin(mathWebview);
@@ -186,9 +196,18 @@ test("Obsidian display math reveals whole source and keeps its editing preview",
       visibleSource(state, state.field(blocks)),
       "before\n\n\n\nafter",
     );
+    assert.equal(blockWidgetCount(state.field(blocks)), 1, "rendered outside");
+    // Math renderer must not register an editingPreview (source+render stack).
+    const renderer = state.facet(blockRenderers).find((r) => r.kind === "math");
+    assert.equal(renderer?.editingPreview, undefined);
     for (let at = doc.indexOf("$$"); at <= doc.lastIndexOf("$$") + 2; at++) {
       state = state.update({ selection: EditorSelection.single(at) }).state;
       assert.equal(visibleSource(state, state.field(blocks)), doc);
+      assert.equal(
+        blockWidgetCount(state.field(blocks)),
+        0,
+        `no stacked preview at ${at}`,
+      );
     }
   } finally {
     await f.root.dispose();

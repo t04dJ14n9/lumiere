@@ -2,9 +2,11 @@
 
 Renders inline and display TeX formulas with MathJax, like Obsidian's math in
 Live Preview. Moving the caret into a formula reveals its source, which reads
-as code with its `$` delimiters in the accent colour; a display formula keeps
-its rendered result below the source while you edit it. Clicking a formula
-reveals it with the formula selected, without its delimiters, as in Obsidian.
+as code with its `$` delimiters in the accent colour. A display formula shows
+either its typeset result or its source — not both stacked — while you edit
+(callout-style; Obsidian keeps a live preview under the `$$` lines). Clicking a
+formula reveals it with the formula selected, without its delimiters, as in
+Obsidian.
 
 ## How it works
 
@@ -43,4 +45,4 @@ Commands are Toggle Inline Math and Insert Math Block; neither has a default key
 ## Limits and differences from Obsidian
 
 Uses the configured MathJax TeX packages plus optional user macros. Errors retain the
-placeholder and show a render error. Save and undo belong to VS Code. Display math shares MarkdownBlock `estimatedHeight` with a MathJax-aware floor so short matrices do not collapse the height map on remount. Inline math line box matches Obsidian `.hmd-fold-math` (placeholder `line-height: 0`, inline SVG `overflow: hidden`). Exact glyph metrics still await the owner's manual comparison.
+placeholder and show a render error. Save and undo belong to VS Code. Display math shares MarkdownBlock `estimatedHeight` with a MathJax-aware floor so short matrices do not collapse the height map on remount. Inline math line box matches Obsidian `.hmd-fold-math` (placeholder `line-height: 0`, inline SVG `overflow: hidden`). Exact glyph metrics still await the owner's manual comparison. Unlike Obsidian, revealed display math does not keep a typeset preview under the source (BH-009 / BH-004).

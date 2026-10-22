@@ -63,8 +63,9 @@ function registerMathRenderers(ctx: Context): void {
       nodes: ["MathBlock"],
       editing: "reveal",
       match: (node) => node.name === "MathBlock",
-      // As in Obsidian, editing keeps the rendered formula below its source.
-      editingPreview: { sourceClass: "md-math-source" },
+      // BH-009 / BH-004: revealed block math is source only (no preview stacked
+      // under the $$ lines). Obsidian keeps a live preview below; we prefer a
+      // single coherent view while editing, like callouts and HTML blocks.
       widget: (block) => new MarkdownBlock(block, ctx.render, editing),
     }),
   );
