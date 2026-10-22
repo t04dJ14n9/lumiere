@@ -94,6 +94,10 @@ export class TableController {
     this.grid.render();
     this.handles = this.createHandles();
     this.handles.refresh();
+    this.mountSticky();
+  }
+
+  private mountSticky(): void {
     this.sticky = new TableStickyHScroll(
       this.grid.scroll,
       this.grid.outer.scrollDOM,
@@ -327,6 +331,10 @@ export class TableController {
     }
     this.highlight();
     this.handles.refresh();
+    this.remeasureSticky();
+  }
+
+  private remeasureSticky(): void {
     if (this.sticky && this.grid.outer.scrollDOM) {
       // Note scroller is stable per editor; re-measure after layout changes.
       this.sticky.measure();
