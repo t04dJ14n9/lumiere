@@ -56,12 +56,17 @@ export async function bootstrap(
   }
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
-  // Chrome (Properties) must not wait on tables/callouts download. Start both
-  // preloads as soon as we know the Obsidian preset, overlapping core settle.
+  // Chrome (Properties) must not wait on tables/callouts *configure* (#285) and
+  // must not *compete* with those chunks on the wire during settle. #286/#287
+  // tried earlier chrome / dynamic YAML and lost interactive; keep first-paint
+  // rAF + sync yaml. Start chrome preload immediately; start paint preload
+  // only once chrome chunks resolve so Properties owns bandwidth first.
   const chromeChunks =
     init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
   const paintChunks =
-    init.preset === "obsidian" ? preloadPaintFeatures() : Promise.resolve();
+    init.preset === "obsidian"
+      ? chromeChunks.then(() => preloadPaintFeatures())
+      : Promise.resolve();
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {

@@ -150,6 +150,8 @@ export function preloadChromeFeatures(): Promise<void> {
 /**
  * First-screen structure beyond chrome (tables, callouts, …). Does not
  * include chrome ids so a pending tables download cannot gate Properties.
+ * Bootstrap starts this only after chrome chunks resolve so tables do not
+ * starve the Properties graph on the wire (wave 10).
  */
 export function preloadPaintFeatures(): Promise<void> {
   const structure = [...PAINT_FEATURE_IDS].filter(
