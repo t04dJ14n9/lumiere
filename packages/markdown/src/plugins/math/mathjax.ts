@@ -52,9 +52,8 @@ async function ensureBrowser(): Promise<void> {
     // never at module import (Node unit tests import this graph).
     // Dynamic import + esbuild splitting yields default-export-only chunks;
     // named destructuring leaves `browserAdaptor` undefined → "n is not a function".
-    const browserMod = await import(
-      "@mathjax/src/cjs/adaptors/browserAdaptor.js"
-    );
+    const browserMod =
+      await import("@mathjax/src/cjs/adaptors/browserAdaptor.js");
     const htmlMod = await import("@mathjax/src/cjs/handlers/html.js");
     const browserAdaptor = cjsNamed<() => unknown>(
       browserMod as Record<string, unknown>,

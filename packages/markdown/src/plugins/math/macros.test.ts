@@ -91,7 +91,11 @@ test("TEX_PACKAGES registers configmacros so TeX accepts macros option", () => {
     `unexpected MathJax macros warning: ${warnings.join(" | ")}`,
   );
   assert.equal(
-    warnings.some((w) => /Package '.*(ams|newcommand|mathtools|configmacros).*' not found/i.test(w)),
+    warnings.some((w) =>
+      /Package '.*(ams|newcommand|mathtools|configmacros).*' not found/i.test(
+        w,
+      ),
+    ),
     false,
     `unexpected missing package warning: ${warnings.join(" | ")}`,
   );
