@@ -20,10 +20,7 @@ test("Ctrl/Cmd+P is Quick Open; other modifiers and keys are not", () => {
   for (const isMac of [false, true]) {
     const modifier = { ctrlKey: !isMac, metaKey: isMac };
     assert.equal(isQuickOpenKey(key({ ...modifier }), isMac), true);
-    assert.equal(
-      isQuickOpenKey(key({ ...modifier, key: "P" }), isMac),
-      true,
-    );
+    assert.equal(isQuickOpenKey(key({ ...modifier, key: "P" }), isMac), true);
     assert.equal(
       isQuickOpenKey(key({ ...modifier, key: "з", keyCode: 80 }), isMac),
       true,
@@ -94,10 +91,10 @@ test("capture listener owns Mod+P, skips native fields and open suggest", () => 
     (target) =>
       Boolean(
         target &&
-          typeof target === "object" &&
-          "tagName" in target &&
-          String((target as { tagName?: string }).tagName).toUpperCase() ===
-            "INPUT",
+        typeof target === "object" &&
+        "tagName" in target &&
+        String((target as { tagName?: string }).tagName).toUpperCase() ===
+          "INPUT",
       ),
   );
 
