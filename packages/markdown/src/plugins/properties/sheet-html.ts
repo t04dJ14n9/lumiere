@@ -20,7 +20,13 @@ import { propertyIcon, propertyFlairIcon } from "../../webview/ui/icons";
 import { validTag } from "../../markdown/tags/grammar";
 import { attr, escape } from "../../markdown/html/helpers";
 import { createRenderer } from "../../markdown/html";
-const { renderInline } = createRenderer();
+
+/** Defer markdown-it plugin setup until a wiki-link value needs inline HTML. */
+let renderInlineFn: ((source: string) => string) | undefined;
+function renderInline(source: string): string {
+  renderInlineFn ??= createRenderer().renderInline;
+  return renderInlineFn(source);
+}
 
 interface PropertyRowOptions {
   kind: PropertyKind;
