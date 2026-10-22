@@ -50,7 +50,8 @@ export async function bootstrap(
   }
   registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
-  await configure(init.features, init.preset === "obsidian");
+  // First paint: only features that shape visible content and caret chrome.
+  await configure(init.features, init.preset === "obsidian", "paint");
   performance.mark("mw:features");
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
@@ -58,7 +59,13 @@ export async function bootstrap(
     throw failed.error;
   }
   performance.mark("mw:plugins");
-  requestAnimationFrame(() => performance.mark("mw:first-paint"));
+  requestAnimationFrame(() => {
+    performance.mark("mw:first-paint");
+    // Math, diagrams, git chrome, bridges, … after the first frame.
+    void configure(init.features, init.preset === "obsidian", "all").catch(
+      (error: unknown) => root.logger.error("Deferred features failed", error),
+    );
+  });
   rpc.notify(protocol, "initialized", {});
   return root;
 }

@@ -109,7 +109,7 @@ function registerSessionHandshake(
       }
       detach = session.attach(shell.id, rpc);
       const config = host.settings.forNote(shell.document);
-      return {
+      const init = {
         text: session.text,
         version: session.version,
         clientID: shell.id,
@@ -120,6 +120,10 @@ function registerSessionHandshake(
         features: config.features ?? {},
         editor: editorConfig.parse(config.editor ?? {}),
       };
+      // After the ready payload is built: deferred panel hosts (blame, search,
+      // suggest, …) may start without delaying the webview's first paint.
+      owned.emit("editor/session-ready");
+      return init;
     }),
   );
 }
