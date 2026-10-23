@@ -33,6 +33,9 @@ function width(state: EditorState, text: string): number {
 
 /** The list item on `line` and its nested lines, as a line-number range. */
 export function itemLines(state: EditorState, line: Line): [number, number] {
+  if (isQuoteListLine(line.text)) {
+    return quoteItemLines(state, line);
+  }
   const own = width(state, line.text);
   let last = line.number;
   for (let n = line.number + 1; n <= state.doc.lines; n++) {
@@ -45,9 +48,55 @@ export function itemLines(state: EditorState, line: Line): [number, number] {
   return [line.number, last];
 }
 
+/** True when the line is a list/task under blockquote markup (`> - …`). */
+function isQuoteListLine(text: string): boolean {
+  const { quotes, marker } = lineMarkup(text);
+  return marker !== "" && quotes.includes(">");
+}
+
+/**
+ * Nest indent under a blockquote: columns after `>` beyond the single
+ * separator space before the list marker (`> -` → 0; `>   -` → 2).
+ */
+function quoteListNestIndent(state: EditorState, quotes: string): number {
+  const gt = quotes.lastIndexOf(">");
+  if (gt < 0) {
+    return 0;
+  }
+  return Math.max(0, width(state, quotes.slice(gt + 1)) - 1);
+}
+
+/** Quote-list item + deeper nest under the same `>` prefix (BH-057). */
+function quoteItemLines(state: EditorState, line: Line): [number, number] {
+  const { quotes } = lineMarkup(line.text);
+  const gt = quotes.lastIndexOf(">");
+  const prefix = quotes.slice(0, gt + 1);
+  const own = quoteListNestIndent(state, quotes);
+  let last = line.number;
+  for (let n = line.number + 1; n <= state.doc.lines; n++) {
+    const text = state.doc.line(n).text;
+    if (text.trim() === "") {
+      break;
+    }
+    const next = lineMarkup(text);
+    const nextGt = next.quotes.lastIndexOf(">");
+    if (nextGt < 0 || next.quotes.slice(0, nextGt + 1) !== prefix) {
+      break;
+    }
+    if (quoteListNestIndent(state, next.quotes) <= own) {
+      break;
+    }
+    last = n;
+  }
+  return [line.number, last];
+}
+
 function reindent(target: Target, delta: number): boolean {
   const { state } = target;
   const line = state.doc.lineAt(state.selection.main.head);
+  if (isQuoteListLine(line.text)) {
+    return reindentQuoteList(target, delta);
+  }
   const [first, last] = itemLines(state, line);
   const unit = getIndentUnit(state);
   const changes: ChangeSpec[] = [];
@@ -82,18 +131,67 @@ function reindent(target: Target, delta: number): boolean {
   return true;
 }
 
+/**
+ * Tab / Shift+Tab for a list under a blockquote: adjust spaces after `>`
+ * (BH-057) — instead of indentMore putting a tab before `>` (`\t> - item`).
+ */
+function reindentQuoteList(target: Target, delta: number): boolean {
+  const { state } = target;
+  const line = state.doc.lineAt(state.selection.main.head);
+  const [first, last] = quoteItemLines(state, line);
+  const unit = getIndentUnit(state);
+  const changes: ChangeSpec[] = [];
+  for (let n = first; n <= last; n++) {
+    const current = state.doc.line(n);
+    const { quotes } = lineMarkup(current.text);
+    const gt = quotes.lastIndexOf(">");
+    if (gt < 0) {
+      continue;
+    }
+    const nest = quoteListNestIndent(state, quotes);
+    if (delta < 0 && nest === 0) {
+      continue;
+    }
+    const nextNest = Math.max(0, nest + delta * unit);
+    const prefix = quotes.slice(0, gt + 1);
+    // Spaces after `>` (not indentString/tabs): keeps list under quote valid
+    // Markdown when useTabs is on (BH-051 sibling; Host GUI `>   -` not `>\t-`).
+    const newQuotes = prefix + " ".repeat(nextNest + 1);
+    changes.push({
+      from: current.from,
+      to: current.from + quotes.length,
+      insert: newQuotes,
+    });
+  }
+  if (changes.length === 0) {
+    return true;
+  }
+  const indented = state.update({ changes }).state;
+  const numbers = indented.changes(
+    renumberAround(indented.doc, { first, last }, state.tabSize),
+  );
+  target.dispatch(
+    state.update({
+      changes: state.changes(changes).compose(numbers),
+      scrollIntoView: true,
+      userEvent: delta > 0 ? "input.indent" : "delete.dedent",
+    }),
+  );
+  return true;
+}
+
 function onListItem(state: EditorState): boolean {
   const { ranges, main } = state.selection;
-  return (
-    ranges.length === 1 &&
-    main.empty &&
-    listItem.test(state.doc.lineAt(main.head).text)
-  );
+  if (ranges.length > 1 || !main.empty) {
+    return false;
+  }
+  const text = state.doc.lineAt(main.head).text;
+  return listItem.test(text) || isQuoteListLine(text);
 }
 
 /**
- * Tab: indent a list item with its children; otherwise indent the lines the
- * selection touches, even with the caret mid-line, as Obsidian does.
+ * Tab: indent a list item with its children (including under `>`, BH-057);
+ * otherwise indent the lines the selection touches, as Obsidian does.
  */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
@@ -156,18 +254,6 @@ export function outdentBackspace(target: Target): boolean {
     return unwrapQuote(target);
   }
   return false;
-}
-
-/**
- * Nest indent under a blockquote: columns after `>` beyond the single
- * separator space before the list marker (`> -` → 0; `>   -` → 2).
- */
-function quoteListNestIndent(state: EditorState, quotes: string): number {
-  const gt = quotes.lastIndexOf(">");
-  if (gt < 0) {
-    return 0;
-  }
-  return Math.max(0, width(state, quotes.slice(gt + 1)) - 1);
 }
 
 /**

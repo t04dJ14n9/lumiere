@@ -134,6 +134,30 @@ test("Backspace at blockquote text start unwraps one quote level (BH-056)", () =
   assert.equal(apply("> - |item", outdentBackspace, "  "), "> |item");
 });
 
+test("Tab indents a list under blockquote after the > (BH-057)", () => {
+  assert.equal(apply("> - |alpha", indentTab, "  "), ">   - |alpha");
+  assert.equal(apply("> - [ ] |task", indentTab, "  "), ">   - [ ] |task");
+  assert.equal(apply("> 1. |one", indentTab, "  "), ">   1. |one");
+  // Children deepen with the parent.
+  assert.equal(
+    apply("> - |parent\n>   - child", indentTab, "  "),
+    ">   - |parent\n>     - child",
+  );
+  // Already nested: one more unit.
+  assert.equal(apply(">   - |child", indentTab, "  "), ">     - |child");
+});
+
+test("Shift+Tab outdents a list under blockquote after the > (BH-057)", () => {
+  assert.equal(apply(">   - |child", outdentTab, "  "), "> - |child");
+  assert.equal(apply(">     - |deep", outdentTab, "  "), ">   - |deep");
+  // Top-level under quote: nothing to outdent (keep focus).
+  assert.equal(apply("> - |top", outdentTab, "  "), "> - |top");
+  assert.equal(
+    apply(">   - |parent\n>     - child", outdentTab, "  "),
+    "> - |parent\n>   - child",
+  );
+});
+
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {
   assert.equal(apply("pla|in", outdentTab), "pla|in");
 });
