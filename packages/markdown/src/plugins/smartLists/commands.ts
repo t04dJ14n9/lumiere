@@ -33,7 +33,114 @@ function run(state: EditorState): Transaction | null {
       result = tr;
     },
   });
-  return ok && result ? keepSpaceBeforeCaret(state, result) : null;
+  return ok && result
+    ? matchSourceIndent(state, keepSpaceBeforeCaret(state, result))
+    : null;
+}
+
+/** Column width of leading whitespace, tabs expanded by `tabSize`. */
+function indentWidth(pad: string, tabSize: number): number {
+  let column = 0;
+  for (const char of pad) {
+    column = char === "\t" ? column + tabSize - (column % tabSize) : column + 1;
+  }
+  return column;
+}
+
+/**
+ * When `useTabs` is on, CodeMirror continues a spaces-only indented item with a
+ * tab (4 spaces → one tab). Obsidian keeps the line's indent style. Expand
+ * leading tabs in the continue insert to spaces so siblings stay spaces (BH-051).
+ */
+function matchSourceIndent(state: EditorState, tr: Transaction): Transaction {
+  const caret = state.selection.main.head;
+  const sourcePad = /^[ \t]*/u.exec(state.doc.lineAt(caret).text)?.[0] ?? "";
+  if (sourcePad.length === 0 || sourcePad.includes("\t")) {
+    return tr;
+  }
+  const changes: ChangeSpec[] = [];
+  let changed = false;
+  tr.changes.iterChanges((...change) => {
+    const [fromA, toA, , , inserted] = change;
+    let text = inserted.toString();
+    if (text.includes("\t")) {
+      const next = text.replace(
+        /(^|\n)(\t+)/g,
+        (_m, lead: string, tabs: string) =>
+          lead + " ".repeat(tabs.length * state.tabSize),
+      );
+      if (next !== text) {
+        text = next;
+        changed = true;
+      }
+    }
+    changes.push({ from: fromA, to: toA, insert: text });
+  });
+  if (!changed) {
+    return tr;
+  }
+  const set = state.changes(changes);
+  return state.update({
+    changes: set,
+    selection: EditorSelection.cursor(set.mapPos(caret, 1)),
+    scrollIntoView: true,
+    userEvent: "input",
+  });
+}
+
+/** Empty bullet/number item (no task box): Enter outdents or leaves the list. */
+function isEmptyListItem(text: string): boolean {
+  const { marker, task } = lineMarkup(text);
+  return (
+    marker !== "" && task === "" && text.slice(textStart(text)).trim() === ""
+  );
+}
+
+/**
+ * Enter on an empty nested item steps out one list level; on a top-level empty
+ * item it leaves the list. Done here so a tab-indented empty sibling under a
+ * spaces-indented parent cannot become `\t--` via CodeMirror (BH-051).
+ */
+function leaveEmptyListItem(
+  target: Target,
+  line: { from: number; to: number; number: number; text: string },
+): boolean {
+  const { state } = target;
+  const { quotes, marker } = lineMarkup(line.text);
+  if (quotes.includes(">")) {
+    return false;
+  }
+  const width = indentWidth(quotes, state.tabSize);
+  let insert: string;
+  if (width === 0) {
+    insert = "";
+  } else {
+    let newPad: string | null = null;
+    for (let n = line.number - 1; n >= 1; n--) {
+      const prev = state.doc.line(n);
+      if (prev.text.trim() === "") {
+        continue;
+      }
+      const previous = lineMarkup(prev.text);
+      if (previous.marker === "") {
+        break;
+      }
+      if (indentWidth(previous.quotes, state.tabSize) < width) {
+        newPad = previous.quotes;
+        break;
+      }
+    }
+    insert = (newPad ?? "") + marker;
+  }
+  target.dispatch(
+    state.update({
+      changes: { from: line.from, to: line.to, insert },
+      selection: EditorSelection.cursor(line.from + insert.length),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
 }
 
 /**
@@ -87,6 +194,16 @@ export function continueList(target: Target): boolean {
   const line = state.doc.lineAt(range.head);
   if (isEmptyQuote(line.text)) {
     return leaveQuoteLevel(target, line);
+  }
+  // BH-051: empty bullet/number leave before CodeMirror — avoids `\t--` when a
+  // tab-indented empty sibling sits under a spaces-indented nest (useTabs).
+  if (
+    isEmptyListItem(line.text) &&
+    range.head >= line.from + textStart(line.text)
+  ) {
+    if (leaveEmptyListItem(target, line)) {
+      return true;
+    }
   }
   const item = continuedItem(state, range.head);
   if (item) {

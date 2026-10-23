@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
-import { ensureSyntaxTree } from "@codemirror/language";
+import { ensureSyntaxTree, indentUnit } from "@codemirror/language";
 import { insertNewlineAndIndent } from "@codemirror/commands";
 import { markdownLanguageSupport } from "../../../src/markdown/dialect";
 import {
@@ -49,6 +49,49 @@ test("Enter on an empty item leaves the list", () => {
   assert.equal(apply("- [ ] one\n- [ ] |", continueList), "- [ ] one\n|");
   assert.equal(apply("- one\n  - |", continueList), "- one\n- |");
 });
+test("Enter continues space-indented nests with spaces when useTabs is on (BH-051)", () => {
+  assert.equal(
+    applyTabs("- alpha\n  - nested\n    - deep|"),
+    "- alpha\n  - nested\n    - deep\n    - |",
+  );
+  assert.equal(applyTabs("- one\n  - two|"), "- one\n  - two\n  - |");
+});
+
+test("Enter on empty tab item under spaces outdents without corrupting the marker (BH-051)", () => {
+  assert.equal(
+    applyTabs("- alpha\n  - nested\n    - deep\n\t- |"),
+    "- alpha\n  - nested\n    - deep\n  - |",
+  );
+  assert.equal(
+    applyTabs("- alpha\n  - nested\n    - deep\n    - |"),
+    "- alpha\n  - nested\n    - deep\n  - |",
+  );
+});
+
+/** Like `apply`, but with indentUnit tab (editor default useTabs). */
+function applyTabs(text: string): string {
+  const head = text.indexOf("|");
+  let state = EditorState.create({
+    doc: text.replace("|", ""),
+    selection: { anchor: head },
+    extensions: [
+      markdownLanguageSupport(),
+      indentUnit.of("\t"),
+      EditorState.tabSize.of(4),
+    ],
+  });
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
+  const handled = continueList({
+    state,
+    dispatch: (tr) => {
+      state = tr.state;
+    },
+  });
+  assert.ok(handled, `not handled: ${JSON.stringify(text)}`);
+  const at = state.selection.main.head;
+  return state.sliceDoc(0, at) + "|" + state.sliceDoc(at);
+}
 
 test("Enter outside lists is left to the default binding", () => {
   const state = EditorState.create({
