@@ -8,6 +8,7 @@ import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
 import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
 import { keepQuickOpenKey } from "./quick-open-keys";
 import { keepCloseKey } from "./close-keys";
+import { getCM, Vim } from "@replit/codemirror-vim";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
@@ -150,6 +151,7 @@ function registerCloseKey(
 ): void {
   // Capture-phase Mod/Ctrl+W so Vim cannot start <C-w> window commands (BH-031)
   // and the webview shell cannot race the host keybinding. Leaves native fields alone.
+  // BH-044: in Vim INSERT, <C-w> deletes the previous word (vim-core); do not Close.
   ctx.effect(() =>
     keepCloseKey(
       ctx.editor.view.dom.ownerDocument,
@@ -157,6 +159,16 @@ function registerCloseKey(
         trigger(ctx, host, "close");
       },
       leavesNativeHistory,
+      {
+        isInsertMode: () =>
+          Boolean(getCM(ctx.editor.view)?.state.vim?.insertMode),
+        onInsertCtrlW: () => {
+          const cm = getCM(ctx.editor.view);
+          if (cm) {
+            Vim.handleKey(cm, "<C-w>", "api");
+          }
+        },
+      },
     ),
   );
 }

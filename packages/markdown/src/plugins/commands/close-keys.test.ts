@@ -112,3 +112,58 @@ test("capture listener owns Mod+W and skips native fields", () => {
   stop();
   assert.equal(listeners.size, 0);
 });
+
+test("Vim INSERT Mod+W deletes word instead of closing (BH-044)", () => {
+  const calls: string[] = [];
+  const listeners = new Map<string, EventListener>();
+  const doc = {
+    defaultView: { navigator: { platform: "Linux x86_64" } },
+    addEventListener(type: string, listener: EventListener, opts?: unknown) {
+      assert.equal(opts, true);
+      listeners.set(type, listener);
+    },
+    removeEventListener(type: string, listener: EventListener, opts?: unknown) {
+      assert.equal(opts, true);
+      if (listeners.get(type) === listener) {
+        listeners.delete(type);
+      }
+    },
+  } as unknown as Document;
+
+  let insert = true;
+  keepCloseKey(
+    doc,
+    () => {
+      calls.push("close");
+    },
+    () => false,
+    {
+      isInsertMode: () => insert,
+      onInsertCtrlW: () => {
+        calls.push("insert-c-w");
+      },
+    },
+  );
+
+  const listener = listeners.get("keydown")!;
+  const fire = () => {
+    const event = {
+      key: "w",
+      ctrlKey: true,
+      metaKey: false,
+      altKey: false,
+      shiftKey: false,
+      target: null,
+      preventDefault() {},
+      stopPropagation() {},
+    };
+    listener(event as unknown as Event);
+  };
+
+  fire();
+  assert.deepEqual(calls, ["insert-c-w"]);
+
+  insert = false;
+  fire();
+  assert.deepEqual(calls, ["insert-c-w", "close"]);
+});
