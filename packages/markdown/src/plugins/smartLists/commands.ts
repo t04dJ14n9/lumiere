@@ -224,7 +224,8 @@ function exitSetextHeading(target: Target): boolean {
 }
 
 /**
- * Enter: continue bullets, numbers, quotes, tasks, footnote and link-ref definitions;
+ * Enter: continue bullets, numbers, quotes, tasks, footnote and link-ref definitions
+ * (incl. quoted footnotes, BH-073);
  * leave the list on an empty item, a quote level on an empty quoted line, and
  * a footnote on an empty indented continuation (BH-060).
  */

@@ -339,3 +339,54 @@ test("Enter does not treat a list under a link-ref as link-ref body (BH-072)", (
 test("Enter on footnote still wins over link-ref pattern (BH-060 / BH-072)", () => {
   assert.equal(apply("[^n]: body|", continueList), "[^n]: body\n\t|");
 });
+
+test("Enter on a quoted footnote definition continues with quote+tab (BH-073)", () => {
+  assert.equal(apply("> [^a]: body|", continueList), "> [^a]: body\n> \t|");
+  assert.equal(
+    apply("> [^a]: first| second", continueList),
+    "> [^a]: first\n> \t| second",
+  );
+  assert.equal(
+    apply("> > [^note]: deep|", continueList),
+    "> > [^note]: deep\n> > \t|",
+  );
+});
+
+test("Enter on a quoted footnote continuation keeps indent; empty leaves (BH-073)", () => {
+  assert.equal(
+    apply("> [^a]: first\n> \tcontinued|", continueList),
+    "> [^a]: first\n> \tcontinued\n> \t|",
+  );
+  assert.equal(
+    apply("> [^a]: first\n>     spaced|", continueList),
+    "> [^a]: first\n>     spaced\n>     |",
+  );
+  assert.equal(apply("> [^a]: first\n> \t|", continueList), "> [^a]: first\n|");
+  assert.equal(
+    apply("> [^a]: first\n>     |", continueList),
+    "> [^a]: first\n|",
+  );
+});
+
+test("Enter does not treat a list under a quoted footnote as footnote body (BH-073)", () => {
+  const head = "> [^a]: def\n>   - item|".indexOf("|");
+  let state = EditorState.create({
+    doc: "> [^a]: def\n>   - item",
+    selection: { anchor: head },
+    extensions: [markdownLanguageSupport()],
+  });
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
+  continueList({
+    state,
+    dispatch: (tr) => {
+      state = tr.state;
+    },
+  });
+  assert.equal(
+    state.doc.toString().includes("\n>   |") ||
+      /\n> {2}$/u.test(state.doc.toString()),
+    false,
+  );
+  assert.match(state.doc.toString(), /- item/);
+});

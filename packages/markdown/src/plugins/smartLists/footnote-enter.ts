@@ -10,38 +10,54 @@ interface Target {
 /**
  * Enter on a footnote definition (or its indented continuation) continues
  * with a tab-indented line, as Obsidian and the footnote popover write it
- * (BH-060). An empty continuation line steps out of the definition.
+ * (BH-060). Quote prefixes are kept (BH-073: `> [^a]: …` → `> \t…`). An empty
+ * continuation line steps out of the definition.
  *
  * Continuation indent alone is not enough: list nests also start with 2–4
  * spaces, so only lines under a `[^label]:` definition are claimed. List
  * markers under a footnote fall through to smart-list continue.
  */
-const footnoteDef = /^ {0,3}\[\^[^\]]+\]:[ \t]?/u;
+const quotePrefix = /^((?:[ \t]*>[ \t]?)*)/u;
+const footnoteMarker = /^ {0,3}\[\^[^\]]+\]:[ \t]?/u;
 const footnoteCont = /^(?: {2,4}| {0,3}\t)/u;
+
+function splitQuotes(text: string): { quotes: string; rest: string } {
+  const quotes = quotePrefix.exec(text)?.[1] ?? "";
+  return { quotes, rest: text.slice(quotes.length) };
+}
 
 export function continueFootnoteDefinition(target: Target): boolean {
   const { state } = target;
   const range = state.selection.main;
   const line = state.doc.lineAt(range.head);
-  const def = footnoteDef.exec(line.text);
+  const { quotes, rest } = splitQuotes(line.text);
+  const def = footnoteMarker.exec(rest);
   if (def) {
-    const markerEnd = line.from + def[0].length;
+    const markerEnd = line.from + quotes.length + def[0].length;
     if (range.head < markerEnd) {
       return false;
     }
-    return splitWithFootnoteIndent(target, line, range.head, "\t");
+    return splitWithFootnoteIndent(target, line, range.head, quotes + "\t");
   }
-  if (
-    !footnoteCont.test(line.text) ||
-    !underFootnoteDefinition(state, line.number)
-  ) {
+  return continueFootnoteBody(target, line, range.head, { quotes, rest });
+}
+
+/** Indented body under a footnote def (plain or quoted); empty leaves. */
+function continueFootnoteBody(
+  target: Target,
+  line: { from: number; to: number; number: number; text: string },
+  head: number,
+  parts: { quotes: string; rest: string },
+): boolean {
+  const cont = footnoteCont.exec(parts.rest);
+  if (!cont || !underFootnoteDefinition(target.state, line.number)) {
     return false;
   }
-  const indent = footnoteCont.exec(line.text)![0];
-  if (range.head < line.from + indent.length) {
+  const indent = parts.quotes + cont[0];
+  if (head < line.from + indent.length) {
     return false;
   }
-  const body = line.text.slice(indent.length);
+  const body = parts.rest.slice(cont[0].length);
   // Lists nested under a footnote keep smart-list Enter / outdent.
   if (lineMarkup(indent + body).marker !== "") {
     return false;
@@ -49,7 +65,7 @@ export function continueFootnoteDefinition(target: Target): boolean {
   if (body.trim() === "") {
     return leaveFootnoteContinuation(target, line);
   }
-  return splitWithFootnoteIndent(target, line, range.head, indent);
+  return splitWithFootnoteIndent(target, line, head, indent);
 }
 
 /** Whether `lineNumber` sits in a footnote definition's indented body. */
@@ -59,10 +75,11 @@ function underFootnoteDefinition(
 ): boolean {
   for (let n = lineNumber - 1; n >= 1; n--) {
     const text = state.doc.line(n).text;
-    if (footnoteDef.test(text)) {
+    const { rest } = splitQuotes(text);
+    if (footnoteMarker.test(rest)) {
       return true;
     }
-    if (footnoteCont.test(text) || text.trim() === "") {
+    if (footnoteCont.test(rest) || text.trim() === "") {
       continue;
     }
     return false;
