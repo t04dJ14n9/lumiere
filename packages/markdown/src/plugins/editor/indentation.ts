@@ -60,10 +60,7 @@ function isQuoteListLine(text: string): boolean {
  */
 function quoteListNestIndent(state: EditorState, quotes: string): number {
   const gt = quotes.lastIndexOf(">");
-  if (gt < 0) {
-    return 0;
-  }
-  return Math.max(0, width(state, quotes.slice(gt + 1)) - 1);
+  return gt < 0 ? 0 : Math.max(0, width(state, quotes.slice(gt + 1)) - 1);
 }
 
 /** Quote-list item + deeper nest under the same `>` prefix (BH-057). */
