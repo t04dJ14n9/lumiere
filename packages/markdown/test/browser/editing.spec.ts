@@ -303,3 +303,37 @@ test("Shift+Enter on trailing empty line under a list fills continuation (BH-049
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("- soft target\n  continued");
 });
+
+test("Tab on setext title or underline is a no-op (BH-066)", async ({
+  page,
+}) => {
+  const source = "Setext Title\n=======\n\nBody under heading.";
+  await open(page, source);
+  // Title start (Host GUI INSERT repro).
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+  // Underline start.
+  await page.evaluate(() => window.harness.reveal(13));
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+});
+
+test("Tab on setext title is a no-op with Vim INSERT (BH-066)", async ({
+  page,
+}) => {
+  const source = "Setext Title\n=======\n\nBody under heading.";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("i");
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+});
