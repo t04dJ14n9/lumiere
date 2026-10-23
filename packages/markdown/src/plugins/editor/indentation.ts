@@ -129,26 +129,100 @@ export function indentationTabKey(event: {
   return event.shiftKey ? "outdent" : "indent";
 }
 
+type BracketKeyEvent = {
+  key: string;
+  code?: string;
+  keyCode?: number;
+  shiftKey: boolean;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  isComposing?: boolean;
+};
+
+/** Electron/Chromium Ctrl+[ → Escape while code stays BracketLeft (no Mod). */
+function remappedCtrlBracketLeft(event: BracketKeyEvent): boolean {
+  const code = event.code ?? "";
+  return (
+    code === "BracketLeft" && (event.key === "Escape" || event.keyCode === 27)
+  );
+}
+
+function bracketIndentAction(
+  event: BracketKeyEvent,
+): "indent" | "outdent" | undefined {
+  const code = event.code ?? "";
+  // Prefer physical `code`; keyCode 219/221 covers older Electron; key text
+  // still helps when code is missing. Mod+Escape is iPad/Chromium C-Esc.
+  if (code === "BracketRight" || event.key === "]" || event.keyCode === 221) {
+    return "indent";
+  }
+  if (
+    code === "BracketLeft" ||
+    event.key === "[" ||
+    event.keyCode === 219 ||
+    event.key === "Escape" ||
+    event.keyCode === 27
+  ) {
+    return "outdent";
+  }
+  return undefined;
+}
+
+/**
+ * Ctrl/Cmd+[ → outdent; Ctrl/Cmd+] → indent (BH-047).
+ * Physical keyCodes 219/221 cover non-Latin layouts like find-keys.
+ * Pure so unit tests need no DOM.
+ */
+export function indentationBracketKey(
+  event: BracketKeyEvent,
+  isMac: boolean,
+): "indent" | "outdent" | undefined {
+  if (event.isComposing || event.altKey || event.shiftKey) {
+    return undefined;
+  }
+  // Bare Esc has code="Escape" — only the remap signature outdents without Mod.
+  if (remappedCtrlBracketLeft(event)) {
+    return "outdent";
+  }
+  const modifier = isMac
+    ? Boolean(event.metaKey) && !event.ctrlKey
+    : Boolean(event.ctrlKey) && !event.metaKey;
+  if (!modifier) {
+    return undefined;
+  }
+  return bracketIndentAction(event);
+}
+
 /**
  * Capture-phase Tab / Shift+Tab so Vim's override-slot DOM handler cannot
- * swallow indent (BH-040). Prec.highest alone is too late on the note editor
- * because Vim registers in the `override` slot (same pattern as BH-006 image
- * keys). Keep the keymap for Insert / Vim-off; skip while suggest owns Tab.
+ * swallow indent (BH-040). Also Mod-[ / Mod-] so Vim INSERT Ctrl+[ cannot
+ * Esc instead of outdent (BH-047; Ctrl+] indent already reached CM).
+ * Prec.highest alone is too late because Vim registers in the `override`
+ * slot (same pattern as BH-006 image keys). Keep the keymap for Insert /
+ * Vim-off; skip Tab while suggest owns it.
  */
-function captureIndentationTab(view: EditorView, event: KeyboardEvent): void {
-  if (
-    event.defaultPrevented ||
-    event.isComposing ||
-    event.target !== view.contentDOM
-  ) {
+function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
+  // Exact contentDOM only (BH-040): nested widgets (properties / table cells)
+  // must keep Tab for focus navigation. Ctrl+[ outdent targets the note body.
+  if (event.isComposing || event.target !== view.contentDOM) {
     return;
   }
-  const action = indentationTabKey(event);
+  const isMac = /Mac|iPhone|iPad/u.test(
+    view.contentDOM.ownerDocument.defaultView?.navigator.platform ?? "",
+  );
+  const bracket = indentationBracketKey(event, isMac);
+  // Host/webview may mark Ctrl+[ defaultPrevented before us; still outdent.
+  // Tab keeps the BH-040 defaultPrevented early-out when not a bracket chord.
+  if (!bracket && event.defaultPrevented) {
+    return;
+  }
+  const action = indentationTabKey(event) ?? bracket;
   if (!action) {
     return;
   }
   // Suggest owns Tab while a completion is open (Obsidian parity).
-  if (completionStatus(view.state) === "active") {
+  if (event.key === "Tab" && completionStatus(view.state) === "active") {
     return;
   }
   const ran = action === "indent" ? indentTab(view) : outdentTab(view);
@@ -161,7 +235,9 @@ function captureIndentationTab(view: EditorView, event: KeyboardEvent): void {
 
 const indentationCapture = ViewPlugin.define((view) => {
   const onKeydown = (event: KeyboardEvent) =>
-    captureIndentationTab(view, event);
+    captureIndentationKeys(view, event);
+  // contentDOM only (BH-040/006). view.dom would see nested widget focus and
+  // steal Tab from properties/tables (browser CI regression).
   view.contentDOM.addEventListener("keydown", onKeydown, true);
   return {
     destroy() {
@@ -176,4 +252,7 @@ export function indentationDom(): Extension {
 
 export const indentationKeymap: readonly KeyBinding[] = [
   { key: "Tab", run: indentTab, shift: outdentTab, preventDefault: true },
+  // BH-047: same chords as CM standardKeymap; capture also owns them over Vim.
+  { key: "Mod-]", run: indentTab, preventDefault: true },
+  { key: "Mod-[", run: outdentTab, preventDefault: true },
 ];

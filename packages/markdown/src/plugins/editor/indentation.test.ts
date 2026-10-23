@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import { indentUnit } from "@codemirror/language";
-import { indentTab, outdentTab, indentationTabKey } from "./indentation";
+import {
+  indentTab,
+  outdentTab,
+  indentationTabKey,
+  indentationBracketKey,
+} from "./indentation";
 
 type Command = typeof indentTab;
 
@@ -85,4 +90,132 @@ test("indentationTabKey maps Tab and Shift+Tab (BH-040)", () => {
     undefined,
   );
   assert.equal(indentationTabKey({ key: "Enter", shiftKey: false }), undefined);
+});
+
+/** BH-047: Ctrl/Cmd+[ outdent, Ctrl/Cmd+] indent (beats Vim INSERT Esc on [). */
+test("indentationBracketKey maps Mod-[ / Mod-] (BH-047)", () => {
+  assert.equal(
+    indentationBracketKey(
+      { key: "]", shiftKey: false, ctrlKey: true, metaKey: false },
+      false,
+    ),
+    "indent",
+  );
+  assert.equal(
+    indentationBracketKey(
+      { key: "[", shiftKey: false, ctrlKey: true, metaKey: false },
+      false,
+    ),
+    "outdent",
+  );
+  assert.equal(
+    indentationBracketKey(
+      { key: "[", shiftKey: false, ctrlKey: false, metaKey: true },
+      true,
+    ),
+    "outdent",
+  );
+  assert.equal(
+    indentationBracketKey(
+      { key: "]", keyCode: 221, shiftKey: false, ctrlKey: true },
+      false,
+    ),
+    "indent",
+  );
+  assert.equal(
+    indentationBracketKey(
+      { key: "[", keyCode: 219, shiftKey: false, ctrlKey: true },
+      false,
+    ),
+    "outdent",
+  );
+  // No modifier → not ours (vim Esc is Ctrl+[ only when we own it via capture).
+  assert.equal(
+    indentationBracketKey({ key: "[", shiftKey: false }, false),
+    undefined,
+  );
+  assert.equal(
+    indentationBracketKey({ key: "[", shiftKey: true, ctrlKey: true }, false),
+    undefined,
+  );
+  // Mac: Ctrl+[ is not Mod (Cmd); leave bare Ctrl for vim Esc on macOS.
+  assert.equal(
+    indentationBracketKey(
+      { key: "[", shiftKey: false, ctrlKey: true, metaKey: false },
+      true,
+    ),
+    undefined,
+  );
+  // Ctrl+[ often reports key=Escape; physical code still outdents (BH-047).
+  assert.equal(
+    indentationBracketKey(
+      {
+        key: "Escape",
+        code: "BracketLeft",
+        shiftKey: false,
+        ctrlKey: true,
+        metaKey: false,
+      },
+      false,
+    ),
+    "outdent",
+  );
+  // Remapped Ctrl+[ → Escape (no BracketLeft code) still outdents.
+  assert.equal(
+    indentationBracketKey(
+      {
+        key: "Escape",
+        code: "Escape",
+        keyCode: 27,
+        shiftKey: false,
+        ctrlKey: true,
+        metaKey: false,
+      },
+      false,
+    ),
+    "outdent",
+  );
+  // Bare Escape (no Mod) must not outdent — early Mod gate.
+  assert.equal(
+    indentationBracketKey(
+      {
+        key: "Escape",
+        code: "Escape",
+        keyCode: 27,
+        shiftKey: false,
+        ctrlKey: false,
+        metaKey: false,
+      },
+      false,
+    ),
+    undefined,
+  );
+  // Linux Chromium: Ctrl+[ → key=Escape, code=BracketLeft, ctrlKey cleared.
+  assert.equal(
+    indentationBracketKey(
+      {
+        key: "Escape",
+        code: "BracketLeft",
+        keyCode: 27,
+        shiftKey: false,
+        ctrlKey: false,
+        metaKey: false,
+      },
+      false,
+    ),
+    "outdent",
+  );
+  assert.equal(
+    indentationBracketKey(
+      {
+        key: "]",
+        code: "BracketRight",
+        shiftKey: false,
+        ctrlKey: true,
+        metaKey: false,
+      },
+      false,
+    ),
+    "indent",
+  );
 });

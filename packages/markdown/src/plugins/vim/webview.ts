@@ -58,6 +58,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     releaseSelectAllFromVim(ctx);
     // BH-046: vim-core has foldCode but no za/zc/zo maps; wire Obsidian folds.
     installVimFoldKeys(ctx);
+    // BH-047: INSERT Ctrl+[ must outdent (Obsidian), not Esc.
+    installVimBracketIndentKeys(ctx);
   },
 };
 
@@ -265,6 +267,19 @@ function installVimFoldKeys(ctx: Context): void {
       for (const [keys] of maps) {
         Vim.unmap(keys, anyMode);
       }
+    };
+  });
+}
+
+/** BH-047: drop vim-core <C-[>→<Esc>; editor capture outdents (indentationDom). */
+function installVimBracketIndentKeys(ctx: Context): void {
+  ctx.effect(() => {
+    const anyMode = undefined as unknown as string;
+    Vim.unmap("<C-[>", "insert");
+    Vim.unmap("<C-[>", anyMode);
+    return () => {
+      Vim.map("<C-[>", "<Esc>", anyMode);
+      Vim.map("<C-[>", "<Esc>", "insert");
     };
   });
 }

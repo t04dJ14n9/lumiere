@@ -233,7 +233,7 @@ function createEditorView(
         }),
         menuSelectionContext,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
-        // BH-040: Tab/Shift+Tab via DOM so Vim NORMAL cannot swallow indent.
+        // BH-040/047: Tab/Shift+Tab and Mod-[/] via DOM so Vim cannot swallow indent.
         indentationDom(),
         Prec.low(
           keymap.of([
