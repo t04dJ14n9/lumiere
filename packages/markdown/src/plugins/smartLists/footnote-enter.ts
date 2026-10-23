@@ -13,6 +13,10 @@ interface Target {
  * (BH-060). Quote prefixes are kept (BH-073: `> [^a]: …` → `> \t…`). An empty
  * continuation line steps out of the definition.
  *
+ * Empty definition lines (`[^a]: |`, `> [^a]: |`) unwrap the marker instead
+ * of leaving a blank opener + indented empty line (BH-091 / ATX empty Enter
+ * BH-084 / callout empty Enter BH-086 parity).
+ *
  * Continuation indent alone is not enough: list nests also start with 2–4
  * spaces, so only lines under a `[^label]:` definition are claimed. List
  * markers under a footnote fall through to smart-list continue.
@@ -22,6 +26,12 @@ interface Target {
  */
 const quotePrefix = /^((?:[ \t]*>[ \t]?)*)/u;
 const footnoteMarker = /^ {0,3}\[\^[^\]]+\]:[ \t]?/u;
+/**
+ * Optional quotes, then footnote marker. Trailing spaces after `:` are part of
+ * the marker so an all-whitespace body still counts as empty (BH-091).
+ */
+const emptyFootnoteDef =
+  /^((?:[ \t]*>[ \t]?)*)( {0,3}\[\^[^\]]+\]:[ \t]*)\s*$/u;
 const footnoteCont = /^(?: {2,4}| {0,3}\t)/u;
 
 function splitQuotes(text: string): { quotes: string; rest: string } {
@@ -32,6 +42,12 @@ function splitQuotes(text: string): { quotes: string; rest: string } {
 export function continueFootnoteDefinition(target: Target): boolean {
   const { state } = target;
   const range = state.selection.main;
+  if (state.selection.ranges.length > 1 || !range.empty) {
+    return false;
+  }
+  if (unwrapEmptyFootnoteDefinition(target)) {
+    return true;
+  }
   const line = state.doc.lineAt(range.head);
   const { quotes, rest } = splitQuotes(line.text);
   const def = footnoteMarker.exec(rest);
@@ -110,6 +126,45 @@ export function softBreakFootnoteDefinition(target: Target): boolean {
     return false;
   }
   return splitWithFootnoteIndent(target, line, range.head, indent);
+}
+
+/**
+ * Enter / Shift+Enter on an empty footnote definition unwraps `[^label]: `
+ * (BH-091). Keeps quote prefixes (`> [^a]: |` → `> |`). Non-empty defs and
+ * mid-marker carets fall through.
+ */
+export function unwrapEmptyFootnoteDefinition(target: Target): boolean {
+  const { state } = target;
+  const range = state.selection.main;
+  if (state.selection.ranges.length > 1 || !range.empty) {
+    return false;
+  }
+  const line = state.doc.lineAt(range.head);
+  const match = emptyFootnoteDef.exec(line.text);
+  if (!match) {
+    return false;
+  }
+  const quotes = match[1] ?? "";
+  const marker = match[2] ?? "";
+  // Require a real marker (at least `[^x]:`); reject bare quotes.
+  if (marker.length === 0) {
+    return false;
+  }
+  const markerFrom = line.from + quotes.length;
+  const markerTo = markerFrom + marker.length;
+  // Caret must be at/after the marker (empty body only).
+  if (range.head < markerTo) {
+    return false;
+  }
+  target.dispatch(
+    state.update({
+      changes: { from: markerFrom, to: line.to, insert: "" },
+      selection: EditorSelection.cursor(markerFrom),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
 }
 
 /** Fill an empty line under a footnote with its continuation indent. */
