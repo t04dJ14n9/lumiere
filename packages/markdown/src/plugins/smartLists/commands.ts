@@ -11,6 +11,7 @@ import {
   textStart,
 } from "../../markdown/list-markup";
 import { renumberAround } from "../../markdown/ordered-lists";
+import { continueFootnoteDefinition } from "./footnote-enter";
 
 interface Target {
   state: EditorState;
@@ -222,8 +223,9 @@ function exitSetextHeading(target: Target): boolean {
 }
 
 /**
- * Enter: continue bullets, numbers, quotes and tasks; leave the list on an
- * empty item, and a quote level on an empty quoted line.
+ * Enter: continue bullets, numbers, quotes, tasks and footnote definitions;
+ * leave the list on an empty item, a quote level on an empty quoted line, and
+ * a footnote on an empty indented continuation (BH-060).
  */
 export function continueList(target: Target): boolean {
   const { state } = target;
@@ -232,6 +234,9 @@ export function continueList(target: Target): boolean {
     return false;
   }
   if (exitSetextHeading(target)) {
+    return true;
+  }
+  if (continueFootnoteDefinition(target)) {
     return true;
   }
   const line = state.doc.lineAt(range.head);
@@ -322,10 +327,6 @@ function dispatchResult(target: Target, tr: Transaction | null): boolean {
   return true;
 }
 
-/**
- * Enter on an empty quoted line, as in Obsidian: the line steps out one
- * quote level and the next line starts at that level.
- */
 function leaveQuoteLevel(
   target: Target,
   line: { from: number; to: number; text: string },
