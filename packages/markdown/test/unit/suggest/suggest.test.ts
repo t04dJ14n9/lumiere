@@ -353,3 +353,35 @@ test("an alias being typed keeps the note offered; accepting only finishes the l
   assert.equal(next.doc.toString(), "[[Other|ali]]");
   assert.equal(next.selection.main.head, 13);
 });
+
+test("BH-041: unresolved literal equal to the query is not offered (live overlay)", () => {
+  const vault = index();
+  // Home.md already links [[Missing]]; that unresolved must stay when the
+  // query is a prefix, but the exact typed stub must not outrank real notes.
+  vault.upsertFile({
+    path: "Welcome.md",
+    uri: "file:///vault/Welcome.md",
+    size: 1,
+    mtime: 1,
+    excluded: false,
+  });
+  vault.setMetadata("Welcome.md", metadata("# Welcome\n"));
+  // Simulate the live overlay: the note being edited contains [[Wel]].
+  vault.setMetadata(
+    "Home.md",
+    metadata("[[Missing]] #Project #project\n[[Wel]]\n"),
+  );
+  const labels = suggestions(vault, "Home.md", {
+    kind: "link",
+    query: "Wel",
+  }).map((item) => item.label);
+  assert.ok(labels.includes("Welcome"), `got ${JSON.stringify(labels)}`);
+  assert.equal(labels[0], "Welcome");
+  assert.ok(!labels.includes("Wel"), `typed stub still offered: ${labels}`);
+  // A different unresolved still matches a shorter query.
+  assert.ok(
+    suggestions(vault, "Home.md", { kind: "link", query: "Miss" }).some(
+      (item) => item.label === "Missing",
+    ),
+  );
+});
