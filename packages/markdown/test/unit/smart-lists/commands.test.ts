@@ -390,3 +390,53 @@ test("Enter does not treat a list under a quoted footnote as footnote body (BH-0
   );
   assert.match(state.doc.toString(), /- item/);
 });
+test("Enter on a quoted link reference continues with quote+tab (BH-075)", () => {
+  assert.equal(apply("> [lab]: url|", continueList), "> [lab]: url\n> \t|");
+  assert.equal(
+    apply("> [lab]: first| second", continueList),
+    "> [lab]: first\n> \t| second",
+  );
+  assert.equal(apply("> > [deep]: x|", continueList), "> > [deep]: x\n> > \t|");
+});
+
+test("Enter on a quoted link-ref continuation keeps indent; empty leaves (BH-075)", () => {
+  assert.equal(
+    apply("> [lab]: first\n> \tcontinued|", continueList),
+    "> [lab]: first\n> \tcontinued\n> \t|",
+  );
+  assert.equal(
+    apply("> [lab]: first\n>     spaced|", continueList),
+    "> [lab]: first\n>     spaced\n>     |",
+  );
+  assert.equal(
+    apply("> [lab]: first\n> \t|", continueList),
+    "> [lab]: first\n|",
+  );
+  assert.equal(
+    apply("> [lab]: first\n>     |", continueList),
+    "> [lab]: first\n|",
+  );
+});
+
+test("Enter does not treat a list under a quoted link-ref as link-ref body (BH-075)", () => {
+  const head = "> [lab]: def\n>   - item|".indexOf("|");
+  let state = EditorState.create({
+    doc: "> [lab]: def\n>   - item",
+    selection: { anchor: head },
+    extensions: [markdownLanguageSupport()],
+  });
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
+  continueList({
+    state,
+    dispatch: (tr) => {
+      state = tr.state;
+    },
+  });
+  assert.equal(
+    state.doc.toString().includes("\n>   |") ||
+      /\n> {2}$/u.test(state.doc.toString()),
+    false,
+  );
+  assert.match(state.doc.toString(), /- item/);
+});
