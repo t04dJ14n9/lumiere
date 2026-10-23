@@ -227,7 +227,6 @@ export function outdentTab(target: Target): boolean {
   return true;
 }
 
-
 /** ATX / callout / footnote-def markers that sit before textStart (BH-061–065). */
 function unwrapLeadingMarkers(target: Target): boolean {
   return (
