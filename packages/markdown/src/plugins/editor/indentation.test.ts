@@ -414,6 +414,41 @@ test("Backspace at list/task ATX heading text start unwraps marker (BH-063)", ()
   assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
 });
 
+test("Backspace at callout title text start unwraps marker (BH-064)", () => {
+  assert.equal(apply("> [!NOTE] |Title", outdentBackspace, "  "), "> |Title");
+  assert.equal(apply("> [!tip] |Hint", outdentBackspace, "  "), "> |Hint");
+  assert.equal(apply("> [!warning] |Warn", outdentBackspace, "  "), "> |Warn");
+  assert.equal(
+    apply("> > [!NOTE] |Nested", outdentBackspace, "  "),
+    "> > |Nested",
+  );
+  // Mid-title / no-space: not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "> [!NOTE] MidTitle",
+        selection: { anchor: 12 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "> [!NOTE]NoSpace",
+        selection: { anchor: 9 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // ATX / list / quote still unwrap.
+  assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
+  assert.equal(apply("- # |ListHead", outdentBackspace, "  "), "- |ListHead");
+  assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
+});
+
 test("Backspace at quoted ATX heading text start unwraps marker (BH-062)", () => {
   assert.equal(apply("> # |Title", outdentBackspace, "  "), "> |Title");
   assert.equal(apply("> ## |Nested", outdentBackspace, "  "), "> |Nested");
