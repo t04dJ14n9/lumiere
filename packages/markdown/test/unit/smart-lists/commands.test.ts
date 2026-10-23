@@ -248,7 +248,34 @@ test("Shift+Enter in a setext heading exits below the underline (BH-076)", () =>
   );
   assert.equal(
     apply("> Title|\n> =========", continueLine),
-    "> Title\n> =========\n|",
+    "> Title\n> =========\n> |",
+  );
+});
+
+test("Enter/Shift+Enter on quoted setext exits with quote prefix (BH-082)", () => {
+  assert.equal(
+    apply("> Title|\n> =========", continueList),
+    "> Title\n> =========\n> |",
+  );
+  assert.equal(
+    apply("> Hello| world\n> ---------", continueLine),
+    "> Hello\n> ---------\n> | world",
+  );
+  assert.equal(
+    apply("> Hello| world\n> ---------", continueList),
+    "> Hello\n> ---------\n> | world",
+  );
+  assert.equal(
+    apply("> |Title\n> =========", continueLine),
+    "> Title\n> =========\n> |",
+  );
+  assert.equal(
+    apply("> > Title|\n> > =========", continueLine),
+    "> > Title\n> > =========\n> > |",
+  );
+  assert.equal(
+    apply("> Title\n> =========|", continueLine),
+    "> Title\n> =========\n> |",
   );
 });
 
