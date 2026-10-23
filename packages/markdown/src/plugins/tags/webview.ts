@@ -61,7 +61,9 @@ export function clickSearches(
 /**
  * Tag under a pointer event's target, if any (LP mark or rendered button).
  */
-export function tagFromEventTarget(target: EventTarget | null): string | undefined {
+export function tagFromEventTarget(
+  target: EventTarget | null,
+): string | undefined {
   if (
     target == null ||
     typeof Element === "undefined" ||
@@ -87,9 +89,7 @@ function registerTagClicks(ctx: Context, search: (tag: string) => void): void {
     ctx.editor.extend(
       ViewPlugin.define((view) => {
         const events = new AbortController();
-        let pending:
-          | { tag: string; x: number; y: number }
-          | undefined;
+        let pending: { tag: string; x: number; y: number } | undefined;
         view.dom.addEventListener(
           "mousedown",
           (event) => {
