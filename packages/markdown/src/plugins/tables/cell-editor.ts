@@ -8,7 +8,7 @@ import type { InputGrouping } from "../document/api";
 import { editGroup } from "../document/api";
 import { CellSource, cellSyntax } from "./cell-source";
 import type { Action, TableEnvironment } from "./environment";
-import { cellNavigation, type CellStep } from "./navigation";
+import { cellNavKey, cellNavigation, type CellStep } from "./navigation";
 import { installCellWordNavigation } from "./word-navigation";
 import type { WordMotion } from "./word-motion";
 
@@ -221,7 +221,26 @@ export class CellEditor {
 }
 
 export function cellKeymap(options: CellEditorOptions) {
-  return Prec.highest(
+  // Tab / Enter must use DOM handlers (like cellNavigation arrows): Vim's
+  // normal-mode keydown swallows keymap Tab/Enter before Prec.highest keymaps
+  // run (BH-039). Insert-mode and Vim-off already reached the keymap path.
+  return Prec.highest([
+    EditorView.domEventHandlers({
+      keydown(event, view) {
+        const nav = cellNavKey(event);
+        if (!nav) {
+          return false;
+        }
+        if (nav === "br") {
+          view.dispatch(view.state.replaceSelection("<br>"));
+        } else if (!options.move(nav.row, nav.column)) {
+          return false;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      },
+    }),
     keymap.of([
       {
         key: "Mod-Enter",
@@ -252,16 +271,6 @@ export function cellKeymap(options: CellEditorOptions) {
         run: (view) => options.environment.wrap("*", view),
         stopPropagation: true,
       },
-      { key: "Tab", run: () => options.move(0, 1) },
-      { key: "Shift-Tab", run: () => options.move(0, -1) },
-      { key: "Enter", run: () => options.move(1, 0) },
-      {
-        key: "Shift-Enter",
-        run: (view) => {
-          view.dispatch(view.state.replaceSelection("<br>"));
-          return true;
-        },
-      },
     ]),
-  );
+  ]);
 }
