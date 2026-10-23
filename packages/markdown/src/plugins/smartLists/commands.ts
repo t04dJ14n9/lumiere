@@ -11,7 +11,10 @@ import {
   textStart,
 } from "../../markdown/list-markup";
 import { renumberAround } from "../../markdown/ordered-lists";
-import { continueFootnoteDefinition } from "./footnote-enter";
+import {
+  continueFootnoteDefinition,
+  softBreakFootnoteDefinition,
+} from "./footnote-enter";
 import { continueLinkReferenceDefinition } from "./linkref-enter";
 import { exitSetextHeading } from "./setext-enter";
 
@@ -361,12 +364,14 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
 /**
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
  * keeps the quotes and lines up with a list item's text. Setext headings
- * exit below the underline like Enter (BH-076 / BH-059).
+ * exit below the underline like Enter (BH-076 / BH-059). Footnote definitions
+ * soft-break with a tab body indent (BH-077 / BH-060).
  *
  * When the caret is on an empty line under a list/quote (the usual place a
  * Live Preview click or End lands once the file has a trailing newline),
  * fill that line with the previous item's continuation indent instead of
- * inserting another bare break (BH-049).
+ * inserting another bare break (BH-049). Empty lines under footnotes fill
+ * with the footnote body indent.
  */
 export function continueLine(target: Target): boolean {
   const { state } = target;
@@ -375,6 +380,9 @@ export function continueLine(target: Target): boolean {
   }
   // Same setext exit as Enter (BH-076): soft-break must not orphan ===/---.
   if (exitSetextHeading(target)) {
+    return true;
+  }
+  if (softBreakFootnoteDefinition(target)) {
     return true;
   }
   const line = state.doc.lineAt(state.selection.main.head);

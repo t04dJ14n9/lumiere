@@ -68,6 +68,92 @@ function continueFootnoteBody(
   return splitWithFootnoteIndent(target, line, head, indent);
 }
 
+/**
+ * Shift+Enter inside a footnote definition soft-breaks with the body indent
+ * (BH-077) — same tab (or continuation spaces) Enter uses (BH-060). Unlike
+ * Enter, an empty continuation does not leave the definition. An empty line
+ * under a footnote fills the indent (BH-049 sibling).
+ *
+ * Plain footnotes only; quoted Shift+Enter quote+tab is a later follow-up.
+ */
+export function softBreakFootnoteDefinition(target: Target): boolean {
+  const { state } = target;
+  const range = state.selection.main;
+  if (state.selection.ranges.length > 1 || !range.empty) {
+    return false;
+  }
+  const line = state.doc.lineAt(range.head);
+  if (line.text === "" && line.number > 1) {
+    return fillFootnoteIndent(target, line);
+  }
+  const def = footnoteMarker.exec(line.text);
+  if (def) {
+    const markerEnd = line.from + def[0].length;
+    if (range.head < markerEnd) {
+      return false;
+    }
+    return splitWithFootnoteIndent(target, line, range.head, "\t");
+  }
+  if (
+    !footnoteCont.test(line.text) ||
+    !underFootnoteDefinition(state, line.number)
+  ) {
+    return false;
+  }
+  const indent = footnoteCont.exec(line.text)![0];
+  if (range.head < line.from + indent.length) {
+    return false;
+  }
+  const body = line.text.slice(indent.length);
+  if (lineMarkup(indent + body).marker !== "") {
+    return false;
+  }
+  return splitWithFootnoteIndent(target, line, range.head, indent);
+}
+
+/** Fill an empty line under a footnote with its continuation indent. */
+function fillFootnoteIndent(
+  target: Target,
+  line: { from: number; to: number; number: number },
+): boolean {
+  const indent = footnoteFillIndent(target.state, line.number);
+  if (indent === null) {
+    return false;
+  }
+  const { state } = target;
+  target.dispatch(
+    state.update({
+      changes: { from: line.from, to: line.to, insert: indent },
+      selection: EditorSelection.cursor(line.from + indent.length),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
+}
+
+/** Indent to fill on an empty line under a footnote def / continuation. */
+function footnoteFillIndent(
+  state: { doc: { line: (n: number) => { text: string } } },
+  lineNumber: number,
+): string | null {
+  for (let n = lineNumber - 1; n >= 1; n--) {
+    const text = state.doc.line(n).text;
+    if (footnoteMarker.test(text)) {
+      return "\t";
+    }
+    const cont = footnoteCont.exec(text);
+    if (cont) {
+      return cont[0];
+    }
+    if (text.trim() === "") {
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
 /** Whether `lineNumber` sits in a footnote definition's indented body. */
 function underFootnoteDefinition(
   state: { doc: { line: (n: number) => { text: string } } },
