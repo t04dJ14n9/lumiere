@@ -65,7 +65,8 @@ export function tagFromEventTarget(
   target: EventTarget | null,
 ): string | undefined {
   if (
-    target == null ||
+    target === null ||
+    target === undefined ||
     typeof Element === "undefined" ||
     !(target instanceof Element)
   ) {
