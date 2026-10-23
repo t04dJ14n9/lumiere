@@ -1,16 +1,17 @@
 /**
  * Ctrl/Cmd+B / Ctrl/Cmd+I → bold / italic (BH-024).
  * Ctrl/Cmd+D → select next occurrence (BH-028).
+ * Ctrl/Cmd+Shift+L → select all occurrences (BH-037).
  *
  * `@replit/codemirror-vim` maps `<C-b>` → page-back, `<C-i>` → jumplist
  * forward, and `<C-d>` → half-page scroll, so with Vim on the CM Mod-b / Mod-i /
  * Mod-d keymaps never run. Capture-phase ownership matches BH-003 / BH-021 /
  * BH-023: preventDefault + stop so Vim cannot steal the chord. The Vim host
  * `consumeVimHostShortcut` binding for Ctrl+B/I is gated off while formatting
- * is enabled so the host cannot noop the chord before the webview. Ctrl+D is
- * not in the host consume list. Physical PageUp still reaches vim-core via its
- * keyToKey → `<C-b>` path (it is not Ctrl+B). Native text fields keep the
- * chords.
+ * is enabled so the host cannot noop the chord before the webview. Ctrl+D and
+ * Ctrl+Shift+L are not in the host consume list. Physical PageUp still reaches
+ * vim-core via its keyToKey → `<C-b>` path (it is not Ctrl+B). Native text
+ * fields keep the chords.
  */
 
 export interface FormatKey {
@@ -22,12 +23,13 @@ export interface FormatKey {
   shiftKey: boolean;
 }
 
-export type FormatAction = "bold" | "italics" | "selectNext";
+export type FormatAction =
+  "bold" | "italics" | "selectNext" | "selectAllMatches";
 
 /**
- * Map a keydown to bold (B / keyCode 66), italics (I / keyCode 73), or select
- * next (D / keyCode 68). Physical codes cover non-Latin layouts the way
- * history-keys covers Z/Y.
+ * Map a keydown to bold (B / keyCode 66), italics (I / keyCode 73), select
+ * next (D / keyCode 68), or select all matches (Shift+L / keyCode 76).
+ * Physical codes cover non-Latin layouts the way history-keys covers Z/Y.
  */
 export function formatActionFor(
   event: FormatKey,
@@ -36,10 +38,16 @@ export function formatActionFor(
   const modifier = isMac
     ? event.metaKey && !event.ctrlKey
     : event.ctrlKey && !event.metaKey;
-  if (!modifier || event.altKey || event.shiftKey) {
+  if (!modifier || event.altKey) {
     return undefined;
   }
   const key = event.key.toLowerCase();
+  if (event.shiftKey) {
+    if (key === "l" || event.keyCode === 76) {
+      return "selectAllMatches";
+    }
+    return undefined;
+  }
   if (key === "b" || event.keyCode === 66) {
     return "bold";
   }
@@ -93,8 +101,10 @@ function elementForClosest(target: EventTarget | null): Element | null {
 }
 
 /**
- * Own Mod/Ctrl+B, Mod/Ctrl+I, and Mod/Ctrl+D in capture phase so Vim cannot
- * page-back / jumplist / half-page-scroll steal formatting shortcuts.
+ * Own Mod/Ctrl+B, Mod/Ctrl+I, Mod/Ctrl+D, and Mod/Ctrl+Shift+L in capture
+ * phase so Vim cannot page-back / jumplist / half-page-scroll steal formatting
+ * shortcuts, and so the host selectHighlights binding cannot noop Shift+L
+ * before the webview (BH-037).
  */
 export function keepFormatKeys(
   target: Document,

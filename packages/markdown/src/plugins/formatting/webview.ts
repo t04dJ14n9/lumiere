@@ -1,6 +1,9 @@
 import { keymap } from "@codemirror/view";
 import { deleteLine, moveLineUp, moveLineDown } from "@codemirror/commands";
-import { selectNextOccurrence } from "@codemirror/search";
+import {
+  selectNextOccurrence,
+  selectSelectionMatches,
+} from "@codemirror/search";
 import { EditorSelection } from "@codemirror/state";
 import type { Command } from "@codemirror/view";
 import type { EditorState, TransactionSpec } from "@codemirror/state";
@@ -129,7 +132,7 @@ function addEditingCommands(commands: Map<string, Command>): void {
   });
 }
 
-/** Capture Mod/Ctrl+B/I/D so Vim cannot steal bold/italic/select-next (BH-024/028). */
+/** Capture Mod/Ctrl+B/I/D/Shift+L so Vim/host cannot steal format shortcuts (BH-024/028/037). */
 function registerFormatKeyOwnership(
   ctx: Context,
   commands: Map<string, Command>,
@@ -147,6 +150,10 @@ function registerFormatKeyOwnership(
       const active = ctx.bail("editor/activeView") ?? ctx.editor.view;
       if (action === "selectNext") {
         selectNextOccurrence(active);
+        return;
+      }
+      if (action === "selectAllMatches") {
+        selectSelectionMatches(active);
         return;
       }
       (action === "bold" ? bold : italics)(active);
@@ -220,6 +227,11 @@ function registerFormattingKeys(
           stopPropagation: true,
         },
         { key: "Mod-d", run: selectNextOccurrence, stopPropagation: true },
+        {
+          key: "Mod-Shift-l",
+          run: selectSelectionMatches,
+          stopPropagation: true,
+        },
       ]),
     ),
   );
