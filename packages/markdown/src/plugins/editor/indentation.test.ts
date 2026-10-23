@@ -5,6 +5,7 @@ import { indentUnit } from "@codemirror/language";
 import {
   indentTab,
   outdentTab,
+  outdentBackspace,
   indentationTabKey,
   indentationBracketKey,
 } from "./indentation";
@@ -61,6 +62,45 @@ test("Tab elsewhere indents the line, wherever the caret is, as in Obsidian", ()
   assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
   assert.equal(apply("«a\nb»", indentTab), "\ta\n\tb");
   assert.equal(apply("\tpla|in", outdentTab), "pla|in");
+});
+
+test("Backspace at nested list text start outdents like Obsidian (BH-052)", () => {
+  assert.equal(
+    apply("- alpha\n  - nested\n    - |deep", outdentBackspace, "  "),
+    "- alpha\n  - nested\n  - |deep",
+  );
+  assert.equal(
+    apply("- alpha\n  - |nested\n    - deep", outdentBackspace, "  "),
+    "- alpha\n- |nested\n  - deep",
+  );
+  assert.equal(
+    apply("- [ ] a\n  - [ ] |b", outdentBackspace, "  "),
+    "- [ ] a\n- [ ] |b",
+  );
+  // Mid-text Backspace is not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "  - deep",
+        selection: { anchor: 6 },
+        extensions: [indentUnit.of("  ")],
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // Top-level text start falls through (no outdent).
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "- top",
+        selection: { anchor: 2 },
+        extensions: [indentUnit.of("  ")],
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
 });
 
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {

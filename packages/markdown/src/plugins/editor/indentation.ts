@@ -10,6 +10,7 @@ import { indentLess, indentMore } from "@codemirror/commands";
 import { completionStatus } from "@codemirror/autocomplete";
 import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import { renumberAround } from "../../markdown/ordered-lists";
+import { textStart } from "../../markdown/list-markup";
 
 interface Target {
   state: EditorState;
@@ -111,6 +112,30 @@ export function outdentTab(target: Target): boolean {
   return true;
 }
 
+/**
+ * Backspace at the start of a nested list item's text outdents the item (and
+ * its children), as in Obsidian — instead of deleting into the marker/space
+ * (`    - |deep` → `  - |deep`, not `    -|deep`) (BH-052).
+ */
+export function outdentBackspace(target: Target): boolean {
+  const { state } = target;
+  const range = state.selection.main;
+  if (state.selection.ranges.length > 1 || !range.empty) {
+    return false;
+  }
+  const line = state.doc.lineAt(range.head);
+  if (!listItem.test(line.text)) {
+    return false;
+  }
+  if (range.head !== line.from + textStart(line.text)) {
+    return false;
+  }
+  if (width(state, line.text) === 0) {
+    return false;
+  }
+  return outdentTab(target);
+}
+
 /** Tab / Shift+Tab indent action (BH-040). Pure so unit tests need no DOM. */
 export function indentationTabKey(event: {
   key: string;
@@ -202,6 +227,24 @@ export function indentationBracketKey(
  * slot (same pattern as BH-006 image keys). Keep the keymap for Insert /
  * Vim-off; skip Tab while suggest owns it.
  */
+
+/** BH-052: Backspace at nested list text start outdents (Vim INSERT too). */
+function captureBackspaceOutdent(view: EditorView, event: KeyboardEvent): void {
+  if (
+    event.key !== "Backspace" ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey
+  ) {
+    return;
+  }
+  if (!outdentBackspace(view)) {
+    return;
+  }
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+
 function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
   // Exact contentDOM only (BH-040): nested widgets (properties / table cells)
   // must keep Tab for focus navigation. Ctrl+[ outdent targets the note body.
@@ -219,6 +262,7 @@ function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
   }
   const action = indentationTabKey(event) ?? bracket;
   if (!action) {
+    captureBackspaceOutdent(view, event);
     return;
   }
   // Suggest owns Tab while a completion is open (Obsidian parity).
@@ -255,4 +299,6 @@ export const indentationKeymap: readonly KeyBinding[] = [
   // BH-047: same chords as CM standardKeymap; capture also owns them over Vim.
   { key: "Mod-]", run: indentTab, preventDefault: true },
   { key: "Mod-[", run: outdentTab, preventDefault: true },
+  // BH-052: nested list text-start Backspace outdents (Obsidian); else fall through.
+  { key: "Backspace", run: outdentBackspace },
 ];
