@@ -7,16 +7,19 @@ interface Target {
 }
 
 /**
- * Optional blockquote prefix, then ATX marker with the required space/tab
- * (`# `, `##\t`, …). Up to three spaces before `#`, as CommonMark allows —
- * those spaces are part of the marker, not kept after unwrap (BH-062).
+ * Optional blockquote markers, optional list/task marker, then ATX with the
+ * required space/tab (`# `, `##\t`, …). Up to three spaces before `#` are
+ * part of the ATX marker (CommonMark), not kept after unwrap (BH-061/062).
+ * List/task stay (BH-063: `- # Title` → `- Title`).
  */
-const quotedAtx = /^((?:[ \t]*>[ \t]?)*)( {0,3}#{1,6}[ \t]+)/u;
+const prefixedAtx =
+  /^((?:[ \t]*>[ \t]?)*)((?:(?:[-*+]|\d{1,9}[.)])[ \t]+(?:\[[^\]\n]\][ \t]+)?)?)( {0,3}#{1,6}[ \t]+)/u;
 
 /**
  * Backspace at ATX heading text start unwraps the marker (BH-061), including
- * under blockquotes (BH-062: `> # Title` → `> Title`). Leaves `#Heading`
- * (no space) alone — that is not an ATX heading. Keeps quote markers.
+ * under blockquotes (BH-062: `> # Title` → `> Title`) and after list / task
+ * markers (BH-063: `- # Title` → `- Title`). Leaves `#Heading` (no space)
+ * alone. Keeps quote and list/task prefixes.
  */
 export function unwrapAtxHeading(target: Target): boolean {
   const { state } = target;
@@ -25,14 +28,14 @@ export function unwrapAtxHeading(target: Target): boolean {
     return false;
   }
   const line = state.doc.lineAt(range.head);
-  const match = quotedAtx.exec(line.text);
+  const match = prefixedAtx.exec(line.text);
   if (!match) {
     return false;
   }
-  const quotes = match[1] ?? "";
-  const marker = match[2] ?? "";
-  const markerFrom = line.from + quotes.length;
-  const markerTo = markerFrom + marker.length;
+  const keep = (match[1] ?? "") + (match[2] ?? "");
+  const atx = match[3] ?? "";
+  const markerFrom = line.from + keep.length;
+  const markerTo = markerFrom + atx.length;
   if (range.head !== markerTo) {
     return false;
   }
