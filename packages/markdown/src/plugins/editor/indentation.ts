@@ -118,7 +118,9 @@ export function outdentTab(target: Target): boolean {
  * - top-level: remove the list marker (and task box), as in Obsidian
  *   (BH-053) — instead of eating the space (`- [ ] |task` → `- [ ]|task`);
  * - inside a blockquote: unwrap the list marker, keep the quotes (BH-054)
- *   — instead of eating the space (`> - |item` → `> -|item`).
+ *   — instead of eating the space (`> - |item` → `> -|item`);
+ * - nested under a blockquote (`>   - |child`): reduce spaces after `>`
+ *   (BH-055) — instead of eating the marker space (`>   -|child`).
  * `listItem` skips quote-prefixed lines; detect markers via lineMarkup.
  */
 export function outdentBackspace(target: Target): boolean {
@@ -135,15 +137,65 @@ export function outdentBackspace(target: Target): boolean {
   if (marker === "" && task === "") {
     return false;
   }
-  // Nested non-quote (and quote lines that still match listItem): outdent.
+  // Nested non-quote: outdent (BH-052).
   if (listItem.test(line.text) && width(state, line.text) > 0) {
     return outdentTab(target);
+  }
+  // Nested under blockquote: outdent spaces after `>` (BH-055).
+  if (quotes.includes(">") && quoteListNestIndent(state, quotes) > 0) {
+    return outdentQuoteList(target);
   }
   // Top-level list (BH-053) or quote-prefixed list (BH-054): unwrap marker.
   if (listItem.test(line.text) || quotes.includes(">")) {
     return unwrapListMarker(target);
   }
   return false;
+}
+
+/**
+ * Nest indent under a blockquote: columns after `>` beyond the single
+ * separator space before the list marker (`> -` → 0; `>   -` → 2).
+ */
+function quoteListNestIndent(state: EditorState, quotes: string): number {
+  const gt = quotes.lastIndexOf(">");
+  if (gt < 0) {
+    return 0;
+  }
+  return Math.max(0, width(state, quotes.slice(gt + 1)) - 1);
+}
+
+/**
+ * Outdent a list item nested under a blockquote by one indent unit of the
+ * spaces after `>`, keeping one separator space and the marker (BH-055).
+ */
+function outdentQuoteList(target: Target): boolean {
+  const { state } = target;
+  const line = state.doc.lineAt(state.selection.main.head);
+  const { quotes, marker, task } = lineMarkup(line.text);
+  const gt = quotes.lastIndexOf(">");
+  if (gt < 0) {
+    return false;
+  }
+  const prefix = quotes.slice(0, gt + 1);
+  const nest = quoteListNestIndent(state, quotes);
+  if (nest === 0) {
+    return false;
+  }
+  const unit = getIndentUnit(state);
+  const nextNest = Math.max(0, nest - unit);
+  // Keep one space after `>` as the marker separator.
+  const newQuotes = prefix + indentString(state, nextNest + 1);
+  const rest = line.text.slice(quotes.length);
+  const textStartPos = newQuotes.length + marker.length + task.length;
+  target.dispatch(
+    state.update({
+      changes: { from: line.from, to: line.to, insert: newQuotes + rest },
+      selection: { anchor: line.from + textStartPos },
+      scrollIntoView: true,
+      userEvent: "delete.dedent",
+    }),
+  );
+  return true;
 }
 
 /** Strip the list marker / task box; keep quotes and the item's text. */
@@ -166,6 +218,7 @@ function unwrapListMarker(target: Target): boolean {
   );
   return true;
 }
+
 
 /** Tab / Shift+Tab indent action (BH-040). Pure so unit tests need no DOM. */
 export function indentationTabKey(event: {
@@ -259,7 +312,7 @@ export function indentationBracketKey(
  * Vim-off; skip Tab while suggest owns it.
  */
 
-/** BH-052/053/054: list text-start Backspace outdents or unwraps (Vim INSERT too). */
+/** BH-052/053/054/055: list text-start Backspace outdents or unwraps (Vim INSERT too). */
 function captureBackspaceOutdent(view: EditorView, event: KeyboardEvent): void {
   if (
     event.key !== "Backspace" ||
@@ -330,6 +383,6 @@ export const indentationKeymap: readonly KeyBinding[] = [
   // BH-047: same chords as CM standardKeymap; capture also owns them over Vim.
   { key: "Mod-]", run: indentTab, preventDefault: true },
   { key: "Mod-[", run: outdentTab, preventDefault: true },
-  // BH-052/053/054: list text-start Backspace outdents or unwraps (Obsidian); else fall through.
+  // BH-052/053/054/055: list text-start Backspace outdents or unwraps (Obsidian); else fall through.
   { key: "Backspace", run: outdentBackspace },
 ];
