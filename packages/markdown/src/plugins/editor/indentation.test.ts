@@ -643,3 +643,44 @@ test("Tab on quoted ATX heading is a no-op (BH-070)", () => {
   // Callout opener still no-op (BH-058).
   assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
 });
+
+test("Backspace at link reference destination start unwraps marker (BH-071)", () => {
+  assert.equal(
+    apply("[lab]: |https://ex.com", outdentBackspace, "  "),
+    "|https://ex.com",
+  );
+  assert.equal(apply("[ref]: |url", outdentBackspace, "  "), "|url");
+  assert.equal(
+    apply("  [ind]: |Indented", outdentBackspace, "  "),
+    "|Indented",
+  );
+  assert.equal(
+    apply("> [q]: |https://ex.com", outdentBackspace, "  "),
+    "> |https://ex.com",
+  );
+  assert.equal(apply("[x]: |<url>", outdentBackspace, "  "), "|<url>");
+  // Mid-destination / no-space: not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "[lab]: MidUrl",
+        selection: { anchor: 10 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "[lab]:NoSpace",
+        selection: { anchor: 6 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // Footnote still unwraps (BH-065); ATX still unwraps.
+  assert.equal(apply("[^n]: |body", outdentBackspace, "  "), "|body");
+  assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
+});
