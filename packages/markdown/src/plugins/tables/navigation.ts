@@ -40,7 +40,6 @@ export function entersTable(
   );
 }
 
-
 /** Tab / Enter cell hops (BH-039). Pure so unit tests do not need a DOM. */
 export function cellNavKey(event: {
   key: string;

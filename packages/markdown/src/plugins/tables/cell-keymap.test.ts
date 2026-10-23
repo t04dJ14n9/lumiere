@@ -17,6 +17,9 @@ test("cellNavKey maps Tab, Shift+Tab, Enter and Shift+Enter (BH-039)", () => {
     column: 0,
   });
   assert.equal(cellNavKey({ key: "Enter", shiftKey: true }), "br");
-  assert.equal(cellNavKey({ key: "Tab", shiftKey: false, ctrlKey: true }), undefined);
+  assert.equal(
+    cellNavKey({ key: "Tab", shiftKey: false, ctrlKey: true }),
+    undefined,
+  );
   assert.equal(cellNavKey({ key: "a", shiftKey: false }), undefined);
 });
