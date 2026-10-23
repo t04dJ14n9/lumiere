@@ -192,7 +192,8 @@ function keepSpaceBeforeCaret(
 
 /**
  * Enter: continue bullets, numbers, quotes, tasks, footnote and link-ref definitions
- * (incl. quoted footnotes, BH-073); callout title content-start exits intact (BH-085);
+ * (incl. quoted footnotes, BH-073); callout title content-start exits intact (BH-085)
+ * or empty unwrap (BH-086);
  * leave the list on an empty item, a quote level on an empty quoted line, and
  * a footnote on an empty indented continuation (BH-060).
  */
@@ -375,7 +376,8 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
  * keeps the quotes and lines up with a list item's text. Setext headings
  * exit below the underline like Enter (BH-076 / BH-059). ATX headings exit
  * below the heading line or unwrap empty markers (BH-084). Callout titles
- * exit intact at content start (BH-085). Footnote definitions soft-break with
+ * exit intact at content start or unwrap empty openers (BH-085 / BH-086).
+ * Footnote definitions soft-break with
  * a tab body indent (BH-077 / BH-060). Link reference definitions soft-break
  * with a tab body indent (BH-079).
  *
@@ -398,7 +400,7 @@ export function continueLine(target: Target): boolean {
   if (exitAtxHeading(target, true)) {
     return true;
   }
-  // Callout title content-start intact exit (BH-085).
+  // Callout title content-start exit / empty unwrap (BH-085 / BH-086).
   if (exitCalloutTitle(target)) {
     return true;
   }
