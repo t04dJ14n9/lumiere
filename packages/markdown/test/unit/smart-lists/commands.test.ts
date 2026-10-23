@@ -231,3 +231,55 @@ test("Enter in a setext heading exits below the underline (BH-059)", () => {
     "Title\n=========\n|\n\nbody",
   );
 });
+
+test("Enter on a footnote definition continues with a tab indent (BH-060)", () => {
+  assert.equal(
+    apply("[^a]: first line|", continueList),
+    "[^a]: first line\n\t|",
+  );
+  assert.equal(
+    apply("[^a]: first| second", continueList),
+    "[^a]: first\n\t| second",
+  );
+  assert.equal(
+    apply("[^note]: named|\n\nbody", continueList),
+    "[^note]: named\n\t|\n\nbody",
+  );
+});
+
+test("Enter on a footnote continuation keeps indent; empty leaves (BH-060)", () => {
+  assert.equal(
+    apply("[^a]: first\n\tcontinued|", continueList),
+    "[^a]: first\n\tcontinued\n\t|",
+  );
+  assert.equal(
+    apply("[^a]: first\n    spaced|", continueList),
+    "[^a]: first\n    spaced\n    |",
+  );
+  assert.equal(apply("[^a]: first\n\t|", continueList), "[^a]: first\n|");
+  assert.equal(apply("[^a]: first\n    |", continueList), "[^a]: first\n|");
+});
+
+test("Enter does not treat a list under a footnote as footnote body (BH-060)", () => {
+  // Fall through to smart-list / default; must not become indent-only "  |".
+  const head = "[^a]: def\n  - item|".indexOf("|");
+  let state = EditorState.create({
+    doc: "[^a]: def\n  - item",
+    selection: { anchor: head },
+    extensions: [markdownLanguageSupport()],
+  });
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
+  continueList({
+    state,
+    dispatch: (tr) => {
+      state = tr.state;
+    },
+  });
+  assert.equal(
+    state.doc.toString().includes("\n  |") ||
+      /\n  $/u.test(state.doc.toString()),
+    false,
+  );
+  assert.match(state.doc.toString(), /- item/);
+});
