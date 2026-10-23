@@ -278,7 +278,7 @@ test("Enter does not treat a list under a footnote as footnote body (BH-060)", (
   });
   assert.equal(
     state.doc.toString().includes("\n  |") ||
-      /\n  $/u.test(state.doc.toString()),
+      /\n {2}$/u.test(state.doc.toString()),
     false,
   );
   assert.match(state.doc.toString(), /- item/);
