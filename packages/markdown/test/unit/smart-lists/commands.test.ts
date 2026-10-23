@@ -283,3 +283,59 @@ test("Enter does not treat a list under a footnote as footnote body (BH-060)", (
   );
   assert.match(state.doc.toString(), /- item/);
 });
+
+test("Enter on a link reference definition continues with a tab indent (BH-072)", () => {
+  assert.equal(
+    apply("[lab]: https://ex.com|", continueList),
+    "[lab]: https://ex.com\n\t|",
+  );
+  assert.equal(
+    apply("[lab]: first| second", continueList),
+    "[lab]: first\n\t| second",
+  );
+  assert.equal(
+    apply("[ref]: named|\n\nbody", continueList),
+    "[ref]: named\n\t|\n\nbody",
+  );
+});
+
+test("Enter on a link-ref continuation keeps indent; empty leaves (BH-072)", () => {
+  assert.equal(
+    apply("[lab]: first\n\tcontinued|", continueList),
+    "[lab]: first\n\tcontinued\n\t|",
+  );
+  assert.equal(
+    apply("[lab]: first\n    spaced|", continueList),
+    "[lab]: first\n    spaced\n    |",
+  );
+  assert.equal(apply("[lab]: first\n\t|", continueList), "[lab]: first\n|");
+  assert.equal(apply("[lab]: first\n    |", continueList), "[lab]: first\n|");
+});
+
+test("Enter does not treat a list under a link-ref as link-ref body (BH-072)", () => {
+  // Fall through to smart-list / default; must not become indent-only "  |".
+  const head = "[lab]: def\n  - item|".indexOf("|");
+  let state = EditorState.create({
+    doc: "[lab]: def\n  - item",
+    selection: { anchor: head },
+    extensions: [markdownLanguageSupport()],
+  });
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
+  continueList({
+    state,
+    dispatch: (tr) => {
+      state = tr.state;
+    },
+  });
+  assert.equal(
+    state.doc.toString().includes("\n  |") ||
+      /\n {2}$/u.test(state.doc.toString()),
+    false,
+  );
+  assert.match(state.doc.toString(), /- item/);
+});
+
+test("Enter on footnote still wins over link-ref pattern (BH-060 / BH-072)", () => {
+  assert.equal(apply("[^n]: body|", continueList), "[^n]: body\n\t|");
+});

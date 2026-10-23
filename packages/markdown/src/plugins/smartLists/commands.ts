@@ -12,6 +12,7 @@ import {
 } from "../../markdown/list-markup";
 import { renumberAround } from "../../markdown/ordered-lists";
 import { continueFootnoteDefinition } from "./footnote-enter";
+import { continueLinkReferenceDefinition } from "./linkref-enter";
 
 interface Target {
   state: EditorState;
@@ -223,7 +224,7 @@ function exitSetextHeading(target: Target): boolean {
 }
 
 /**
- * Enter: continue bullets, numbers, quotes, tasks and footnote definitions;
+ * Enter: continue bullets, numbers, quotes, tasks, footnote and link-ref definitions;
  * leave the list on an empty item, a quote level on an empty quoted line, and
  * a footnote on an empty indented continuation (BH-060).
  */
@@ -237,6 +238,9 @@ export function continueList(target: Target): boolean {
     return true;
   }
   if (continueFootnoteDefinition(target)) {
+    return true;
+  }
+  if (continueLinkReferenceDefinition(target)) {
     return true;
   }
   const line = state.doc.lineAt(range.head);
