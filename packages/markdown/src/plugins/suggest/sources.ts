@@ -64,7 +64,24 @@ export class SuggestionIndex {
       request.kind === "tag" && !request.query
         ? entries.slice(0, 50)
         : rankedCandidates(entries, request.query);
-    return selected
+    // BH-041: the live overlay indexes the wikilink being typed as unresolved.
+    // That exact literal then ranks first (fuzzy exact match), so Tab accepts a
+    // no-op instead of a real note (e.g. Wel above Welcome). Drop unresolved
+    // link literals that equal the query — accepting them cannot change the
+    // text. Tags are also literals; only filter link suggestions.
+    const query = request.query;
+    const useful =
+      request.kind === "link" && query.length > 0
+        ? selected.filter(
+            (entry) =>
+              !(
+                entry.value.kind === "literal" &&
+                entry.detail === "Unresolved link" &&
+                entry.value.text.toLowerCase() === query.toLowerCase()
+              ),
+          )
+        : selected;
+    return useful
       .map((entry) =>
         materialize({
           vault: this.vault,
