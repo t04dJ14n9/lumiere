@@ -9,10 +9,10 @@ test("a word the browser selected on a macOS secondary click counts before CodeM
   );
 });
 
-test("the browser's caret in the content wins over a stale CodeMirror range", () => {
+test("Vim character-visual: CodeMirror's range counts when the DOM caret is collapsed (BH-048)", () => {
   assert.equal(
     menuHasSelection({ isInContent: true, isCollapsed: true }, false),
-    false,
+    true,
   );
 });
 
@@ -26,6 +26,10 @@ test("without a browser selection in the content, CodeMirror's selection decides
   assert.equal(
     menuHasSelection({ isInContent: false, isCollapsed: true }, false),
     true,
+  );
+  assert.equal(
+    menuHasSelection({ isInContent: true, isCollapsed: true }, true),
+    false,
   );
 });
 
