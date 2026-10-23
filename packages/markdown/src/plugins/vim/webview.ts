@@ -229,7 +229,6 @@ function vimExtensions(ctx: Context, status: boolean) {
   ];
 }
 
-
 /** BH-046: map za/zc/zo/zM/zR onto Lumière fold commands (gutter/Toggle Fold already work). */
 function installVimFoldKeys(ctx: Context): void {
   ctx.effect(() => {
