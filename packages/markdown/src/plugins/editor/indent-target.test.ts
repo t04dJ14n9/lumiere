@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isNoteBodyIndentTarget } from "./indent-target";
+import { isNoteBodyIndentTarget, type IndentTargetView } from "./indent-target";
 
 type Stub = {
   closest?: (sel: string) => unknown;
@@ -9,9 +9,9 @@ type Stub = {
   nodeType?: number;
 };
 
-function viewOf(content: Stub, dom: Stub) {
+function viewOf(content: Stub, dom: Stub): IndentTargetView {
   return {
-    contentDOM: content as unknown as { contains: (o: Node | null) => boolean },
+    contentDOM: content as unknown as IndentTargetView["contentDOM"],
     dom: dom as unknown as EventTarget,
   };
 }
