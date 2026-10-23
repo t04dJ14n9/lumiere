@@ -597,9 +597,10 @@ test("Backspace/Shift+Tab on quoted setext does not unwrap one > (BH-068)", () =
     apply("> |Title\n> =======", outdentBackspace, "  "),
     "> |Title\n> =======",
   );
+  // Underline start: BH-074 unwraps (delete underline); title start stays no-op.
   assert.equal(
     apply("> Title\n> |=======", outdentBackspace, "  "),
-    "> Title\n> |=======",
+    "> Title|",
   );
   assert.equal(
     apply("> Tit|le\n> =======", outdentTab, "  "),
@@ -683,4 +684,59 @@ test("Backspace at link reference destination start unwraps marker (BH-071)", ()
   // Footnote still unwraps (BH-065); ATX still unwraps.
   assert.equal(apply("[^n]: |body", outdentBackspace, "  "), "|body");
   assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
+});
+
+test("Backspace at setext underline start unwraps heading (BH-074)", () => {
+  assert.equal(apply("Title\n|=========", outdentBackspace, "  "), "Title|");
+  assert.equal(apply("Title\n|---------", outdentBackspace, "  "), "Title|");
+  assert.equal(
+    apply("Hello world\n|===", outdentBackspace, "  "),
+    "Hello world|",
+  );
+  // Mid-underline is not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "Title\n=========",
+        selection: { anchor: "Title\n==".length },
+      }),
+      dispatch: () => {},
+    }),
+    false,
+  );
+  // Orphan underline (no title) is not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "=========",
+        selection: { anchor: 0 },
+      }),
+      dispatch: () => {},
+    }),
+    false,
+  );
+  // List/quote Backspace still wins on non-setext.
+  assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
+});
+
+test("Backspace at quoted setext underline start unwraps heading (BH-074)", () => {
+  assert.equal(
+    apply("> Title\n> |=========", outdentBackspace, "  "),
+    "> Title|",
+  );
+  assert.equal(
+    apply("> > Deep\n> > |---", outdentBackspace, "  "),
+    "> > Deep|",
+  );
+  // Mismatched quote depth: leave alone (do not join).
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "> Title\n=========",
+        selection: { anchor: "> Title\n".length },
+      }),
+      dispatch: () => {},
+    }),
+    false,
+  );
 });
