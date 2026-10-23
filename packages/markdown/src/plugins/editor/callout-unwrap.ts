@@ -6,15 +6,16 @@ interface Target {
 }
 
 /**
- * Optional blockquote prefix, then Obsidian callout opener `[!TYPE]` and the
- * required space/tab before the title. Keeps quote markers (BH-064:
- * `> [!NOTE] Title` → `> Title`).
+ * Optional blockquote prefix, then Obsidian callout opener `[!TYPE]` with an
+ * optional fold marker (`+`/`-`) and the required space/tab before the title.
+ * Keeps quote markers (BH-064 / BH-078: `> [!NOTE]- Title` → `> Title`).
  */
-const quotedCallout = /^((?:[ \t]*>[ \t]?)*)(\[![\w-]+\][ \t]+)/u;
+const quotedCallout = /^((?:[ \t]*>[ \t]?)*)(\[![\w-]+\][+-]?[ \t]+)/u;
 
 /**
- * Backspace at callout title text start unwraps `[!TYPE] ` (BH-064). Leaves
- * `> [!NOTE]Title` (no space) and bare `> [!NOTE]` alone. Keeps quotes.
+ * Backspace at callout title text start unwraps `[!TYPE] ` / `[!TYPE]- `
+ * (BH-064 / BH-078). Leaves `> [!NOTE]Title` (no space) and bare `> [!NOTE]`
+ * alone. Keeps quotes.
  */
 export function unwrapCalloutTitle(target: Target): boolean {
   const { state } = target;

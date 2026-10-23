@@ -449,6 +449,32 @@ test("Backspace at callout title text start unwraps marker (BH-064)", () => {
   assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
 });
 
+test("Backspace at folded callout title unwraps marker including fold (BH-078)", () => {
+  assert.equal(apply("> [!NOTE]- |Title", outdentBackspace, "  "), "> |Title");
+  assert.equal(apply("> [!tip]+ |Hint", outdentBackspace, "  "), "> |Hint");
+  assert.equal(apply("> [!warning]- |Warn", outdentBackspace, "  "), "> |Warn");
+  assert.equal(
+    apply("> > [!NOTE]+ |Nested", outdentBackspace, "  "),
+    "> > |Nested",
+  );
+  // Fold with tab before title.
+  assert.equal(apply("> [!NOTE]-\t|Title", outdentBackspace, "  "), "> |Title");
+  // No space after fold marker: leave alone.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "> [!NOTE]-NoSpace",
+        selection: { anchor: 10 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // Plain callout (BH-064) and quote unwrap still work.
+  assert.equal(apply("> [!NOTE] |Plain", outdentBackspace, "  "), "> |Plain");
+  assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
+});
+
 test("Backspace at quoted ATX heading text start unwraps marker (BH-062)", () => {
   assert.equal(apply("> # |Title", outdentBackspace, "  "), "> |Title");
   assert.equal(apply("> ## |Nested", outdentBackspace, "  "), "> |Nested");
