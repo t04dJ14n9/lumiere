@@ -10,7 +10,7 @@ import { indentLess, indentMore } from "@codemirror/commands";
 import { completionStatus } from "@codemirror/autocomplete";
 import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import { renumberAround } from "../../markdown/ordered-lists";
-import { textStart } from "../../markdown/list-markup";
+import { lineMarkup, textStart } from "../../markdown/list-markup";
 
 interface Target {
   state: EditorState;
@@ -113,9 +113,10 @@ export function outdentTab(target: Target): boolean {
 }
 
 /**
- * Backspace at the start of a nested list item's text outdents the item (and
- * its children), as in Obsidian — instead of deleting into the marker/space
- * (`    - |deep` → `  - |deep`, not `    -|deep`) (BH-052).
+ * Backspace at the start of a list item's text:
+ * - nested (indent > 0): outdent like Shift+Tab (BH-052);
+ * - top-level: remove the list marker (and task box), as in Obsidian
+ *   (BH-053) — instead of eating the space (`- [ ] |task` → `- [ ]|task`).
  */
 export function outdentBackspace(target: Target): boolean {
   const { state } = target;
@@ -130,10 +131,31 @@ export function outdentBackspace(target: Target): boolean {
   if (range.head !== line.from + textStart(line.text)) {
     return false;
   }
-  if (width(state, line.text) === 0) {
+  if (width(state, line.text) > 0) {
+    return outdentTab(target);
+  }
+  return unwrapListMarker(target);
+}
+
+/** Strip the list marker / task box; keep quotes and the item's text. */
+function unwrapListMarker(target: Target): boolean {
+  const { state } = target;
+  const line = state.doc.lineAt(state.selection.main.head);
+  const { quotes, marker, task } = lineMarkup(line.text);
+  if (marker === "" && task === "") {
     return false;
   }
-  return outdentTab(target);
+  const from = line.from + quotes.length;
+  const to = from + marker.length + task.length;
+  target.dispatch(
+    state.update({
+      changes: { from, to, insert: "" },
+      selection: { anchor: from },
+      scrollIntoView: true,
+      userEvent: "delete.list",
+    }),
+  );
+  return true;
 }
 
 /** Tab / Shift+Tab indent action (BH-040). Pure so unit tests need no DOM. */
@@ -228,7 +250,7 @@ export function indentationBracketKey(
  * Vim-off; skip Tab while suggest owns it.
  */
 
-/** BH-052: Backspace at nested list text start outdents (Vim INSERT too). */
+/** BH-052/053: Backspace at list text start outdents or unwraps (Vim INSERT too). */
 function captureBackspaceOutdent(view: EditorView, event: KeyboardEvent): void {
   if (
     event.key !== "Backspace" ||
@@ -299,6 +321,6 @@ export const indentationKeymap: readonly KeyBinding[] = [
   // BH-047: same chords as CM standardKeymap; capture also owns them over Vim.
   { key: "Mod-]", run: indentTab, preventDefault: true },
   { key: "Mod-[", run: outdentTab, preventDefault: true },
-  // BH-052: nested list text-start Backspace outdents (Obsidian); else fall through.
+  // BH-052/053: list text-start Backspace outdents or unwraps (Obsidian); else fall through.
   { key: "Backspace", run: outdentBackspace },
 ];
