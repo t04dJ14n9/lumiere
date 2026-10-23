@@ -630,3 +630,16 @@ test("Tab on link reference definition is a no-op (BH-069)", () => {
   // Plain still indents.
   assert.equal(apply("pla|in", indentTab), "\tpla|in");
 });
+
+test("Tab on quoted ATX heading is a no-op (BH-070)", () => {
+  assert.equal(apply("> # he|ading", indentTab, "  "), "> # he|ading");
+  assert.equal(apply("> ## Title|", indentTab, "  "), "> ## Title|");
+  assert.equal(apply("> > # |Nested", indentTab, "  "), "> > # |Nested");
+  assert.equal(apply("> # |Alpha", indentTab), "> # |Alpha");
+  // Plain ATX still indents (documented beside BH-066).
+  assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
+  // Plain quote still nests.
+  assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
+  // Callout opener still no-op (BH-058).
+  assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
+});
