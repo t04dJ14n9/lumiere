@@ -524,3 +524,27 @@ test("Shift+Enter on a quoted footnote soft-breaks with quote+tab (BH-080)", () 
   // Empty line under a quoted footnote fills quote+tab.
   assert.equal(apply("> [^a]: first\n|", continueLine), "> [^a]: first\n> \t|");
 });
+
+test("Shift+Enter on a quoted link reference soft-breaks with quote+tab (BH-081)", () => {
+  assert.equal(
+    apply("> [lab]: https://ex.com|", continueLine),
+    "> [lab]: https://ex.com\n> \t|",
+  );
+  assert.equal(
+    apply("> [lab]: first| second", continueLine),
+    "> [lab]: first\n> \t| second",
+  );
+  assert.equal(
+    apply("> > [note]: url|", continueLine),
+    "> > [note]: url\n> > \t|",
+  );
+  assert.equal(
+    apply("> [lab]: url\n> \tcontinued|", continueLine),
+    "> [lab]: url\n> \tcontinued\n> \t|",
+  );
+  assert.equal(
+    apply("> [lab]: url\n> \t|", continueLine),
+    "> [lab]: url\n> \t\n> \t|",
+  );
+  assert.equal(apply("> [lab]: url\n|", continueLine), "> [lab]: url\n> \t|");
+});
