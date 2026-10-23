@@ -609,3 +609,24 @@ test("Backspace/Shift+Tab on quoted setext does not unwrap one > (BH-068)", () =
   assert.equal(apply("> |plain", outdentBackspace, "  "), "|plain");
   assert.equal(apply("> |plain", outdentTab, "  "), "|plain");
 });
+
+test("Tab on link reference definition is a no-op (BH-069)", () => {
+  assert.equal(
+    apply("[lab]: |https://ex.com", indentTab),
+    "[lab]: |https://ex.com",
+  );
+  assert.equal(
+    apply("[lab]: https://ex.com|", indentTab),
+    "[lab]: https://ex.com|",
+  );
+  assert.equal(apply("|[ref]: url", indentTab), "|[ref]: url");
+  assert.equal(apply("[x]: <|url>", indentTab, "  "), "[x]: <|url>");
+  assert.equal(
+    apply("> [lab]: |https://ex.com", indentTab, "  "),
+    "> [lab]: |https://ex.com",
+  );
+  // Footnote defs are handled by BH-067 (no-op), not link-ref.
+  assert.equal(apply("[^n]: |body", indentTab), "[^n]: |body");
+  // Plain still indents.
+  assert.equal(apply("pla|in", indentTab), "\tpla|in");
+});

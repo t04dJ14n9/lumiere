@@ -19,6 +19,7 @@ import {
   onQuotedSetextHeading,
   refuseQuotedSetextUnwrap,
 } from "./setext-quote-indent";
+import { onLinkReferenceDefinitionLine } from "./linkref-indent";
 import { unwrapLeadingMarkers, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
 
@@ -197,13 +198,17 @@ function onListItem(state: EditorState): boolean {
   return listItem.test(text) || isQuoteListLine(text);
 }
 
-/** Tab: list (BH-057), footnote-def no-op (BH-067), quoted-setext no-op (BH-068), nest quote (BH-058), setext no-op (BH-066), else indentMore. */
+/** Tab: list (BH-057), footnote-def no-op (BH-067), link-ref no-op (BH-069), quoted-setext no-op (BH-068), nest quote (BH-058), setext no-op (BH-066), else indentMore. */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, 1);
   }
   // Footnote def (incl. quote-prefixed): no-op before nestQuote (BH-067).
   if (onFootnoteDefinitionLine(target.state)) {
+    return true;
+  }
+  // Link ref def (incl. quote-prefixed): no-op before nestQuote (BH-069).
+  if (onLinkReferenceDefinitionLine(target.state)) {
     return true;
   }
   if (onQuotedSetextHeading(target.state)) {
