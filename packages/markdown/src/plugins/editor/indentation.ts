@@ -8,7 +8,7 @@ import type {
 import { getIndentUnit, indentString } from "@codemirror/language";
 import { indentLess, indentMore } from "@codemirror/commands";
 import { completionStatus } from "@codemirror/autocomplete";
-import { EditorView, ViewPlugin, type KeyBinding } from "@codemirror/view";
+import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import { renumberAround } from "../../markdown/ordered-lists";
 
 interface Target {
