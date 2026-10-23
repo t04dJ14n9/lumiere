@@ -246,14 +246,15 @@ export function outdentTab(target: Target): boolean {
   return true;
 }
 
-/** Backspace at list/quote/heading text start (BH-052–056, 061, 068, 071). */
+/** Backspace at list/quote/heading text start (BH-052–056, 061, 068, 071, 074). */
 export function outdentBackspace(target: Target): boolean {
   const { state } = target;
   const range = state.selection.main;
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
   }
-  // ATX/callout/footnote/link-ref: unwrap before textStart gate (BH-061–065, 071).
+  // Setext underline / ATX / callout / footnote / link-ref before textStart
+  // gate (BH-061–065, 071, 074).
   if (unwrapLeadingMarkers(target)) {
     return true;
   }
