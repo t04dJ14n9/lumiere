@@ -43,6 +43,9 @@ function registerTagRenderer(ctx: Context): void {
   );
 }
 
+/** Pixels of pointer travel that count as a drag, not a click (BH-050). */
+const TAG_DRAG_PX = 4;
+
 /**
  * Whether a click on a tag searches for it: a primary click that left the
  * caret in it, not a Shift-click or a drag, which only select.
@@ -56,26 +59,70 @@ export function clickSearches(
 }
 
 /**
+ * Tag under a pointer event's target, if any (LP mark or rendered button).
+ */
+export function tagFromEventTarget(target: EventTarget | null): string | undefined {
+  if (
+    target == null ||
+    typeof Element === "undefined" ||
+    !(target instanceof Element)
+  ) {
+    return undefined;
+  }
+  const tag = target.closest<HTMLElement>(".md-tag[data-tag]")?.dataset.tag;
+  return validTag(tag) ? tag : undefined;
+}
+
+/**
  * Clicking a tag in the note puts the caret there and searches for the tag,
  * as in Obsidian.
+ *
+ * BH-050: read the tag on mousedown. CodeMirror places the caret before
+ * `click`, which can split the mark decoration so the click target no longer
+ * carries `data-tag` / `.md-tag`. Listening on `view.dom` (not a stale outer
+ * `contentDOM`) matches property tag buttons.
  */
 function registerTagClicks(ctx: Context, search: (tag: string) => void): void {
-  const view = ctx.editor.view;
   ctx.effect(() =>
     ctx.editor.extend(
-      ViewPlugin.define(() => {
+      ViewPlugin.define((view) => {
         const events = new AbortController();
-        view.contentDOM.addEventListener(
+        let pending:
+          | { tag: string; x: number; y: number }
+          | undefined;
+        view.dom.addEventListener(
+          "mousedown",
+          (event) => {
+            if (event.button !== 0) {
+              pending = undefined;
+              return;
+            }
+            const tag = tagFromEventTarget(event.target);
+            pending = tag
+              ? { tag, x: event.clientX, y: event.clientY }
+              : undefined;
+          },
+          { signal: events.signal },
+        );
+        view.dom.addEventListener(
           "click",
           (event) => {
-            const tag =
-              event.target instanceof Element
-                ? event.target.closest<HTMLElement>("span.md-tag[data-tag]")
-                    ?.dataset.tag
-                : undefined;
-            if (clickSearches(event, view.state.selection.main.empty, tag)) {
-              search(tag);
+            const start = pending;
+            pending = undefined;
+            if (
+              !start ||
+              !clickSearches(
+                event,
+                // Drag distance, not post-click selection: caret placement can
+                // briefly look non-empty while CM settles the click.
+                Math.hypot(event.clientX - start.x, event.clientY - start.y) <=
+                  TAG_DRAG_PX,
+                start.tag,
+              )
+            ) {
+              return;
             }
+            search(start.tag);
           },
           { signal: events.signal },
         );
