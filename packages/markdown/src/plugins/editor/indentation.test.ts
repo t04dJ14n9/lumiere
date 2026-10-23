@@ -561,3 +561,51 @@ test("Tab on footnote definition opener is a no-op (BH-067)", () => {
   // Plain still indents.
   assert.equal(apply("pla|in", indentTab), "\tpla|in");
 });
+
+test("Tab on quoted setext title or underline is a no-op (BH-068)", () => {
+  // nestQuote would turn `> Title` into `> > Title` and break the heading.
+  assert.equal(
+    apply("> Tit|le\n> =======", indentTab, "  "),
+    "> Tit|le\n> =======",
+  );
+  assert.equal(
+    apply("> Title|\n> -------", indentTab, "  "),
+    "> Title|\n> -------",
+  );
+  assert.equal(
+    apply("> |Title\n> =======", indentTab, "  "),
+    "> |Title\n> =======",
+  );
+  assert.equal(
+    apply("> Title\n> ===|====", indentTab, "  "),
+    "> Title\n> ===|====",
+  );
+  assert.equal(
+    apply("> > Tit|le\n> > =====", indentTab, "  "),
+    "> > Tit|le\n> > =====",
+  );
+  // Plain quote still nests; mismatched quote depth is not a setext pair.
+  assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
+  assert.equal(
+    apply("> Tit|le\n======", indentTab, "  "),
+    "> > Tit|le\n======",
+  );
+});
+
+test("Backspace/Shift+Tab on quoted setext does not unwrap one > (BH-068)", () => {
+  assert.equal(
+    apply("> |Title\n> =======", outdentBackspace, "  "),
+    "> |Title\n> =======",
+  );
+  assert.equal(
+    apply("> Title\n> |=======", outdentBackspace, "  "),
+    "> Title\n> |=======",
+  );
+  assert.equal(
+    apply("> Tit|le\n> =======", outdentTab, "  "),
+    "> Tit|le\n> =======",
+  );
+  // Plain quote still unwraps (BH-056 / BH-058).
+  assert.equal(apply("> |plain", outdentBackspace, "  "), "|plain");
+  assert.equal(apply("> |plain", outdentTab, "  "), "|plain");
+});
