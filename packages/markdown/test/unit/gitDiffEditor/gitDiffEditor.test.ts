@@ -58,7 +58,6 @@ test("sideLabels distinguish plain-file pairs (BH-064)", () => {
   });
 });
 
-
 test("host: plain-file rendered takeover keeps distinct sides and labels (BH-064)", async () => {
   const h = harness("rendered");
   h.texts["file:///tmp/base-n.md"] = "# T\n\nold\n";
