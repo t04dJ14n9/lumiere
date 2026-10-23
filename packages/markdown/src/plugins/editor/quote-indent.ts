@@ -16,6 +16,16 @@ export function plainQuoteLine(text: string): boolean {
   return marker === "" && task === "" && quotes.includes(">");
 }
 
+/** Single empty caret on a plain quote line (BH-058). */
+export function onPlainQuote(state: EditorState): boolean {
+  const { ranges, main } = state.selection;
+  return (
+    ranges.length === 1 &&
+    main.empty &&
+    plainQuoteLine(state.doc.lineAt(main.head).text)
+  );
+}
+
 /** Nest one `> ` level (BH-058). Callout openers no-op. */
 export function nestQuote(target: Target): boolean {
   const { state } = target;

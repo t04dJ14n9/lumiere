@@ -10,16 +10,16 @@ import { renumberAround } from "../../markdown/ordered-lists";
 import { lineMarkup, textStart } from "../../markdown/list-markup";
 import {
   nestQuote,
+  onPlainQuote,
   outdentPlainQuote,
-  plainQuoteLine,
   unwrapQuote,
 } from "./quote-indent";
-import { unwrapCalloutTitle } from "./callout-unwrap";
+import { onFootnoteDefinitionLine } from "./footnote-unwrap";
 import {
-  onFootnoteDefinitionLine,
-  unwrapFootnoteDefinition,
-} from "./footnote-unwrap";
-import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
+  onQuotedSetextHeading,
+  refuseQuotedSetextUnwrap,
+} from "./setext-quote-indent";
+import { unwrapLeadingMarkers, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
 
 interface Target {
@@ -197,14 +197,7 @@ function onListItem(state: EditorState): boolean {
   return listItem.test(text) || isQuoteListLine(text);
 }
 
-function onPlainQuote(state: EditorState): boolean {
-  return (
-    singleEmptyCaret(state) &&
-    plainQuoteLine(state.doc.lineAt(state.selection.main.head).text)
-  );
-}
-
-/** Tab: list (BH-057), else footnote-def no-op (BH-067) before nestQuote, else nest plain quote (BH-058), else setext no-op (BH-066), else indentMore. */
+/** Tab: list (BH-057), footnote-def no-op (BH-067), quoted-setext no-op (BH-068), nest quote (BH-058), setext no-op (BH-066), else indentMore. */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, 1);
@@ -212,6 +205,9 @@ export function indentTab(target: Target): boolean {
   // Footnote def (incl. quote-prefixed): no-op before nestQuote (BH-067).
   if (onFootnoteDefinitionLine(target.state)) {
     return true;
+  }
+  if (onQuotedSetextHeading(target.state)) {
+    return true; // BH-068: nestQuote would break the pair
   }
   if (onPlainQuote(target.state)) {
     return nestQuote(target);
@@ -224,10 +220,13 @@ export function indentTab(target: Target): boolean {
   return indentMore(target);
 }
 
-/** Shift+Tab: list outdent, else unwrap plain quote (BH-058), else indentLess. */
+/** Shift+Tab: list, quoted-setext no-op (BH-068), unwrap quote, else indentLess. */
 export function outdentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, -1);
+  }
+  if (onQuotedSetextHeading(target.state)) {
+    return true; // BH-068: do not unwrap one `>`
   }
   if (onPlainQuote(target.state)) {
     return outdentPlainQuote(target);
@@ -237,24 +236,14 @@ export function outdentTab(target: Target): boolean {
   return true;
 }
 
-/** ATX / callout / footnote-def markers that sit before textStart (BH-061–065). */
-function unwrapLeadingMarkers(target: Target): boolean {
-  return (
-    unwrapAtxHeading(target) ||
-    unwrapCalloutTitle(target) ||
-    unwrapFootnoteDefinition(target)
-  );
-}
-
-/** Backspace at list/quote/heading text start: outdent/unwrap (BH-052–056, 061). */
+/** Backspace at list/quote/heading text start (BH-052–056, 061, 068). */
 export function outdentBackspace(target: Target): boolean {
   const { state } = target;
   const range = state.selection.main;
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
   }
-  // Markers whose textStart sits after the opener (ATX/callout/footnote):
-  // unwrap before the textStart gate (BH-061–065).
+  // ATX/callout/footnote: unwrap before textStart gate (BH-061–065).
   if (unwrapLeadingMarkers(target)) {
     return true;
   }
@@ -277,6 +266,9 @@ export function outdentBackspace(target: Target): boolean {
       return unwrapListMarker(target);
     }
     return false;
+  }
+  if (refuseQuotedSetextUnwrap(state, quotes)) {
+    return true; // BH-068
   }
   // Plain blockquote text (no list marker): unwrap one `>` (BH-056).
   if (quotes.includes(">")) {

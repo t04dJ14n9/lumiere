@@ -1,5 +1,7 @@
 import type { EditorState, Transaction } from "@codemirror/state";
 import { lineMarkup } from "../../markdown/list-markup";
+import { unwrapCalloutTitle } from "./callout-unwrap";
+import { unwrapFootnoteDefinition } from "./footnote-unwrap";
 
 interface Target {
   state: EditorState;
@@ -69,4 +71,13 @@ export function unwrapListMarker(target: Target): boolean {
     }),
   );
   return true;
+}
+
+/** ATX / callout / footnote-def markers before textStart (BH-061–065). */
+export function unwrapLeadingMarkers(target: Target): boolean {
+  return (
+    unwrapAtxHeading(target) ||
+    unwrapCalloutTitle(target) ||
+    unwrapFootnoteDefinition(target)
+  );
 }
