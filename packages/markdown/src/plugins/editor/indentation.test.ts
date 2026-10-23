@@ -619,11 +619,12 @@ test("Tab on quoted setext title or underline is a no-op (BH-068)", () => {
 });
 
 test("Backspace/Shift+Tab on quoted setext does not unwrap one > (BH-068)", () => {
+  // Title start: BH-083 unwraps (delete underline); keep matching `>`.
   assert.equal(
     apply("> |Title\n> =======", outdentBackspace, "  "),
-    "> |Title\n> =======",
+    "> |Title",
   );
-  // Underline start: BH-074 unwraps (delete underline); title start stays no-op.
+  // Underline start: BH-074 unwraps (delete underline).
   assert.equal(
     apply("> Title\n> |=======", outdentBackspace, "  "),
     "> Title|",
@@ -764,5 +765,57 @@ test("Backspace at quoted setext underline start unwraps heading (BH-074)", () =
       dispatch: () => {},
     }),
     false,
+  );
+});
+
+test("Backspace at setext title start unwraps heading (BH-083)", () => {
+  assert.equal(apply("|Title\n=========", outdentBackspace, "  "), "|Title");
+  assert.equal(apply("|Title\n---------", outdentBackspace, "  "), "|Title");
+  assert.equal(
+    apply("|Hello world\n===", outdentBackspace, "  "),
+    "|Hello world",
+  );
+  // Mid-title is not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "Title\n=========",
+        selection: { anchor: 2 },
+      }),
+      dispatch: () => {},
+    }),
+    false,
+  );
+  // No underline below: leave alone (plain paragraph / quote unwrap later).
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "Title\n\nbody",
+        selection: { anchor: 0 },
+      }),
+      dispatch: () => {},
+    }),
+    false,
+  );
+  // Underline unwrap (BH-074) still works.
+  assert.equal(apply("Title\n|=========", outdentBackspace, "  "), "Title|");
+  // ATX / list still unwrap.
+  assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
+  assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
+});
+
+test("Backspace at quoted setext title start unwraps heading (BH-083)", () => {
+  assert.equal(
+    apply("> |Title\n> =========", outdentBackspace, "  "),
+    "> |Title",
+  );
+  assert.equal(
+    apply("> > |Deep\n> > ---", outdentBackspace, "  "),
+    "> > |Deep",
+  );
+  // Mismatched quote depth: do not unwrap setext (quote path may still run).
+  assert.equal(
+    apply("> |Title\n=========", outdentBackspace, "  "),
+    "|Title\n=========",
   );
 });

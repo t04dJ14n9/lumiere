@@ -52,3 +52,47 @@ export function unwrapSetextUnderline(target: Target): boolean {
   );
   return true;
 }
+
+/**
+ * Backspace at setext title text start unwraps the heading by deleting the
+ * underline (BH-083 / BH-074 sibling). `|Title\n===` → `|Title`; quotes kept
+ * (`> |Title\n> ===` → `> |Title`) so quote-unwrap cannot orphan the marks.
+ * Mid-title Backspace falls through. Mismatched quote depth is left alone.
+ */
+export function unwrapSetextTitle(target: Target): boolean {
+  const { state } = target;
+  const range = state.selection.main;
+  if (state.selection.ranges.length > 1 || !range.empty) {
+    return false;
+  }
+  const line = state.doc.lineAt(range.head);
+  if (line.number >= state.doc.lines) {
+    return false;
+  }
+  const quotes = quotePrefix.exec(line.text)?.[1] ?? "";
+  if (range.head !== line.from + quotes.length) {
+    return false;
+  }
+  const titleRest = line.text.slice(quotes.length);
+  if (titleRest.trim() === "" || /^(?:=+|-+)[ \t]*$/u.test(titleRest)) {
+    return false;
+  }
+  const under = state.doc.line(line.number + 1);
+  const match = setextUnderline.exec(under.text);
+  if (!match) {
+    return false;
+  }
+  const underQuotes = match[1] ?? "";
+  if (underQuotes !== quotes) {
+    return false;
+  }
+  target.dispatch(
+    state.update({
+      changes: { from: line.to, to: under.to, insert: "" },
+      selection: { anchor: range.head },
+      scrollIntoView: true,
+      userEvent: "delete.setext",
+    }),
+  );
+  return true;
+}
