@@ -215,3 +215,19 @@ test("Enter outside a list keeps the line's indentation, in a code block too, as
   );
   assert.equal(apply("plain|", insertNewlineAndIndent), "plain\n|");
 });
+
+test("Enter in a setext heading exits below the underline (BH-059)", () => {
+  assert.equal(
+    apply("Title|\n=========\n\nbody", continueList),
+    "Title\n=========\n|\n\nbody",
+  );
+  assert.equal(apply("Title\n---------|", continueList), "Title\n---------\n|");
+  assert.equal(
+    apply("Hello| world\n---------\n\nbody", continueList),
+    "Hello\n---------\n| world\n\nbody",
+  );
+  assert.equal(
+    apply("|Title\n=========\n\nbody", continueList),
+    "Title\n=========\n|\n\nbody",
+  );
+});

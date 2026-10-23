@@ -182,6 +182,46 @@ function keepSpaceBeforeCaret(
 }
 
 /**
+ * Enter inside a setext heading exits below the underline (BH-059) — instead of
+ * splitting the title from `===`/`---` and breaking the heading.
+ */
+function exitSetextHeading(target: Target): boolean {
+  const { state } = target;
+  const caret = state.selection.main.head;
+  const tree = syntaxTree(state);
+  let node: SyntaxNode | null = tree.resolveInner(caret, caret === 0 ? 1 : -1);
+  while (node && !/^SetextHeading[1-6]$/.test(node.name)) {
+    node = node.parent;
+  }
+  if (!node) {
+    return false;
+  }
+  const title = state.doc.lineAt(node.from);
+  const onTitle = state.doc.lineAt(caret).number === title.number;
+  // At title start: leave heading intact and exit below (same as EOL).
+  const suffix =
+    onTitle && caret > title.from ? title.text.slice(caret - title.from) : "";
+  const after = node.to;
+  const changes: ChangeSpec[] =
+    suffix.length > 0
+      ? [
+          { from: caret, to: title.to, insert: "" },
+          { from: after, insert: state.lineBreak + suffix },
+        ]
+      : [{ from: after, insert: state.lineBreak }];
+  const set = state.changes(changes);
+  target.dispatch(
+    state.update({
+      changes: set,
+      selection: EditorSelection.cursor(set.mapPos(after, 1) - suffix.length),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
+}
+
+/**
  * Enter: continue bullets, numbers, quotes and tasks; leave the list on an
  * empty item, and a quote level on an empty quoted line.
  */
@@ -191,26 +231,36 @@ export function continueList(target: Target): boolean {
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
   }
+  if (exitSetextHeading(target)) {
+    return true;
+  }
   const line = state.doc.lineAt(range.head);
   if (isEmptyQuote(line.text)) {
     return leaveQuoteLevel(target, line);
   }
-  // BH-051: empty bullet/number leave before CodeMirror — avoids `\t--` when a
-  // tab-indented empty sibling sits under a spaces-indented nest (useTabs).
   if (
     isEmptyListItem(line.text) &&
-    range.head >= line.from + textStart(line.text)
+    range.head >= line.from + textStart(line.text) &&
+    leaveEmptyListItem(target, line)
   ) {
-    if (leaveEmptyListItem(target, line)) {
-      return true;
-    }
+    return true;
   }
   const item = continuedItem(state, range.head);
   if (item) {
     return newItemAfter(target, item);
   }
+  return continueTaskOrMarkup(target, line, range.head);
+}
+
+/** Task box continue / empty-task leave, else lang-markdown continueMarkup. */
+function continueTaskOrMarkup(
+  target: Target,
+  line: { from: number; text: string },
+  head: number,
+): boolean {
+  const { state } = target;
   const match = task.exec(line.text);
-  if (!match || range.head < line.from + match[0].length) {
+  if (!match || head < line.from + match[0].length) {
     return dispatchResult(target, run(state));
   }
   const [, marker = "", taskBox = ""] = match;
@@ -225,16 +275,19 @@ export function continueList(target: Target): boolean {
   if (!tr) {
     return false;
   }
-  const head = tr.newSelection.main.head;
-  const next = tr.newDoc.lineAt(head);
-  if (!listStart.test(next.text.slice(0, head - next.from))) {
+  const nextHead = tr.newSelection.main.head;
+  const next = tr.newDoc.lineAt(nextHead);
+  if (!listStart.test(next.text.slice(0, nextHead - next.from))) {
     return dispatchResult(target, tr);
   }
-  const box2 = ChangeSet.of([{ from: head, insert: "[ ] " }], tr.newDoc.length);
+  const box2 = ChangeSet.of(
+    [{ from: nextHead, insert: "[ ] " }],
+    tr.newDoc.length,
+  );
   target.dispatch(
     state.update({
       changes: tr.changes.compose(box2),
-      selection: EditorSelection.cursor(head + 4),
+      selection: EditorSelection.cursor(nextHead + 4),
       scrollIntoView: true,
       userEvent: "input",
     }),
