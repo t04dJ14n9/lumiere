@@ -483,3 +483,21 @@ test("Shift+Enter on a footnote definition soft-breaks with a tab indent (BH-077
   // Empty line under a footnote fills the body indent (BH-049 sibling).
   assert.equal(apply("[^a]: first\n|", continueLine), "[^a]: first\n\t|");
 });
+
+test("Shift+Enter on a link reference soft-breaks with a tab indent (BH-079)", () => {
+  assert.equal(
+    apply("[lab]: https://ex.com|", continueLine),
+    "[lab]: https://ex.com\n\t|",
+  );
+  assert.equal(
+    apply("[lab]: first| second", continueLine),
+    "[lab]: first\n\t| second",
+  );
+  assert.equal(apply("  [ref]: spaced|", continueLine), "  [ref]: spaced\n\t|");
+  assert.equal(
+    apply("[lab]: url\n\tcontinued|", continueLine),
+    "[lab]: url\n\tcontinued\n\t|",
+  );
+  assert.equal(apply("[lab]: url\n\t|", continueLine), "[lab]: url\n\t\n\t|");
+  assert.equal(apply("[lab]: url\n|", continueLine), "[lab]: url\n\t|");
+});
