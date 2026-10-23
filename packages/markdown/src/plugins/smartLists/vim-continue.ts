@@ -8,7 +8,7 @@ import { continueList } from "./commands";
  */
 export function installVimListContinue(): () => void {
   const previous = CodeMirror.commands.newlineAndIndentContinueComment;
-  CodeMirror.commands.newlineAndIndentContinueComment = (cm) => {
+  CodeMirror.commands.newlineAndIndentContinueComment = (cm: CodeMirror) => {
     if (continueList(cm.cm6)) {
       return;
     }
