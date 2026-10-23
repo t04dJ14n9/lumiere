@@ -9,25 +9,34 @@ type Stub = {
   nodeType?: number;
 };
 
-test("isNoteBodyIndentTarget: contentDOM and contained marks pass (BH-066)", () => {
+function viewOf(content: Stub, dom: Stub) {
+  return {
+    contentDOM: content as unknown as { contains: (o: Node | null) => boolean },
+    dom: dom as unknown as EventTarget,
+  };
+}
+
+test("isNoteBodyIndentTarget: contentDOM and cm-line marks pass (BH-066)", () => {
+  const line: Stub = {};
+  const mark: Stub = {
+    closest(sel) {
+      if (sel === ".cm-line") {
+        return line;
+      }
+      if (sel === ".cm-editor") {
+        return dom;
+      }
+      return null;
+    },
+  };
+  const text: Stub = { nodeType: 3, parentElement: mark };
   const content: Stub = {
     contains(n) {
       return n === mark || n === text;
     },
   };
   const dom: Stub = {};
-  const mark: Stub = {
-    closest(sel) {
-      return sel === ".cm-editor" ? dom : null;
-    },
-  };
-  const text: Stub = { nodeType: 3, parentElement: mark };
-  const view = {
-    contentDOM: content as unknown as EventTarget & {
-      contains?: (n: EventTarget) => boolean;
-    },
-    dom: dom as unknown as EventTarget,
-  };
+  const view = viewOf(content, dom);
   assert.equal(
     isNoteBodyIndentTarget(view, content as unknown as EventTarget),
     true,
@@ -43,6 +52,30 @@ test("isNoteBodyIndentTarget: contentDOM and contained marks pass (BH-066)", () 
   assert.equal(isNoteBodyIndentTarget(view, null), false);
 });
 
+test("isNoteBodyIndentTarget: add-button outside cm-line excluded (BH-040)", () => {
+  const btn: Stub = {
+    closest(sel) {
+      if (sel === ".cm-line") {
+        return null;
+      }
+      if (sel === ".cm-editor") {
+        return dom;
+      }
+      return null;
+    },
+  };
+  const content: Stub = {
+    contains(n) {
+      return n === btn;
+    },
+  };
+  const dom: Stub = {};
+  assert.equal(
+    isNoteBodyIndentTarget(viewOf(content, dom), btn as unknown as EventTarget),
+    false,
+  );
+});
+
 test("isNoteBodyIndentTarget: table cell / property inputs are excluded", () => {
   const content: Stub = {
     contains() {
@@ -56,6 +89,9 @@ test("isNoteBodyIndentTarget: table cell / property inputs are excluded", () => 
       if (sel.includes("table-cell-content")) {
         return cell;
       }
+      if (sel === ".cm-line") {
+        return cell;
+      }
       if (sel === ".cm-editor") {
         return cellEditor;
       }
@@ -64,15 +100,16 @@ test("isNoteBodyIndentTarget: table cell / property inputs are excluded", () => 
   };
   const prop: Stub = {
     closest(sel) {
-      return sel.includes("data-property-input") ? prop : null;
+      if (sel.includes("data-property-input")) {
+        return prop;
+      }
+      if (sel === ".cm-line") {
+        return prop;
+      }
+      return null;
     },
   };
-  const view = {
-    contentDOM: content as unknown as EventTarget & {
-      contains?: (n: EventTarget) => boolean;
-    },
-    dom: noteDom as unknown as EventTarget,
-  };
+  const view = viewOf(content, noteDom);
   assert.equal(
     isNoteBodyIndentTarget(view, cell as unknown as EventTarget),
     false,

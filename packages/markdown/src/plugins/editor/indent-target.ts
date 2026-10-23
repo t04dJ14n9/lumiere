@@ -22,15 +22,19 @@ function elementForClosest(target: EventTarget | null): ClosestEl | null {
   return null;
 }
 
+/**
+ * Minimal view shape so units can stub without importing EditorView (DOM).
+ * `contains` matches `Node.contains`.
+ */
 export type IndentTargetView = {
-  contentDOM: EventTarget & { contains?: (node: EventTarget) => boolean };
+  contentDOM: EventTarget & { contains: (other: Node | null) => boolean };
   dom: EventTarget;
 };
 
 /**
  * True when Tab/indent capture should own this keydown (BH-040 / BH-066).
- * Exact `contentDOM` or a mark/text descendant inside it — but never a
- * nested property field or table-cell editor (those keep focus Tab).
+ * Exact `contentDOM`, or a mark/text caret target inside a note-body `.cm-line`
+ * — never property/table chrome or nested cell editors (those keep focus Tab).
  */
 export function isNoteBodyIndentTarget(
   view: IndentTargetView,
@@ -39,11 +43,7 @@ export function isNoteBodyIndentTarget(
   if (target === view.contentDOM) {
     return true;
   }
-  if (
-    !target ||
-    typeof view.contentDOM.contains !== "function" ||
-    !view.contentDOM.contains(target)
-  ) {
+  if (!target || !view.contentDOM.contains(target as Node)) {
     return false;
   }
   const element = elementForClosest(target);
@@ -53,7 +53,11 @@ export function isNoteBodyIndentTarget(
   if (element.closest(nestedIndentOwner)) {
     return false;
   }
-  // Nested CM editor widget (table cell) that is not the note body.
+  // Property Add / table add-row buttons live in contentDOM widgets but
+  // outside `.cm-line`; requiring a line keeps BH-040 focus Tab working.
+  if (!element.closest(".cm-line")) {
+    return false;
+  }
   const nested = element.closest(".cm-editor");
   return !nested || nested === view.dom;
 }
