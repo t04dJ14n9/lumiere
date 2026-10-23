@@ -1,9 +1,6 @@
 import { keymap } from "@codemirror/view";
 import { deleteLine, moveLineUp, moveLineDown } from "@codemirror/commands";
-import {
-  selectNextOccurrence,
-  selectSelectionMatches,
-} from "@codemirror/search";
+import { selectNextOccurrence } from "@codemirror/search";
 import { EditorSelection } from "@codemirror/state";
 import type { Command } from "@codemirror/view";
 import type { EditorState, TransactionSpec } from "@codemirror/state";
@@ -22,6 +19,7 @@ import { fenceLines, lineEdit, linkEdit, ruleEdit, tagEdit } from "./lines";
 import { addCursor } from "./cursors";
 import { linkPasteHandler } from "./paste-link";
 import { keepFormatKeys } from "./format-keys";
+import { selectAllOccurrences } from "./select-occurrences";
 
 export const formattingWebview: Plugin = {
   name: "formatting",
@@ -132,7 +130,7 @@ function addEditingCommands(commands: Map<string, Command>): void {
   });
 }
 
-/** Capture Mod/Ctrl+B/I/D/Shift+L so Vim/host cannot steal format shortcuts (BH-024/028/037). */
+/** Capture Mod/Ctrl+B/I/D/Shift+L so Vim/host cannot steal format shortcuts (BH-024/028/037/038). */
 function registerFormatKeyOwnership(
   ctx: Context,
   commands: Map<string, Command>,
@@ -153,7 +151,7 @@ function registerFormatKeyOwnership(
         return;
       }
       if (action === "selectAllMatches") {
-        selectSelectionMatches(active);
+        selectAllOccurrences(active);
         return;
       }
       (action === "bold" ? bold : italics)(active);
@@ -229,7 +227,7 @@ function registerFormattingKeys(
         { key: "Mod-d", run: selectNextOccurrence, stopPropagation: true },
         {
           key: "Mod-Shift-l",
-          run: selectSelectionMatches,
+          run: selectAllOccurrences,
           stopPropagation: true,
         },
       ]),

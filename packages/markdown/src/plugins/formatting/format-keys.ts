@@ -1,7 +1,8 @@
 /**
  * Ctrl/Cmd+B / Ctrl/Cmd+I → bold / italic (BH-024).
  * Ctrl/Cmd+D → select next occurrence (BH-028).
- * Ctrl/Cmd+Shift+L → select all occurrences (BH-037).
+ * Ctrl/Cmd+Shift+L → select all occurrences (BH-037); empty caret selects
+ * the word first then every match (BH-038).
  *
  * `@replit/codemirror-vim` maps `<C-b>` → page-back, `<C-i>` → jumplist
  * forward, and `<C-d>` → half-page scroll, so with Vim on the CM Mod-b / Mod-i /
