@@ -517,3 +517,19 @@ test("Backspace at footnote definition body start unwraps marker (BH-065)", () =
   assert.equal(apply("> [!NOTE] |Title", outdentBackspace, "  "), "> |Title");
   assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
 });
+
+test("Tab on setext title or underline is a no-op (BH-066)", () => {
+  // Hard tab indent would turn the title into a CodeBlock in one press.
+  assert.equal(apply("Tit|le\n=======", indentTab), "Tit|le\n=======");
+  assert.equal(apply("Title|\n-------", indentTab), "Title|\n-------");
+  assert.equal(apply("|Title\n=======", indentTab), "|Title\n=======");
+  assert.equal(apply("Title\n===|====", indentTab), "Title\n===|====");
+  assert.equal(apply("Title\n---|----", indentTab, "  "), "Title\n---|----");
+  // Two-space unit: still no-op (would need two Tabs to reach CodeBlock).
+  assert.equal(apply("Tit|le\n=======", indentTab, "  "), "Tit|le\n=======");
+  // Non-setext still indents (ATX; blank between title-ish and underline).
+  assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
+  assert.equal(apply("Tit|le\n\n=======", indentTab), "\tTit|le\n\n=======");
+  // Lone underline line without a title above is not setext.
+  assert.equal(apply("===|====", indentTab), "\t===|====");
+});

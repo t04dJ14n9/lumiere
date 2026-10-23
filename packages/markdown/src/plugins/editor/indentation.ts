@@ -20,6 +20,7 @@ import {
 import { unwrapCalloutTitle } from "./callout-unwrap";
 import { unwrapFootnoteDefinition } from "./footnote-unwrap";
 import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
+import { onSetextHeading } from "./setext-indent";
 
 interface Target {
   state: EditorState;
@@ -203,13 +204,18 @@ function onPlainQuote(state: EditorState): boolean {
   );
 }
 
-/** Tab: list (BH-057), else nest plain quote (BH-058), else indentMore. */
+/** Tab: list (BH-057), else nest plain quote (BH-058), else setext no-op (BH-066), else indentMore. */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, 1);
   }
   if (onPlainQuote(target.state)) {
     return nestQuote(target);
+  }
+  // Setext title/underline: no-op like callout openers — indenting one line alone
+  // destroys SetextHeading (BH-066).
+  if (onSetextHeading(target.state)) {
+    return true;
   }
   return indentMore(target);
 }
