@@ -16,6 +16,9 @@ interface Target {
  * Continuation indent alone is not enough: list nests also start with 2–4
  * spaces, so only lines under a `[^label]:` definition are claimed. List
  * markers under a footnote fall through to smart-list continue.
+ *
+ * Quote-prefixed defs for Enter are BH-073 (#355). Shift+Enter keeps quotes
+ * here (BH-080): `> [^a]: …` soft-breaks to `> \t…` instead of bare `> |`.
  */
 const quotePrefix = /^((?:[ \t]*>[ \t]?)*)/u;
 const footnoteMarker = /^ {0,3}\[\^[^\]]+\]:[ \t]?/u;
@@ -70,11 +73,10 @@ function continueFootnoteBody(
 
 /**
  * Shift+Enter inside a footnote definition soft-breaks with the body indent
- * (BH-077) — same tab (or continuation spaces) Enter uses (BH-060). Unlike
- * Enter, an empty continuation does not leave the definition. An empty line
- * under a footnote fills the indent (BH-049 sibling).
- *
- * Plain footnotes only; quoted Shift+Enter quote+tab is a later follow-up.
+ * (BH-077) — same tab (or continuation spaces) Enter uses (BH-060). Quote
+ * prefixes are kept (BH-080: `> [^a]: …` → `> \t…`). Unlike Enter, an empty
+ * continuation does not leave the definition. An empty line under a footnote
+ * fills the indent (BH-049 sibling), including quote+tab under a quoted def.
  */
 export function softBreakFootnoteDefinition(target: Target): boolean {
   const { state } = target;
@@ -86,25 +88,24 @@ export function softBreakFootnoteDefinition(target: Target): boolean {
   if (line.text === "" && line.number > 1) {
     return fillFootnoteIndent(target, line);
   }
-  const def = footnoteMarker.exec(line.text);
+  const { quotes, rest } = splitQuotes(line.text);
+  const def = footnoteMarker.exec(rest);
   if (def) {
-    const markerEnd = line.from + def[0].length;
+    const markerEnd = line.from + quotes.length + def[0].length;
     if (range.head < markerEnd) {
       return false;
     }
-    return splitWithFootnoteIndent(target, line, range.head, "\t");
+    return splitWithFootnoteIndent(target, line, range.head, quotes + "\t");
   }
-  if (
-    !footnoteCont.test(line.text) ||
-    !underFootnoteDefinition(state, line.number)
-  ) {
+  const cont = footnoteCont.exec(rest);
+  if (!cont || !underFootnoteDefinition(state, line.number)) {
     return false;
   }
-  const indent = footnoteCont.exec(line.text)![0];
+  const indent = quotes + cont[0];
   if (range.head < line.from + indent.length) {
     return false;
   }
-  const body = line.text.slice(indent.length);
+  const body = rest.slice(cont[0].length);
   if (lineMarkup(indent + body).marker !== "") {
     return false;
   }
@@ -139,12 +140,13 @@ function footnoteFillIndent(
 ): string | null {
   for (let n = lineNumber - 1; n >= 1; n--) {
     const text = state.doc.line(n).text;
-    if (footnoteMarker.test(text)) {
-      return "\t";
+    const { quotes, rest } = splitQuotes(text);
+    if (footnoteMarker.test(rest)) {
+      return quotes + "\t";
     }
-    const cont = footnoteCont.exec(text);
+    const cont = footnoteCont.exec(rest);
     if (cont) {
-      return cont[0];
+      return quotes + cont[0];
     }
     if (text.trim() === "") {
       continue;
