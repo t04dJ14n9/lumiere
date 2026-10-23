@@ -3,7 +3,7 @@ import { lineMarkup } from "../../markdown/list-markup";
 import { unwrapCalloutTitle } from "./callout-unwrap";
 import { unwrapFootnoteDefinition } from "./footnote-unwrap";
 import { unwrapLinkReferenceDefinition } from "./linkref-unwrap";
-import { unwrapSetextUnderline } from "./setext-unwrap";
+import { unwrapSetextTitle, unwrapSetextUnderline } from "./setext-unwrap";
 
 interface Target {
   state: EditorState;
@@ -75,9 +75,10 @@ export function unwrapListMarker(target: Target): boolean {
   return true;
 }
 
-/** Setext underline / ATX / callout / footnote-def / link-ref before textStart (BH-061–065, 071, 074). */
+/** Setext title/underline / ATX / callout / footnote-def / link-ref before textStart (BH-061–065, 071, 074, 083). */
 export function unwrapLeadingMarkers(target: Target): boolean {
   return (
+    unwrapSetextTitle(target) ||
     unwrapSetextUnderline(target) ||
     unwrapAtxHeading(target) ||
     unwrapCalloutTitle(target) ||
