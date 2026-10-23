@@ -100,6 +100,15 @@ test("Backspace at top-level list text start unwraps marker (BH-053)", () => {
   assert.equal(apply("- a\n  - |b", outdentBackspace, "  "), "- a\n- |b");
 });
 
+test("Backspace at blockquote list text start unwraps marker (BH-054)", () => {
+  assert.equal(apply("> - |item", outdentBackspace, "  "), "> |item");
+  assert.equal(apply("> - [ ] |task", outdentBackspace, "  "), "> |task");
+  assert.equal(apply("> 1. |one", outdentBackspace, "  "), "> |one");
+  assert.equal(apply("> > - |nested", outdentBackspace, "  "), "> > |nested");
+  // Plain nested still outdents (BH-052).
+  assert.equal(apply("- a\n  - |b", outdentBackspace, "  "), "- a\n- |b");
+});
+
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {
   assert.equal(apply("pla|in", outdentTab), "pla|in");
 });
