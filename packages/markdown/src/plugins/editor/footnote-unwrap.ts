@@ -44,3 +44,16 @@ export function unwrapFootnoteDefinition(target: Target): boolean {
   );
   return true;
 }
+
+/**
+ * Caret on a footnote definition opener line (BH-067).
+ * Tab via indentMore would indent the whole `[^label]: …` line and turn it
+ * into a CodeBlock (same class of break as setext Tab / BH-066).
+ */
+export function onFootnoteDefinitionLine(state: EditorState): boolean {
+  const { ranges, main } = state.selection;
+  if (ranges.length !== 1 || !main.empty) {
+    return false;
+  }
+  return quotedFootnoteDef.test(state.doc.lineAt(main.head).text);
+}
