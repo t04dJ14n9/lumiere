@@ -56,6 +56,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     releaseQuickOpenFromVim(ctx);
     // BH-029: default <C-a> increment steals Select All.
     releaseSelectAllFromVim(ctx);
+    // BH-046: vim-core has foldCode but no za/zc/zo maps; wire Obsidian folds.
+    installVimFoldKeys(ctx);
   },
 };
 
@@ -225,6 +227,46 @@ function vimExtensions(ctx: Context, status: boolean) {
       },
     }),
   ];
+}
+
+/** BH-046: map za/zc/zo/zM/zR onto Lumière fold commands (gutter/Toggle Fold already work). */
+function installVimFoldKeys(ctx: Context): void {
+  ctx.effect(() => {
+    const run = (id: string) => {
+      void ctx.commands.run(id);
+    };
+    Vim.defineAction("lumiereToggleFold", () => {
+      run("editor:toggle-fold");
+    });
+    Vim.defineAction("lumiereFoldMore", () => {
+      run("editor:fold-more");
+    });
+    Vim.defineAction("lumiereFoldLess", () => {
+      run("editor:fold-less");
+    });
+    Vim.defineAction("lumiereFoldAll", () => {
+      run("editor:fold-all");
+    });
+    Vim.defineAction("lumiereUnfoldAll", () => {
+      run("editor:unfold-all");
+    });
+    const maps: readonly (readonly [string, string])[] = [
+      ["za", "lumiereToggleFold"],
+      ["zc", "lumiereFoldMore"],
+      ["zo", "lumiereFoldLess"],
+      ["zM", "lumiereFoldAll"],
+      ["zR", "lumiereUnfoldAll"],
+    ];
+    for (const [keys, name] of maps) {
+      Vim.mapCommand(keys, "action", name, {}, {});
+    }
+    return () => {
+      const anyMode = undefined as unknown as string;
+      for (const [keys] of maps) {
+        Vim.unmap(keys, anyMode);
+      }
+    };
+  });
 }
 
 /** Drop vim-core's <C-p>→k so host Quick Open / suggest Ctrl+P can run (BH-021). */
