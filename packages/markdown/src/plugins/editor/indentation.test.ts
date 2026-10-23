@@ -480,3 +480,40 @@ test("Backspace at quoted ATX heading text start unwraps marker (BH-062)", () =>
   assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
   assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
 });
+
+test("Backspace at footnote definition body start unwraps marker (BH-065)", () => {
+  assert.equal(
+    apply("[^note1]: |def line", outdentBackspace, "  "),
+    "|def line",
+  );
+  assert.equal(apply("[^a]: |body", outdentBackspace, "  "), "|body");
+  assert.equal(
+    apply("  [^ind]: |Indented", outdentBackspace, "  "),
+    "|Indented",
+  );
+  assert.equal(apply("> [^q]: |Quoted", outdentBackspace, "  "), "> |Quoted");
+  // Mid-body / no-space: not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "[^n]: MidBody",
+        selection: { anchor: 8 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "[^n]:NoSpace",
+        selection: { anchor: 5 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // Callout / ATX still unwrap.
+  assert.equal(apply("> [!NOTE] |Title", outdentBackspace, "  "), "> |Title");
+  assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
+});

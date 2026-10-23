@@ -18,6 +18,7 @@ import {
   unwrapQuote,
 } from "./quote-indent";
 import { unwrapCalloutTitle } from "./callout-unwrap";
+import { unwrapFootnoteDefinition } from "./footnote-unwrap";
 import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
 
 interface Target {
@@ -226,6 +227,15 @@ export function outdentTab(target: Target): boolean {
   return true;
 }
 
+/** ATX / callout / footnote-def markers that sit before textStart (BH-061–065). */
+function unwrapLeadingMarkers(target: Target): boolean {
+  return (
+    unwrapAtxHeading(target) ||
+    unwrapCalloutTitle(target) ||
+    unwrapFootnoteDefinition(target)
+  );
+}
+
 /** Backspace at list/quote/heading text start: outdent/unwrap (BH-052–056, 061). */
 export function outdentBackspace(target: Target): boolean {
   const { state } = target;
@@ -233,12 +243,9 @@ export function outdentBackspace(target: Target): boolean {
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
   }
-  // ATX / callout title: textStart is before the marker, so unwrap first
-  // (BH-061–063 ATX; BH-064 callout `[!TYPE] `).
-  if (unwrapAtxHeading(target)) {
-    return true;
-  }
-  if (unwrapCalloutTitle(target)) {
+  // Markers whose textStart sits after the opener (ATX/callout/footnote):
+  // unwrap before the textStart gate (BH-061–065).
+  if (unwrapLeadingMarkers(target)) {
     return true;
   }
   const line = state.doc.lineAt(range.head);
