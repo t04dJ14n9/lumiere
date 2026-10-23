@@ -203,14 +203,9 @@ export function indentationBracketKey(
  * Vim-off; skip Tab while suggest owns it.
  */
 function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
-  if (event.isComposing) {
-    return;
-  }
-  const target = event.target;
-  if (
-    !(target instanceof Node) ||
-    (target !== view.contentDOM && !view.contentDOM.contains(target))
-  ) {
+  // Exact contentDOM only (BH-040): nested widgets (properties / table cells)
+  // must keep Tab for focus navigation. Ctrl+[ outdent targets the note body.
+  if (event.isComposing || event.target !== view.contentDOM) {
     return;
   }
   const isMac = /Mac|iPhone|iPad/u.test(
@@ -218,6 +213,7 @@ function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
   );
   const bracket = indentationBracketKey(event, isMac);
   // Host/webview may mark Ctrl+[ defaultPrevented before us; still outdent.
+  // Tab keeps the BH-040 defaultPrevented early-out when not a bracket chord.
   if (!bracket && event.defaultPrevented) {
     return;
   }
@@ -240,13 +236,11 @@ function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
 const indentationCapture = ViewPlugin.define((view) => {
   const onKeydown = (event: KeyboardEvent) =>
     captureIndentationKeys(view, event);
-  // view.dom covers nested focus targets; contentDOM matches BH-006/040.
-  // Capture on both so Vim override-slot handlers cannot win first.
-  view.dom.addEventListener("keydown", onKeydown, true);
+  // contentDOM only (BH-040/006). view.dom would see nested widget focus and
+  // steal Tab from properties/tables (browser CI regression).
   view.contentDOM.addEventListener("keydown", onKeydown, true);
   return {
     destroy() {
-      view.dom.removeEventListener("keydown", onKeydown, true);
       view.contentDOM.removeEventListener("keydown", onKeydown, true);
     },
   };
