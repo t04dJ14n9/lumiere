@@ -11,7 +11,7 @@ const key = (overrides: Partial<FormatKey> = {}): FormatKey => ({
   ...overrides,
 });
 
-test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics; Ctrl/Cmd+D is selectNext", () => {
+test("Ctrl/Cmd+B/I/D and Ctrl/Cmd+Shift+L map to format actions", () => {
   for (const isMac of [false, true]) {
     const modifier = { ctrlKey: !isMac, metaKey: isMac };
     assert.equal(formatActionFor(key({ ...modifier }), isMac), "bold");
@@ -47,9 +47,25 @@ test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics; Ctrl/Cmd+D is selectNext", () =
       formatActionFor(key({ ...modifier, key: "а", keyCode: 68 }), isMac),
       "selectNext",
     );
+    assert.equal(
+      formatActionFor(key({ ...modifier, key: "l", shiftKey: true }), isMac),
+      "selectAllMatches",
+    );
+    assert.equal(
+      formatActionFor(key({ ...modifier, key: "L", shiftKey: true }), isMac),
+      "selectAllMatches",
+    );
+    assert.equal(
+      formatActionFor(
+        key({ ...modifier, key: "а", keyCode: 76, shiftKey: true }),
+        isMac,
+      ),
+      "selectAllMatches",
+    );
     for (const override of [
       { altKey: true },
-      { shiftKey: true },
+      { shiftKey: true, key: "b" },
+      { shiftKey: true, key: "d" },
       { ctrlKey: true, metaKey: true },
       { ctrlKey: false, metaKey: false },
       { key: "f" },
@@ -63,7 +79,7 @@ test("Ctrl/Cmd+B is bold; Ctrl/Cmd+I is italics; Ctrl/Cmd+D is selectNext", () =
   }
 });
 
-test("capture listener owns Mod+B/I/D and skips native fields", () => {
+test("capture listener owns Mod+B/I/D/Shift+L and skips native fields", () => {
   const calls: string[] = [];
   const listeners = new Map<string, EventListener>();
   const doc = {
@@ -129,6 +145,10 @@ test("capture listener owns Mod+B/I/D and skips native fields", () => {
   calls.length = 0;
   assert.equal(fire({ key: "d" }).prevented, true);
   assert.deepEqual(calls, ["selectNext"]);
+
+  calls.length = 0;
+  assert.equal(fire({ key: "l", shiftKey: true }).prevented, true);
+  assert.deepEqual(calls, ["selectAllMatches"]);
 
   calls.length = 0;
   assert.equal(
