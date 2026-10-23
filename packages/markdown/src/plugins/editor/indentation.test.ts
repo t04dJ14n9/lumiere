@@ -126,6 +126,14 @@ test("Backspace at nested quote-list text start outdents inside quotes (BH-055)"
   assert.equal(apply("> - |item", outdentBackspace, "  "), "> |item");
 });
 
+test("Backspace at blockquote text start unwraps one quote level (BH-056)", () => {
+  assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
+  assert.equal(apply("> > |nested", outdentBackspace, "  "), "> |nested");
+  assert.equal(apply("> > > |deep", outdentBackspace, "  "), "> > |deep");
+  // Quote+list still unwraps marker (BH-054), not quote level.
+  assert.equal(apply("> - |item", outdentBackspace, "  "), "> |item");
+});
+
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {
   assert.equal(apply("pla|in", outdentTab), "pla|in");
 });

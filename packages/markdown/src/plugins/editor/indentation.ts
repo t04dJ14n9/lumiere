@@ -10,7 +10,7 @@ import { indentLess, indentMore } from "@codemirror/commands";
 import { completionStatus } from "@codemirror/autocomplete";
 import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import { renumberAround } from "../../markdown/ordered-lists";
-import { lineMarkup, textStart } from "../../markdown/list-markup";
+import { lineMarkup, outerQuotes, textStart } from "../../markdown/list-markup";
 
 interface Target {
   state: EditorState;
@@ -113,14 +113,16 @@ export function outdentTab(target: Target): boolean {
 }
 
 /**
- * Backspace at the start of a list item's text:
+ * Backspace at the start of a list/quote item's text:
  * - nested (indent > 0): outdent like Shift+Tab (BH-052);
  * - top-level: remove the list marker (and task box), as in Obsidian
  *   (BH-053) — instead of eating the space (`- [ ] |task` → `- [ ]|task`);
- * - inside a blockquote: unwrap the list marker, keep the quotes (BH-054)
+ * - inside a blockquote list: unwrap the list marker, keep the quotes (BH-054)
  *   — instead of eating the space (`> - |item` → `> -|item`);
  * - nested under a blockquote (`>   - |child`): reduce spaces after `>`
- *   (BH-055) — instead of eating the marker space (`>   -|child`).
+ *   (BH-055) — instead of eating the marker space (`>   -|child`);
+ * - plain blockquote: drop one `>` level (BH-056) — instead of eating the
+ *   space (`> |text` → `>|text`).
  * `listItem` skips quote-prefixed lines; detect markers via lineMarkup.
  */
 export function outdentBackspace(target: Target): boolean {
@@ -134,20 +136,24 @@ export function outdentBackspace(target: Target): boolean {
     return false;
   }
   const { quotes, marker, task } = lineMarkup(line.text);
-  if (marker === "" && task === "") {
-    return false;
-  }
   // Nested non-quote: outdent (BH-052).
   if (listItem.test(line.text) && width(state, line.text) > 0) {
     return outdentTab(target);
   }
   // Nested under blockquote: outdent spaces after `>` (BH-055).
-  if (quotes.includes(">") && quoteListNestIndent(state, quotes) > 0) {
-    return outdentQuoteList(target);
+  if (marker !== "" || task !== "") {
+    if (quotes.includes(">") && quoteListNestIndent(state, quotes) > 0) {
+      return outdentQuoteList(target);
+    }
+    // Top-level list (BH-053) or quote-prefixed list (BH-054): unwrap marker.
+    if (listItem.test(line.text) || quotes.includes(">")) {
+      return unwrapListMarker(target);
+    }
+    return false;
   }
-  // Top-level list (BH-053) or quote-prefixed list (BH-054): unwrap marker.
-  if (listItem.test(line.text) || quotes.includes(">")) {
-    return unwrapListMarker(target);
+  // Plain blockquote text (no list marker): unwrap one `>` (BH-056).
+  if (quotes.includes(">")) {
+    return unwrapQuote(target);
   }
   return false;
 }
@@ -214,6 +220,28 @@ function unwrapListMarker(target: Target): boolean {
       selection: { anchor: from },
       scrollIntoView: true,
       userEvent: "delete.list",
+    }),
+  );
+  return true;
+}
+
+/** Remove one blockquote level at the caret line (BH-056). */
+function unwrapQuote(target: Target): boolean {
+  const { state } = target;
+  const line = state.doc.lineAt(state.selection.main.head);
+  const { quotes } = lineMarkup(line.text);
+  if (!quotes.includes(">")) {
+    return false;
+  }
+  const outer = outerQuotes(quotes);
+  const rest = line.text.slice(quotes.length);
+  const insert = outer + rest;
+  target.dispatch(
+    state.update({
+      changes: { from: line.from, to: line.to, insert },
+      selection: { anchor: line.from + outer.length },
+      scrollIntoView: true,
+      userEvent: "delete.quote",
     }),
   );
   return true;
@@ -311,7 +339,7 @@ export function indentationBracketKey(
  * Vim-off; skip Tab while suggest owns it.
  */
 
-/** BH-052/053/054/055: list text-start Backspace outdents or unwraps (Vim INSERT too). */
+/** BH-052–056: list/quote text-start Backspace outdents or unwraps (Vim INSERT too). */
 function captureBackspaceOutdent(view: EditorView, event: KeyboardEvent): void {
   if (
     event.key !== "Backspace" ||
@@ -382,6 +410,6 @@ export const indentationKeymap: readonly KeyBinding[] = [
   // BH-047: same chords as CM standardKeymap; capture also owns them over Vim.
   { key: "Mod-]", run: indentTab, preventDefault: true },
   { key: "Mod-[", run: outdentTab, preventDefault: true },
-  // BH-052/053/054/055: list text-start Backspace outdents or unwraps (Obsidian); else fall through.
+  // BH-052–056: list/quote text-start Backspace outdents or unwraps (Obsidian); else fall through.
   { key: "Backspace", run: outdentBackspace },
 ];
