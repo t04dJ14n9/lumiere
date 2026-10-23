@@ -626,8 +626,17 @@ test("Enter at callout title content start exits below intact (BH-085)", () => {
     "> [!NOTE] Hello\n> | world",
   );
   assert.equal(apply("> [!NOTE] Title|", continueList), "> [!NOTE] Title\n> |");
-  // Empty title falls through to quote continue.
-  assert.equal(apply("> [!NOTE] |", continueList), "> [!NOTE] \n> |");
+});
+
+test("Enter on empty callout title unwraps opener (BH-086)", () => {
+  assert.equal(apply("> [!NOTE] |", continueList), "> |");
+  assert.equal(apply("> [!NOTE]- |", continueList), "> |");
+  assert.equal(apply("> [!NOTE]+ |", continueList), "> |");
+  assert.equal(apply("> [!WARNING] |", continueList), "> |");
+  assert.equal(apply("> > [!TIP] |", continueList), "> > |");
+  assert.equal(apply("> [!NOTE]\t|", continueList), "> |");
+  // Empty quote (no callout) still leaves the quote level.
+  assert.equal(apply("> |", continueList), "\n|");
 });
 
 test("Shift+Enter at callout title content start exits below intact (BH-085)", () => {
@@ -636,4 +645,11 @@ test("Shift+Enter at callout title content start exits below intact (BH-085)", (
     apply("> [!WARNING]- |Hi", continueLine),
     "> [!WARNING]- Hi\n> |",
   );
+});
+
+test("Shift+Enter on empty callout title unwraps opener (BH-086)", () => {
+  assert.equal(apply("> [!NOTE] |", continueLine), "> |");
+  assert.equal(apply("> [!NOTE]- |", continueLine), "> |");
+  assert.equal(apply("> [!abstract]+ |", continueLine), "> |");
+  assert.equal(apply("> > [!NOTE] |", continueLine), "> > |");
 });
