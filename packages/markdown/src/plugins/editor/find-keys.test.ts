@@ -1,10 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  findActionFor,
-  keepFindKey,
-  type FindKey,
-} from "./find-keys";
+import { findActionFor, keepFindKey, type FindKey } from "./find-keys";
 
 const key = (overrides: Partial<FindKey> = {}): FindKey => ({
   key: "f",

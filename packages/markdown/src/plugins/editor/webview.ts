@@ -30,7 +30,11 @@ import { findExtension, openFind } from "./find";
 import { keepFindKey } from "./find-keys";
 import { keepSelectAllInEditor } from "./select-all";
 import { keepEditKeys } from "./edit-keys";
-import { defaultKeymap, deleteCharBackward, selectAll } from "@codemirror/commands";
+import {
+  defaultKeymap,
+  deleteCharBackward,
+  selectAll,
+} from "@codemirror/commands";
 import { getCM } from "@replit/codemirror-vim";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
