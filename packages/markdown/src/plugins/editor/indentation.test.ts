@@ -331,3 +331,37 @@ test("indentationBracketKey maps Mod-[ / Mod-] (BH-047)", () => {
     "indent",
   );
 });
+
+test("Backspace at ATX heading text start unwraps marker (BH-061)", () => {
+  assert.equal(
+    apply("# |HeadingAlpha", outdentBackspace, "  "),
+    "|HeadingAlpha",
+  );
+  assert.equal(apply("## |Nested", outdentBackspace, "  "), "|Nested");
+  assert.equal(apply("### |Deep", outdentBackspace, "  "), "|Deep");
+  assert.equal(apply("  # |Indented", outdentBackspace, "  "), "|Indented");
+  // Mid-title / no-space fake heading: not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "# MidTitle",
+        selection: { anchor: 5 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "#NoSpace",
+        selection: { anchor: 1 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // List/quote still take precedence.
+  assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
+  assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
+});

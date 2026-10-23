@@ -17,6 +17,7 @@ import {
   plainQuoteLine,
   unwrapQuote,
 } from "./quote-indent";
+import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
 
 interface Target {
   state: EditorState;
@@ -224,12 +225,16 @@ export function outdentTab(target: Target): boolean {
   return true;
 }
 
-/** Backspace at list/quote text start: outdent/unwrap (BH-052–056). */
+/** Backspace at list/quote/heading text start: outdent/unwrap (BH-052–056, 061). */
 export function outdentBackspace(target: Target): boolean {
   const { state } = target;
   const range = state.selection.main;
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
+  }
+  // ATX: textStart is 0, so unwrap before that gate (BH-061).
+  if (unwrapAtxHeading(target)) {
+    return true;
   }
   const line = state.doc.lineAt(range.head);
   if (range.head !== line.from + textStart(line.text)) {
@@ -287,27 +292,6 @@ function outdentQuoteList(target: Target): boolean {
       selection: { anchor: line.from + textStartPos },
       scrollIntoView: true,
       userEvent: "delete.dedent",
-    }),
-  );
-  return true;
-}
-
-/** Strip the list marker / task box; keep quotes and the item's text. */
-function unwrapListMarker(target: Target): boolean {
-  const { state } = target;
-  const line = state.doc.lineAt(state.selection.main.head);
-  const { quotes, marker, task } = lineMarkup(line.text);
-  if (marker === "" && task === "") {
-    return false;
-  }
-  const from = line.from + quotes.length;
-  const to = from + marker.length + task.length;
-  target.dispatch(
-    state.update({
-      changes: { from, to, insert: "" },
-      selection: { anchor: from },
-      scrollIntoView: true,
-      userEvent: "delete.list",
     }),
   );
   return true;
