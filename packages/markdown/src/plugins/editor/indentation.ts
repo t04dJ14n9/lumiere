@@ -15,7 +15,10 @@ import {
   unwrapQuote,
 } from "./quote-indent";
 import { unwrapCalloutTitle } from "./callout-unwrap";
-import { unwrapFootnoteDefinition } from "./footnote-unwrap";
+import {
+  onFootnoteDefinitionLine,
+  unwrapFootnoteDefinition,
+} from "./footnote-unwrap";
 import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
 
@@ -201,10 +204,14 @@ function onPlainQuote(state: EditorState): boolean {
   );
 }
 
-/** Tab: list (BH-057), else nest plain quote (BH-058), else setext no-op (BH-066), else indentMore. */
+/** Tab: list (BH-057), else footnote-def no-op (BH-067) before nestQuote, else nest plain quote (BH-058), else setext no-op (BH-066), else indentMore. */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, 1);
+  }
+  // Footnote def (incl. quote-prefixed): no-op before nestQuote (BH-067).
+  if (onFootnoteDefinitionLine(target.state)) {
+    return true;
   }
   if (onPlainQuote(target.state)) {
     return nestQuote(target);

@@ -547,3 +547,17 @@ test("Tab on setext title or underline is a no-op (BH-066)", () => {
   // Lone underline line without a title above is not setext.
   assert.equal(apply("===|====", indentTab), "\t===|====");
 });
+
+test("Tab on footnote definition opener is a no-op (BH-067)", () => {
+  assert.equal(apply("[^n]: |body", indentTab), "[^n]: |body");
+  assert.equal(apply("[^note1]: def |line", indentTab), "[^note1]: def |line");
+  assert.equal(apply("|[^a]: x", indentTab), "|[^a]: x");
+  assert.equal(apply("> [^q]: |Quoted", indentTab, "  "), "> [^q]: |Quoted");
+  // Continuation under def still indents (not the opener line).
+  assert.equal(
+    apply("[^n]: body\n\t|cont", indentTab),
+    "[^n]: body\n\t\t|cont",
+  );
+  // Plain still indents.
+  assert.equal(apply("pla|in", indentTab), "\tpla|in");
+});
