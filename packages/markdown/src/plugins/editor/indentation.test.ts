@@ -527,6 +527,20 @@ test("Tab on setext title or underline is a no-op (BH-066)", () => {
   assert.equal(apply("Title\n---|----", indentTab, "  "), "Title\n---|----");
   // Two-space unit: still no-op (would need two Tabs to reach CodeBlock).
   assert.equal(apply("Tit|le\n=======", indentTab, "  "), "Tit|le\n=======");
+  // Host GUI fixture (integ BH066Setext.md): title start + underline start.
+  const hostGui = "Setext Title\n=======\n\nBody under heading.";
+  assert.equal(
+    apply("|Setext Title\n=======\n\nBody under heading.", indentTab),
+    `|${hostGui}`,
+  );
+  assert.equal(
+    apply("Setext Title\n|=======\n\nBody under heading.", indentTab),
+    `Setext Title\n|=======\n\nBody under heading.`,
+  );
+  assert.equal(
+    apply("Setext |Title\n=======\n\nBody under heading.", indentTab),
+    "Setext |Title\n=======\n\nBody under heading.",
+  );
   // Non-setext still indents (ATX; blank between title-ish and underline).
   assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
   assert.equal(apply("Tit|le\n\n=======", indentTab), "\tTit|le\n\n=======");

@@ -24,7 +24,7 @@ import { protocol, type viewState } from "./protocol";
 import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
-import { indentationDom, indentationKeymap } from "./indentation";
+import { indentationDom, indentationKeymap } from "./indent-capture";
 import { lineStartKeymap } from "./line-start";
 import { findExtension, openFind } from "./find";
 import { keepFindKey } from "./find-keys";

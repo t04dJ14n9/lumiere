@@ -71,6 +71,20 @@ for (const options of builds) {
 // Every bundled source file; scripts/third-party-notices.mjs reads it.
 if (!watch) {
   await mkdir("artifacts", { recursive: true });
+
+  // Fail loudly if setext Tab no-op was dropped (stale @workshop/markdown /
+  // foreign worktree / skipped rebuild) — Host GUI BH-066 regression class.
+  if (
+    !watch &&
+    ![...inputs].some((input) =>
+      input.replaceAll("\\", "/").endsWith("plugins/editor/setext-indent.ts"),
+    )
+  ) {
+    throw new Error(
+      "webview bundle must include plugins/editor/setext-indent.ts (BH-066)",
+    );
+  }
+
   await writeFile(
     "artifacts/bundle-inputs.json",
     JSON.stringify([...inputs].sort(), null, 1),
