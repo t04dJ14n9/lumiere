@@ -93,6 +93,17 @@ test("Shift+Enter breaks the line inside the item, lined up with its text", () =
   assert.equal(apply("a|", continueLine), "a\n|");
 });
 
+test("Shift+Enter on an empty line under a list fills the continuation indent (BH-049)", () => {
+  // Trailing EOF newline: caret on the empty line under the item (Host LP click/End).
+  assert.equal(apply("- a\n|", continueLine), "- a\n  |");
+  assert.equal(apply("- [ ] a\n|", continueLine), "- [ ] a\n      |");
+  assert.equal(apply("1. a\n|", continueLine), "1. a\n   |");
+  assert.equal(apply("> a\n|", continueLine), "> a\n> |");
+  assert.equal(apply("- a\n  b\n|", continueLine), "- a\n  b\n  |");
+  // Plain paragraph: still a bare break.
+  assert.equal(apply("a\n|", continueLine), "a\n\n|");
+});
+
 test("an edit inside an ordered list numbers it again, as in Obsidian", async () => {
   const { renumberOnEdit } =
     await import("../../../src/plugins/smartLists/renumber");
