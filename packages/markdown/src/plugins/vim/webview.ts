@@ -17,6 +17,7 @@ import { freezeRevealDuringVisual } from "./visual-reveal";
 import { normalCaretAfterHostEdits } from "./normal-caret";
 import { installVimKeyRouting } from "./key-routing";
 import { vimLineKeyboard } from "./keyboard";
+import { outdentTab } from "../editor/indentation";
 import { insertIntoClickedSource } from "./click-insert";
 import type {} from "../livePreview/api";
 
@@ -58,6 +59,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     releaseSelectAllFromVim(ctx);
     // BH-046: vim-core has foldCode but no za/zc/zo maps; wire Obsidian folds.
     installVimFoldKeys(ctx);
+    // BH-047: INSERT Ctrl+[ must outdent (Obsidian), not Esc.
+    installVimBracketIndentKeys(ctx);
   },
 };
 
@@ -265,6 +268,33 @@ function installVimFoldKeys(ctx: Context): void {
       for (const [keys] of maps) {
         Vim.unmap(keys, anyMode);
       }
+    };
+  });
+}
+
+
+/** BH-047: Vim INSERT <C-[> is Esc; Obsidian/CM use Mod-[ to outdent. Own the chord. */
+function installVimBracketIndentKeys(ctx: Context): void {
+  ctx.effect(() => {
+    const anyMode = undefined as unknown as string;
+    // Drop vim-core keyToKey <C-[>→<Esc> (global + insert).
+    Vim.unmap("<C-[>", "insert");
+    Vim.unmap("<C-[>", anyMode);
+    Vim.defineAction("lumiereOutdentList", (cm: { cm6?: Parameters<typeof outdentTab>[0] }) => {
+      const view = cm.cm6 ?? ctx.editor.view;
+      outdentTab(view);
+    });
+    Vim.mapCommand(
+      "<C-[>",
+      "action",
+      "lumiereOutdentList",
+      {},
+      { context: "insert", isEdit: true },
+    );
+    return () => {
+      Vim.unmap("<C-[>", "insert");
+      Vim.map("<C-[>", "<Esc>", anyMode);
+      Vim.map("<C-[>", "<Esc>", "insert");
     };
   });
 }
