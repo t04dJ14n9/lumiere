@@ -272,3 +272,34 @@ test("drag across wrapped CJK selects a range without click-position snap-back",
   const sel = await page.evaluate(() => window.harness.capture());
   expect(sel.from).not.toBe(sel.to);
 });
+
+test("Shift+Enter continues the line inside a list item (BH-049)", async ({
+  page,
+}) => {
+  await open(page, "- soft target");
+  await page.evaluate(() => window.harness.reveal(13));
+  await page.keyboard.press("Shift+Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  ");
+  await page.keyboard.insertText("continued");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  continued");
+});
+
+test("Shift+Enter on trailing empty line under a list fills continuation (BH-049)", async ({
+  page,
+}) => {
+  // Saved notes end with a newline; LP click/End often lands on that empty line.
+  await open(page, "- soft target\n");
+  await page.evaluate(() => window.harness.reveal(14));
+  await page.keyboard.press("Shift+Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  ");
+  await page.keyboard.insertText("continued");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  continued");
+});

@@ -8,6 +8,7 @@ import {
   isEmptyQuote,
   lineMarkup,
   outerQuotes,
+  textStart,
 } from "../../markdown/list-markup";
 import { renumberAround } from "../../markdown/ordered-lists";
 
@@ -223,6 +224,11 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
 /**
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
  * keeps the quotes and lines up with a list item's text.
+ *
+ * When the caret is on an empty line under a list/quote (the usual place a
+ * Live Preview click or End lands once the file has a trailing newline),
+ * fill that line with the previous item's continuation indent instead of
+ * inserting another bare break (BH-049).
  */
 export function continueLine(target: Target): boolean {
   const { state } = target;
@@ -230,6 +236,21 @@ export function continueLine(target: Target): boolean {
     return false;
   }
   const line = state.doc.lineAt(state.selection.main.head);
+  if (line.text === "" && line.number > 1) {
+    const prev = state.doc.line(line.number - 1);
+    const prefix = continuationPrefix(prev.text);
+    if (prefix !== "" && textStart(prev.text) > 0) {
+      target.dispatch(
+        state.update({
+          changes: { from: line.from, to: line.to, insert: prefix },
+          selection: EditorSelection.cursor(line.from + prefix.length),
+          scrollIntoView: true,
+          userEvent: "input",
+        }),
+      );
+      return true;
+    }
+  }
   target.dispatch(
     state.update(
       state.replaceSelection(state.lineBreak + continuationPrefix(line.text)),
