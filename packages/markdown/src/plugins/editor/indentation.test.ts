@@ -89,18 +89,15 @@ test("Backspace at nested list text start outdents like Obsidian (BH-052)", () =
     }),
     false,
   );
-  // Top-level text start falls through (no outdent).
-  assert.equal(
-    outdentBackspace({
-      state: EditorState.create({
-        doc: "- top",
-        selection: { anchor: 2 },
-        extensions: [indentUnit.of("  ")],
-      }),
-      dispatch: () => undefined,
-    }),
-    false,
-  );
+});
+
+test("Backspace at top-level list text start unwraps marker (BH-053)", () => {
+  assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
+  assert.equal(apply("- [ ] |task", outdentBackspace, "  "), "|task");
+  assert.equal(apply("1. |one", outdentBackspace, "  "), "|one");
+  assert.equal(apply("* |star", outdentBackspace, "  "), "|star");
+  // Nested still outdents, does not unwrap.
+  assert.equal(apply("- a\n  - |b", outdentBackspace, "  "), "- a\n- |b");
 });
 
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {
