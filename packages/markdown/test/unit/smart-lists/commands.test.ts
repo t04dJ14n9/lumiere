@@ -575,3 +575,34 @@ test("Shift+Enter on a quoted link reference soft-breaks with quote+tab (BH-081)
   );
   assert.equal(apply("> [lab]: url\n|", continueLine), "> [lab]: url\n> \t|");
 });
+
+test("Enter in an ATX heading exits below the heading (BH-084)", () => {
+  assert.equal(apply("# Title|", continueList), "# Title\n|");
+  assert.equal(apply("## Hello| world", continueList), "## Hello\n| world");
+  assert.equal(apply("# |Title", continueList), "# Title\n|");
+  assert.equal(apply("> # Title|", continueList), "> # Title\n> |");
+  assert.equal(apply("> # |Title", continueList), "> # Title\n> |");
+  assert.equal(apply("> # Hello| world", continueList), "> # Hello\n> | world");
+  assert.equal(apply("- # Title|", continueList), "- # Title\n- |");
+  assert.equal(apply("- # |Title", continueList), "- # Title\n- |");
+});
+
+test("Enter on empty ATX heading unwraps marker (BH-084)", () => {
+  assert.equal(apply("# |", continueList), "|");
+  assert.equal(apply("## |", continueList), "|");
+  assert.equal(apply("> # |", continueList), "> |");
+  assert.equal(apply("- # |", continueList), "- |");
+  assert.equal(apply("> - # |", continueList), "> - |");
+  assert.equal(apply("- [ ] # |", continueList), "- [ ] |");
+});
+
+test("Shift+Enter in an ATX heading exits below the heading (BH-084)", () => {
+  assert.equal(apply("# Title|", continueLine), "# Title\n|");
+  assert.equal(apply("## Hello| world", continueLine), "## Hello\n| world");
+  assert.equal(apply("# |Title", continueLine), "# Title\n|");
+  assert.equal(apply("> # |Title", continueLine), "> # Title\n> |");
+  assert.equal(apply("- # Hello| world", continueLine), "- # Hello\n  | world");
+  assert.equal(apply("- # |Title", continueLine), "- # Title\n  |");
+  assert.equal(apply("# |", continueLine), "|");
+  assert.equal(apply("> # |", continueLine), "> |");
+});

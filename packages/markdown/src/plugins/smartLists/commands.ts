@@ -18,6 +18,7 @@ import {
 import { softBreakLinkReferenceDefinition } from "./linkref-break";
 import { continueLinkReferenceDefinition } from "./linkref-enter";
 import { exitSetextHeading } from "./setext-enter";
+import { exitAtxHeading } from "./atx-enter";
 
 interface Target {
   state: EditorState;
@@ -203,6 +204,9 @@ export function continueList(target: Target): boolean {
   if (exitSetextHeading(target)) {
     return true;
   }
+  if (exitAtxHeading(target, false)) {
+    return true;
+  }
   if (continueFootnoteDefinition(target)) {
     return true;
   }
@@ -365,7 +369,8 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
 /**
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
  * keeps the quotes and lines up with a list item's text. Setext headings
- * exit below the underline like Enter (BH-076 / BH-059). Footnote definitions
+ * exit below the underline like Enter (BH-076 / BH-059). ATX headings exit
+ * below the heading line or unwrap empty markers (BH-084). Footnote definitions
  * soft-break with a tab body indent (BH-077 / BH-060). Link reference
  * definitions soft-break with a tab body indent (BH-079).
  *
@@ -382,6 +387,10 @@ export function continueLine(target: Target): boolean {
   }
   // Same setext exit as Enter (BH-076): soft-break must not orphan ===/---.
   if (exitSetextHeading(target)) {
+    return true;
+  }
+  // ATX exit / empty unwrap (BH-084): soft-break must not orphan `# ` titles.
+  if (exitAtxHeading(target, true)) {
     return true;
   }
   // Footnote soft-break (BH-077) before link-ref (BH-079); footnotes use [^].
