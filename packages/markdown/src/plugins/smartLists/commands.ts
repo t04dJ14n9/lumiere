@@ -181,7 +181,6 @@ function keepSpaceBeforeCaret(
   });
 }
 
-
 /**
  * Enter inside a setext heading exits below the underline (BH-059) — instead of
  * splitting the title from `===`/`---` and breaking the heading.
@@ -295,7 +294,6 @@ function continueTaskOrMarkup(
   );
   return true;
 }
-
 
 function emptyTask(target: Target, box: { from: number; to: number }): boolean {
   const { state } = target;

@@ -221,10 +221,7 @@ test("Enter in a setext heading exits below the underline (BH-059)", () => {
     apply("Title|\n=========\n\nbody", continueList),
     "Title\n=========\n|\n\nbody",
   );
-  assert.equal(
-    apply("Title\n---------|", continueList),
-    "Title\n---------\n|",
-  );
+  assert.equal(apply("Title\n---------|", continueList), "Title\n---------\n|");
   assert.equal(
     apply("Hello| world\n---------\n\nbody", continueList),
     "Hello\n---------\n| world\n\nbody",
