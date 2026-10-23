@@ -158,6 +158,23 @@ test("Shift+Tab outdents a list under blockquote after the > (BH-057)", () => {
   );
 });
 
+test("Tab nests a plain blockquote instead of tab-before-> (BH-058)", () => {
+  assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
+  assert.equal(apply("> > |nested", indentTab, "  "), "> > > |nested");
+  assert.equal(apply("> quoted| text", indentTab, "  "), "> > quoted| text");
+  // Callout opener: no-op (do not tab-before-> or nest).
+  assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
+  // Quote-list still nests indent after > (BH-057), not another >.
+  assert.equal(apply("> - |item", indentTab, "  "), ">   - |item");
+});
+
+test("Shift+Tab unwraps a plain blockquote level (BH-058)", () => {
+  assert.equal(apply("> > |nested", outdentTab, "  "), "> |nested");
+  assert.equal(apply("> |top", outdentTab, "  "), "|top");
+  assert.equal(apply("> > > |deep", outdentTab, "  "), "> > |deep");
+  assert.equal(apply("> [!note] |Title", outdentTab, "  "), "> [!note] |Title");
+});
+
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {
   assert.equal(apply("pla|in", outdentTab), "pla|in");
 });

@@ -10,7 +10,13 @@ import { indentLess, indentMore } from "@codemirror/commands";
 import { completionStatus } from "@codemirror/autocomplete";
 import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import { renumberAround } from "../../markdown/ordered-lists";
-import { lineMarkup, outerQuotes, textStart } from "../../markdown/list-markup";
+import { lineMarkup, textStart } from "../../markdown/list-markup";
+import {
+  nestQuote,
+  outdentPlainQuote,
+  plainQuoteLine,
+  unwrapQuote,
+} from "./quote-indent";
 
 interface Target {
   state: EditorState;
@@ -128,10 +134,7 @@ function reindent(target: Target, delta: number): boolean {
   return true;
 }
 
-/**
- * Tab / Shift+Tab for a list under a blockquote: adjust spaces after `>`
- * (BH-057) — instead of indentMore putting a tab before `>` (`\t> - item`).
- */
+/** Tab/Shift+Tab for quote-list: reindent spaces after `>` (BH-057). */
 function reindentQuoteList(target: Target, delta: number): boolean {
   const { state } = target;
   const line = state.doc.lineAt(state.selection.main.head);
@@ -177,49 +180,51 @@ function reindentQuoteList(target: Target, delta: number): boolean {
   return true;
 }
 
-function onListItem(state: EditorState): boolean {
+function singleEmptyCaret(state: EditorState): boolean {
   const { ranges, main } = state.selection;
-  if (ranges.length > 1 || !main.empty) {
+  return ranges.length === 1 && main.empty;
+}
+
+function onListItem(state: EditorState): boolean {
+  if (!singleEmptyCaret(state)) {
     return false;
   }
-  const text = state.doc.lineAt(main.head).text;
+  const text = state.doc.lineAt(state.selection.main.head).text;
   return listItem.test(text) || isQuoteListLine(text);
 }
 
-/**
- * Tab: indent a list item with its children (including under `>`, BH-057);
- * otherwise indent the lines the selection touches, as Obsidian does.
- */
+function onPlainQuote(state: EditorState): boolean {
+  return (
+    singleEmptyCaret(state) &&
+    plainQuoteLine(state.doc.lineAt(state.selection.main.head).text)
+  );
+}
+
+/** Tab: list (BH-057), else nest plain quote (BH-058), else indentMore. */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, 1);
   }
+  if (onPlainQuote(target.state)) {
+    return nestQuote(target);
+  }
   return indentMore(target);
 }
 
-/** Shift+Tab: outdent a list item with its children or the selected lines. */
+/** Shift+Tab: list outdent, else unwrap plain quote (BH-058), else indentLess. */
 export function outdentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, -1);
+  }
+  if (onPlainQuote(target.state)) {
+    return outdentPlainQuote(target);
   }
   indentLess(target);
   // Shift+Tab never moves focus out of the note, even with nothing to outdent.
   return true;
 }
 
-/**
- * Backspace at the start of a list/quote item's text:
- * - nested (indent > 0): outdent like Shift+Tab (BH-052);
- * - top-level: remove the list marker (and task box), as in Obsidian
- *   (BH-053) — instead of eating the space (`- [ ] |task` → `- [ ]|task`);
- * - inside a blockquote list: unwrap the list marker, keep the quotes (BH-054)
- *   — instead of eating the space (`> - |item` → `> -|item`);
- * - nested under a blockquote (`>   - |child`): reduce spaces after `>`
- *   (BH-055) — instead of eating the marker space (`>   -|child`);
- * - plain blockquote: drop one `>` level (BH-056) — instead of eating the
- *   space (`> |text` → `>|text`).
- * `listItem` skips quote-prefixed lines; detect markers via lineMarkup.
- */
+/** Backspace at list/quote text start: outdent/unwrap (BH-052–056). */
 export function outdentBackspace(target: Target): boolean {
   const { state } = target;
   const range = state.selection.main;
@@ -303,28 +308,6 @@ function unwrapListMarker(target: Target): boolean {
       selection: { anchor: from },
       scrollIntoView: true,
       userEvent: "delete.list",
-    }),
-  );
-  return true;
-}
-
-/** Remove one blockquote level at the caret line (BH-056). */
-function unwrapQuote(target: Target): boolean {
-  const { state } = target;
-  const line = state.doc.lineAt(state.selection.main.head);
-  const { quotes } = lineMarkup(line.text);
-  if (!quotes.includes(">")) {
-    return false;
-  }
-  const outer = outerQuotes(quotes);
-  const rest = line.text.slice(quotes.length);
-  const insert = outer + rest;
-  target.dispatch(
-    state.update({
-      changes: { from: line.from, to: line.to, insert },
-      selection: { anchor: line.from + outer.length },
-      scrollIntoView: true,
-      userEvent: "delete.quote",
     }),
   );
   return true;
