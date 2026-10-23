@@ -867,3 +867,14 @@ test("Tab on plain fence opener/closer is a no-op (BH-089)", () => {
   // List still indents.
   assert.equal(apply("- |item", indentTab, "  "), "  - |item");
 });
+
+test("Tab on plain display-math $$ fence is a no-op (BH-090)", () => {
+  assert.equal(apply("$$|", indentTab), "$$|");
+  assert.equal(apply("|$$", indentTab), "|$$");
+  assert.equal(apply("   $$|", indentTab), "   $$|");
+  assert.equal(apply("$$|", indentTab, "  "), "$$|");
+  assert.equal(apply("$$\nx^2\n$$|", indentTab), "$$\nx^2\n$$|");
+  // Inline-ish dollar content / paragraph still indents.
+  assert.equal(apply("cost is $|5", indentTab), "\tcost is $|5");
+  assert.equal(apply("some| text", indentTab), "\tsome| text");
+});
