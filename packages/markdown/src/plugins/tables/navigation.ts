@@ -40,6 +40,28 @@ export function entersTable(
   );
 }
 
+
+/** Tab / Enter cell hops (BH-039). Pure so unit tests do not need a DOM. */
+export function cellNavKey(event: {
+  key: string;
+  shiftKey: boolean;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  isComposing?: boolean;
+}): CellStep | "br" | undefined {
+  if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) {
+    return undefined;
+  }
+  if (event.key === "Tab") {
+    return { row: 0, column: event.shiftKey ? -1 : 1 };
+  }
+  if (event.key === "Enter") {
+    return event.shiftKey ? "br" : { row: 1, column: 0 };
+  }
+  return undefined;
+}
+
 /**
  * Handle table boundaries before Vim's DOM handler consumes navigation keys.
  * `vimMode` reads the optional Vim service so this module never imports the
