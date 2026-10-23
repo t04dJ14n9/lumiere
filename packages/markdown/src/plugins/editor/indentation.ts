@@ -18,6 +18,7 @@ import {
   unwrapQuote,
 } from "./quote-indent";
 import { unwrapCalloutTitle } from "./callout-unwrap";
+import { unwrapFootnoteDefinition } from "./footnote-unwrap";
 import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
 
 interface Target {
@@ -239,6 +240,9 @@ export function outdentBackspace(target: Target): boolean {
     return true;
   }
   if (unwrapCalloutTitle(target)) {
+    return true;
+  }
+  if (unwrapFootnoteDefinition(target)) {
     return true;
   }
   const line = state.doc.lineAt(range.head);
