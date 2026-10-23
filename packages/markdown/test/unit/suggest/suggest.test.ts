@@ -385,3 +385,25 @@ test("BH-041: unresolved literal equal to the query is not offered (live overlay
     ),
   );
 });
+
+test("BH-042: tag literal equal to the query is not offered (live overlay)", () => {
+  const vault = index();
+  // Simulate the live overlay: the note being edited ends with the stub #fi.
+  vault.setMetadata(
+    "Home.md",
+    metadata("[[Missing]] #Project #project #fixture\n#fi\n"),
+  );
+  const labels = suggestions(vault, "Home.md", {
+    kind: "tag",
+    query: "fi",
+  }).map((item) => item.label);
+  assert.ok(labels.includes("fixture"), `got ${JSON.stringify(labels)}`);
+  assert.equal(labels[0], "fixture");
+  assert.ok(!labels.includes("fi"), `typed stub still offered: ${labels}`);
+  // A fully typed tag with no longer match stays offered (Enter → space).
+  const full = suggestions(vault, "Home.md", {
+    kind: "tag",
+    query: "fixture",
+  }).map((item) => item.label);
+  assert.ok(full.includes("fixture"), `got ${JSON.stringify(full)}`);
+});

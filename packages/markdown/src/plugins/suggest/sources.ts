@@ -64,23 +64,48 @@ export class SuggestionIndex {
       request.kind === "tag" && !request.query
         ? entries.slice(0, 50)
         : rankedCandidates(entries, request.query);
-    // BH-041: the live overlay indexes the wikilink being typed as unresolved.
-    // That exact literal then ranks first (fuzzy exact match), so Tab accepts a
-    // no-op instead of a real note (e.g. Wel above Welcome). Drop unresolved
-    // link literals that equal the query — accepting them cannot change the
-    // text. Tags are also literals; only filter link suggestions.
+    // BH-041 / BH-042: the live overlay indexes the token being typed. That
+    // exact literal then ranks first (fuzzy exact match), so Tab accepts a
+    // no-op instead of a real completion (Wel above Welcome; fi above
+    // fixture). Drop unresolved link literals that equal the query. For tags,
+    // drop the query-exact literal only when a longer tag still matches —
+    // otherwise Enter can still finish a fully typed tag with a space.
     const query = request.query;
-    const useful =
-      request.kind === "link" && query.length > 0
-        ? selected.filter(
-            (entry) =>
-              !(
-                entry.value.kind === "literal" &&
-                entry.detail === "Unresolved link" &&
-                entry.value.text.toLowerCase() === query.toLowerCase()
-              ),
-          )
-        : selected;
+    const useful = (() => {
+      if (query.length === 0) {
+        return selected;
+      }
+      if (request.kind === "link") {
+        return selected.filter(
+          (entry) =>
+            !(
+              entry.value.kind === "literal" &&
+              entry.detail === "Unresolved link" &&
+              entry.value.text.toLowerCase() === query.toLowerCase()
+            ),
+        );
+      }
+      if (request.kind === "tag") {
+        const lower = query.toLowerCase();
+        const hasLonger = selected.some(
+          (entry) =>
+            entry.value.kind === "literal" &&
+            entry.value.text.toLowerCase().startsWith(lower) &&
+            entry.value.text.length > query.length,
+        );
+        if (!hasLonger) {
+          return selected;
+        }
+        return selected.filter(
+          (entry) =>
+            !(
+              entry.value.kind === "literal" &&
+              entry.value.text.toLowerCase() === lower
+            ),
+        );
+      }
+      return selected;
+    })();
     return useful
       .map((entry) =>
         materialize({
