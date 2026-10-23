@@ -606,3 +606,34 @@ test("Shift+Enter in an ATX heading exits below the heading (BH-084)", () => {
   assert.equal(apply("# |", continueLine), "|");
   assert.equal(apply("> # |", continueLine), "> |");
 });
+test("Enter at callout title content start exits below intact (BH-085)", () => {
+  assert.equal(apply("> [!NOTE] |Title", continueList), "> [!NOTE] Title\n> |");
+  assert.equal(
+    apply("> [!NOTE]- |Title", continueList),
+    "> [!NOTE]- Title\n> |",
+  );
+  assert.equal(
+    apply("> [!NOTE]+ |Folded", continueList),
+    "> [!NOTE]+ Folded\n> |",
+  );
+  assert.equal(
+    apply("> > [!TIP] |Deep", continueList),
+    "> > [!TIP] Deep\n> > |",
+  );
+  // Mid / EOL still start body (quote continue).
+  assert.equal(
+    apply("> [!NOTE] Hello| world", continueList),
+    "> [!NOTE] Hello\n> | world",
+  );
+  assert.equal(apply("> [!NOTE] Title|", continueList), "> [!NOTE] Title\n> |");
+  // Empty title falls through to quote continue.
+  assert.equal(apply("> [!NOTE] |", continueList), "> [!NOTE] \n> |");
+});
+
+test("Shift+Enter at callout title content start exits below intact (BH-085)", () => {
+  assert.equal(apply("> [!NOTE] |Title", continueLine), "> [!NOTE] Title\n> |");
+  assert.equal(
+    apply("> [!WARNING]- |Hi", continueLine),
+    "> [!WARNING]- Hi\n> |",
+  );
+});

@@ -19,6 +19,7 @@ import { softBreakLinkReferenceDefinition } from "./linkref-break";
 import { continueLinkReferenceDefinition } from "./linkref-enter";
 import { exitSetextHeading } from "./setext-enter";
 import { exitAtxHeading } from "./atx-enter";
+import { exitCalloutTitle } from "./callout-enter";
 
 interface Target {
   state: EditorState;
@@ -191,7 +192,7 @@ function keepSpaceBeforeCaret(
 
 /**
  * Enter: continue bullets, numbers, quotes, tasks, footnote and link-ref definitions
- * (incl. quoted footnotes, BH-073);
+ * (incl. quoted footnotes, BH-073); callout title content-start exits intact (BH-085);
  * leave the list on an empty item, a quote level on an empty quoted line, and
  * a footnote on an empty indented continuation (BH-060).
  */
@@ -205,6 +206,9 @@ export function continueList(target: Target): boolean {
     return true;
   }
   if (exitAtxHeading(target, false)) {
+    return true;
+  }
+  if (exitCalloutTitle(target)) {
     return true;
   }
   if (continueFootnoteDefinition(target)) {
@@ -370,9 +374,10 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
  * keeps the quotes and lines up with a list item's text. Setext headings
  * exit below the underline like Enter (BH-076 / BH-059). ATX headings exit
- * below the heading line or unwrap empty markers (BH-084). Footnote definitions
- * soft-break with a tab body indent (BH-077 / BH-060). Link reference
- * definitions soft-break with a tab body indent (BH-079).
+ * below the heading line or unwrap empty markers (BH-084). Callout titles
+ * exit intact at content start (BH-085). Footnote definitions soft-break with
+ * a tab body indent (BH-077 / BH-060). Link reference definitions soft-break
+ * with a tab body indent (BH-079).
  *
  * When the caret is on an empty line under a list/quote (the usual place a
  * Live Preview click or End lands once the file has a trailing newline),
@@ -391,6 +396,10 @@ export function continueLine(target: Target): boolean {
   }
   // ATX exit / empty unwrap (BH-084): soft-break must not orphan `# ` titles.
   if (exitAtxHeading(target, true)) {
+    return true;
+  }
+  // Callout title content-start intact exit (BH-085).
+  if (exitCalloutTitle(target)) {
     return true;
   }
   // Footnote soft-break (BH-077) before link-ref (BH-079); footnotes use [^].
