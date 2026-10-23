@@ -122,18 +122,8 @@ test("Backspace at nested quote-list text start outdents inside quotes (BH-055)"
     apply("> - [ ] a\n>   - [ ] |b", outdentBackspace, "  "),
     "> - [ ] a\n> - [ ] |b",
   );
-  // Top-level quote (no suffix indent) still falls through on tip (BH-054).
-  assert.equal(
-    outdentBackspace({
-      state: EditorState.create({
-        doc: "> - item",
-        selection: { anchor: 4 },
-        extensions: [indentUnit.of("  ")],
-      }),
-      dispatch: () => undefined,
-    }),
-    false,
-  );
+  // Top-level quote (no nest) unwraps marker (BH-054), does not outdent.
+  assert.equal(apply("> - |item", outdentBackspace, "  "), "> |item");
 });
 
 test("Shift+Tab with nothing to outdent still keeps focus in the note", () => {

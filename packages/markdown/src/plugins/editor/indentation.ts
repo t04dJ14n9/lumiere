@@ -219,7 +219,6 @@ function unwrapListMarker(target: Target): boolean {
   return true;
 }
 
-
 /** Tab / Shift+Tab indent action (BH-040). Pure so unit tests need no DOM. */
 export function indentationTabKey(event: {
   key: string;
