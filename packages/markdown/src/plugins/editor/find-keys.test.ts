@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findActionFor, keepFindKey, type FindKey } from "./find-keys";
+import {
+  findActionFor,
+  keepFindKey,
+  type FindKey,
+} from "./find-keys";
 
 const key = (overrides: Partial<FindKey> = {}): FindKey => ({
   key: "f",
@@ -131,4 +135,64 @@ test("missing document is a no-op dispose", () => {
     assert.fail("must not open find without a document");
   });
   stop();
+});
+
+test("Vim INSERT Mod+H deletes char instead of opening Replace (BH-045)", () => {
+  const calls: string[] = [];
+  const listeners = new Map<string, EventListener>();
+  const doc = {
+    defaultView: { navigator: { platform: "Linux x86_64" } },
+    addEventListener(type: string, listener: EventListener, opts?: unknown) {
+      assert.equal(opts, true);
+      listeners.set(type, listener);
+    },
+    removeEventListener(type: string, listener: EventListener, opts?: unknown) {
+      assert.equal(opts, true);
+      if (listeners.get(type) === listener) {
+        listeners.delete(type);
+      }
+    },
+  } as unknown as Document;
+
+  let insert = true;
+  keepFindKey(
+    doc,
+    (replace) => {
+      calls.push(replace ? "replace" : "find");
+    },
+    () => false,
+    {
+      isInsertMode: () => insert,
+      onInsertCtrlH: () => {
+        calls.push("insert-c-h");
+      },
+    },
+  );
+
+  const listener = listeners.get("keydown")!;
+  const fire = (key: string) => {
+    const event = {
+      key,
+      ctrlKey: true,
+      metaKey: false,
+      altKey: false,
+      shiftKey: false,
+      target: null,
+      preventDefault() {},
+      stopPropagation() {},
+    };
+    listener(event as unknown as Event);
+  };
+
+  fire("h");
+  assert.deepEqual(calls, ["insert-c-h"]);
+
+  insert = false;
+  calls.length = 0;
+  fire("h");
+  assert.deepEqual(calls, ["replace"]);
+
+  calls.length = 0;
+  fire("f");
+  assert.deepEqual(calls, ["find"]);
 });

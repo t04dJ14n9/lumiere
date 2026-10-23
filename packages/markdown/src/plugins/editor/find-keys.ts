@@ -1,13 +1,15 @@
 /**
- * Ctrl/Cmd+F → Find; Ctrl/Cmd+H → Replace (BH-023 / BH-025).
+ * Ctrl/Cmd+F → Find; Ctrl/Cmd+H → Replace (BH-023 / BH-025), except Vim INSERT
+ * Ctrl+H (BH-045).
  *
  * `@replit/codemirror-vim` maps `<C-f>` → page-forward by default, so with Vim
  * on the CM Mod-f keymap never runs and Find stays closed. Capture-phase
  * ownership matches BH-003 / BH-021 / BH-024: preventDefault + stop so Vim
  * cannot page and the workbench cannot open its empty custom-editor Find.
  * Ctrl/Cmd+H is owned the same way so Replace opens with the replace row
- * (BH-025); vim-core does not map `<C-h>`, but without capture the chord can
- * still lose to the shell or leave Find-only. Physical PageDown still reaches
+ * (BH-025). vim-core does not map `<C-h>`, but CM's standard keymap binds
+ * Ctrl-h → deleteCharBackward; without an insert gate our capture steals
+ * backspace-in-insert for Replace (BH-045). Physical PageDown still reaches
  * vim-core (it is not Ctrl+F). Native text fields keep Ctrl+F / Ctrl+H.
  */
 
@@ -86,14 +88,26 @@ function elementForClosest(target: EventTarget | null): Element | null {
   return null;
 }
 
+export interface KeepFindKeyOptions {
+  /**
+   * When true, Ctrl/Cmd+H is Vim INSERT backspace (CM Ctrl-h → deleteCharBackward)
+   * — do not open Replace. BH-045.
+   */
+  isInsertMode?: () => boolean;
+  /** Run instead of Replace when `isInsertMode()` is true (delete prior char). */
+  onInsertCtrlH?: () => void;
+}
+
 /**
  * Own Mod/Ctrl+F and Mod/Ctrl+H in capture phase so Find/Replace beat Vim and
- * the workbench empty custom-editor find widget.
+ * the workbench empty custom-editor find widget. Optional insert-mode gate
+ * leaves Ctrl+H backspace to the editor (BH-045).
  */
 export function keepFindKey(
   target: Document,
   onAction: (replace: boolean) => void,
   leavesNative: (target: EventTarget | null) => boolean = leavesNativeFind,
+  options: KeepFindKeyOptions = {},
 ): () => void {
   if (!target || typeof target.addEventListener !== "function") {
     return () => {};
@@ -111,6 +125,10 @@ export function keepFindKey(
     }
     event.preventDefault();
     event.stopPropagation();
+    if (action === "replace" && options.isInsertMode?.()) {
+      options.onInsertCtrlH?.();
+      return;
+    }
     onAction(action === "replace");
   };
   target.addEventListener("keydown", listener, true);

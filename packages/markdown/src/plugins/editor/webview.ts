@@ -30,7 +30,8 @@ import { findExtension, openFind } from "./find";
 import { keepFindKey } from "./find-keys";
 import { keepSelectAllInEditor } from "./select-all";
 import { keepEditKeys } from "./edit-keys";
-import { defaultKeymap, selectAll } from "@codemirror/commands";
+import { defaultKeymap, deleteCharBackward, selectAll } from "@codemirror/commands";
+import { getCM } from "@replit/codemirror-vim";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
@@ -163,12 +164,23 @@ function registerEditKeyOwnership(ctx: Context, view: EditorView): void {
   );
 }
 
-/** Capture Mod/Ctrl+F/H so Find/Replace beat Vim and the workbench (BH-023/025). */
+/** Capture Mod/Ctrl+F/H so Find/Replace beat Vim and the workbench (BH-023/025).
+ * BH-045: Vim INSERT Ctrl+H deletes the prior character instead of opening Replace. */
 function registerFindKeyOwnership(ctx: Context, view: EditorView): void {
   ctx.effect(() =>
-    keepFindKey(view.dom.ownerDocument, (replace) => {
-      openFind(view, replace);
-    }),
+    keepFindKey(
+      view.dom.ownerDocument,
+      (replace) => {
+        openFind(view, replace);
+      },
+      undefined,
+      {
+        isInsertMode: () => Boolean(getCM(view)?.state.vim?.insertMode),
+        onInsertCtrlH: () => {
+          deleteCharBackward(view);
+        },
+      },
+    ),
   );
 }
 
