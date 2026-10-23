@@ -501,3 +501,26 @@ test("Shift+Enter on a link reference soft-breaks with a tab indent (BH-079)", (
   assert.equal(apply("[lab]: url\n\t|", continueLine), "[lab]: url\n\t\n\t|");
   assert.equal(apply("[lab]: url\n|", continueLine), "[lab]: url\n\t|");
 });
+
+test("Shift+Enter on a quoted footnote soft-breaks with quote+tab (BH-080)", () => {
+  assert.equal(apply("> [^a]: body|", continueLine), "> [^a]: body\n> \t|");
+  assert.equal(
+    apply("> [^a]: first| second", continueLine),
+    "> [^a]: first\n> \t| second",
+  );
+  assert.equal(
+    apply("> > [^note]: deep|", continueLine),
+    "> > [^note]: deep\n> > \t|",
+  );
+  assert.equal(
+    apply("> [^a]: first\n> \tcontinued|", continueLine),
+    "> [^a]: first\n> \tcontinued\n> \t|",
+  );
+  // Empty quoted continuation soft-breaks (does not leave, unlike Enter).
+  assert.equal(
+    apply("> [^a]: first\n> \t|", continueLine),
+    "> [^a]: first\n> \t\n> \t|",
+  );
+  // Empty line under a quoted footnote fills quote+tab.
+  assert.equal(apply("> [^a]: first\n|", continueLine), "> [^a]: first\n> \t|");
+});
