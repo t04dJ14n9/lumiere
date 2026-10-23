@@ -460,3 +460,26 @@ test("Enter does not treat a list under a quoted link-ref as link-ref body (BH-0
   );
   assert.match(state.doc.toString(), /- item/);
 });
+
+test("Shift+Enter on a footnote definition soft-breaks with a tab indent (BH-077)", () => {
+  assert.equal(
+    apply("[^a]: first line|", continueLine),
+    "[^a]: first line\n\t|",
+  );
+  assert.equal(
+    apply("[^a]: first| second", continueLine),
+    "[^a]: first\n\t| second",
+  );
+  assert.equal(
+    apply("  [^note]: spaced|", continueLine),
+    "  [^note]: spaced\n\t|",
+  );
+  assert.equal(
+    apply("[^a]: first\n\tcontinued|", continueLine),
+    "[^a]: first\n\tcontinued\n\t|",
+  );
+  // Empty continuation soft-breaks (does not leave, unlike Enter).
+  assert.equal(apply("[^a]: first\n\t|", continueLine), "[^a]: first\n\t\n\t|");
+  // Empty line under a footnote fills the body indent (BH-049 sibling).
+  assert.equal(apply("[^a]: first\n|", continueLine), "[^a]: first\n\t|");
+});
