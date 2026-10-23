@@ -835,3 +835,19 @@ test("Tab on plain ATX heading is a no-op (BH-087)", () => {
   // Callout opener still no-op (BH-058).
   assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
 });
+
+test("Tab on plain thematic break is a no-op (BH-088)", () => {
+  assert.equal(apply("---|", indentTab), "---|");
+  assert.equal(apply("|***", indentTab), "|***");
+  assert.equal(apply("___|", indentTab), "___|");
+  assert.equal(apply("- - -|", indentTab), "- - -|");
+  assert.equal(apply("* * *|", indentTab), "* * *|");
+  assert.equal(apply("   ---|", indentTab), "   ---|");
+  assert.equal(apply("---|", indentTab, "  "), "---|");
+  // Setext underline still no-op via BH-066 (not HR).
+  assert.equal(apply("Title\n---|", indentTab), "Title\n---|");
+  // List item still indents (not a thematic break).
+  assert.equal(apply("- |item", indentTab, "  "), "  - |item");
+  // Plain paragraph still indents.
+  assert.equal(apply("some| text", indentTab), "\tsome| text");
+});
