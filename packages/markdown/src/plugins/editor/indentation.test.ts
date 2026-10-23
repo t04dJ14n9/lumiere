@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import { indentUnit } from "@codemirror/language";
-import { indentTab, outdentTab } from "./indentation";
+import { indentTab, outdentTab, indentationTabKey } from "./indentation";
 
 type Command = typeof indentTab;
 
@@ -70,4 +70,19 @@ test("moving a numbered item renumbers the lists it leaves and joins", () => {
   );
   assert.equal(apply("1. a\n\t1. b|", outdentTab), "1. a\n2. b|");
   assert.equal(apply("1. a\n\t1. b|\n2. c", outdentTab), "1. a\n2. b|\n3. c");
+});
+
+/** BH-040: Tab / Shift+Tab map to indent actions before Vim can swallow them. */
+test("indentationTabKey maps Tab and Shift+Tab (BH-040)", () => {
+  assert.equal(indentationTabKey({ key: "Tab", shiftKey: false }), "indent");
+  assert.equal(indentationTabKey({ key: "Tab", shiftKey: true }), "outdent");
+  assert.equal(
+    indentationTabKey({ key: "Tab", shiftKey: false, ctrlKey: true }),
+    undefined,
+  );
+  assert.equal(
+    indentationTabKey({ key: "Tab", shiftKey: false, isComposing: true }),
+    undefined,
+  );
+  assert.equal(indentationTabKey({ key: "Enter", shiftKey: false }), undefined);
 });
