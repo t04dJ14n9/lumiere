@@ -17,6 +17,7 @@ import {
   plainQuoteLine,
   unwrapQuote,
 } from "./quote-indent";
+import { unwrapCalloutTitle } from "./callout-unwrap";
 import { unwrapAtxHeading, unwrapListMarker } from "./heading-unwrap";
 
 interface Target {
@@ -232,8 +233,12 @@ export function outdentBackspace(target: Target): boolean {
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
   }
-  // ATX: textStart is 0, so unwrap before that gate (BH-061).
+  // ATX / callout title: textStart is before the marker, so unwrap first
+  // (BH-061–063 ATX; BH-064 callout `[!TYPE] `).
   if (unwrapAtxHeading(target)) {
+    return true;
+  }
+  if (unwrapCalloutTitle(target)) {
     return true;
   }
   const line = state.doc.lineAt(range.head);
