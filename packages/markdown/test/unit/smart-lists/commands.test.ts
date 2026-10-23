@@ -232,6 +232,26 @@ test("Enter in a setext heading exits below the underline (BH-059)", () => {
   );
 });
 
+test("Shift+Enter in a setext heading exits below the underline (BH-076)", () => {
+  assert.equal(
+    apply("Title|\n=========\n\nbody", continueLine),
+    "Title\n=========\n|\n\nbody",
+  );
+  assert.equal(apply("Title\n---------|", continueLine), "Title\n---------\n|");
+  assert.equal(
+    apply("Hello| world\n---------\n\nbody", continueLine),
+    "Hello\n---------\n| world\n\nbody",
+  );
+  assert.equal(
+    apply("|Title\n=========\n\nbody", continueLine),
+    "Title\n=========\n|\n\nbody",
+  );
+  assert.equal(
+    apply("> Title|\n> =========", continueLine),
+    "> Title\n> =========\n|",
+  );
+});
+
 test("Enter on a footnote definition continues with a tab indent (BH-060)", () => {
   assert.equal(
     apply("[^a]: first line|", continueList),

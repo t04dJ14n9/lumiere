@@ -13,6 +13,7 @@ import {
 import { renumberAround } from "../../markdown/ordered-lists";
 import { continueFootnoteDefinition } from "./footnote-enter";
 import { continueLinkReferenceDefinition } from "./linkref-enter";
+import { exitSetextHeading } from "./setext-enter";
 
 interface Target {
   state: EditorState;
@@ -181,46 +182,6 @@ function keepSpaceBeforeCaret(
     scrollIntoView: true,
     userEvent: "input",
   });
-}
-
-/**
- * Enter inside a setext heading exits below the underline (BH-059) — instead of
- * splitting the title from `===`/`---` and breaking the heading.
- */
-function exitSetextHeading(target: Target): boolean {
-  const { state } = target;
-  const caret = state.selection.main.head;
-  const tree = syntaxTree(state);
-  let node: SyntaxNode | null = tree.resolveInner(caret, caret === 0 ? 1 : -1);
-  while (node && !/^SetextHeading[1-6]$/.test(node.name)) {
-    node = node.parent;
-  }
-  if (!node) {
-    return false;
-  }
-  const title = state.doc.lineAt(node.from);
-  const onTitle = state.doc.lineAt(caret).number === title.number;
-  // At title start: leave heading intact and exit below (same as EOL).
-  const suffix =
-    onTitle && caret > title.from ? title.text.slice(caret - title.from) : "";
-  const after = node.to;
-  const changes: ChangeSpec[] =
-    suffix.length > 0
-      ? [
-          { from: caret, to: title.to, insert: "" },
-          { from: after, insert: state.lineBreak + suffix },
-        ]
-      : [{ from: after, insert: state.lineBreak }];
-  const set = state.changes(changes);
-  target.dispatch(
-    state.update({
-      changes: set,
-      selection: EditorSelection.cursor(set.mapPos(after, 1) - suffix.length),
-      scrollIntoView: true,
-      userEvent: "input",
-    }),
-  );
-  return true;
 }
 
 /**
@@ -399,7 +360,8 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
 
 /**
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
- * keeps the quotes and lines up with a list item's text.
+ * keeps the quotes and lines up with a list item's text. Setext headings
+ * exit below the underline like Enter (BH-076 / BH-059).
  *
  * When the caret is on an empty line under a list/quote (the usual place a
  * Live Preview click or End lands once the file has a trailing newline),
@@ -410,6 +372,10 @@ export function continueLine(target: Target): boolean {
   const { state } = target;
   if (state.selection.ranges.length > 1) {
     return false;
+  }
+  // Same setext exit as Enter (BH-076): soft-break must not orphan ===/---.
+  if (exitSetextHeading(target)) {
+    return true;
   }
   const line = state.doc.lineAt(state.selection.main.head);
   if (line.text === "" && line.number > 1) {
