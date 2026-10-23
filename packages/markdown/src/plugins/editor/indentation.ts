@@ -129,36 +129,60 @@ export function indentationTabKey(event: {
   return event.shiftKey ? "outdent" : "indent";
 }
 
+type BracketKeyEvent = {
+  key: string;
+  code?: string;
+  keyCode?: number;
+  shiftKey: boolean;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  isComposing?: boolean;
+};
+
+/** Electron/Chromium Ctrl+[ → Escape while code stays BracketLeft (no Mod). */
+function remappedCtrlBracketLeft(event: BracketKeyEvent): boolean {
+  const code = event.code ?? "";
+  return (
+    code === "BracketLeft" && (event.key === "Escape" || event.keyCode === 27)
+  );
+}
+
+function bracketIndentAction(
+  event: BracketKeyEvent,
+): "indent" | "outdent" | undefined {
+  const code = event.code ?? "";
+  // Prefer physical `code`; keyCode 219/221 covers older Electron; key text
+  // still helps when code is missing. Mod+Escape is iPad/Chromium C-Esc.
+  if (code === "BracketRight" || event.key === "]" || event.keyCode === 221) {
+    return "indent";
+  }
+  if (
+    code === "BracketLeft" ||
+    event.key === "[" ||
+    event.keyCode === 219 ||
+    event.key === "Escape" ||
+    event.keyCode === 27
+  ) {
+    return "outdent";
+  }
+  return undefined;
+}
+
 /**
  * Ctrl/Cmd+[ → outdent; Ctrl/Cmd+] → indent (BH-047).
  * Physical keyCodes 219/221 cover non-Latin layouts like find-keys.
  * Pure so unit tests need no DOM.
  */
 export function indentationBracketKey(
-  event: {
-    key: string;
-    code?: string;
-    keyCode?: number;
-    shiftKey: boolean;
-    altKey?: boolean;
-    ctrlKey?: boolean;
-    metaKey?: boolean;
-    isComposing?: boolean;
-  },
+  event: BracketKeyEvent,
   isMac: boolean,
 ): "indent" | "outdent" | undefined {
   if (event.isComposing || event.altKey || event.shiftKey) {
     return undefined;
   }
-  const code = event.code ?? "";
-  const key = event.key;
-  // Chromium/Electron on Linux often remaps Ctrl+[ to key="Escape" while
-  // keeping code="BracketLeft", and may clear ctrlKey. Bare Esc has
-  // code="Escape" — only the remap signature outdents without Mod.
-  if (
-    code === "BracketLeft" &&
-    (key === "Escape" || event.keyCode === 27)
-  ) {
+  // Bare Esc has code="Escape" — only the remap signature outdents without Mod.
+  if (remappedCtrlBracketLeft(event)) {
     return "outdent";
   }
   const modifier = isMac
@@ -167,25 +191,7 @@ export function indentationBracketKey(
   if (!modifier) {
     return undefined;
   }
-  // Prefer physical `code`; keyCode 219/221 covers older Electron; key text
-  // still helps when code is missing. Mod+Escape is iPad/Chromium C-Esc.
-  if (
-    code === "BracketRight" ||
-    key === "]" ||
-    event.keyCode === 221
-  ) {
-    return "indent";
-  }
-  if (
-    code === "BracketLeft" ||
-    key === "[" ||
-    event.keyCode === 219 ||
-    key === "Escape" ||
-    event.keyCode === 27
-  ) {
-    return "outdent";
-  }
-  return undefined;
+  return bracketIndentAction(event);
 }
 
 /**

@@ -135,10 +135,7 @@ test("indentationBracketKey maps Mod-[ / Mod-] (BH-047)", () => {
     undefined,
   );
   assert.equal(
-    indentationBracketKey(
-      { key: "[", shiftKey: true, ctrlKey: true },
-      false,
-    ),
+    indentationBracketKey({ key: "[", shiftKey: true, ctrlKey: true }, false),
     undefined,
   );
   // Mac: Ctrl+[ is not Mod (Cmd); leave bare Ctrl for vim Esc on macOS.
