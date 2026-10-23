@@ -24,7 +24,7 @@ import { protocol, type viewState } from "./protocol";
 import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
-import { indentationKeymap } from "./indentation";
+import { indentationDom, indentationKeymap } from "./indentation";
 import { lineStartKeymap } from "./line-start";
 import { findExtension, openFind } from "./find";
 import { keepFindKey } from "./find-keys";
@@ -217,6 +217,8 @@ function createEditorView(
         }),
         menuSelectionContext,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
+        // BH-040: Tab/Shift+Tab via DOM so Vim NORMAL cannot swallow indent.
+        indentationDom(),
         Prec.low(
           keymap.of([
             ...indentationKeymap,
