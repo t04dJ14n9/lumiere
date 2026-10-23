@@ -47,6 +47,27 @@ export function sideLabel(uri: string): string {
 }
 
 /**
+ * Labels for a comparison. A plain-file pair (Compare, `code --diff`) must not
+ * both read "Working tree" — that made both sides look like the live buffer.
+ */
+export function sideLabels(
+  original: string,
+  modified: string,
+): { left: string; right: string } {
+  const left = sideLabel(original);
+  const right = sideLabel(modified);
+  if (left !== "Working tree" || right !== "Working tree") {
+    return { left, right };
+  }
+  const a = fileName(original);
+  const b = fileName(modified);
+  if (!a || !b || a === b) {
+    return { left: "Original", right: "Modified" };
+  }
+  return { left: a, right: b };
+}
+
+/**
  * Rendered side-by-side diffs. With `diffEditor: rendered` it takes over
  * Markdown text diffs as VS Code opens them (Source Control, Timeline); the
  * command opens one against HEAD for the active note in either mode.
@@ -246,6 +267,14 @@ async function prepare(
   life: Life,
   comparison: Comparison,
 ): Promise<Prepared | undefined> {
+  if (comparison.original === comparison.modified) {
+    report(
+      ctx,
+      "Could not read the diff",
+      new Error("Both sides resolve to the same URI"),
+    );
+    return undefined;
+  }
   // Subscribe before reading, so an edit during the first read is seen.
   let changed = false;
   let onChange: (() => void) | undefined;
@@ -278,7 +307,10 @@ async function prepare(
         return undefined;
       }
     } while (changed && ++reads < MAX_REREADS);
-    const [left, right] = sides;
+    const [leftRaw, rightRaw] = sides;
+    const labels = sideLabels(comparison.original, comparison.modified);
+    const left = { ...leftRaw, label: labels.left };
+    const right = { ...rightRaw, label: labels.right };
     const resources = await prepareResources(ctx, left, right);
     return {
       left,
@@ -364,9 +396,13 @@ function present(
       readSide(ctx, comparison.original),
       readSide(ctx, comparison.modified),
     ]).then(
-      ([left, right]) => {
+      ([leftRaw, rightRaw]) => {
         if (open && life.live && mine === version) {
-          panel.update(left, right);
+          const labels = sideLabels(comparison.original, comparison.modified);
+          panel.update(
+            { ...leftRaw, label: labels.left },
+            { ...rightRaw, label: labels.right },
+          );
         }
       },
       (error: unknown) => {

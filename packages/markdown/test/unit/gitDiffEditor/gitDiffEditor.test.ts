@@ -7,6 +7,7 @@ import { createRoot } from "@workshop/core";
 import {
   gitDiffEditorHost,
   sideLabel,
+  sideLabels,
 } from "../../../src/plugins/gitDiffEditor/host";
 import {
   describedComparison,
@@ -35,6 +36,124 @@ test("sideLabel names each side of a git diff", () => {
   assert.equal(sideLabel(gitUri("~")), "Index");
   assert.equal(sideLabel(gitUri("a".repeat(40))), "aaaaaaa");
   assert.equal(sideLabel("git:/n.md?not-json"), "Git");
+});
+
+test("sideLabels distinguish plain-file pairs (BH-064)", () => {
+  assert.deepEqual(sideLabels(gitUri("HEAD"), "file:///n.md"), {
+    left: "HEAD",
+    right: "Working tree",
+  });
+  // code --diff /tmp/old.md ./n.md must not claim both are the live tree.
+  assert.deepEqual(sideLabels("file:///tmp/old.md", "file:///vault/n.md"), {
+    left: "old.md",
+    right: "n.md",
+  });
+  assert.deepEqual(sideLabels("file:///a/n.md", "file:///b/n.md"), {
+    left: "Original",
+    right: "Modified",
+  });
+  assert.deepEqual(sideLabels("file:///n.md", "file:///n.md"), {
+    left: "Original",
+    right: "Modified",
+  });
+});
+
+
+test("host: plain-file rendered takeover keeps distinct sides and labels (BH-064)", async () => {
+  const h = harness("rendered");
+  h.texts["file:///tmp/base-n.md"] = "# T\n\nold\n";
+  h.texts["file:///vault/n.md"] = "# T\n\nnew\n";
+  const root = createRoot();
+  provideHostServices(root, h.host);
+  root.plugin(gitDiffEditorHost);
+  await root.settled();
+  let closed = false;
+  h.opened.forEach((listener) =>
+    listener({
+      original: "file:///tmp/base-n.md",
+      modified: "file:///vault/n.md",
+      column: 1,
+      preview: true,
+      close: async () => {
+        closed = true;
+        return true;
+      },
+    }),
+  );
+  await tick();
+  await tick();
+  assert.equal(closed, true);
+  assert.equal(h.shown.length, 1);
+  assert.equal(h.shown[0]!.left.label, "base-n.md");
+  assert.equal(h.shown[0]!.right.label, "n.md");
+  assert.equal(h.shown[0]!.left.text, "# T\n\nold\n");
+  assert.equal(h.shown[0]!.right.text, "# T\n\nnew\n");
+  assert.notEqual(h.shown[0]!.left.text, h.shown[0]!.right.text);
+  await root.dispose();
+});
+
+test("host: identical original/modified URI is refused (BH-064)", async () => {
+  const commands = new Map<string, (...args: unknown[]) => unknown>();
+  const opened = new Set<(diff: OpenedDiff) => void>();
+  const shown: Shown[] = [];
+  const diffViews: DiffViews = {
+    onDidOpenDiff(listener) {
+      opened.add(listener);
+      return () => void opened.delete(listener);
+    },
+    async openNative() {},
+    show(options) {
+      shown.push({ ...options, disposed: false, updates: 0 });
+      return {
+        update() {},
+        onDispose() {
+          return () => {};
+        },
+        dispose() {},
+      };
+    },
+  };
+  const host = fakeHost({
+    diffViews,
+    git: { toGitUri: (_uri: string, ref: string) => gitUri(ref) },
+    hostCommands: {
+      register(id, run) {
+        commands.set(id, run);
+        return () => void commands.delete(id);
+      },
+    },
+    settings: { get: <T>() => "rendered" as T },
+    activeEditor: { note: () => "file:///n.md" },
+    hostDocuments: {
+      text: () => "# same\n",
+      onChange() {
+        return () => {};
+      },
+    },
+    dialogs: { error() {} },
+  });
+  const root = createRoot();
+  provideHostServices(root, host);
+  root.plugin(gitDiffEditorHost);
+  await root.settled();
+  let closed = false;
+  opened.forEach((listener) =>
+    listener({
+      original: "file:///n.md",
+      modified: "file:///n.md",
+      column: 1,
+      preview: true,
+      close: async () => {
+        closed = true;
+        return true;
+      },
+    }),
+  );
+  await tick();
+  await tick();
+  assert.equal(closed, false);
+  assert.equal(shown.length, 0);
+  await root.dispose();
 });
 
 test("SCM uris become structured sides and Open Full Diff keeps them", () => {
