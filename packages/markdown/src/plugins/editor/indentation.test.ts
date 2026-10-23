@@ -366,6 +366,54 @@ test("Backspace at ATX heading text start unwraps marker (BH-061)", () => {
   assert.equal(apply("> |quoted", outdentBackspace, "  "), "|quoted");
 });
 
+test("Backspace at list/task ATX heading text start unwraps marker (BH-063)", () => {
+  assert.equal(apply("- # |ListHead", outdentBackspace, "  "), "- |ListHead");
+  assert.equal(apply("* # |StarHead", outdentBackspace, "  "), "* |StarHead");
+  assert.equal(apply("1. # |OrdHead", outdentBackspace, "  "), "1. |OrdHead");
+  assert.equal(
+    apply("- [ ] # |TaskHead", outdentBackspace, "  "),
+    "- [ ] |TaskHead",
+  );
+  assert.equal(
+    apply("- [x] # |DoneHead", outdentBackspace, "  "),
+    "- [x] |DoneHead",
+  );
+  assert.equal(
+    apply("> - # |QuoteList", outdentBackspace, "  "),
+    "> - |QuoteList",
+  );
+  assert.equal(
+    apply("> - [ ] # |QuoteTask", outdentBackspace, "  "),
+    "> - [ ] |QuoteTask",
+  );
+  assert.equal(apply("- ## |Nested", outdentBackspace, "  "), "- |Nested");
+  // Mid-title / no-space under list: not ours.
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "- # MidTitle",
+        selection: { anchor: 7 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  assert.equal(
+    outdentBackspace({
+      state: EditorState.create({
+        doc: "- #NoSpace",
+        selection: { anchor: 3 },
+      }),
+      dispatch: () => undefined,
+    }),
+    false,
+  );
+  // Plain / quoted ATX and list unwrap unchanged (BH-061 / 062 / 053).
+  assert.equal(apply("# |Plain", outdentBackspace, "  "), "|Plain");
+  assert.equal(apply("> # |Quoted", outdentBackspace, "  "), "> |Quoted");
+  assert.equal(apply("- |top", outdentBackspace, "  "), "|top");
+});
+
 test("Backspace at quoted ATX heading text start unwraps marker (BH-062)", () => {
   assert.equal(apply("> # |Title", outdentBackspace, "  "), "> |Title");
   assert.equal(apply("> ## |Nested", outdentBackspace, "  "), "> |Nested");
