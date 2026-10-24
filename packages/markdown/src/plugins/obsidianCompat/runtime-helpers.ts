@@ -1,5 +1,8 @@
+import type { Component, MarkdownRenderChild } from "./obsidian-core";
+import type { MarkdownPostProcessorContext } from "./obsidian-workspace";
 import { getDomDocument } from "./dom-helpers";
-import type { ObsidianPluginManifest } from "./api";
+import type { ObsidianPluginManifest, SerializedVaultFile } from "./api";
+import { normalizePath } from "./obsidian-core";
 import { createPluginRequire } from "./obsidian-module";
 import { Plugin } from "./obsidian-plugin";
 import type { App } from "./obsidian-workspace";
@@ -145,7 +148,7 @@ export function createPluginStyleEl(
   pluginId: string,
   styles: string | undefined,
 ): HTMLStyleElement | null {
-  if (!styles || false) {
+  if (!styles) {
     return null;
   }
   const styleEl = getDomDocument().createElement("style");
@@ -155,28 +158,131 @@ export function createPluginStyleEl(
   return styleEl;
 }
 
+export function toVaultRelativePath(
+  pathOrUri: string,
+  vaultRoot: string,
+): string {
+  const raw = String(pathOrUri ?? "");
+  if (!raw) {
+    return "";
+  }
+  const prefix = vaultRoot ? `${vaultRoot.replace(/\/+$/, "")}/` : "";
+  if (prefix && raw.startsWith(prefix)) {
+    return normalizePath(decodeURIComponent(raw.slice(prefix.length)));
+  }
+  if (raw.includes("://")) {
+    const lastSlash = raw.lastIndexOf("/");
+    const tail = lastSlash >= 0 ? raw.slice(lastSlash + 1) : raw;
+    return normalizePath(decodeURIComponent(tail));
+  }
+  return normalizePath(raw);
+}
+
+export async function preloadVaultMarkdownFiles(
+  app: App,
+  files: readonly SerializedVaultFile[],
+): Promise<void> {
+  const missing = files.filter(
+    (item) =>
+      item.content === undefined &&
+      item.path.toLowerCase().endsWith(".md") &&
+      app.vault.getCachedContent(item.path) === undefined,
+  );
+  await Promise.all(
+    missing.map(async (item) => {
+      const file = app.vault.getFileByPath(item.path);
+      if (!file) {
+        return;
+      }
+      try {
+        await app.vault.read(file);
+      } catch {
+        // Ignore unreadable files during initial bootstrap preload
+      }
+    }),
+  );
+}
+
+function appendInlineTokens(parent: HTMLElement, text: string): void {
+  const doc = getDomDocument();
+  const tokenRe = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(([^)]+)\)/g;
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  while ((match = tokenRe.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parent.appendChild(doc.createTextNode(text.slice(lastIdx, match.index)));
+    }
+    const a = doc.createElement("a");
+    if (match[1] !== undefined) {
+      const target = match[1].trim();
+      const alias = (match[2] ?? target).trim();
+      a.className = "internal-link";
+      a.dataset.href = target;
+      a.setAttribute("href", target);
+      a.textContent = alias;
+    } else {
+      a.className = "external-link";
+      a.setAttribute("href", match[4] ?? "");
+      a.textContent = match[3] ?? "";
+    }
+    parent.appendChild(a);
+    lastIdx = tokenRe.lastIndex;
+  }
+  if (lastIdx < text.length) {
+    parent.appendChild(doc.createTextNode(text.slice(lastIdx)));
+  }
+}
+
 export function renderFallbackMarkdown(
   markdown: string,
   el: HTMLElement,
 ): void {
-  const wrapper = getDomDocument().createElement("div");
-  wrapper.className = "markdown-rendered";
+  const doc = getDomDocument();
   const fenceMatch = /^```(\w+)?[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*$/m.exec(
     markdown.trim(),
   );
   if (fenceMatch) {
-    const pre = getDomDocument().createElement("pre");
-    const code = getDomDocument().createElement("code");
+    const wrapper = doc.createElement("div");
+    wrapper.className = "markdown-rendered";
+    const pre = doc.createElement("pre");
+    const code = doc.createElement("code");
     if (fenceMatch[1]) {
       code.className = `language-${fenceMatch[1].toLowerCase()}`;
     }
     code.textContent = fenceMatch[2] ?? "";
     pre.appendChild(code);
     wrapper.appendChild(pre);
-  } else {
-    const p = getDomDocument().createElement("p");
-    p.textContent = markdown;
-    wrapper.appendChild(p);
+    el.appendChild(wrapper);
+    return;
   }
-  el.appendChild(wrapper);
+  const p = doc.createElement("p");
+  appendInlineTokens(p, markdown);
+  el.appendChild(p);
+}
+
+export function buildPostProcessorContext(
+  app: App,
+  clean: string,
+  renderChildren: Set<Component>,
+  ownerComponent?: Component,
+): MarkdownPostProcessorContext {
+  const cache = app.metadataCache.getCache(clean);
+  return {
+    docId: clean,
+    sourcePath: clean,
+    frontmatter: cache?.frontmatter ?? null,
+    addChild: (child: Component | MarkdownRenderChild) => {
+      if (ownerComponent) {
+        ownerComponent.addChild(child);
+      } else {
+        renderChildren.add(child);
+        void child.load();
+      }
+    },
+    getSectionInfo: () => {
+      const text = app.vault.getCachedContent(clean) ?? "";
+      const lines = text.split(/\r?\n/);
+      return { text, lineStart: 0, lineEnd: Math.max(0, lines.length - 1) };
+    },
+  };
 }
