@@ -676,3 +676,33 @@ test("Shift+Enter on empty footnote definition unwraps marker (BH-091)", () => {
   // Non-empty: Shift+Enter still soft-breaks with tab (BH-077).
   assert.equal(apply("[^a]: body|", continueLine), "[^a]: body\n\t|");
 });
+
+test("Enter on empty link reference unwraps marker (BH-092)", () => {
+  assert.equal(apply("[label]: |", continueList), "|");
+  assert.equal(apply("[label]:|", continueList), "|");
+  assert.equal(apply("[ref]: |", continueList), "|");
+  assert.equal(apply("  [x]: |", continueList), "|");
+  assert.equal(apply("> [label]: |", continueList), "> |");
+  assert.equal(apply("> > [label]: |", continueList), "> > |");
+  assert.equal(apply("[label]:\t|", continueList), "|");
+  // Footnote empty also unwraps via BH-091.
+  assert.equal(apply("[^a]: |", continueList), "|");
+  // Non-empty destination still continues with tab via BH-072.
+  assert.equal(
+    apply("[label]: https://example.com|", continueList),
+    "[label]: https://example.com\n\t|",
+  );
+  assert.equal(apply("> |", continueList), "\n|");
+});
+
+test("Shift+Enter on empty link reference unwraps marker (BH-092)", () => {
+  assert.equal(apply("[label]: |", continueLine), "|");
+  assert.equal(apply("[label]:|", continueLine), "|");
+  assert.equal(apply("> [label]: |", continueLine), "> |");
+  assert.equal(apply("> > [ref]: |", continueLine), "> > |");
+  // Non-empty destination still soft-breaks with tab via BH-079.
+  assert.equal(
+    apply("[label]: https://example.com|", continueLine),
+    "[label]: https://example.com\n\t|",
+  );
+});
