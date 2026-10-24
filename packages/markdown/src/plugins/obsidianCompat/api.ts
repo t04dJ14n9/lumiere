@@ -18,6 +18,44 @@ export interface VaultConfigChange {
   readonly vaultRoot: string;
 }
 
+export interface ObsidianPluginManifest {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly minAppVersion?: string;
+  readonly description?: string;
+  readonly author?: string;
+  readonly authorUrl?: string;
+  readonly isDesktopOnly?: boolean;
+  readonly dir?: string;
+}
+
+export interface CommunityPluginBundle {
+  readonly id: string;
+  readonly manifest: ObsidianPluginManifest;
+  readonly mainJs: string;
+  readonly stylesCss?: string;
+  readonly data?: unknown;
+}
+
+export interface SerializedVaultFile {
+  readonly path: string;
+  readonly mtime: number;
+  readonly ctime?: number;
+  readonly size: number;
+  readonly content?: string;
+}
+
+export interface ObsidianBootstrapSnapshot {
+  readonly trusted: boolean;
+  readonly vaultRoot: string;
+  readonly vaultName: string;
+  readonly configDir: string;
+  readonly activePath: string;
+  readonly files: readonly SerializedVaultFile[];
+  readonly plugins: readonly CommunityPluginBundle[];
+}
+
 export interface ObsidianCompat {
   /** Resolves the supplied identity before returning an immutable snapshot. */
   getPropertyTypes(scope: VaultConfigScope): Promise<PropertyTypes>;

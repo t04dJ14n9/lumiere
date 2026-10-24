@@ -1,5 +1,5 @@
 import type { BaseContext, Plugin } from "@workshop/core";
-import { features } from "../plugins/catalog";
+import { features, workbenchFeatures } from "../plugins/catalog";
 import type { NoteSettings, PanelShell, HostServices } from "../shared/host";
 import { PluginSwitch } from "../shared/plugin-switch";
 import {
@@ -14,6 +14,7 @@ import {
   onlineVideosHost,
   sourcesPropertyHost,
   cursorBridgePanelHost,
+  obsidianCompatPanelHost,
 } from "../plugins/host";
 
 type PanelHost = Plugin<{ panel: PanelShell }>;
@@ -26,6 +27,7 @@ const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   sourcesPropertyHost,
   tagsHost,
   cursorBridgePanelHost,
+  obsidianCompatPanelHost,
 ];
 
 /**
@@ -103,6 +105,8 @@ function isEnabled(settings: NoteSettings, id: string): boolean {
   }
   return (
     settings.features?.[id]?.enabled ??
-    features.some((manifest) => manifest.id === id && manifest.defaultEnabled)
+    [...features, ...workbenchFeatures].some(
+      (manifest) => manifest.id === id && manifest.defaultEnabled,
+    )
   );
 }

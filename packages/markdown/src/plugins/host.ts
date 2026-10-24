@@ -37,6 +37,7 @@ export { codeBlocksHost } from "./codeBlocks/host";
 
 export { okfCoreHost } from "./okfCore/host";
 export { obsidianCompatHost } from "./obsidianCompat/host";
+export { obsidianCompatPanelHost } from "./obsidianCompat/panel-host";
 export { graphHost } from "./graph/host";
 export { sourcesPropertyHost } from "./sourcesProperty/host";
 export { publicApiHost } from "./publicApi/host";
