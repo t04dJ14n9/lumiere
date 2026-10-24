@@ -37,7 +37,7 @@
     "@workshop/core": "workspace:*",
     "dompurify": "3.4.17",
     "graphology": "0.26.0",
-    "lucide": "1.57.0",
+    "lucide": "1.59.0",
     "markdown-it": "15.0.3",
     "markdown-it-footnote": "4.0.0",
     "markdown-it-mark": "4.0.0",
