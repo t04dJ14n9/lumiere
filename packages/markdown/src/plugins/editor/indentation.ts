@@ -24,6 +24,7 @@ import { unwrapLeadingMarkers, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
 import { onPlainAtxHeading, onQuotedAtxHeading } from "./atx-indent";
 import { onFenceLine } from "./fence-indent";
+import { onMathFence } from "./math-indent";
 import { onThematicBreak } from "./thematic-indent";
 
 interface Target {
@@ -201,7 +202,7 @@ function onListItem(state: EditorState): boolean {
   return listItem.test(text) || isQuoteListLine(text);
 }
 
-/** Tab: HR/fence no-op (BH-088/089), list (BH-057), footnote-def no-op (BH-067), link-ref no-op (BH-069), quoted-setext no-op (BH-068), quoted-ATX no-op (BH-070), nest quote (BH-058), setext no-op (BH-066), plain ATX no-op (BH-087), else indentMore. */
+/** Tab: HR/fence/math-fence no-op (BH-088/089/090), list (BH-057), footnote-def no-op (BH-067), link-ref no-op (BH-069), quoted-setext no-op (BH-068), quoted-ATX no-op (BH-070), nest quote (BH-058), setext no-op (BH-066), plain ATX no-op (BH-087), else indentMore. */
 export function indentTab(target: Target): boolean {
   // Before list: `- - -` / `* * *` look like list items but are thematic breaks;
   // indenting them into a CodeBlock destroys the HR (BH-088).
@@ -210,6 +211,10 @@ export function indentTab(target: Target): boolean {
   }
   // Fence opener/closer: indenting ≥4 spaces breaks the fence (BH-089).
   if (onFenceLine(target.state)) {
+    return true;
+  }
+  // Display-math $$ fence: indenting ≥4 spaces breaks the fence (BH-090).
+  if (onMathFence(target.state)) {
     return true;
   }
   if (onListItem(target.state)) {
