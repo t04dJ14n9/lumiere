@@ -89,6 +89,10 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
     import("../plugins/obsidianCompat/webview").then(
       (m) => m.obsidianCompatWebview,
     ),
+  obsidianMarketplace: () =>
+    import("../plugins/obsidianMarketplace/webview").then(
+      (m) => m.obsidianMarketplaceWebview,
+    ),
   vim: () => import("../plugins/vim/webview").then((m) => m.vimWebview),
 };
 

@@ -1,3 +1,9 @@
+export {
+  CommunityPluginLoader,
+  isValidPluginId,
+  type LoadedCommunityPlugins,
+} from "./community-plugins";
+export { resolveConfigDirectory } from "./config-dir";
 import type { Disposer } from "@workshop/core";
 
 /** Serialized Obsidian types, distinct from editable UI kinds. */
@@ -78,6 +84,9 @@ declare module "@workshop/core" {
   }
   interface Events {
     /** @mode emit */ "obsidianCompat/changed": (
+      change: VaultConfigChange,
+    ) => void;
+    /** @mode emit */ "obsidianCompat/pluginsChanged": (
       change: VaultConfigChange,
     ) => void;
   }
