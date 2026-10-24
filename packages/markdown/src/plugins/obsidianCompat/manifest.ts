@@ -12,10 +12,11 @@ export const config = Schema.object({
 export default defineManifest({
   id: "obsidianCompat",
   title: "Obsidian Compatibility",
-  description: "Use Obsidian property types and vault settings in Lumière.",
+  description:
+    "Use Obsidian property types, vault settings, native obsidian API, and community plugins in Lumière.",
   kind: "feature",
   defaultEnabled: true,
-  surfaces: ["host"],
+  surfaces: ["host", "webview"],
   capabilities: ["resourceLoading"],
   config,
 } as const);
