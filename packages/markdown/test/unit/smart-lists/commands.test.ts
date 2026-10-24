@@ -755,3 +755,18 @@ test("Shift+Enter inside HTML comment exits after the comment (BH-097)", () => {
   // Edge: caret at end still soft-breaks after (not claimed).
   assert.equal(apply("<!-- comment -->|", continueLine), "<!-- comment -->\n|");
 });
+
+test("Enter mid-ATX opener exits below without splitting marker (BH-098)", () => {
+  assert.equal(apply("#| Title", continueList), "# Title\n|");
+  assert.equal(apply("##| Hello", continueList), "## Hello\n|");
+  assert.equal(apply("> #| Title", continueList), "> # Title\n> |");
+  assert.equal(apply("- #| Title", continueList), "- # Title\n- |");
+  assert.equal(apply("> - #| Title", continueList), "> - # Title\n> - |");
+});
+
+test("Shift+Enter mid-ATX opener exits below without splitting marker (BH-098)", () => {
+  assert.equal(apply("#| Title", continueLine), "# Title\n|");
+  assert.equal(apply("##| Hello world", continueLine), "## Hello world\n|");
+  assert.equal(apply("> #| Title", continueLine), "> # Title\n> |");
+  assert.equal(apply("- #| Title", continueLine), "- # Title\n  |");
+});

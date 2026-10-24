@@ -1,6 +1,7 @@
 import { EditorSelection } from "@codemirror/state";
 import type { EditorState, Transaction } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode } from "@lezer/common";
 import { continuationPrefix } from "../../markdown/list-markup";
 
 interface Target {
@@ -24,7 +25,7 @@ export function exitHtmlComment(target: Target, soft: boolean): boolean {
   }
   const caret = range.head;
   const tree = syntaxTree(state);
-  let node = tree.resolveInner(caret, -1);
+  let node: SyntaxNode | null = tree.resolveInner(caret, -1);
   while (node) {
     if (node.name === "CommentBlock" || node.name === "Comment") {
       if (caret > node.from && caret < node.to) {

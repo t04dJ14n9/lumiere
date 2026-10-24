@@ -1,6 +1,7 @@
 import { EditorSelection } from "@codemirror/state";
 import type { ChangeSpec, EditorState, Transaction } from "@codemirror/state";
 import { continuationPrefix } from "../../markdown/list-markup";
+import { exitAtxHeadingMidOpener } from "./atx-mid-enter";
 
 interface Target {
   state: EditorState;
@@ -42,7 +43,7 @@ export function exitAtxHeading(target: Target, soft: boolean): boolean {
   const atx = match[3] ?? "";
   const contentStart = line.from + keep.length + atx.length;
   if (caret < contentStart) {
-    return false;
+    return exitAtxHeadingMidOpener(target, soft);
   }
   const body = line.text.slice(keep.length + atx.length);
   // Empty heading: unwrap marker (BH-061 sibling on Enter/SE).
