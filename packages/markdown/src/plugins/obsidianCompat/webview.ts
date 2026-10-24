@@ -1,5 +1,5 @@
 import { EditorView, type ViewUpdate } from "@codemirror/view";
-import type { Context, Plugin } from "@workshop/core";
+import type { Context, Disposer, Plugin } from "@workshop/core";
 import type {} from "../commands/api";
 import type {} from "../editor/api";
 import type {} from "../livePreview/api";
@@ -69,7 +69,7 @@ function createWebviewRuntime(ctx: Context): ObsidianRuntime {
 function bindCodeBlockRenderer(
   ctx: Context,
   runtime: ObsidianRuntime,
-): () => void {
+): Disposer {
   return ctx.livePreview.block({
     kind: "obsidian-codeblock",
     nodes: ["FencedCode"],
@@ -97,13 +97,13 @@ function registerCodeBlockIntegration(
   ctx: Context,
   runtime: ObsidianRuntime,
 ): () => void {
-  let unblock: (() => void) | undefined;
+  let unblock: Disposer | undefined;
   let live = true;
-  const bindBlock = (): (() => void) => bindCodeBlockRenderer(ctx, runtime);
+  const bindBlock = (): Disposer => bindCodeBlockRenderer(ctx, runtime);
   unblock = bindBlock();
   ctx.effect(() => () => {
     live = false;
-    unblock?.();
+    void unblock?.();
     unblock = undefined;
   });
 
@@ -132,7 +132,7 @@ function registerCodeBlockIntegration(
     if (!live) {
       return;
     }
-    unblock?.();
+    void unblock?.();
     unblock = bindBlock();
     ctx.emit("render/changed");
   };
