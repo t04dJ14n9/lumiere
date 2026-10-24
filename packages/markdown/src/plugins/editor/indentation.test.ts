@@ -903,3 +903,19 @@ test("Tab on quoted display-math $$ fence is a no-op (BH-095)", () => {
   // Plain quote still nests.
   assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
 });
+
+test("Tab on quoted thematic break is a no-op (BH-096)", () => {
+  assert.equal(apply("> ---|", indentTab, "  "), "> ---|");
+  assert.equal(apply("> ***|", indentTab, "  "), "> ***|");
+  assert.equal(apply("> ___|", indentTab, "  "), "> ___|");
+  // Spaced marks inside quote otherwise hit list reindent.
+  assert.equal(apply("> - - -|", indentTab, "  "), "> - - -|");
+  assert.equal(apply("> * * *|", indentTab, "  "), "> * * *|");
+  assert.equal(apply("> > ---|", indentTab, "  "), "> > ---|");
+  // Plain thematic break also no-op (BH-088 #370).
+  assert.equal(apply("---|", indentTab), "---|");
+  // Quoted list item still indents.
+  assert.equal(apply("> - |item", indentTab, "  "), ">   - |item");
+  // Plain quote still nests.
+  assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
+});
