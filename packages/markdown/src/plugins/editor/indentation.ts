@@ -22,7 +22,7 @@ import {
 import { onLinkReferenceDefinitionLine } from "./linkref-indent";
 import { unwrapLeadingMarkers, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
-import { onQuotedAtxHeading } from "./atx-indent";
+import { onPlainAtxHeading, onQuotedAtxHeading } from "./atx-indent";
 
 interface Target {
   state: EditorState;
@@ -199,7 +199,7 @@ function onListItem(state: EditorState): boolean {
   return listItem.test(text) || isQuoteListLine(text);
 }
 
-/** Tab: list (BH-057), footnote-def no-op (BH-067), link-ref no-op (BH-069), quoted-setext no-op (BH-068), quoted-ATX no-op (BH-070), nest quote (BH-058), setext no-op (BH-066), else indentMore. */
+/** Tab: list (BH-057), footnote-def no-op (BH-067), link-ref no-op (BH-069), quoted-setext no-op (BH-068), quoted-ATX no-op (BH-070), nest quote (BH-058), setext no-op (BH-066), plain ATX no-op (BH-087), else indentMore. */
 export function indentTab(target: Target): boolean {
   if (onListItem(target.state)) {
     return reindent(target, 1);
@@ -225,6 +225,10 @@ export function indentTab(target: Target): boolean {
   // Setext title/underline: no-op like callout openers — indenting one line alone
   // destroys SetextHeading (BH-066).
   if (onSetextHeading(target.state)) {
+    return true;
+  }
+  // Plain ATX: same CodeBlock break under a hard-tab indent unit (BH-087).
+  if (onPlainAtxHeading(target.state)) {
     return true;
   }
   return indentMore(target);

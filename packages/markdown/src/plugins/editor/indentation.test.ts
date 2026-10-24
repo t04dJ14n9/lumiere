@@ -59,7 +59,7 @@ test("Shift+Tab outdents a list item with its children", () => {
 test("Tab elsewhere indents the line, wherever the caret is, as in Obsidian", () => {
   assert.equal(apply("some| text", indentTab), "\tsome| text");
   assert.equal(apply("some| text", indentTab, "    "), "    some| text");
-  assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
+  assert.equal(apply("# he|ading", indentTab), "# he|ading");
   assert.equal(apply("«a\nb»", indentTab), "\ta\n\tb");
   assert.equal(apply("\tpla|in", outdentTab), "pla|in");
 });
@@ -567,8 +567,8 @@ test("Tab on setext title or underline is a no-op (BH-066)", () => {
     apply("Setext |Title\n=======\n\nBody under heading.", indentTab),
     "Setext |Title\n=======\n\nBody under heading.",
   );
-  // Non-setext still indents (ATX; blank between title-ish and underline).
-  assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
+  // Plain ATX no-ops (BH-087); blank between title-ish and underline still indents.
+  assert.equal(apply("# he|ading", indentTab), "# he|ading");
   assert.equal(apply("Tit|le\n\n=======", indentTab), "\tTit|le\n\n=======");
   // Lone underline line without a title above is not setext.
   assert.equal(apply("===|====", indentTab), "\t===|====");
@@ -664,8 +664,8 @@ test("Tab on quoted ATX heading is a no-op (BH-070)", () => {
   assert.equal(apply("> ## Title|", indentTab, "  "), "> ## Title|");
   assert.equal(apply("> > # |Nested", indentTab, "  "), "> > # |Nested");
   assert.equal(apply("> # |Alpha", indentTab), "> # |Alpha");
-  // Plain ATX still indents (documented beside BH-066).
-  assert.equal(apply("# he|ading", indentTab), "\t# he|ading");
+  // Plain ATX no-ops (BH-087).
+  assert.equal(apply("# he|ading", indentTab), "# he|ading");
   // Plain quote still nests.
   assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
   // Callout opener still no-op (BH-058).
@@ -818,4 +818,20 @@ test("Backspace at quoted setext title start unwraps heading (BH-083)", () => {
     apply("> |Title\n=========", outdentBackspace, "  "),
     "|Title\n=========",
   );
+});
+test("Tab on plain ATX heading is a no-op (BH-087)", () => {
+  assert.equal(apply("# he|ading", indentTab), "# he|ading");
+  assert.equal(apply("## Title|", indentTab), "## Title|");
+  assert.equal(apply("|### Title", indentTab), "|### Title");
+  assert.equal(apply("###### |H6", indentTab), "###### |H6");
+  assert.equal(apply("   # |Indented3", indentTab), "   # |Indented3");
+  assert.equal(apply("# he|ading", indentTab, "  "), "# he|ading");
+  // List-prefixed ATX still indents the list item (BH-057).
+  assert.equal(apply("- # |Title", indentTab, "  "), "  - # |Title");
+  // Plain paragraph still indents.
+  assert.equal(apply("some| text", indentTab), "\tsome| text");
+  // Setext still no-op (BH-066).
+  assert.equal(apply("Tit|le\n=======", indentTab), "Tit|le\n=======");
+  // Callout opener still no-op (BH-058).
+  assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
 });
