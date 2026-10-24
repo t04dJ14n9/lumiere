@@ -20,3 +20,26 @@ export function onThematicBreak(state: EditorState): boolean {
   }
   return thematicBreak.test(state.doc.lineAt(main.head).text);
 }
+
+/**
+ * Optional blockquote markers, then thematic break: ≤3 spaces, then 3+ of
+ * the same `*` / `-` / `_` with optional spaces between (CommonMark).
+ */
+const quotedThematic =
+  /^((?:[ \t]*>[ \t]?)*)( {0,3}([-*_])(?:[ \t]*\3){2,}[ \t]*)$/u;
+
+/**
+ * Caret on a blockquote-wrapped thematic-break line (BH-096).
+ * Tab via nestQuote nests another `>` (`> ---` → `> > ---`); Tab via list
+ * reindent on spaced marks (`> - - -` → `>   - - -`). Both destroy the HR.
+ * No-op before list / nestQuote. Plain HRs are BH-088 (#370).
+ */
+export function onQuotedThematicBreak(state: EditorState): boolean {
+  const { ranges, main } = state.selection;
+  if (ranges.length !== 1 || !main.empty) {
+    return false;
+  }
+  const text = state.doc.lineAt(main.head).text;
+  const match = quotedThematic.exec(text);
+  return Boolean(match && (match[1] ?? "").includes(">"));
+}

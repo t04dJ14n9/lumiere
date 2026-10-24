@@ -25,7 +25,7 @@ import { onSetextHeading } from "./setext-indent";
 import { onPlainAtxHeading, onQuotedAtxHeading } from "./atx-indent";
 import { onFenceLine, onQuotedFenceLine } from "./fence-indent";
 import { onMathFence, onQuotedMathFence } from "./math-indent";
-import { onThematicBreak } from "./thematic-indent";
+import { onThematicBreak, onQuotedThematicBreak } from "./thematic-indent";
 
 interface Target {
   state: EditorState;
@@ -215,6 +215,10 @@ export function indentTab(target: Target): boolean {
   }
   // Display-math $$ fence: indenting ≥4 spaces breaks the fence (BH-090).
   if (onMathFence(target.state)) {
+    return true;
+  }
+  // Quoted HR before list (`> - - -`) and nestQuote (`> ---`) (BH-096).
+  if (onQuotedThematicBreak(target.state)) {
     return true;
   }
   if (onListItem(target.state)) {
