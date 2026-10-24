@@ -179,16 +179,23 @@ class SearchParser {
       return this.property();
     }
     if (scopes) {
-      const operator = /^([a-z-]+):/.exec(this.source.slice(this.at));
+      const operator = /^([a-zA-Z_][a-zA-Z0-9_-]*):/.exec(
+        this.source.slice(this.at),
+      );
       if (operator) {
         this.at += operator[0].length;
-        if (!searchScopes.has(operator[1]!)) {
-          return this.fail(`Unsupported search operator ${operator[1]}`);
+        const name = operator[1]!;
+        if (searchScopes.has(name)) {
+          return {
+            kind: "scope",
+            scope: name,
+            term: this.unary(stops, scopes, propertyValue),
+          };
         }
         return {
-          kind: "scope",
-          scope: operator[1]!,
-          term: this.unary(stops, scopes, propertyValue),
+          kind: "property",
+          name: { kind: "text", value: name },
+          value: this.unary(stops, false, true),
         };
       }
     }
