@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "shell",
+  "description": "What Lumière's window may ask of the app: the folder picker, the menu's events, closing the window (⌘W on its last tab) and the app's light or dark appearance. The window is served by Lumière's own server on a loopback port (packages/app/src/shell/tauri.ts lists the calls). Keep this list as short as that file.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:*"]
+  },
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:app:allow-set-app-theme",
+    "core:window:allow-close",
+    "dialog:allow-open"
+  ]
+}

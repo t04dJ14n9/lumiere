@@ -47,6 +47,17 @@ export type Capability =
   /** Serves the public extension API. */
   | "publicApi";
 
+/**
+ * What a plugin needs from its host beyond the host services every host
+ * provides. Outside a host that offers it, the plugin's settings are not
+ * shown, since they could do nothing there (shared/host-needs.ts).
+ * - `workbench`: VS Code's or Cursor's own window: text editors, Source
+ *   Control, and other extensions such as agent chats and Marp.
+ * - `git`: a Git repository, through the `git` host service.
+ * - `panels`: panels of their own (`views.panel`), such as the graph's.
+ */
+export type HostNeed = "workbench" | "git" | "panels";
+
 export interface Manifest {
   readonly config?: Schema<unknown>;
   /** Public setting paths for fields shared with the files namespace. */
@@ -64,6 +75,13 @@ export interface Manifest {
   /** Which halves the plugin runs in; the public API reports these. */
   readonly surfaces: readonly ("host" | "webview")[];
   readonly capabilities: readonly Capability[];
+  /** What it needs from its host, if anything beyond the host services. */
+  readonly needs?: readonly HostNeed[];
+  /**
+   * Needs of single settings, by config field, for a plugin that runs
+   * everywhere but has a setting that applies only in some hosts.
+   */
+  readonly settingNeeds?: Readonly<Record<string, readonly HostNeed[]>>;
   readonly contributes?: {
     menus?: readonly {
       command: string;

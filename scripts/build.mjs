@@ -70,7 +70,8 @@ for (const name of products) {
 // Fail loudly if Follow Link create-on-click for basename Markdown links
 // was dropped (wrong @workshop/markdown resolution / stale foreign worktree).
 const extensionJs = await readFile(path.join(dist, "extension.js"), "utf8");
-if (!/create:\w+\.wiki\s*\|\|/.test(extensionJs)) {
+// A development build spaces the property (`create: r.wiki ||`), a production one does not.
+if (!/create:\s*\w+\.wiki\s*\|\|/.test(extensionJs)) {
   throw new Error(
     "dist/extension.js missing Markdown basename create path (expected create:<wiki>||...)",
   );

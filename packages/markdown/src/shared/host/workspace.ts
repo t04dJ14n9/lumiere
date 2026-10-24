@@ -7,6 +7,10 @@ export interface HostWorkspace {
   isTrusted(): boolean;
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
+  /**
+   * Hear a file change, appear or go away; it and the folders above it
+   * need not exist yet (VS Code's file watchers work this way).
+   */
   watch(uri: string, listener: () => void): Disposer;
   /** Create, copy and list workspace files. */
   readonly files: WorkspaceFiles;

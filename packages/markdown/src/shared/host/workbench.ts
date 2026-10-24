@@ -136,4 +136,6 @@ export interface ActiveEditor {
    * `keep` is the view that should remain: host text or Lumière.
    */
   closeSiblingTabs(uri: string, keep: "text" | "lumiere"): Promise<void>;
+  /** The view type of the custom editor in the active tab, if one is there. */
+  customEditorViewType(): string | undefined;
 }

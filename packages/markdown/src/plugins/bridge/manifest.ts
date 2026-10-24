@@ -9,6 +9,7 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host"],
   capabilities: ["commands", "clipboard", "agentHandoff"],
+  needs: ["workbench"],
   contributes: {
     commands: [
       {

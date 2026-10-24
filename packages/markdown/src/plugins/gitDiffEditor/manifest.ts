@@ -18,6 +18,7 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host"],
   capabilities: ["commands", "rendering"],
+  needs: ["workbench", "git"],
   config,
   contributes: {
     commands: [

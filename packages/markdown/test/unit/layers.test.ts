@@ -46,3 +46,21 @@ for (const [name, source, diagnostic] of [
     }
   });
 }
+
+test("the portable host entry imports no VS Code, so other editors can start the plugins", async () => {
+  const esbuild = await import("esbuild");
+  const result = await esbuild.build({
+    entryPoints: [resolve("src/host/portable.ts")],
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    write: false,
+    external: ["vscode"],
+    metafile: true,
+    logLevel: "silent",
+  });
+  const importers = Object.entries(result.metafile.inputs)
+    .filter(([, input]) => input.imports.some((item) => item.path === "vscode"))
+    .map(([file]) => file);
+  assert.deepEqual(importers, []);
+});

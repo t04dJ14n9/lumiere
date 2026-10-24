@@ -1,0 +1,16 @@
+{
+  "name": "@workshop/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lumière as a desktop app: a Tauri window around Lumière's own server (packages/app).",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build-sidecar.mjs && tauri build --config src-tauri/tauri.bundle.json",
+    "check": "cargo check --manifest-path src-tauri/Cargo.toml && cargo test --manifest-path src-tauri/Cargo.toml",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}
