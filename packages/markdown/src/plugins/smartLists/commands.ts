@@ -17,7 +17,10 @@ import {
   unwrapEmptyFootnoteDefinition,
 } from "./footnote-enter";
 import { softBreakLinkReferenceDefinition } from "./linkref-break";
-import { continueLinkReferenceDefinition } from "./linkref-enter";
+import {
+  continueLinkReferenceDefinition,
+  unwrapEmptyLinkReferenceDefinition,
+} from "./linkref-enter";
 import { exitSetextHeading } from "./setext-enter";
 import { exitAtxHeading } from "./atx-enter";
 import { exitCalloutTitle } from "./callout-enter";
@@ -412,6 +415,10 @@ export function continueLine(target: Target): boolean {
   }
   // Footnote soft-break (BH-077) before link-ref (BH-079); footnotes use [^].
   if (softBreakFootnoteDefinition(target)) {
+    return true;
+  }
+  // Empty link-ref unwrap (BH-092) before link-ref soft-break (BH-079).
+  if (unwrapEmptyLinkReferenceDefinition(target)) {
     return true;
   }
   if (softBreakLinkReferenceDefinition(target)) {

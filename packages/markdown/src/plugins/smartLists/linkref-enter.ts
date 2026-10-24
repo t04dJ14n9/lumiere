@@ -17,6 +17,13 @@ interface Target {
 const quotePrefix = /^((?:[ \t]*>[ \t]?)*)/u;
 const linkRefMarker = /^ {0,3}\[(?!\^)[^\]]+\]:[ \t]?/u;
 const linkRefCont = /^(?: {2,4}| {0,3}\t)/u;
+/**
+ * Optional quotes, then link-reference marker `[label]:` (not footnote
+ * `[^label]:`). Trailing spaces after `:` are part of the marker so an
+ * all-whitespace destination still counts as empty (BH-092).
+ */
+const emptyLinkRefDef =
+  /^((?:[ \t]*>[ \t]?)*)( {0,3}\[(?!\^)[^\]]+\]:[ \t]*)\s*$/u;
 
 function splitQuotes(text: string): { quotes: string; rest: string } {
   const quotes = quotePrefix.exec(text)?.[1] ?? "";
@@ -24,6 +31,9 @@ function splitQuotes(text: string): { quotes: string; rest: string } {
 }
 
 export function continueLinkReferenceDefinition(target: Target): boolean {
+  if (unwrapEmptyLinkReferenceDefinition(target)) {
+    return true;
+  }
   const { state } = target;
   const range = state.selection.main;
   const line = state.doc.lineAt(range.head);
@@ -113,6 +123,44 @@ function leaveLinkRefContinuation(
     state.update({
       changes: { from: line.from, to: line.to, insert: "" },
       selection: EditorSelection.cursor(line.from),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
+}
+
+/**
+ * Enter / Shift+Enter on an empty link reference definition unwraps
+ * `[label]: ` (BH-092 / footnote empty Enter BH-091 / ATX BH-084 / callout
+ * BH-086 parity). Keeps quote prefixes (`> [label]: |` → `> |`). Non-empty
+ * defs and mid-marker carets fall through (BH-072 continue is separate).
+ */
+export function unwrapEmptyLinkReferenceDefinition(target: Target): boolean {
+  const { state } = target;
+  const range = state.selection.main;
+  if (state.selection.ranges.length > 1 || !range.empty) {
+    return false;
+  }
+  const line = state.doc.lineAt(range.head);
+  const match = emptyLinkRefDef.exec(line.text);
+  if (!match) {
+    return false;
+  }
+  const quotes = match[1] ?? "";
+  const marker = match[2] ?? "";
+  if (marker.length === 0) {
+    return false;
+  }
+  const markerFrom = line.from + quotes.length;
+  const markerTo = markerFrom + marker.length;
+  if (range.head < markerTo) {
+    return false;
+  }
+  target.dispatch(
+    state.update({
+      changes: { from: markerFrom, to: line.to, insert: "" },
+      selection: EditorSelection.cursor(markerFrom),
       scrollIntoView: true,
       userEvent: "input",
     }),
