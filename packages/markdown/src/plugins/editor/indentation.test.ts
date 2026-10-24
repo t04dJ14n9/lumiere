@@ -892,3 +892,14 @@ test("Tab on quoted fence opener/closer is a no-op (BH-094)", () => {
   // Callout opener still no-op (BH-058).
   assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
 });
+
+test("Tab on quoted display-math $$ fence is a no-op (BH-095)", () => {
+  assert.equal(apply("> $$|", indentTab, "  "), "> $$|");
+  assert.equal(apply("> $$ |", indentTab, "  "), "> $$ |");
+  assert.equal(apply("> > $$|", indentTab, "  "), "> > $$|");
+  assert.equal(apply("> $$|", indentTab), "> $$|");
+  // Plain $$ also no-op (BH-090 #372).
+  assert.equal(apply("$$|", indentTab), "$$|");
+  // Plain quote still nests.
+  assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
+});

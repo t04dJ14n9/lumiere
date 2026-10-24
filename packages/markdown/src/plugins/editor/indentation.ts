@@ -24,7 +24,7 @@ import { unwrapLeadingMarkers, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
 import { onPlainAtxHeading, onQuotedAtxHeading } from "./atx-indent";
 import { onFenceLine, onQuotedFenceLine } from "./fence-indent";
-import { onMathFence } from "./math-indent";
+import { onMathFence, onQuotedMathFence } from "./math-indent";
 import { onThematicBreak } from "./thematic-indent";
 
 interface Target {
@@ -237,6 +237,10 @@ export function indentTab(target: Target): boolean {
   }
   // Quoted fence before nestQuote — nesting `>` changes fence depth (BH-094).
   if (onQuotedFenceLine(target.state)) {
+    return true;
+  }
+  // Quoted $$ before nestQuote — nesting `>` changes fence depth (BH-095).
+  if (onQuotedMathFence(target.state)) {
     return true;
   }
   if (onPlainQuote(target.state)) {
