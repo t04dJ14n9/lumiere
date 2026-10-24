@@ -41,6 +41,7 @@ export const obsidianCompatPanelHost: Plugin<{ panel: PanelShell }> = {
           }),
         );
       }
+      void notifyPluginsChanged(ctx, panel, loader);
     }
   },
 };

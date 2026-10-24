@@ -9,6 +9,15 @@ export type PluginConstructor = new (
   manifest: ObsidianPluginManifest,
 ) => Plugin;
 
+type FactoryArgs = [
+  req: (id: string) => unknown,
+  mod: { exports: unknown },
+  exports: unknown,
+  app: App,
+  filename: string,
+  dirname: string,
+];
+
 export function evaluatePluginModule(
   code: string,
   app: App,
@@ -21,26 +30,89 @@ export function evaluatePluginModule(
   } = {
     exports: {},
   };
-
-  const factory = new Function(
-    "require",
-    "module",
-    "exports",
-    "app",
-    "__" + "filename",
-    "__" + "dirname",
-    `${code}\n//# sourceURL=obsidian-plugin://${manifest.id}/main.js`,
-  ) as (...args: unknown[]) => unknown;
-
-  factory(
+  const args: FactoryArgs = [
     req,
     mod,
     mod.exports,
     app,
     `.obsidian/plugins/${manifest.id}/main.js`,
     `.obsidian/plugins/${manifest.id}`,
-  );
+  ];
+  runPluginFactory(code, manifest.id, args);
   return extractPluginConstructor(mod.exports, manifest.id);
+}
+
+function runPluginFactory(
+  code: string,
+  manifestId: string,
+  args: FactoryArgs,
+): void {
+  const fName = "__" + "filename";
+  const dName = "__" + "dirname";
+  try {
+    const factory = new Function(
+      "require",
+      "module",
+      "exports",
+      "app",
+      fName,
+      dName,
+      `${code}\n//# sourceURL=obsidian-plugin://${manifestId}/main.js`,
+    ) as (...fnArgs: unknown[]) => unknown;
+    factory(...args);
+    return;
+  } catch (err) {
+    if (!(err instanceof EvalError)) {
+      throw err;
+    }
+  }
+  runNoncedScriptFactory(code, manifestId, args);
+}
+
+function runNoncedScriptFactory(
+  code: string,
+  manifestId: string,
+  args: FactoryArgs,
+): void {
+  const fName = "__" + "filename";
+  const dName = "__" + "dirname";
+  const doc = getDomDocument();
+  const globals = globalThis as Record<string, unknown>;
+  const slot = `__lumierePluginExec_${manifestId.replace(/[^A-Za-z0-9_]/g, "_")}`;
+  let capturedError: unknown;
+  globals[slot] = (
+    factory: ((...fnArgs: unknown[]) => unknown) | null,
+    thrown?: unknown,
+  ) => {
+    if (thrown !== undefined || !factory) {
+      capturedError = thrown;
+      return;
+    }
+    try {
+      factory(...args);
+    } catch (e) {
+      capturedError = e;
+    }
+  };
+  const existing = doc.querySelector(
+    "script[nonce]",
+  ) as HTMLScriptElement | null;
+  const nonce = existing?.nonce || existing?.getAttribute("nonce") || "";
+  const scriptEl = doc.createElement("script");
+  if (nonce) {
+    scriptEl.nonce = nonce;
+    scriptEl.setAttribute("nonce", nonce);
+  }
+  scriptEl.textContent = `try { globalThis[${JSON.stringify(slot)}](function(require, module, exports, app, ${fName}, ${dName}) {\n${code}\n}); } catch (e) { globalThis[${JSON.stringify(slot)}](null, e); }\n//# sourceURL=obsidian-plugin://${manifestId}/main.js`;
+  try {
+    doc.head.appendChild(scriptEl);
+  } finally {
+    scriptEl.remove();
+    delete globals[slot];
+  }
+  if (capturedError !== undefined) {
+    throw capturedError;
+  }
 }
 
 function extractPluginConstructor(

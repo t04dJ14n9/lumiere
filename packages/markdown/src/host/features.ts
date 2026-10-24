@@ -27,6 +27,7 @@ const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   sourcesPropertyHost,
   tagsHost,
   cursorBridgePanelHost,
+  obsidianCompatPanelHost,
 ];
 
 /**
@@ -40,7 +41,6 @@ const DEFERRED_PANEL_HOSTS: readonly PanelHost[] = [
   suggestHost,
   searchHost,
   onlineVideosHost,
-  obsidianCompatPanelHost,
 ];
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
