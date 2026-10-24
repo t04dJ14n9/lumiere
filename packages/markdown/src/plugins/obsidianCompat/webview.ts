@@ -66,46 +66,60 @@ function createWebviewRuntime(ctx: Context): ObsidianRuntime {
   return runtime;
 }
 
+function bindCodeBlockRenderer(
+  ctx: Context,
+  runtime: ObsidianRuntime,
+): () => void {
+  return ctx.livePreview.block({
+    kind: "obsidian-codeblock",
+    nodes: ["FencedCode"],
+    editing: "reveal",
+    match(node, state) {
+      if (node.name !== "FencedCode") {
+        return false;
+      }
+      const info = node.node.getChild("CodeInfo");
+      if (!info) {
+        return false;
+      }
+      const lang = state
+        .sliceDoc(info.from, info.to)
+        .trim()
+        .split(/\s+/)[0]
+        ?.toLowerCase();
+      return Boolean(lang && runtime.getCodeBlockLanguages().includes(lang));
+    },
+    widget: (block) => new MarkdownBlock(block, ctx.render, FENCED_PREVIEW),
+  });
+}
+
 function registerCodeBlockIntegration(
   ctx: Context,
   runtime: ObsidianRuntime,
-): void {
-  ctx.effect(() =>
-    ctx.livePreview.block({
-      kind: "obsidian-codeblock",
-      nodes: ["FencedCode"],
-      editing: "reveal",
-      match(node, state) {
-        if (node.name !== "FencedCode") {
-          return false;
-        }
-        const info = node.node.getChild("CodeInfo");
-        if (!info) {
-          return false;
-        }
-        const lang = state
-          .sliceDoc(info.from, info.to)
-          .trim()
-          .split(/\s+/)[0]
-          ?.toLowerCase();
-        return Boolean(lang && runtime.getCodeBlockLanguages().includes(lang));
-      },
-      widget: (block) => new MarkdownBlock(block, ctx.render, FENCED_PREVIEW),
-    }),
-  );
+): () => void {
+  let unblock: (() => void) | undefined;
+  let live = true;
+  const bindBlock = (): (() => void) => bindCodeBlockRenderer(ctx, runtime);
+  unblock = bindBlock();
+  ctx.effect(() => () => {
+    live = false;
+    unblock?.();
+    unblock = undefined;
+  });
 
   ctx.on("render/fence", (fence, pass) => {
     const lang = fence.language.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
     if (!runtime.getCodeBlockLanguages().includes(lang)) {
       return undefined;
     }
+    fence.element.replaceChildren();
+    fence.element.classList.add(`block-language-${lang}`);
     const sourcePath = pass.documentUri ?? ctx.editor.source;
-    void runtime.runCodeBlockProcessors(
-      lang,
-      fence.source,
-      fence.element,
-      sourcePath,
-    );
+    void runtime
+      .runCodeBlockProcessors(lang, fence.source, fence.element, sourcePath)
+      .then(() => {
+        pass.measure?.();
+      });
     return true;
   });
 
@@ -113,6 +127,15 @@ function registerCodeBlockIntegration(
     const sourcePath = pass.documentUri ?? ctx.editor.source;
     await runtime.runPostProcessors(pass.container, sourcePath);
   });
+
+  return () => {
+    if (!live) {
+      return;
+    }
+    unblock?.();
+    unblock = bindBlock();
+    ctx.emit("render/changed");
+  };
 }
 
 export const obsidianCompatWebview: Plugin = {
@@ -122,7 +145,7 @@ export const obsidianCompatWebview: Plugin = {
     const runtime = createWebviewRuntime(ctx);
     (globalThis as Record<string, unknown>).__lumiereObsidianRuntime = runtime;
 
-    registerCodeBlockIntegration(ctx, runtime);
+    const refreshBlocks = registerCodeBlockIntegration(ctx, runtime);
 
     ctx.effect(() =>
       ctx.editor.extend(
@@ -146,7 +169,7 @@ export const obsidianCompatWebview: Plugin = {
     ctx.effect(() =>
       ctx.rpc.on(protocol, "pluginsChanged", ({ trusted, plugins }) => {
         runtime.setTrusted(trusted);
-        void runtime.syncCommunityPlugins(plugins);
+        void runtime.syncCommunityPlugins(plugins).then(() => refreshBlocks());
       }),
     );
 
@@ -157,6 +180,7 @@ export const obsidianCompatWebview: Plugin = {
     void ctx.rpc
       .call(protocol, "bootstrap", {})
       .then((snapshot) => runtime.applyBootstrap(snapshot))
+      .then(() => refreshBlocks())
       .catch(() => {});
 
     ctx.effect(() => () => {
