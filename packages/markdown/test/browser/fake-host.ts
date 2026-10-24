@@ -36,6 +36,7 @@ export class BrowserHost {
   propertyTypes: PropertyTypes = {};
   propertyNames: string[] = ["status", "list"];
   propertiesCollapsed = false;
+  snippets: string[] = [];
   /** Workspace trust sent to the editor; set before `open`. */
   trusted = false;
   /** Links the editor asked the host to open. */
@@ -56,6 +57,13 @@ export class BrowserHost {
   gitStaged = 0;
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
+
+  setSnippets(snippets: string[]): void {
+    this.snippets = snippets;
+    this.endpoints.forEach((endpoint) =>
+      endpoint.notify(propertiesProtocol, "snippets", snippets),
+    );
+  }
 
   /** Push an inline-title value (browser remount / height probes). */
   applyTitle(title: string, error?: string): void {
@@ -281,6 +289,7 @@ export class BrowserHost {
       );
       return collapsed;
     });
+    host.handle(propertiesProtocol, "snippets", () => this.snippets);
     host.handle(gitGutterProtocol, "baseline", () =>
       this.gitBaseline === undefined
         ? { status: "unavailable" as const }

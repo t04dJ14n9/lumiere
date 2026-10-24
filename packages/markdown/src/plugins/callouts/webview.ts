@@ -5,6 +5,7 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";
 import type {} from "../livePreview/api";
+import { resolveCalloutIcon } from "../../webview/ui/icons";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { insertCallout, isCallout } from "./edit";
 const disclosureChanged = StateEffect.define<null>();
@@ -45,6 +46,57 @@ function registerCalloutRenderer(ctx: Context): void {
   );
 }
 
+function parseColorTuple(raw: string): string | undefined {
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(raw);
+  if (hex) {
+    const digits = hex[1]!;
+    const full =
+      digits.length === 3
+        ? digits
+            .split("")
+            .map((char) => char + char)
+            .join("")
+        : digits;
+    const red = Number.parseInt(full.slice(0, 2), 16);
+    const green = Number.parseInt(full.slice(2, 4), 16);
+    const blue = Number.parseInt(full.slice(4, 6), 16);
+    return `${red}, ${green}, ${blue}`;
+  }
+  const rgb = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i.exec(raw);
+  if (rgb) {
+    return `${rgb[1]}, ${rgb[2]}, ${rgb[3]}`;
+  }
+  return undefined;
+}
+
+export function applyCustomCalloutStyles(root: ParentNode): void {
+  const callouts = root.querySelectorAll<HTMLElement>(".callout[data-callout]");
+  for (const callout of callouts) {
+    const style = getComputedStyle(callout);
+    const rawColor = style.getPropertyValue("--callout-color").trim();
+    const tuple = rawColor ? parseColorTuple(rawColor) : undefined;
+    if (tuple) {
+      callout.style.setProperty("--callout-color", tuple);
+    }
+    const rawIcon = style.getPropertyValue("--callout-icon").trim();
+    if (!rawIcon) {
+      continue;
+    }
+    const iconSvg = resolveCalloutIcon(rawIcon);
+    const currentIcon = callout.querySelector(
+      ":scope > .callout-title > .callout-icon",
+    );
+    if (iconSvg && currentIcon) {
+      const template = document.createElement("template");
+      template.innerHTML = iconSvg;
+      const replacement = template.content.firstElementChild;
+      if (replacement) {
+        currentIcon.replaceWith(replacement);
+      }
+    }
+  }
+}
+
 function registerDisclosures(
   ctx: Context,
   folds: DisclosureState,
@@ -62,6 +114,7 @@ function registerDisclosures(
     };
     cleanups.add(cleanup);
     pass.onDispose(cleanup);
+    applyCustomCalloutStyles(pass.container);
     pass.container
       .querySelectorAll<HTMLDetailsElement>("details.callout")
       .forEach((details, index) => {
