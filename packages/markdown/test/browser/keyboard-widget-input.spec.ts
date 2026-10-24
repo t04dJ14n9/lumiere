@@ -216,3 +216,29 @@ test("typing after clicking a footnote superscript inserts at the definition", a
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("See the note.[^1]\n\nafter\n\nxyz[^1]: Footnote body.");
 });
+
+test("Alt-click on a rendered wikilink places one caret so typing edits the link", async ({
+  page,
+}) => {
+  const source = "prefix [[Note]] suffix";
+  await open(page, source);
+  await page.evaluate((p) => window.harness.reveal(p), source.length);
+  const link = page.locator(".md-link-rendered").first();
+  await expect(link).toBeVisible();
+  const box = await link.boundingBox();
+  await page.keyboard.down("Alt");
+  await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.keyboard.up("Alt");
+  await expect
+    .poll(async () => {
+      const html = await page.evaluate(
+        () => document.querySelector(".cm-line")?.innerHTML ?? "",
+      );
+      return html.includes("[[") && !html.includes("md-link-rendered");
+    })
+    .toBe(true);
+  await page.keyboard.type("Z");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("prefix [[NoZte]] suffix");
+});
