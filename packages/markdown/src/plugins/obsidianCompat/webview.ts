@@ -8,6 +8,7 @@ import {
   FENCED_PREVIEW,
   MarkdownBlock,
 } from "../../webview/ui/markdown-widget";
+import { Component } from "./obsidian-core";
 import type { ObsidianCommand } from "./obsidian-workspace";
 import { protocol } from "./protocol";
 import { ObsidianRuntime } from "./runtime";
@@ -24,7 +25,15 @@ function createWebviewRuntime(ctx: Context): ObsidianRuntime {
         runtime.app.commands.executeCommand(cmd),
       ),
     renderMarkdown: async (markdown, el, sourcePath) => {
-      await ctx.render.into(el, markdown, { documentUri: sourcePath });
+      const temp = el.ownerDocument.createElement("div");
+      await ctx.render.into(
+        temp,
+        markdown,
+        sourcePath.includes("://") ? { documentUri: sourcePath } : {},
+      );
+      while (temp.firstChild) {
+        el.appendChild(temp.firstChild);
+      }
     },
     loadPluginData: async (pluginId) =>
       (await ctx.rpc.call(protocol, "loadPluginData", { pluginId })).data,
@@ -93,6 +102,34 @@ function bindCodeBlockRenderer(
   });
 }
 
+function observeAsyncFenceRender(
+  el: HTMLElement,
+  pass: {
+    measure?: (() => void) | undefined;
+    onDispose: (fn: () => void) => void;
+  },
+): Component {
+  const component = new Component();
+  void component.load();
+  if (typeof MutationObserver !== "undefined") {
+    const observer = new MutationObserver(() => {
+      pass.measure?.();
+    });
+    observer.observe(el, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    pass.onDispose(() => {
+      observer.disconnect();
+    });
+  }
+  pass.onDispose(() => {
+    component.unload();
+  });
+  return component;
+}
+
 function registerCodeBlockIntegration(
   ctx: Context,
   runtime: ObsidianRuntime,
@@ -115,8 +152,15 @@ function registerCodeBlockIntegration(
     fence.element.replaceChildren();
     fence.element.classList.add(`block-language-${lang}`);
     const sourcePath = pass.documentUri ?? ctx.editor.source;
+    const component = observeAsyncFenceRender(fence.element, pass);
     void runtime
-      .runCodeBlockProcessors(lang, fence.source, fence.element, sourcePath)
+      .runCodeBlockProcessors(
+        lang,
+        fence.source,
+        fence.element,
+        sourcePath,
+        component,
+      )
       .then(() => {
         pass.measure?.();
       });
@@ -173,14 +217,16 @@ export const obsidianCompatWebview: Plugin = {
       }),
     );
 
-    runtime.syncDocument(
-      ctx.editor.source,
-      ctx.editor.view.state.doc.toString(),
-    );
     void ctx.rpc
       .call(protocol, "bootstrap", {})
-      .then((snapshot) => runtime.applyBootstrap(snapshot))
-      .then(() => refreshBlocks())
+      .then(async (snapshot) => {
+        await runtime.applyBootstrap(snapshot);
+        runtime.syncDocument(
+          ctx.editor.source,
+          ctx.editor.view.state.doc.toString(),
+        );
+        refreshBlocks();
+      })
       .catch(() => {});
 
     ctx.effect(() => () => {

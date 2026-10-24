@@ -32,6 +32,7 @@ import {
   Component,
   debounce,
   Events,
+  getLanguage,
   hexToArrayBuffer,
   Keymap,
   MarkdownRenderChild,
@@ -88,6 +89,7 @@ import {
   SuggestModal,
 } from "./obsidian-modals";
 import { Plugin } from "./obsidian-plugin";
+import { installRuntimeEnv } from "./runtime-env";
 import {
   AbstractTextComponent,
   addIcon,
@@ -208,6 +210,7 @@ export const obsidianModule = Object.freeze({
   parseYaml,
   stringifyYaml,
   moment,
+  getLanguage,
   setIcon,
   getIcon,
   addIcon,
@@ -302,8 +305,10 @@ export function installObsidianGlobalModule(
   targetGlobal: Record<PropertyKey, unknown> = globalThis,
 ): PluginRequire {
   installDomHelpers(targetGlobal);
+  installRuntimeEnv(targetGlobal);
   const req = createPluginRequire();
   targetGlobal.obsidian = obsidianModule;
+  targetGlobal.moment = moment;
   const previousRequire =
     typeof targetGlobal.require === "function"
       ? (targetGlobal.require as PluginRequire)
@@ -335,6 +340,7 @@ export {
   FileManager,
   FileSystemAdapter,
   getAllTags,
+  getLanguage,
   installDomHelpers,
   Keymap,
   MarkdownRenderChild,

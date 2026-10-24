@@ -14,6 +14,10 @@ import {
 
 export class MarkdownPreviewRenderer {
   private static postProcessors = new Set<MarkdownPostProcessor>();
+  private static codeBlockProcessors = new Map<
+    string,
+    Set<MarkdownPostProcessor>
+  >();
 
   static registerPostProcessor(
     postProcessor: MarkdownPostProcessor,
@@ -24,6 +28,30 @@ export class MarkdownPreviewRenderer {
 
   static unregisterPostProcessor(postProcessor: MarkdownPostProcessor): void {
     this.postProcessors.delete(postProcessor);
+  }
+
+  static registerCodeBlockPostProcessor(
+    language: string,
+    handler: (
+      source: string,
+      el: HTMLElement,
+      ctx: MarkdownPostProcessorContext,
+    ) => Promise<unknown> | void,
+  ): MarkdownPostProcessor {
+    const proc = this.createCodeBlockPostProcessor(language, handler);
+    this.registerPostProcessor(proc);
+    return proc;
+  }
+
+  static unregisterCodeBlockPostProcessor(language: string): void {
+    const langLower = language.trim().toLowerCase();
+    const set = this.codeBlockProcessors.get(langLower);
+    if (set) {
+      for (const proc of set) {
+        this.postProcessors.delete(proc);
+      }
+      this.codeBlockProcessors.delete(langLower);
+    }
   }
 
   static getPostProcessors(): readonly MarkdownPostProcessor[] {
@@ -39,7 +67,10 @@ export class MarkdownPreviewRenderer {
     ) => Promise<unknown> | void,
   ): MarkdownPostProcessor {
     const langLower = language.trim().toLowerCase();
-    return async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+    const proc: MarkdownPostProcessor = async (
+      el: HTMLElement,
+      ctx: MarkdownPostProcessorContext,
+    ) => {
       const codeEls = el.querySelectorAll<HTMLElement>(
         `pre > code.language-${langLower}`,
       );
@@ -54,6 +85,13 @@ export class MarkdownPreviewRenderer {
         await handler(codeEl.textContent ?? "", replacement, ctx);
       }
     };
+    let set = this.codeBlockProcessors.get(langLower);
+    if (!set) {
+      set = new Set();
+      this.codeBlockProcessors.set(langLower, set);
+    }
+    set.add(proc);
+    return proc;
   }
 }
 
@@ -196,6 +234,12 @@ export class App {
   setting: {
     pluginTabs: PluginSettingTab[];
   };
+  metadataTypeManager: {
+    getAllProperties: () => Record<string, unknown>;
+    setType: (name: string, type: string) => void;
+    getTypeInfo?: (name: string) => Record<string, unknown>;
+    types?: Record<string, unknown>;
+  };
   plugins: {
     plugins: Record<string, unknown>;
     enabledPlugins: Set<string>;
@@ -217,6 +261,13 @@ export class App {
     this.workspace = new Workspace(this, workspaceBackend);
     this.commands = new AppCommands(this);
     this.setting = { pluginTabs: [] };
+    const propTypes: Record<string, unknown> = {};
+    this.metadataTypeManager = {
+      getAllProperties: () => propTypes,
+      setType: (name: string, type: string) => {
+        propTypes[name] = { name, type };
+      },
+    };
     const pluginsMap: Record<string, unknown> = {};
     const enabledSet = new Set<string>();
     this.plugins = {

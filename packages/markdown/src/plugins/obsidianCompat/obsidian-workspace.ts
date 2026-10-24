@@ -94,6 +94,8 @@ export class WorkspaceLeaf extends WorkspaceItem {
     return view;
   }
 
+  rebuildView(): void {}
+
   detach(): void {
     this.containerEl.remove();
   }
@@ -434,6 +436,8 @@ export class Workspace extends Events {
       callback(this.activeLeaf);
     }
   }
+
+  iterateCodeMirrors(_callback: (cm: unknown) => unknown): void {}
 
   revealLeaf(_leaf: WorkspaceLeaf): Promise<void> {
     return Promise.resolve();

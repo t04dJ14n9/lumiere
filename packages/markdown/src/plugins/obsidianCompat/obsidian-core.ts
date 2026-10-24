@@ -413,28 +413,9 @@ export function hexToArrayBuffer(hex: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-export function moment(input?: Date | number | string) {
-  const date = input === undefined ? new Date() : new Date(input);
-  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
-  return {
-    format(pattern = "YYYY-MM-DDTHH:mm:ssZ"): string {
-      return pattern
-        .replace(/YYYY/g, String(date.getFullYear()))
-        .replace(/YY/g, String(date.getFullYear()).slice(-2))
-        .replace(/MM/g, pad(date.getMonth() + 1))
-        .replace(/DD/g, pad(date.getDate()))
-        .replace(/HH/g, pad(date.getHours()))
-        .replace(/mm/g, pad(date.getMinutes()))
-        .replace(/ss/g, pad(date.getSeconds()));
-    },
-    valueOf: () => date.getTime(),
-    unix: () => Math.floor(date.getTime() / 1000),
-    toDate: () => new Date(date.getTime()),
-    toISOString: () => date.toISOString(),
-    isValid: () => !Number.isNaN(date.getTime()),
-    clone: () => moment(date.getTime()),
-  };
-}
-moment.locale = () => "en";
-moment.unix = (seconds: number) => moment(seconds * 1000);
-moment.utc = (input?: Date | number | string) => moment(input);
+export {
+  getLanguage,
+  moment,
+  type MomentInput,
+  type MomentObject,
+} from "./obsidian-moment";

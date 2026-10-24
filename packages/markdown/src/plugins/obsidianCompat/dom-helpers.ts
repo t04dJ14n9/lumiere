@@ -48,6 +48,10 @@ declare global {
     hasClass(cls: string): boolean;
     setText(val: string | DocumentFragment): void;
     getText(): string;
+    appendText(val: string): void;
+    instanceOf<T>(type: new (...args: never[]) => T): boolean;
+    setChildrenInPlace(children: Node[]): void;
+    onNodeInserted(listener: () => unknown, once?: boolean): () => void;
     setAttr(
       qualifiedName: string,
       value: string | number | boolean | null,
@@ -69,6 +73,8 @@ declare global {
       listener: (ev: MouseEvent) => unknown,
       options?: boolean | AddEventListenerOptions,
     ): void;
+    onNodeInserted(listener: () => unknown, once?: boolean): () => void;
+    instanceOf<T>(type: new (...args: never[]) => T): this is T;
   }
   interface DocumentFragment {
     createEl<K extends keyof HTMLElementTagNameMap>(

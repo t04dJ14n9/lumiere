@@ -1,3 +1,4 @@
+import { installRuntimeEnv } from "./runtime-env";
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type {
@@ -7,7 +8,6 @@ import type {
   SerializedVaultFile,
 } from "./api";
 import { installDomHelpers } from "./dom-helpers";
-import type { MarkdownRenderChild } from "./obsidian-core";
 import { Component, normalizePath } from "./obsidian-core";
 import type { VaultBackend } from "./obsidian-files";
 import { installObsidianGlobalModule } from "./obsidian-module";
@@ -21,14 +21,16 @@ import {
   App,
   MarkdownPreviewRenderer,
   MarkdownRenderer,
-  type MarkdownPostProcessorContext,
   type ObsidianCommand,
   type WorkspaceBackend,
 } from "./obsidian-workspace";
 import {
+  buildPostProcessorContext,
   createPluginStyleEl,
   evaluatePluginModule,
+  preloadVaultMarkdownFiles,
   renderFallbackMarkdown,
+  toVaultRelativePath,
 } from "./runtime-helpers";
 
 export { evaluatePluginModule, renderFallbackMarkdown };
@@ -65,6 +67,7 @@ export interface ObsidianRuntimeHostBridge {
 export class ObsidianRuntime {
   readonly app: App;
   private trusted = false;
+  private vaultRoot = "";
   private readonly loadedPlugins = new Map<string, LoadedCommunityPlugin>();
   private readonly pluginDataCache = new Map<string, unknown>();
   private readonly postProcessors = new Set<MarkdownPostProcessor>();
@@ -73,6 +76,7 @@ export class ObsidianRuntime {
     MarkdownCodeBlockProcessor[]
   >();
   private readonly activeDisposers = new Map<string, Array<() => void>>();
+  private readonly renderChildren = new Set<Component>();
   private readonly bridge: ObsidianRuntimeHostBridge;
   private activeDocumentPath = "Untitled.md";
 
@@ -80,6 +84,7 @@ export class ObsidianRuntime {
     this.bridge = bridge;
     installDomHelpers();
     installObsidianGlobalModule();
+    installRuntimeEnv();
 
     this.app = new App(bridge.vault ?? {}, {
       getEditorView: () =>
@@ -126,8 +131,14 @@ export class ObsidianRuntime {
     return [...this.codeBlockHandlers.keys()];
   }
 
+  toVaultPath(pathOrUri: string): string {
+    return (
+      toVaultRelativePath(pathOrUri, this.vaultRoot) || this.activeDocumentPath
+    );
+  }
+
   syncDocument(path: string, content: string): void {
-    const clean = normalizePath(path || "Untitled.md");
+    const clean = this.toVaultPath(path || "Untitled.md");
     this.activeDocumentPath = clean;
     const file = this.app.vault.setCachedContent(clean, content);
     this.app.workspace.setActiveFile(file);
@@ -143,15 +154,19 @@ export class ObsidianRuntime {
   }
 
   async applyBootstrap(snapshot: ObsidianBootstrapSnapshot): Promise<void> {
+    this.vaultRoot = snapshot.vaultRoot || "";
     this.app.vault.configDir = snapshot.configDir || ".obsidian";
     this.app.vault.setName(snapshot.vaultName || "vault");
     if (snapshot.activePath) {
       this.activeDocumentPath = normalizePath(snapshot.activePath);
     }
     this.syncVaultFiles(snapshot.files);
+    await preloadVaultMarkdownFiles(this.app, snapshot.files);
     this.setTrusted(snapshot.trusted);
     if (snapshot.trusted) {
       await this.syncCommunityPlugins(snapshot.plugins);
+      this.app.metadataCache.trigger("resolved");
+      this.app.workspace.trigger("layout-ready");
     }
   }
 
@@ -262,6 +277,10 @@ export class ObsidianRuntime {
   }
 
   unloadAllPlugins(): void {
+    for (const child of [...this.renderChildren]) {
+      child.unload();
+    }
+    this.renderChildren.clear();
     for (const id of [...this.loadedPlugins.keys()]) {
       this.unloadPlugin(id);
     }
@@ -288,7 +307,12 @@ export class ObsidianRuntime {
     if (!handlers || handlers.length === 0) {
       return false;
     }
-    const ctx = this.createPostProcessorContext(sourcePath, component);
+    const ctx = buildPostProcessorContext(
+      this.app,
+      this.toVaultPath(sourcePath),
+      this.renderChildren,
+      component,
+    );
     for (const handler of [...handlers]) {
       await handler(source, el, ctx);
     }
@@ -307,7 +331,12 @@ export class ObsidianRuntime {
     if (allProcessors.length === 0) {
       return;
     }
-    const ctx = this.createPostProcessorContext(sourcePath, component);
+    const ctx = buildPostProcessorContext(
+      this.app,
+      this.toVaultPath(sourcePath),
+      this.renderChildren,
+      component,
+    );
     for (const processor of allProcessors) {
       await processor(el, ctx);
     }
@@ -316,35 +345,6 @@ export class ObsidianRuntime {
   dispose(): void {
     this.unloadAllPlugins();
     MarkdownRenderer.setBackend(undefined);
-  }
-
-  private createPostProcessorContext(
-    sourcePath: string,
-    ownerComponent?: Component,
-  ): MarkdownPostProcessorContext {
-    const clean = normalizePath(sourcePath || this.activeDocumentPath);
-    const cache = this.app.metadataCache.getCache(clean);
-    return {
-      docId: clean,
-      sourcePath: clean,
-      frontmatter: cache?.frontmatter ?? null,
-      addChild: (child: Component | MarkdownRenderChild) => {
-        if (ownerComponent) {
-          ownerComponent.addChild(child);
-        } else {
-          void child.load();
-        }
-      },
-      getSectionInfo: (_targetEl: HTMLElement) => {
-        const text = this.app.vault.getCachedContent(clean) ?? "";
-        const lines = text.split(/\r?\n/);
-        return {
-          text,
-          lineStart: 0,
-          lineEnd: Math.max(0, lines.length - 1),
-        };
-      },
-    };
   }
 
   private installRuntimeBridge(): void {

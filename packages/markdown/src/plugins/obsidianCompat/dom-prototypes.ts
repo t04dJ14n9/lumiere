@@ -25,6 +25,17 @@ function defineIfMissing(
   });
 }
 
+function clearNodeChildren(node: Node): void {
+  while (node.firstChild) {
+    node.removeChild(node.firstChild);
+  }
+}
+
+function appendTextToNode(node: Node, val: string): void {
+  const doc = node.ownerDocument ?? document;
+  node.appendChild(doc.createTextNode(String(val ?? "")));
+}
+
 function buildNodeMethods(getSelf: (ctx: unknown) => Node) {
   return {
     createEl<K extends keyof HTMLElementTagNameMap>(
@@ -52,9 +63,7 @@ function buildNodeMethods(getSelf: (ctx: unknown) => Node) {
     },
     empty() {
       const node = getSelf(this);
-      while (node.firstChild) {
-        node.removeChild(node.firstChild);
-      }
+      clearNodeChildren(node);
       node.textContent = "";
     },
     detach() {
@@ -66,6 +75,19 @@ function buildNodeMethods(getSelf: (ctx: unknown) => Node) {
     },
     getText(): string {
       return getSelf(this).textContent ?? "";
+    },
+    appendText(val: string) {
+      appendTextToNode(getSelf(this), val);
+    },
+    setChildrenInPlace(children: Node[]) {
+      const node = getSelf(this);
+      clearNodeChildren(node);
+      for (const child of children) {
+        node.appendChild(child);
+      }
+    },
+    instanceOf<T>(type: new (...args: never[]) => T): boolean {
+      return typeof type === "function" && getSelf(this) instanceof type;
     },
   };
 }
@@ -194,6 +216,17 @@ function buildQueryMethods(getSelf: (ctx: unknown) => HTMLElement) {
       const el = getSelf(this);
       el.addEventListener("click", listener as EventListener, options);
       el.addEventListener("auxclick", listener as EventListener, options);
+    },
+    onNodeInserted(listener: () => unknown, _once?: boolean): () => void {
+      let active = true;
+      queueMicrotask(() => {
+        if (active) {
+          listener();
+        }
+      });
+      return () => {
+        active = false;
+      };
     },
   };
 }
