@@ -726,3 +726,32 @@ test("Shift+Enter on thematic break does not list-indent (BH-093)", () => {
   assert.equal(apply("- - -\n|", continueLine), "- - -\n|");
   assert.equal(apply("---\n|", continueLine), "---\n|");
 });
+
+test("Enter inside HTML comment exits after the comment (BH-097)", () => {
+  assert.equal(apply("<!--|comment -->", continueList), "<!--comment -->\n|");
+  assert.equal(apply("<!-- comment| -->", continueList), "<!-- comment -->\n|");
+  assert.equal(apply("<!--|x-->", continueList), "<!--x-->\n|");
+  assert.equal(
+    apply("text <!--|x--> more", continueList),
+    "text <!--x-->\n| more",
+  );
+  assert.equal(
+    apply("> <!--|comment -->", continueList),
+    "> <!--comment -->\n|",
+  );
+});
+
+test("Shift+Enter inside HTML comment exits after the comment (BH-097)", () => {
+  assert.equal(apply("<!--|comment -->", continueLine), "<!--comment -->\n|");
+  assert.equal(apply("<!-- comment| -->", continueLine), "<!-- comment -->\n|");
+  assert.equal(
+    apply("text <!--|x--> more", continueLine),
+    "text <!--x-->\n| more",
+  );
+  assert.equal(
+    apply("> <!--|comment -->", continueLine),
+    "> <!--comment -->\n> |",
+  );
+  // Edge: caret at end still soft-breaks after (not claimed).
+  assert.equal(apply("<!-- comment -->|", continueLine), "<!-- comment -->\n|");
+});

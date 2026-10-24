@@ -25,6 +25,7 @@ import {
 import { exitSetextHeading } from "./setext-enter";
 import { exitAtxHeading } from "./atx-enter";
 import { exitCalloutTitle } from "./callout-enter";
+import { exitHtmlComment } from "./html-comment-enter";
 
 interface Target {
   state: EditorState;
@@ -218,6 +219,9 @@ export function continueList(target: Target): boolean {
   if (exitCalloutTitle(target)) {
     return true;
   }
+  if (exitHtmlComment(target, false)) {
+    return true;
+  }
   if (continueFootnoteDefinition(target)) {
     return true;
   }
@@ -409,6 +413,10 @@ export function continueLine(target: Target): boolean {
   }
   // Callout title content-start exit / empty unwrap (BH-085 / BH-086).
   if (exitCalloutTitle(target)) {
+    return true;
+  }
+  // HTML comment: soft-break must not split CommentBlock / Comment (BH-097).
+  if (exitHtmlComment(target, true)) {
     return true;
   }
   // Empty footnote-def unwrap (BH-091) before footnote soft-break (BH-077).
