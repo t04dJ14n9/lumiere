@@ -878,3 +878,17 @@ test("Tab on plain display-math $$ fence is a no-op (BH-090)", () => {
   assert.equal(apply("cost is $|5", indentTab), "\tcost is $|5");
   assert.equal(apply("some| text", indentTab), "\tsome| text");
 });
+
+test("Tab on quoted fence opener/closer is a no-op (BH-094)", () => {
+  assert.equal(apply("> ```|", indentTab, "  "), "> ```|");
+  assert.equal(apply("> ```js|", indentTab, "  "), "> ```js|");
+  assert.equal(apply("> ~~~|", indentTab, "  "), "> ~~~|");
+  assert.equal(apply("> > ```|", indentTab, "  "), "> > ```|");
+  assert.equal(apply("> ```|", indentTab), "> ```|");
+  // Plain fence also no-op (BH-089 #371).
+  assert.equal(apply("```|", indentTab), "```|");
+  // Plain quote still nests.
+  assert.equal(apply("> |quoted", indentTab, "  "), "> > |quoted");
+  // Callout opener still no-op (BH-058).
+  assert.equal(apply("> [!note] |Title", indentTab, "  "), "> [!note] |Title");
+});
