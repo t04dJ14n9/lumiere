@@ -15,6 +15,7 @@ import {
   sourcesPropertyHost,
   cursorBridgePanelHost,
   obsidianCompatPanelHost,
+  obsidianMarketplacePanelHost,
 } from "../plugins/host";
 
 type PanelHost = Plugin<{ panel: PanelShell }>;
@@ -28,6 +29,7 @@ const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   tagsHost,
   cursorBridgePanelHost,
   obsidianCompatPanelHost,
+  obsidianMarketplacePanelHost,
 ];
 
 /**

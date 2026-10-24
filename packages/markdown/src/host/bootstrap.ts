@@ -38,6 +38,7 @@ import {
   settingsHost,
   okfCoreHost,
   obsidianCompatHost,
+  obsidianMarketplaceHost,
   graphHost,
   diffResourcesHost,
 } from "../plugins/host";
@@ -125,6 +126,7 @@ function startWindowFeatures(
     tagsViewHost,
     okfCoreHost,
     obsidianCompatHost,
+    obsidianMarketplaceHost,
     graphHost,
   ];
   const manifests = [...workbenchFeatures, ...features];
@@ -156,6 +158,7 @@ function startWindowFeatures(
         "okfCore",
         "graph",
         "linkUpdates",
+        "obsidianMarketplace",
       ],
     },
   );

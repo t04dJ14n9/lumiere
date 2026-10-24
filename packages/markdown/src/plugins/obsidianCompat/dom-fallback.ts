@@ -12,36 +12,27 @@ class MiniClassList {
 
   loadFrom(raw: string): void {
     this.set.clear();
-    for (const token of raw.split(/\s+/).filter(Boolean)) {
-      this.set.add(token);
-    }
+    raw
+      .split(/\s+/)
+      .filter(Boolean)
+      .forEach((t) => this.set.add(t));
   }
 
   add(...tokens: string[]): void {
-    for (const t of tokens) {
-      if (t) {
-        this.set.add(t);
-      }
-    }
+    tokens.filter(Boolean).forEach((t) => this.set.add(t));
     this.sync();
   }
 
   remove(...tokens: string[]): void {
-    for (const t of tokens) {
-      this.set.delete(t);
-    }
+    tokens.forEach((t) => this.set.delete(t));
     this.sync();
   }
 
   toggle(token: string, force?: boolean): boolean {
-    const shouldHave = force ?? !this.set.has(token);
-    if (shouldHave) {
-      this.set.add(token);
-    } else {
-      this.set.delete(token);
-    }
+    const keep = force ?? !this.set.has(token);
+    this.set[keep ? "add" : "delete"](token);
     this.sync();
-    return shouldHave;
+    return keep;
   }
 
   contains(token: string): boolean {
@@ -49,9 +40,7 @@ class MiniClassList {
   }
 
   forEach(cb: (token: string) => void): void {
-    for (const token of this.set) {
-      cb(token);
-    }
+    this.set.forEach((t) => cb(t));
   }
 }
 
@@ -84,10 +73,10 @@ export class MiniElement extends EventTarget {
     this.tagName = tag.toUpperCase();
     this.classList = new MiniClassList(this);
     const styleObj: Record<string, unknown> = {
-      setProperty(k: string, v: string) {
+      setProperty: (k: string, v: string) => {
         styleObj[k] = v;
       },
-      removeProperty(k: string) {
+      removeProperty: (k: string) => {
         delete styleObj[k];
       },
     };
@@ -103,13 +92,11 @@ export class MiniElement extends EventTarget {
   }
 
   get nodeType(): number {
-    if (this.tagName === "#TEXT") {
-      return 3;
-    }
-    if (this.tagName === "#DOCUMENT-FRAGMENT") {
-      return 11;
-    }
-    return 1;
+    const types: Record<string, number> = {
+      "#TEXT": 3,
+      "#DOCUMENT-FRAGMENT": 11,
+    };
+    return types[this.tagName] ?? 1;
   }
 
   get nodeName(): string {
@@ -140,46 +127,48 @@ export class MiniElement extends EventTarget {
 
   get firstChild(): MiniElement | null {
     this.materializeText();
-    return this.children[0] ?? null;
+    return this.firstElementChild;
   }
-
   get firstElementChild(): MiniElement | null {
     return this.children[0] ?? null;
   }
-
   get lastChild(): MiniElement | null {
     this.materializeText();
-    return this.children[this.children.length - 1] ?? null;
+    return this.lastElementChild;
   }
-
   get lastElementChild(): MiniElement | null {
-    return this.children[this.children.length - 1] ?? null;
+    return this.children.at(-1) ?? null;
   }
 
+  private siblingAt(offset: number): MiniElement | null {
+    const list = this.parentNode?.children;
+    const idx = list ? list.indexOf(this) : -1;
+    return idx >= 0 ? (list?.[idx + offset] ?? null) : null;
+  }
   get nextSibling(): MiniElement | null {
-    if (!this.parentNode) {
-      return null;
-    }
-    const idx = this.parentNode.children.indexOf(this);
-    return idx >= 0 ? (this.parentNode.children[idx + 1] ?? null) : null;
+    return this.siblingAt(1);
   }
-
   get previousSibling(): MiniElement | null {
-    if (!this.parentNode) {
-      return null;
-    }
-    const idx = this.parentNode.children.indexOf(this);
-    return idx > 0 ? (this.parentNode.children[idx - 1] ?? null) : null;
+    return this.siblingAt(-1);
   }
 
   get isConnected(): boolean {
     return true;
   }
+  get id(): string {
+    return this.getAttribute("id") ?? "";
+  }
+  set id(val: string) {
+    this.setAttribute("id", val);
+  }
+  get ownerDocument(): Document {
+    return fallbackDoc as unknown as Document;
+  }
+  click(): void {
+    this.dispatchEvent(new Event("click"));
+  }
 
   get textContent(): string {
-    if (this.children.length === 0) {
-      return this._text;
-    }
     return this._text + this.children.map((c) => c.textContent).join("");
   }
 
@@ -191,31 +180,24 @@ export class MiniElement extends EventTarget {
   get innerText(): string {
     return this.textContent;
   }
-
   set innerText(val: string) {
     this.textContent = val;
   }
-
   get data(): string {
     return this.textContent;
   }
-
   set data(val: string) {
     this.textContent = val;
   }
-
   get nodeValue(): string | null {
     return this.tagName === "#TEXT" ? this.textContent : null;
   }
-
   set nodeValue(val: string | null) {
     this.textContent = String(val ?? "");
   }
-
   get innerHTML(): string {
     return this.textContent;
   }
-
   set innerHTML(val: string) {
     this.textContent = val.replace(/<[^>]*>/g, "");
   }
@@ -358,36 +340,65 @@ export class MiniElement extends EventTarget {
 
   querySelectorAll(selector: string): MiniElement[] {
     const out: MiniElement[] = [];
-    const parts = selector.trim().split(/\s*>\s*|\s+/);
-    const lastPart = parts[parts.length - 1] ?? selector;
+    const parts = selector
+      .trim()
+      .split(/\s*>\s*|\s+/)
+      .filter(Boolean);
     const visit = (node: MiniElement) => {
       for (const child of node.children) {
-        if (matchesCompound(child, lastPart)) {
+        if (matchesSelectorParts(child, parts)) {
           out.push(child);
         }
         visit(child);
       }
     };
     visit(this);
-    const list = out as MiniElement[] & {
-      item?: (i: number) => MiniElement | null;
-    };
-    list.item = (i: number) => out[i] ?? null;
+    Object.assign(out, { item: (i: number) => out[i] ?? null });
     return out;
   }
 }
 
+function matchesSelectorParts(
+  el: MiniElement,
+  parts: readonly string[],
+): boolean {
+  if (parts.length === 0 || !matchesCompound(el, parts[parts.length - 1]!)) {
+    return false;
+  }
+  let cur: MiniElement | null = el.parentNode;
+  for (let i = parts.length - 2; i >= 0; i--) {
+    while (cur && !matchesCompound(cur, parts[i]!)) {
+      cur = cur.parentNode;
+    }
+    if (!cur) {
+      return false;
+    }
+    cur = cur.parentNode;
+  }
+  return true;
+}
+
 function matchesCompound(el: MiniElement, sel: string): boolean {
+  if (sel.startsWith("#")) {
+    return el.id === sel.slice(1);
+  }
+  if (sel.startsWith("[") && sel.endsWith("]")) {
+    const inner = sel.slice(1, -1);
+    const eq = inner.indexOf("=");
+    if (eq < 0) {
+      return el.hasAttribute(inner);
+    }
+    const val = inner.slice(eq + 1).replace(/^["']|["']$/g, "");
+    return el.getAttribute(inner.slice(0, eq)) === val;
+  }
   const dotIdx = sel.indexOf(".");
   if (dotIdx === 0) {
     return el.classList.contains(sel.slice(1));
   }
   if (dotIdx > 0) {
-    const tag = sel.slice(0, dotIdx);
-    const cls = sel.slice(dotIdx + 1);
     return (
-      el.tagName.toLowerCase() === tag.toLowerCase() &&
-      el.classList.contains(cls)
+      el.tagName.toLowerCase() === sel.slice(0, dotIdx).toLowerCase() &&
+      el.classList.contains(sel.slice(dotIdx + 1))
     );
   }
   return el.tagName.toLowerCase() === sel.toLowerCase();
@@ -407,6 +418,9 @@ const fallbackDoc = {
   },
   addEventListener: () => {},
   removeEventListener: () => {},
+  getElementById: (id: string) =>
+    fallbackDoc.head.querySelector(`#${id}`) ??
+    fallbackDoc.body.querySelector(`#${id}`),
   querySelector: (sel: string) => fallbackDoc.body.querySelector(sel),
   querySelectorAll: (sel: string) => fallbackDoc.body.querySelectorAll(sel),
 };

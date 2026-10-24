@@ -17,6 +17,11 @@ export const obsidianCompatPanelHost: Plugin<{ panel: PanelShell }> = {
   apply(ctx, { panel }) {
     const loader = new CommunityPluginLoader({ workspace: ctx.workspace });
     registerBootstrapHandlers(ctx, panel, loader);
+    ctx.on("obsidianCompat/pluginsChanged", (change) => {
+      if (!change.vaultRoot || change.vaultRoot === String(ctx.vault.root)) {
+        void notifyPluginsChanged(ctx, panel, loader);
+      }
+    });
     registerVaultReadHandlers(ctx, panel);
     registerVaultWriteHandlers(ctx);
     ctx.effect(() =>
