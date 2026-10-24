@@ -337,3 +337,22 @@ test("Tab on setext title is a no-op with Vim INSERT (BH-066)", async ({
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe(source);
 });
+
+test("clicking a Mermaid internal-link node opens its target note without revealing source", async ({
+  page,
+}) => {
+  const source =
+    "above\n\n```mermaid\ngraph TD\n    A[Biology] --> B[Chemistry]\n    class A,B internal-link;\n```\n\nbelow";
+  await open(page, source);
+  await expect(page.locator('pre[data-fence="mermaid"] svg')).toBeVisible({
+    timeout: 15_000,
+  });
+  const nodes = page.locator('pre[data-fence="mermaid"] svg .internal-link');
+  await expect(nodes).toHaveCount(2);
+  await expect(nodes.first()).toHaveAttribute("data-href", "Biology");
+  await nodes.first().click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.opened.at(-1)))
+    .toBe("Biology");
+  await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
+});
