@@ -23,6 +23,15 @@ pre[data-fence="mermaid"] svg {
 pre[data-fence="mermaid"] svg text {
   cursor: text;
 }
+pre[data-fence="mermaid"] svg .internal-link,
+pre[data-fence="mermaid"] svg .internal-link text,
+pre[data-fence="mermaid"] svg .internal-link tspan {
+  cursor: pointer;
+}
+pre[data-fence="mermaid"] svg .internal-link text,
+pre[data-fence="mermaid"] svg .internal-link tspan {
+  text-decoration: underline;
+}
 
 /* Obsidian mermaid-wrapper.is-guarded (REA app.css ~11494); VS Code tokens. */
 .mermaid-wrapper {
