@@ -72,7 +72,7 @@ export function noteCssClassesExtension(): Extension {
 
 export function registerVaultSnippets(ctx: Context, signal: AbortSignal): void {
   const applySnippets = (snippets: readonly string[]) => {
-    if (signal.aborted) {
+    if (signal.aborted || typeof document === "undefined") {
       return;
     }
     const combined = snippets.join("\n\n").trim();
@@ -97,9 +97,11 @@ export function registerVaultSnippets(ctx: Context, signal: AbortSignal): void {
     }
   };
   ctx.effect(() => () => {
-    document.head
-      .querySelector<HTMLStyleElement>("style[data-vault-snippets]")
-      ?.remove();
+    if (typeof document !== "undefined") {
+      document.head
+        ?.querySelector<HTMLStyleElement>("style[data-vault-snippets]")
+        ?.remove();
+    }
   });
   ctx.effect(() => ctx.rpc.on(protocol, "snippets", applySnippets));
   void ctx.rpc

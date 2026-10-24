@@ -62,8 +62,8 @@ test("noteCssClassesExtension provides editorAttributes and contentAttributes an
       insert: "# Plain note\n",
     },
   }).state;
-  assert.equal(state.facet(EditorView.editorAttributes).at(-1), {});
-  assert.equal(state.facet(EditorView.contentAttributes).at(-1), {});
+  assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {});
+  assert.deepEqual(state.facet(EditorView.contentAttributes).at(-1), {});
 });
 
 test("loadVaultCssSnippets honors appearance.json enabledCssSnippets or discovers .obsidian/snippets/*.css", async () => {
