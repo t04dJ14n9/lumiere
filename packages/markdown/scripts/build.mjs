@@ -5,7 +5,8 @@ import { prismPlugin } from "./prism.mjs";
 // (scripts/build.mjs there), which copies this dist/ into dist/markdown/.
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
 import * as esbuild from "esbuild";
 const require = createRequire(import.meta.url);
 const watch = process.argv.includes("--watch");
@@ -17,6 +18,11 @@ const shared = {
   metafile: true,
 };
 await rm("dist", { recursive: true, force: true });
+await mkdir("dist/webview", { recursive: true });
+await copyFile(
+  path.join(path.dirname(require.resolve("@embedpdf/pdfium")), "pdfium.wasm"),
+  "dist/webview/pdfium.wasm",
+);
 execFileSync(
   process.execPath,
   [require.resolve("typescript/bin/tsc"), "-p", "tsconfig.api.json"],

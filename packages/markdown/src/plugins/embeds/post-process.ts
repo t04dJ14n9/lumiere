@@ -6,6 +6,7 @@ import { inspectImage } from "./image-dialog";
 import { mountImageEmbedActions } from "./embed-actions";
 import { embeddedNote, MissingSection } from "./note";
 import { renderBaseEmbed } from "./base-embed";
+import { mountPdfEmbed } from "./pdf-embed";
 
 interface EmbedOptions {
   pass: RenderPass;
@@ -145,6 +146,16 @@ class EmbedPass {
         wiki,
         resource,
         open: (href, isWiki) => this.options.open(href, isWiki),
+      });
+    } else if (resource.kind === "pdf") {
+      mountPdfEmbed({
+        node,
+        target,
+        url: resource.url,
+        wiki,
+        signal: this.events.signal,
+        measure: this.options.pass.measure,
+        open: (openTarget, isWiki) => this.options.open(openTarget, isWiki),
       });
     } else {
       node.replaceChildren(
