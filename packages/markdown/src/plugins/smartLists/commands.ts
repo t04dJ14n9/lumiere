@@ -14,6 +14,7 @@ import { renumberAround } from "../../markdown/ordered-lists";
 import {
   continueFootnoteDefinition,
   softBreakFootnoteDefinition,
+  unwrapEmptyFootnoteDefinition,
 } from "./footnote-enter";
 import { softBreakLinkReferenceDefinition } from "./linkref-break";
 import { continueLinkReferenceDefinition } from "./linkref-enter";
@@ -195,7 +196,8 @@ function keepSpaceBeforeCaret(
  * (incl. quoted footnotes, BH-073); callout title content-start exits intact (BH-085)
  * or empty unwrap (BH-086);
  * leave the list on an empty item, a quote level on an empty quoted line, and
- * a footnote on an empty indented continuation (BH-060).
+ * a footnote on an empty indented continuation (BH-060). Empty footnote
+ * definition lines unwrap the marker (BH-091).
  */
 export function continueList(target: Target): boolean {
   const { state } = target;
@@ -402,6 +404,10 @@ export function continueLine(target: Target): boolean {
   }
   // Callout title content-start exit / empty unwrap (BH-085 / BH-086).
   if (exitCalloutTitle(target)) {
+    return true;
+  }
+  // Empty footnote-def unwrap (BH-091) before footnote soft-break (BH-077).
+  if (unwrapEmptyFootnoteDefinition(target)) {
     return true;
   }
   // Footnote soft-break (BH-077) before link-ref (BH-079); footnotes use [^].

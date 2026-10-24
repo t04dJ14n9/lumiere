@@ -653,3 +653,26 @@ test("Shift+Enter on empty callout title unwraps opener (BH-086)", () => {
   assert.equal(apply("> [!abstract]+ |", continueLine), "> |");
   assert.equal(apply("> > [!NOTE] |", continueLine), "> > |");
 });
+
+test("Enter on empty footnote definition unwraps marker (BH-091)", () => {
+  assert.equal(apply("[^a]: |", continueList), "|");
+  assert.equal(apply("[^a]:|", continueList), "|");
+  assert.equal(apply("[^note]: |", continueList), "|");
+  assert.equal(apply("  [^a]: |", continueList), "|");
+  assert.equal(apply("> [^a]: |", continueList), "> |");
+  assert.equal(apply("> > [^tip]: |", continueList), "> > |");
+  assert.equal(apply("[^a]:\t|", continueList), "|");
+  // Non-empty body still continues with tab (BH-060).
+  assert.equal(apply("[^a]: body|", continueList), "[^a]: body\n\t|");
+  // Empty quote (no footnote) still leaves the quote level.
+  assert.equal(apply("> |", continueList), "\n|");
+});
+
+test("Shift+Enter on empty footnote definition unwraps marker (BH-091)", () => {
+  assert.equal(apply("[^a]: |", continueLine), "|");
+  assert.equal(apply("[^a]:|", continueLine), "|");
+  assert.equal(apply("> [^a]: |", continueLine), "> |");
+  assert.equal(apply("> > [^note]: |", continueLine), "> > |");
+  // Non-empty: Shift+Enter still soft-breaks with tab (BH-077).
+  assert.equal(apply("[^a]: body|", continueLine), "[^a]: body\n\t|");
+});
