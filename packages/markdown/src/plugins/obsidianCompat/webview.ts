@@ -16,14 +16,32 @@ import { ObsidianRuntime } from "./runtime";
 export { ObsidianRuntime } from "./runtime";
 export * from "./obsidian-module";
 
+function createCommandRegistrar(
+  ctx: Context,
+  getRuntime: () => ObsidianRuntime,
+): (cmd: ObsidianCommand) => () => void {
+  const disposers = new Map<string, Disposer>();
+  return (cmd: ObsidianCommand): (() => void) => {
+    const id = `obsidian:${cmd.id}`;
+    void disposers.get(id)?.();
+    const dispose = ctx.commands.register(id, (): boolean =>
+      getRuntime().app.commands.executeCommand(cmd),
+    );
+    disposers.set(id, dispose);
+    return () => {
+      if (disposers.get(id) === dispose) {
+        disposers.delete(id);
+        void dispose();
+      }
+    };
+  };
+}
+
 function createWebviewRuntime(ctx: Context): ObsidianRuntime {
   const runtime: ObsidianRuntime = new ObsidianRuntime({
     getEditorView: () => ctx.editor.view,
     registerEditorExtension: (ext) => ctx.editor.extend(ext),
-    registerCommand: (cmd: ObsidianCommand): (() => void) =>
-      ctx.commands.register(`obsidian:${cmd.id}`, (): boolean =>
-        runtime.app.commands.executeCommand(cmd),
-      ),
+    registerCommand: createCommandRegistrar(ctx, () => runtime),
     renderMarkdown: async (markdown, el, sourcePath) => {
       const temp = el.ownerDocument.createElement("div");
       await ctx.render.into(

@@ -243,16 +243,40 @@ function createInlineWorkerScope(
   code: string,
   onReply: (data: unknown) => void,
 ): Record<string, unknown> {
-  const scope = Object.create(targetGlobal) as Record<string, unknown>;
-  scope.onmessage = null;
-  scope.postMessage = (data: unknown) => {
-    queueMicrotask(() => onReply(data));
+  const local: Record<PropertyKey, unknown> = {
+    onmessage: null,
+    postMessage: (data: unknown) => {
+      queueMicrotask(() => onReply(data));
+    },
+    addEventListener: (type: string, fn: unknown) => {
+      if (type === "message" && typeof fn === "function") {
+        local.onmessage = fn;
+      }
+    },
+    removeEventListener: () => {},
   };
-  scope.addEventListener = (type: string, fn: unknown) => {
-    if (type === "message" && typeof fn === "function") {
-      scope.onmessage = fn;
-    }
-  };
+  const scope = new Proxy(local, {
+    get(target, prop) {
+      if (prop === "self" || prop === "window" || prop === "globalThis") {
+        return scope;
+      }
+      if (prop in target) {
+        return target[prop];
+      }
+      const val = Reflect.get(targetGlobal, prop, targetGlobal);
+      if (
+        typeof val === "function" &&
+        (val as { prototype?: unknown }).prototype === undefined
+      ) {
+        return (val as (...args: unknown[]) => unknown).bind(targetGlobal);
+      }
+      return val;
+    },
+    set(target, prop, value) {
+      target[prop] = value;
+      return true;
+    },
+  });
   if (code) {
     runWorkerCode(code, scope);
   }
