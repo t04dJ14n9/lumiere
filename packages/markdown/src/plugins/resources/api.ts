@@ -1,10 +1,16 @@
 import type { LinkSyntax } from "../../shared/vault-path";
 import type { DiffSide } from "../../shared/git";
+import type { BaseNoteEntry } from "../../markdown/bases";
+
+export type { BaseNoteEntry } from "../../markdown/bases";
+
 export interface Resource {
-  kind: "note" | "image" | "audio" | "video" | "pdf" | "file";
+  kind: "note" | "base" | "image" | "audio" | "video" | "pdf" | "file";
   source: string;
   url: string;
   text?: string;
+  entries?: BaseNoteEntry[];
+  thisEntry?: BaseNoteEntry;
 }
 export interface Resources {
   /** Known source-note allowlist (owning doc and nested Markdown notes). */
