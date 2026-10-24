@@ -706,3 +706,23 @@ test("Shift+Enter on empty link reference unwraps marker (BH-092)", () => {
     "[label]: https://example.com\n\t|",
   );
 });
+
+test("Shift+Enter on thematic break does not list-indent (BH-093)", () => {
+  assert.equal(apply("- - -|", continueLine), "- - -\n|");
+  assert.equal(apply("* * *|", continueLine), "* * *\n|");
+  assert.equal(apply("_ _ _|", continueLine), "_ _ _\n|");
+  assert.equal(apply("---|", continueLine), "---\n|");
+  assert.equal(apply("***|", continueLine), "***\n|");
+  assert.equal(apply("___|", continueLine), "___\n|");
+  assert.equal(apply("- - - -|", continueLine), "- - - -\n|");
+  assert.equal(apply("   ---|", continueLine), "   ---\n|");
+  assert.equal(apply("> - - -|", continueLine), "> - - -\n> |");
+  assert.equal(apply("> ---|", continueLine), "> ---\n> |");
+  assert.equal(apply("> > * * *|", continueLine), "> > * * *\n> > |");
+  // Real list item still gets continuation indent (BH-049).
+  assert.equal(apply("- item|", continueLine), "- item\n  |");
+  assert.equal(apply("* item|", continueLine), "* item\n  |");
+  // Empty line under spaced HR does not fill list indent.
+  assert.equal(apply("- - -\n|", continueLine), "- - -\n|");
+  assert.equal(apply("---\n|", continueLine), "---\n|");
+});

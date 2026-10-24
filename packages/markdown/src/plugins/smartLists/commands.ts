@@ -4,7 +4,8 @@ import { insertNewlineContinueMarkupCommand } from "@codemirror/lang-markdown";
 import { syntaxTree } from "@codemirror/language";
 import type { SyntaxNode } from "@lezer/common";
 import {
-  continuationPrefix,
+  softBreakPrefix,
+  isThematicBreakLine,
   isEmptyQuote,
   lineMarkup,
   outerQuotes,
@@ -378,7 +379,8 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
 
 /**
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
- * keeps the quotes and lines up with a list item's text. Setext headings
+ * keeps the quotes and lines up with a list item's text. Thematic breaks
+ * (`---`, `- - -`) keep quotes only — no list continuation indent (BH-093). Setext headings
  * exit below the underline like Enter (BH-076 / BH-059). ATX headings exit
  * below the heading line or unwrap empty markers (BH-084). Callout titles
  * exit intact at content start or unwrap empty openers (BH-085 / BH-086).
@@ -427,7 +429,12 @@ export function continueLine(target: Target): boolean {
   const line = state.doc.lineAt(state.selection.main.head);
   if (line.text === "" && line.number > 1) {
     const prev = state.doc.line(line.number - 1);
-    const prefix = continuationPrefix(prev.text);
+    // Empty line under a thematic break: do not fill list indent or insert
+    // another bare break (BH-093 / BH-049 fill must not treat `- - -` as a list).
+    if (isThematicBreakLine(prev.text)) {
+      return true;
+    }
+    const prefix = softBreakPrefix(prev.text);
     if (prefix !== "" && textStart(prev.text) > 0) {
       target.dispatch(
         state.update({
@@ -442,7 +449,7 @@ export function continueLine(target: Target): boolean {
   }
   target.dispatch(
     state.update(
-      state.replaceSelection(state.lineBreak + continuationPrefix(line.text)),
+      state.replaceSelection(state.lineBreak + softBreakPrefix(line.text)),
       { scrollIntoView: true, userEvent: "input" },
     ),
   );
