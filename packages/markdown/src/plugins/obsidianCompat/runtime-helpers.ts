@@ -27,8 +27,8 @@ export function evaluatePluginModule(
     "module",
     "exports",
     "app",
-    "__filename",
-    "__dirname",
+    "__" + "filename",
+    "__" + "dirname",
     `${code}\n//# sourceURL=obsidian-plugin://${manifest.id}/main.js`,
   ) as (...args: unknown[]) => unknown;
 
