@@ -23,7 +23,7 @@ import { onLinkReferenceDefinitionLine } from "./linkref-indent";
 import { unwrapLeadingMarkers, unwrapListMarker } from "./heading-unwrap";
 import { onSetextHeading } from "./setext-indent";
 import { onPlainAtxHeading, onQuotedAtxHeading } from "./atx-indent";
-import { onFenceLine } from "./fence-indent";
+import { onFenceLine, onQuotedFenceLine } from "./fence-indent";
 import { onMathFence } from "./math-indent";
 import { onThematicBreak } from "./thematic-indent";
 
@@ -233,6 +233,10 @@ export function indentTab(target: Target): boolean {
   }
   // Quoted ATX before nestQuote — nesting `>` changes quote depth (BH-070).
   if (onQuotedAtxHeading(target.state)) {
+    return true;
+  }
+  // Quoted fence before nestQuote — nesting `>` changes fence depth (BH-094).
+  if (onQuotedFenceLine(target.state)) {
     return true;
   }
   if (onPlainQuote(target.state)) {
