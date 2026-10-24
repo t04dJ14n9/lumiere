@@ -851,3 +851,19 @@ test("Tab on plain thematic break is a no-op (BH-088)", () => {
   // Plain paragraph still indents.
   assert.equal(apply("some| text", indentTab), "\tsome| text");
 });
+
+test("Tab on plain fence opener/closer is a no-op (BH-089)", () => {
+  assert.equal(apply("```|", indentTab), "```|");
+  assert.equal(apply("|```js", indentTab), "|```js");
+  assert.equal(apply("```typescript|", indentTab), "```typescript|");
+  assert.equal(apply("~~~|", indentTab), "~~~|");
+  assert.equal(apply("~~~~|", indentTab), "~~~~|");
+  assert.equal(apply("   ```|", indentTab), "   ```|");
+  assert.equal(apply("```|", indentTab, "  "), "```|");
+  // Closing fence with info-less line.
+  assert.equal(apply("```js\ncode\n```|", indentTab), "```js\ncode\n```|");
+  // Inline code / paragraph still indents.
+  assert.equal(apply("some| text", indentTab), "\tsome| text");
+  // List still indents.
+  assert.equal(apply("- |item", indentTab, "  "), "  - |item");
+});
