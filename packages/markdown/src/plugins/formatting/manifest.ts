@@ -154,36 +154,57 @@ export default defineManifest({
         id: "setHeading0",
         title: "Set Heading 0",
         editorCommand: "editor:set-heading-0",
+        // Obsidian: Ctrl/Cmd+Alt+0 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+0",
+        mac: "cmd+alt+0",
       },
       {
         id: "setHeading1",
         title: "Set Heading 1",
         editorCommand: "editor:set-heading-1",
+        // Obsidian: Ctrl/Cmd+Alt+1 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+1",
+        mac: "cmd+alt+1",
       },
       {
         id: "setHeading2",
         title: "Set Heading 2",
         editorCommand: "editor:set-heading-2",
+        // Obsidian: Ctrl/Cmd+Alt+2 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+2",
+        mac: "cmd+alt+2",
       },
       {
         id: "setHeading3",
         title: "Set Heading 3",
         editorCommand: "editor:set-heading-3",
+        // Obsidian: Ctrl/Cmd+Alt+3 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+3",
+        mac: "cmd+alt+3",
       },
       {
         id: "setHeading4",
         title: "Set Heading 4",
         editorCommand: "editor:set-heading-4",
+        // Obsidian: Ctrl/Cmd+Alt+4 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+4",
+        mac: "cmd+alt+4",
       },
       {
         id: "setHeading5",
         title: "Set Heading 5",
         editorCommand: "editor:set-heading-5",
+        // Obsidian: Ctrl/Cmd+Alt+5 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+5",
+        mac: "cmd+alt+5",
       },
       {
         id: "setHeading6",
         title: "Set Heading 6",
         editorCommand: "editor:set-heading-6",
+        // Obsidian: Ctrl/Cmd+Alt+6 (BH-030). Vim must not consume these.
+        key: "ctrl+alt+6",
+        mac: "cmd+alt+6",
       },
     ],
   },

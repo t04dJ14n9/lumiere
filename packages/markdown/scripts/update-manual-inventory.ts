@@ -15,7 +15,9 @@ async function main() {
         .join("; ") || "unbound";
     const action = command.command.endsWith("consumeVimHostShortcut")
       ? "Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette."
-      : `On a disposable fixture, run ${command.title}; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes.`;
+      : command.command.endsWith("handleVimCtrlN")
+        ? "Enable Vim in Live Preview and press Ctrl+N; must not open Untitled and must move like j (<C-n>). Disable Vim: Ctrl+N opens Untitled. Hidden from the palette."
+        : `On a disposable fixture, run ${command.title}; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes.`;
     return `| \`${command.command}\` — ${escape(command.title)} | ${escape(keys)} | ${escape(action)} |`;
   });
   const settings = Object.entries(generated.configuration.properties).map(

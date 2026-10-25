@@ -136,3 +136,40 @@ test("Properties inline widgets, pending rows, pill keys and shared presentation
     /is-collapsed/,
   );
 });
+
+test("cssclasses frontmatter applies classes onto editor DOM and custom callouts honor CSS custom properties", async ({
+  page,
+}) => {
+  const doc = [
+    "---",
+    "cssclasses:",
+    "  - custom-showcase-page",
+    "  - wide-card-note",
+    "---",
+    "",
+    "> [!custom-question-type] Custom Callout Title",
+    "> Styled via custom CSS callout rules.",
+  ].join("\n");
+  await open(page, doc);
+  await page.evaluate(() => {
+    window.harness.setSnippets([
+      `.cm-editor.custom-showcase-page .callout[data-callout="custom-question-type"] {
+        --callout-color: 0, 184, 212;
+        --callout-icon: lucide-alert-circle;
+      }`,
+    ]);
+  });
+  const editor = page.locator(".cm-editor").first();
+  await expect(editor).toHaveClass(/custom-showcase-page/);
+  await expect(editor).toHaveClass(/wide-card-note/);
+  await expect(editor).toHaveAttribute(
+    "data-cssclasses",
+    "custom-showcase-page wide-card-note",
+  );
+  const callout = page.locator(`.callout[data-callout="custom-question-type"]`);
+  await expect(callout).toBeVisible();
+  await expect(callout.locator(".callout-icon")).toHaveAttribute(
+    "data-lucide",
+    "alert-circle",
+  );
+});

@@ -15,7 +15,7 @@ test("callout aliases, fallback kinds and fold flags preserve distinct container
     result,
     /<summary class="callout-title"><span class="callout-title-text">Summary<\/span><button type="button" class="callout-fold" aria-label="Toggle callout">›<\/button><\/summary>/,
   );
-  assert.match(result, /<details class="callout" data-callout="note">/);
+  assert.match(result, /<details class="callout" data-callout="unknown">/);
   assert.match(
     result,
     /<summary class="callout-title"><span class="callout-title-text">Unknown<\/span><button type="button" class="callout-fold" aria-label="Toggle callout">›<\/button><\/summary>/,

@@ -27,7 +27,10 @@ function policy(trusted: boolean): Map<string, string> {
 test("the webview CSP matches DESIGN §19 in a trusted workspace", () => {
   const csp = policy(true);
   assert.equal(csp.get("default-src"), "'none'");
-  assert.match(csp.get("script-src") ?? "", /^'nonce-[^']+' vscode-resource:$/);
+  assert.match(
+    csp.get("script-src") ?? "",
+    /^'nonce-[^']+' 'wasm-unsafe-eval' vscode-resource:$/,
+  );
   assert.equal(csp.get("img-src"), "vscode-resource: data: blob: https:");
   assert.equal(csp.get("media-src"), "vscode-resource: blob: https:");
   assert.equal(csp.get("frame-src"), "https:");

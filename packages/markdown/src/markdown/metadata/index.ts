@@ -64,9 +64,7 @@ function extractMetadata(doc: Text): NoteMetadata {
   collector.collect({ text: source, syntax: tree });
   collectDefinitions(collector, result.footnotes.definitions);
   result.blocks = extractBlocks(source, tree, position);
-  for (const value of Array.isArray(header?.values?.tags)
-    ? header.values.tags
-    : []) {
+  for (const value of frontmatterTagValues(header?.values?.tags)) {
     // Obsidian trims before it drops the `#`: `" #a "` is the tag `a`, and
     // `"# a"` is none.
     const tag =
@@ -107,4 +105,11 @@ function collectDefinitions(
       inDefinition: true,
     });
   }
+}
+
+function frontmatterTagValues(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return typeof value === "string" ? [value] : [];
 }

@@ -272,3 +272,87 @@ test("drag across wrapped CJK selects a range without click-position snap-back",
   const sel = await page.evaluate(() => window.harness.capture());
   expect(sel.from).not.toBe(sel.to);
 });
+
+test("Shift+Enter continues the line inside a list item (BH-049)", async ({
+  page,
+}) => {
+  await open(page, "- soft target");
+  await page.evaluate(() => window.harness.reveal(13));
+  await page.keyboard.press("Shift+Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  ");
+  await page.keyboard.insertText("continued");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  continued");
+});
+
+test("Shift+Enter on trailing empty line under a list fills continuation (BH-049)", async ({
+  page,
+}) => {
+  // Saved notes end with a newline; LP click/End often lands on that empty line.
+  await open(page, "- soft target\n");
+  await page.evaluate(() => window.harness.reveal(14));
+  await page.keyboard.press("Shift+Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  ");
+  await page.keyboard.insertText("continued");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  continued");
+});
+
+test("Tab on setext title or underline is a no-op (BH-066)", async ({
+  page,
+}) => {
+  const source = "Setext Title\n=======\n\nBody under heading.";
+  await open(page, source);
+  // Title start (Host GUI INSERT repro).
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+  // Underline start.
+  await page.evaluate(() => window.harness.reveal(13));
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+});
+
+test("Tab on setext title is a no-op with Vim INSERT (BH-066)", async ({
+  page,
+}) => {
+  const source = "Setext Title\n=======\n\nBody under heading.";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("i");
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+});
+
+test("clicking a Mermaid internal-link node opens its target note without revealing source", async ({
+  page,
+}) => {
+  const source =
+    "above\n\n```mermaid\ngraph TD\n    A[Biology] --> B[Chemistry]\n    class A,B internal-link;\n```\n\nbelow";
+  await open(page, source);
+  await expect(page.locator('pre[data-fence="mermaid"] svg')).toBeVisible({
+    timeout: 15_000,
+  });
+  const nodes = page.locator('pre[data-fence="mermaid"] svg .internal-link');
+  await expect(nodes).toHaveCount(2);
+  await expect(nodes.first()).toHaveAttribute("data-href", "Biology");
+  await nodes.first().click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.opened.at(-1)))
+    .toBe("Biology");
+  await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
+});

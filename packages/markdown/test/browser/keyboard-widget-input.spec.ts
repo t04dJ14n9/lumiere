@@ -130,6 +130,24 @@ test("callout title click toggles fold without editing (BH-017)", async ({
   await expect(body).toBeHidden();
 });
 
+test("expanded (+) callout title click collapses without editing (BH-035)", async ({
+  page,
+}) => {
+  const callout =
+    "> [!question]+ Expanded, foldable\n> Click the title to collapse.";
+  await open(page, `before\n\n${callout}\n\nafter`);
+  const body = page.locator(".callout-content p");
+  await expect(body).toBeVisible();
+  await page.locator(".callout-title-text").click();
+  await expect(body).toBeHidden();
+  await expect(page.locator(".hybrid-callout")).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`before\n\n${callout}\n\nafter`);
+  await page.locator(".callout-title-text").click();
+  await expect(body).toBeVisible();
+});
+
 test("callout fold button toggles without editing, then its body accepts input", async ({
   page,
 }) => {
