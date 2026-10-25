@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  MermaidSvgCache,
   MermaidViewportScheduler,
   type VisibilityWatch,
 } from "./viewport-schedule";
@@ -26,12 +27,16 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Settle-only: no ahead-of-time idle prefetch. */
+const noPrefetch = { scheduleIdle: () => () => {} };
+
 test("Mermaid work does not start until the fence stays near the viewport", async () => {
   const calls: string[] = [];
   const visibility = fakeVisibility();
   const scheduler = new MermaidViewportScheduler({
     settleMs: 40,
     watch: visibility.watch,
+    ...noPrefetch,
     render: async (source) => {
       calls.push(source);
       return `<svg data-src="${source}"></svg>`;
@@ -53,7 +58,6 @@ test("Mermaid work does not start until the fence stays near the viewport", asyn
     onSvg: (svg) => painted.push(svg),
   });
 
-  // Fast scroll flash: enter and leave before settle.
   visibility.setVisible(a, true);
   visibility.setVisible(b, true);
   await delay(10);
@@ -62,7 +66,6 @@ test("Mermaid work does not start until the fence stays near the viewport", asyn
   await delay(60);
   assert.deepEqual(calls, [], "flash-by diagrams must not call Mermaid");
 
-  // C stays near the viewport long enough to settle.
   visibility.setVisible(c, true);
   await delay(60);
   await scheduler.whenIdle();
@@ -81,6 +84,7 @@ test("leaving the viewport before paint cancels a settled Mermaid job so the nex
   const scheduler = new MermaidViewportScheduler({
     settleMs: 20,
     watch: visibility.watch,
+    ...noPrefetch,
     render: async (source) => {
       order.push(`start:${source}`);
       if (source === "slow") {
@@ -103,8 +107,6 @@ test("leaving the viewport before paint cancels a settled Mermaid job so the nex
 
   visibility.setVisible(slowEl, true);
   await delay(30);
-  // Slow job has started (or is first in the serial queue). Scroll it away and
-  // bring the next diagram into view before Mermaid finishes.
   disposeSlow();
   visibility.setVisible(nextEl, true);
   await delay(30);
@@ -131,6 +133,7 @@ test("leaving the near-viewport band before settle prevents Mermaid without disp
   const scheduler = new MermaidViewportScheduler({
     settleMs: 40,
     watch: visibility.watch,
+    ...noPrefetch,
     render: async (source) => {
       calls.push(source);
       return `<svg>${source}</svg>`;
@@ -146,4 +149,87 @@ test("leaving the near-viewport band before settle prevents Mermaid without disp
   await delay(60);
   await scheduler.whenIdle();
   assert.deepEqual(calls, []);
+});
+
+test("idle prefetch fills the SVG cache so a later settle paints without a second Mermaid call", async () => {
+  const calls: string[] = [];
+  const idle: Array<() => void> = [];
+  const visibility = fakeVisibility();
+  const cache = new MermaidSvgCache(8);
+  const scheduler = new MermaidViewportScheduler({
+    settleMs: 20,
+    watch: visibility.watch,
+    cache,
+    scheduleIdle: (run) => {
+      idle.push(run);
+      return () => {
+        const index = idle.indexOf(run);
+        if (index >= 0) {
+          idle.splice(index, 1);
+        }
+      };
+    },
+    render: async (source) => {
+      calls.push(source);
+      return `<svg data-src="${source}"></svg>`;
+    },
+  });
+
+  const el = { id: "warm" };
+  const painted: string[] = [];
+  scheduler.schedule(el as unknown as Element, "warm", {
+    onSvg: (svg) => painted.push(svg),
+  });
+
+  assert.equal(idle.length, 1, "mount schedules one idle prefetch");
+  idle.shift()!();
+  await scheduler.whenIdle();
+  assert.deepEqual(calls, ["warm"]);
+  assert.equal(painted.length, 0, "prefetch alone must not paint");
+  assert.equal(cache.get("warm"), `<svg data-src="warm"></svg>`);
+
+  visibility.setVisible(el, true);
+  await delay(30);
+  await scheduler.whenIdle();
+  assert.deepEqual(calls, ["warm"], "settle must reuse the cached SVG");
+  assert.equal(painted.length, 1);
+  assert.match(painted[0]!, /data-src="warm"/);
+});
+
+test("cache hit on remount paints immediately without calling Mermaid", async () => {
+  const calls: string[] = [];
+  const visibility = fakeVisibility();
+  const cache = new MermaidSvgCache(8);
+  cache.set("cached", `<svg data-src="cached"></svg>`);
+  const scheduler = new MermaidViewportScheduler({
+    settleMs: 20,
+    watch: visibility.watch,
+    cache,
+    ...noPrefetch,
+    render: async (source) => {
+      calls.push(source);
+      return `<svg data-src="${source}"></svg>`;
+    },
+  });
+
+  const el = { id: "again" };
+  const painted: string[] = [];
+  scheduler.schedule(el as unknown as Element, "cached", {
+    onSvg: (svg) => painted.push(svg),
+  });
+  await delay(0);
+  assert.deepEqual(calls, []);
+  assert.equal(painted.length, 1);
+  assert.match(painted[0]!, /data-src="cached"/);
+});
+
+test("MermaidSvgCache evicts least-recently used entries", () => {
+  const cache = new MermaidSvgCache(2);
+  cache.set("a", "A");
+  cache.set("b", "B");
+  cache.get("a");
+  cache.set("c", "C");
+  assert.equal(cache.get("a"), "A");
+  assert.equal(cache.get("b"), undefined);
+  assert.equal(cache.get("c"), "C");
 });

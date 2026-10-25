@@ -34,12 +34,13 @@ export class DiagramRenderer {
   ) {
     this.trust = trust;
     this.openLink = openLink;
-    // Mermaid mutates shared engine state; the scheduler keeps renders serial
-    // and only starts work after the fence settles near the viewport.
+    // Mermaid mutates shared engine state; the scheduler keeps renders serial,
+    // prefetechs on idle into an SVG cache, and paints after near-viewport settle.
     this.scheduler = new MermaidViewportScheduler({
       watch: observeNearViewport,
       settleMs: 80,
       render: (source) => this.renderMermaidSvg(source),
+      cacheKey: (source) => this.cacheKeyFor(source),
     });
   }
 
