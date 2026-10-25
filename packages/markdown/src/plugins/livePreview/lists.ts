@@ -116,12 +116,15 @@ function decorateContinuations(
       if (line.from !== first.from && spaces > 0) {
         if (spaces > content) {
           const steps = Math.max(1, Math.floor(spaces / INDENT_SIZE));
-          const spaceStyle = `--list-depth: ${steps}; --list-marker: ${CONTINUATION_SPACES_MARKER}`;
+          // Space-step continuations: guide count matches Obsidian cm-indent widgets.
+          const spaceStyle = `--list-depth: ${steps}; --list-marker: ${CONTINUATION_SPACES_MARKER}; --list-guide-depth: ${steps}`;
           cx.line(line.from, "md-list-line md-list-continuation", {
             style: spaceStyle,
           });
           cx.hide(line.from, line.from + spaces);
         } else {
+          // Hang under item text: Obsidian 1.14.4 LP paints ancestor guides only
+          // (--list-depth), not an extra content-column guide on hang lines.
           cx.line(line.from, "md-list-line md-list-continuation", { style });
           cx.hide(line.from, line.from + spaces);
         }

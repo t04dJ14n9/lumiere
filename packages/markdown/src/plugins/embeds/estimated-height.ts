@@ -36,6 +36,8 @@ const MEDIA_DEFAULT = 180;
 const ONLINE_VIDEO_DEFAULT = 200;
 /** PDF and other attachment cards. */
 const CARD_DEFAULT = 48;
+/** Embedded Obsidian Base (.base) table/cards/list view. */
+const BASE_DEFAULT = 240;
 /**
  * Note embeds: content unknown until resolve. 360 ≈ 15 body lines — enough
  * that a multi-paragraph remount rarely blanks PageDown before measure, and
@@ -99,6 +101,9 @@ export function embedEstimatedHeight(source: string): number {
   // Online Videos replaces matching image URLs with tall cards.
   if (parseVideoUrl(embedTarget(source))) {
     return ONLINE_VIDEO_DEFAULT + CHROME;
+  }
+  if (/\.base$/i.test(embedTarget(source))) {
+    return BASE_DEFAULT + CHROME;
   }
   const kind = mediaKind(embedTarget(source));
   if (kind === "audio" || kind === "video") {

@@ -79,6 +79,7 @@ function defaultHost(): HostServices {
       onNoteChanged: none,
       textEditor: () => undefined,
       onTextSelectionChanged: none,
+      closeSiblingTabs: async () => {},
     },
     settings: {
       get: (_key, fallback) => fallback,

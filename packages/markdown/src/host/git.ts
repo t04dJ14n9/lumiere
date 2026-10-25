@@ -414,14 +414,24 @@ export class NativeGitAccess implements GitAccess {
 
   toGitUri(uri: string, ref: string): string | undefined {
     const target = vscode.Uri.parse(uri);
-    if (target.scheme !== "file") {
+    // Match vscode.git: any workspace note (file or vscode-remote SSH), not
+    // untitled/output/git buffers. Path in the query is fsPath when present.
+    if (
+      target.scheme === "untitled" ||
+      target.scheme === "output" ||
+      target.scheme === "git"
+    ) {
+      return undefined;
+    }
+    const path = target.fsPath || target.path;
+    if (!path) {
       return undefined;
     }
     // The git: URI format the git extension resolves: the ref in the query.
     return target
       .with({
         scheme: "git",
-        query: JSON.stringify({ path: target.fsPath, ref }),
+        query: JSON.stringify({ path, ref }),
       })
       .toString();
   }

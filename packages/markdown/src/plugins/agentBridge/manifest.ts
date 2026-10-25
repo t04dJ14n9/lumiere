@@ -14,7 +14,8 @@ export default defineManifest({
         command: "copyLinkForAgent",
         location: "webview/context",
         when: "webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
-        group: "agent",
+        // Rank ahead of other webview/context items (matches PDF 0_agent@1).
+        group: "0_agent@1",
       },
     ],
     commands: [

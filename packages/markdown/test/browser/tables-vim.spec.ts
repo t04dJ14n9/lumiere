@@ -326,6 +326,10 @@ test("cell word operators and visual selections remain in the cell buffer", asyn
   await expect
     .poll(() => focusedCell(page))
     .toMatchObject({ label: "Table cell 1, 1", text: "alpha", mode: "visual" });
+  // Nested CellEditor mounts drawSelection; outer .mw-editor CSS does not hide it.
+  await expect(
+    page.locator(".hybrid-table .cm-selectionBackground"),
+  ).not.toHaveCount(0);
   await page.keyboard.press("Escape");
   await press(page, "0dw");
   await expectCell(page, 0, 0, "", 0);

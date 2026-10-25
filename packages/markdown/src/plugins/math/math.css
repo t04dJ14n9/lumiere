@@ -53,8 +53,8 @@ mjx-container svg {
 }
 /*
  * Revealed math source, inline or in a block, reads as code with its `$`
- * delimiters in the accent colour, as in Obsidian. A block being edited keeps
- * its rendered formula below the source.
+ * delimiters in the accent colour, as in Obsidian. A revealed display block
+ * shows source only (no stacked preview under the $$ lines).
  */
 .md-math {
   font-family: var(--code-font);

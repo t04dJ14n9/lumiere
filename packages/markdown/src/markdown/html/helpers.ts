@@ -1,6 +1,3 @@
-import MarkdownIt from "markdown-it";
-// Utility instance has no feature registrations or mutable render state.
-const md = new MarkdownIt();
 export interface WikiTarget {
   target: string;
   label: string;
@@ -30,15 +27,43 @@ export function headingId(text: string): string {
     .replace(/[^\p{L}\p{N}\s_-]/gu, "")
     .replace(/\s+/g, "-");
 }
-export const escape = (text: string): string => md.utils.escapeHtml(text);
+
+/** Same HTML escapes as markdown-it's `utils.escapeHtml`. */
+export const escape = (text: string): string =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+/** Same entity decode as markdown-it's `utils.unescapeAll` for common entities. */
 export function decodeMarkdownText(raw: string): string {
-  return md.utils.unescapeAll(raw);
+  return raw
+    .replace(/&#x([0-9a-fA-F]+);/g, (_all, hex: string) =>
+      String.fromCodePoint(Number.parseInt(hex, 16)),
+    )
+    .replace(/&#([0-9]+);/g, (_all, dec: string) =>
+      String.fromCodePoint(Number.parseInt(dec, 10)),
+    )
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&");
 }
+
+/**
+ * Resolve a Markdown link destination without pulling markdown-it into the
+ * host metadata path. Angle-bracket destinations and backslash escapes match
+ * CommonMark; spaces become %20 like markdown-it's normalizeLink.
+ */
 export function linkDestination(raw: string): string {
   const value =
     raw.startsWith("<") && raw.endsWith(">") ? raw.slice(1, -1) : raw;
-  return md.normalizeLink(md.utils.unescapeAll(value));
+  return decodeMarkdownText(value)
+    .replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1")
+    .replace(/ /g, "%20");
 }
+
 export const attr = (
   name: string,
   value: string | number | undefined,

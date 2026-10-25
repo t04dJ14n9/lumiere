@@ -71,7 +71,11 @@ async function searchOneFile(
     return "skip";
   }
   try {
-    const document = await searchDocument({ vault, worker, read }, file);
+    const document = await searchDocument(
+      { vault, worker, read },
+      file,
+      origin.path,
+    );
     if (token.cancelled) {
       return "cancel";
     }
@@ -155,6 +159,7 @@ function documentKind(extension: string): "markdown" | "canvas" | "file" {
 async function searchDocument(
   input: Pick<SearchInput, "vault" | "worker" | "read">,
   file: VaultFile,
+  originPath?: string,
 ): Promise<SearchDocument> {
   const kind = documentKind(file.extension);
   const cached =
@@ -170,10 +175,22 @@ async function searchDocument(
   const needsMetadata =
     input.worker.requiresMetadata && kind === "markdown" && !metadata;
   const read = kind !== "file" && (input.worker.requiresText || needsMetadata);
+  const raw = read ? await input.read(file.uri) : "";
+  const text =
+    kind === "markdown" && file.path === originPath
+      ? blankQueryFences(raw)
+      : raw;
   return {
     path: file.path,
     kind,
-    text: read ? await input.read(file.uri) : "",
+    text,
     ...(!read && metadata && { metadata }),
   };
+}
+
+function blankQueryFences(text: string): string {
+  return text.replace(
+    /^(`{3,}|~{3,})[ \t]*query\b[^\r\n]*\r?\n[\s\S]*?(?:^\1[ \t]*$|$)/gm,
+    (match) => match.replace(/[^\r\n]/g, " "),
+  );
 }

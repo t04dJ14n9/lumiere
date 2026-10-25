@@ -264,7 +264,7 @@ class InlineDecorations implements InlineContext {
           (link) => link.position.start.offset === from,
         )?.link;
 
-    // Rendered labels open on plain click; source needs Cmd/Ctrl-click.
+    // Rendered labels: plain click reveals source; Mod-click follows (BH-020).
     this.mark(
       from + 1,
       closingLabel?.from ?? to,

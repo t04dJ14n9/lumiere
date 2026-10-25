@@ -40,6 +40,24 @@ test("Enter continues a list and an empty item leaves it", async ({ page }) => {
     .toBe("- one\n- two\nafter");
 });
 
+test("find field appends while the query has matches (BH-010)", async ({
+  page,
+}) => {
+  // Repro: match path used to select-all the find field after each key
+  // (CodeMirror findNext → selectSearchInput), so "p" then "r" became "r".
+  await open(page, "price proper apple\n");
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("ControlOrMeta+f");
+  const find = page.getByRole("textbox", { name: "Find..." });
+  await expect(find).toBeFocused();
+  await page.keyboard.type("p");
+  await expect(find).toHaveValue("p");
+  await expect(page.locator(".mw-find-count")).toHaveText("1 / 5");
+  await page.keyboard.type("r");
+  await expect(find).toHaveValue("pr");
+  await expect(page.locator(".mw-find-count")).toHaveText("1 / 2");
+});
+
 test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
   page,
 }) => {
@@ -71,39 +89,36 @@ test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
     .toContain("!");
 });
 
-test("block math: a click selects the formula and keeps the preview below its source, as in Obsidian", async ({
+test("block math: a click selects the formula and shows source only (BH-009)", async ({
   page,
 }) => {
   // Offsets: "$$" at 8, the formula "x^2" at 11–14, "after" at 19.
   await open(page, "before\n\n$$\nx^2\n$$\n\nafter");
   const math = page.locator(".hybrid-math");
-  const source = page.locator(".cm-line.md-math-source");
+  const delimiters = page.locator(".md-math-delimiter");
   await expect(math).toHaveCount(1);
   await math.click();
   await expect
     .poll(() => page.evaluate(() => window.harness.capture()))
     .toMatchObject({ from: 11, to: 14 });
-  await expect(source).toHaveCount(3);
-  await expect(math).toHaveCount(1);
-  const closing = (await source.last().boundingBox())!;
-  const preview = (await math.boundingBox())!;
-  expect(preview.y).toBeGreaterThanOrEqual(closing.y + closing.height - 1);
-  // The source reads as highlighted TeX, its $$ in the accent colour.
-  await expect(source.locator(".md-math-delimiter")).toHaveCount(2);
-  await expect(source.locator(".md-math-command")).toHaveText("^");
-  await expect(source.locator(".md-math-number")).toHaveText("2");
-  // Typing replaces the formula, and the preview follows.
+  // Source replaces the widget — no stacked preview under the $$ lines.
+  await expect(math).toHaveCount(0);
+  await expect(delimiters).toHaveCount(2);
+  await expect(page.locator(".md-math-command")).toHaveText("^");
+  await expect(page.locator(".md-math-number")).toHaveText("2");
+  // Typing replaces the formula body.
   await page.keyboard.insertText("y");
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("before\n\n$$\ny\n$$\n\nafter");
-  // Leaving hides the source; arrowing in from above shows it again.
+  // Leaving restores the render; arrowing in from above shows source again.
   await page.evaluate(() => window.harness.reveal(0));
-  await expect(source).toHaveCount(0);
+  await expect(math).toHaveCount(1);
+  await expect(delimiters).toHaveCount(0);
   await page.evaluate(() => window.harness.reveal(7));
   await page.keyboard.press("ArrowDown");
-  await expect(source).toHaveCount(3);
-  await expect(math).toHaveCount(1);
+  await expect(math).toHaveCount(0);
+  await expect(delimiters).toHaveCount(2);
 });
 
 test("mermaid margin click stays rendered after inserting a line above", async ({
@@ -256,4 +271,88 @@ test("drag across wrapped CJK selects a range without click-position snap-back",
   await page.waitForTimeout(80);
   const sel = await page.evaluate(() => window.harness.capture());
   expect(sel.from).not.toBe(sel.to);
+});
+
+test("Shift+Enter continues the line inside a list item (BH-049)", async ({
+  page,
+}) => {
+  await open(page, "- soft target");
+  await page.evaluate(() => window.harness.reveal(13));
+  await page.keyboard.press("Shift+Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  ");
+  await page.keyboard.insertText("continued");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  continued");
+});
+
+test("Shift+Enter on trailing empty line under a list fills continuation (BH-049)", async ({
+  page,
+}) => {
+  // Saved notes end with a newline; LP click/End often lands on that empty line.
+  await open(page, "- soft target\n");
+  await page.evaluate(() => window.harness.reveal(14));
+  await page.keyboard.press("Shift+Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  ");
+  await page.keyboard.insertText("continued");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("- soft target\n  continued");
+});
+
+test("Tab on setext title or underline is a no-op (BH-066)", async ({
+  page,
+}) => {
+  const source = "Setext Title\n=======\n\nBody under heading.";
+  await open(page, source);
+  // Title start (Host GUI INSERT repro).
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+  // Underline start.
+  await page.evaluate(() => window.harness.reveal(13));
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+});
+
+test("Tab on setext title is a no-op with Vim INSERT (BH-066)", async ({
+  page,
+}) => {
+  const source = "Setext Title\n=======\n\nBody under heading.";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("i");
+  await page.keyboard.press("Tab");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(source);
+});
+
+test("clicking a Mermaid internal-link node opens its target note without revealing source", async ({
+  page,
+}) => {
+  const source =
+    "above\n\n```mermaid\ngraph TD\n    A[Biology] --> B[Chemistry]\n    class A,B internal-link;\n```\n\nbelow";
+  await open(page, source);
+  await expect(page.locator('pre[data-fence="mermaid"] svg')).toBeVisible({
+    timeout: 15_000,
+  });
+  const nodes = page.locator('pre[data-fence="mermaid"] svg .internal-link');
+  await expect(nodes).toHaveCount(2);
+  await expect(nodes.first()).toHaveAttribute("data-href", "Biology");
+  await nodes.first().click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.opened.at(-1)))
+    .toBe("Biology");
+  await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
 });

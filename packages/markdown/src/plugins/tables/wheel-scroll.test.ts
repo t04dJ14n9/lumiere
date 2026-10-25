@@ -163,14 +163,20 @@ test("a note without vertical overflow does not consume the wheel", () => {
   assert.deepEqual(viewport.calls, []);
 });
 
-test("a pending edge destination lets the next outward tick chain while still visibly mid-scroll", () => {
+test("an outward tick at the note edge chains natively after an instant jump", () => {
   for (const [scrollTop, deltaY, edge] of [
     [100, -120, 0],
     [1400, 120, 1500],
   ] as const) {
     const calls: ScrollToOptions[] = [];
-    const viewport = Object.assign(note(scrollTop), {
-      scrollTo: (options: ScrollToOptions) => calls.push(options),
+    const base = note(scrollTop);
+    const viewport = Object.assign(base, {
+      scrollTo(options: ScrollToOptions) {
+        calls.push(options);
+        if (options.behavior === "instant") {
+          base.scrollTop = options.top ?? base.scrollTop;
+        }
+      },
     });
     const motion = new TableWheelMotion(viewport, () => false);
     const first = wheel({ deltaY });
@@ -178,30 +184,20 @@ test("a pending edge destination lets the next outward tick chain while still vi
       motion.scroll(distance),
     );
     assert.equal(first.defaultPrevented, true);
-    assert.deepEqual(calls, [{ top: edge, behavior: "smooth" }]);
-    viewport.scrollTop += deltaY / 4;
-    motion.observeScroll();
+    assert.deepEqual(calls, [{ top: edge, behavior: "instant" }]);
+    assert.equal(viewport.scrollTop, edge);
     const second = wheel({ deltaY });
     forwardTableWheel(second, viewport, 24, (distance) =>
       motion.scroll(distance),
     );
     assert.equal(second.defaultPrevented, false);
-    assert.equal(
-      calls.length,
-      1,
-      "no new scroll when the pending target is at the edge",
-    );
-    assert.notEqual(
-      viewport.scrollTop,
-      edge,
-      "the animation is still in flight",
-    );
+    assert.equal(calls.length, 1, "no new scroll when already at the edge");
 
     const reverse = wheel({ deltaY: -deltaY });
     forwardTableWheel(reverse, viewport, 24, (distance) =>
       motion.scroll(distance),
     );
     assert.equal(reverse.defaultPrevented, true);
-    assert.equal(calls.at(-1)?.top, viewport.scrollTop - deltaY);
+    assert.equal(calls.at(-1)?.top, edge - deltaY);
   }
 });

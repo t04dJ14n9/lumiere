@@ -5,7 +5,8 @@ import { prismPlugin } from "./prism.mjs";
 // (scripts/build.mjs there), which copies this dist/ into dist/markdown/.
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
 import * as esbuild from "esbuild";
 const require = createRequire(import.meta.url);
 const watch = process.argv.includes("--watch");
@@ -17,6 +18,11 @@ const shared = {
   metafile: true,
 };
 await rm("dist", { recursive: true, force: true });
+await mkdir("dist/webview", { recursive: true });
+await copyFile(
+  path.join(path.dirname(require.resolve("@embedpdf/pdfium")), "pdfium.wasm"),
+  "dist/webview/pdfium.wasm",
+);
 execFileSync(
   process.execPath,
   [require.resolve("typescript/bin/tsc"), "-p", "tsconfig.api.json"],
@@ -47,6 +53,15 @@ const builds = [
     format: "cjs",
     target: "node20",
   },
+  {
+    ...shared,
+    // Separate host chunk: loadYaml() requires this only after a `---` fence.
+    entryPoints: ["src/markdown/properties/yaml-runtime.ts"],
+    outfile: "dist/yaml-runtime.cjs",
+    platform: "node",
+    format: "cjs",
+    target: "node20",
+  },
 ];
 const inputs = new Set();
 for (const options of builds) {
@@ -62,6 +77,20 @@ for (const options of builds) {
 // Every bundled source file; scripts/third-party-notices.mjs reads it.
 if (!watch) {
   await mkdir("artifacts", { recursive: true });
+
+  // Fail loudly if setext Tab no-op was dropped (stale @workshop/markdown /
+  // foreign worktree / skipped rebuild) — Host GUI BH-066 regression class.
+  if (
+    !watch &&
+    ![...inputs].some((input) =>
+      input.replaceAll("\\", "/").endsWith("plugins/editor/setext-indent.ts"),
+    )
+  ) {
+    throw new Error(
+      "webview bundle must include plugins/editor/setext-indent.ts (BH-066)",
+    );
+  }
+
   await writeFile(
     "artifacts/bundle-inputs.json",
     JSON.stringify([...inputs].sort(), null, 1),

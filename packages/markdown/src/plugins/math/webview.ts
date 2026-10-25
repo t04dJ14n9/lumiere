@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "@workshop/core";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../formatting/api";
@@ -13,16 +13,41 @@ import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { inlineMathEdit, mathBlockEdit } from "./commands";
 import { delimiters, mathBody, mathTokens } from "./source";
 import { errorMessage } from "../../shared/errors";
-export const mathWebview: Plugin = {
+import { config } from "./manifest";
+interface MathMount {
+  macros: Record<string, string>;
+}
+
+const mounts = new WeakMap<Context, MathMount>();
+
+export const mathWebview: Plugin<Infer<typeof config>> = {
   name: "math",
+  config,
   inject: {
     required: ["editor", "commands", "livePreview", "render"],
     optional: ["formatting"],
   },
-  apply(ctx) {
+  // Features re-renders after settings change; rebuild MathJax macros first.
+  reconfigure(ctx, options) {
+    const mount = mounts.get(ctx);
+    if (!mount) {
+      return false;
+    }
+    mount.macros = options.macros;
+    void import("./mathjax").then(({ setUserMacros }) =>
+      setUserMacros(mount.macros),
+    );
+    return true;
+  },
+  apply(ctx, options) {
+    const mount: MathMount = { macros: options.macros };
+    mounts.set(ctx, mount);
+    void import("./mathjax").then(({ setUserMacros }) =>
+      setUserMacros(mount.macros),
+    );
     const cleanups = registerMathCleanup(ctx);
     registerMathRenderers(ctx);
-    registerTypesetting(ctx, cleanups);
+    registerTypesetting(ctx, cleanups, mount);
     registerMathCommands(ctx);
   },
 };
@@ -38,8 +63,9 @@ function registerMathRenderers(ctx: Context): void {
       nodes: ["MathBlock"],
       editing: "reveal",
       match: (node) => node.name === "MathBlock",
-      // As in Obsidian, editing keeps the rendered formula below its source.
-      editingPreview: { sourceClass: "md-math-source" },
+      // BH-009 / BH-004: revealed block math is source only (no preview stacked
+      // under the $$ lines). Obsidian keeps a live preview below; we prefer a
+      // single coherent view while editing, like callouts and HTML blocks.
       widget: (block) => new MarkdownBlock(block, ctx.render, editing),
     }),
   );
@@ -93,12 +119,16 @@ function registerMathCleanup(ctx: Context): Set<() => void> {
   return cleanups;
 }
 
-function registerTypesetting(ctx: Context, cleanups: Set<() => void>): void {
+function registerTypesetting(
+  ctx: Context,
+  cleanups: Set<() => void>,
+  mount: MathMount,
+): void {
   ctx.on("render/postProcess", (pass) => {
     for (const node of pass.container.querySelectorAll<HTMLElement>(
       "[data-math]",
     )) {
-      typesetNode({ node, pass, cleanups, logger: ctx.logger });
+      typesetNode({ node, pass, cleanups, logger: ctx.logger, mount });
     }
   });
 }
@@ -129,9 +159,16 @@ interface TypesetOptions {
   pass: RenderPass;
   cleanups: Set<() => void>;
   logger: Context["logger"];
+  mount: MathMount;
 }
 
-function typesetNode({ node, pass, cleanups, logger }: TypesetOptions): void {
+function typesetNode({
+  node,
+  pass,
+  cleanups,
+  logger,
+  mount,
+}: TypesetOptions): void {
   const original = node.textContent;
   // A disposed pass must not receive the result of a lazy MathJax load.
   let active = true;
@@ -144,7 +181,10 @@ function typesetNode({ node, pass, cleanups, logger }: TypesetOptions): void {
   pass.onDispose(cleanup);
   const expression = decodeURIComponent(node.dataset.math ?? "");
   void import("./mathjax")
-    .then(({ typeset }) => typeset(expression, node.dataset.display === "true"))
+    .then(({ typeset, setUserMacros }) => {
+      setUserMacros(mount.macros);
+      return typeset(expression, node.dataset.display === "true");
+    })
     .then((html) => {
       if (!active) {
         return;

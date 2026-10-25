@@ -10,7 +10,7 @@ import { bindPropertyForm } from "./form";
 import { frontmatter, propertyChanges } from "../../markdown/properties";
 
 /** Template markup is covered separately; these fakes exercise the form's actual events. */
-test("pending rows survive Escape, reject duplicates quietly, and accept a vault name before any YAML write", async (t) => {
+test("pending rows dismiss on Escape and blur, reject duplicates quietly, and accept a vault name before any YAML write", async (t) => {
   const document = installPropertyDOM(t);
   const panel = new PropertyElement(document);
   const heading = new PropertyElement(document);
@@ -34,6 +34,10 @@ test("pending rows survive Escape, reject duplicates quietly, and accept a vault
       const key = new PropertyNativeInput(document);
       key.parentElement = new PropertyElement(document);
       row.find = () => key;
+      row.contains = (el) =>
+        el === row ||
+        el === key ||
+        row.children.includes(el as PropertyElement);
       element.children = [row];
       inputs.push(key);
     }
@@ -74,24 +78,46 @@ test("pending rows survive Escape, reject duplicates quietly, and accept a vault
   wrapperNeeded = true;
   add.dispatchEvent(new Event("click"));
   await Promise.resolve();
+  await Promise.resolve(); // names().then → suggestions.receive (list open)
   const first = inputs[0]!;
+  first.focus();
+  first.dispatchEvent(new Event("input")); // filter/render with vault names
+  // Host GUI failure mode: Escape while the suggestion list is visible must
+  // unmount the draft row, not merely hide the popup.
   first.dispatchEvent(propertyKey("Escape"));
   assert.equal(left, 1);
+  assert.equal(list.children.length, 0);
+  assert.equal(writes, 0);
+
+  wrapperNeeded = true;
+  add.dispatchEvent(new Event("click"));
+  await Promise.resolve();
+  const blurred = inputs[1]!;
+  document.activeElement = null;
+  blurred.dispatchEvent(new Event("blur"));
+  await Promise.resolve();
+  assert.equal(list.children.length, 0);
+  assert.equal(writes, 0);
+  assert.equal(left, 1);
+
+  wrapperNeeded = true;
+  add.dispatchEvent(new Event("click"));
+  await Promise.resolve();
+  const duplicate = inputs[2]!;
+  duplicate.value = "title";
+  duplicate.focus();
+  duplicate.dispatchEvent(new Event("input"));
+  duplicate.dispatchEvent(propertyKey("Enter"));
+  assert.equal(document.activeElement, duplicate);
+  assert.equal(duplicate.value, "title");
+  assert.equal(duplicate.validityMessage, "");
+  assert.equal(writes, 0);
   assert.equal(list.children.length, 1);
-  assert.equal(writes, 0);
-  first.value = "title";
-  first.focus();
-  first.dispatchEvent(new Event("input"));
-  first.dispatchEvent(propertyKey("Enter"));
-  assert.equal(document.activeElement, first);
-  assert.equal(first.value, "title");
-  assert.equal(first.validityMessage, "");
-  assert.equal(writes, 0);
   wrapperNeeded = true;
   add.dispatchEvent(new Event("click"));
   await Promise.resolve();
   assert.equal(list.children.length, 2);
-  const second = inputs[1]!;
+  const second = inputs[3]!;
   second.value = "st";
   second.dispatchEvent(new Event("input"));
   second.dispatchEvent(propertyKey("Enter"));

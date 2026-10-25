@@ -1,6 +1,10 @@
 /*
  * The rendered diff panel. The editor's stylesheet (editor.css) gives the
  * rendered Markdown and the git tokens; this lays out the two aligned sides.
+ *
+ * One scrollport (`.mw-diff-grid`): flex `min-height: 0` so the grid shrinks
+ * and scrolls, and cells/pre must not create nested vertical scroll (editor.css
+ * `.markdown-rendered pre { overflow: auto }` would otherwise desync sides).
  */
 body {
   overflow: hidden;
@@ -9,6 +13,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-height: 0;
 }
 .mw-diff-head {
   display: grid;
@@ -44,6 +49,7 @@ body {
 }
 .mw-diff-grid {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 8px 0 48px;
   font-family: var(--text-font);
@@ -53,10 +59,12 @@ body {
 .mw-diff-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
 }
 .mw-diff-cell {
   padding: 2px 24px;
   min-width: 0;
+  overflow: visible;
   border-left: 3px solid transparent;
 }
 .mw-diff-cell.is-before {
@@ -92,12 +100,19 @@ body {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: -1px;
 }
-.mw-diff-cell pre {
+/*
+ * Horizontal scroll only. `overflow-y: visible` with `overflow-x: auto` computes
+ * to auto (CSS overflow); use hidden so tall fences grow with the row instead
+ * of nesting a second vertical scrollport beside the other side.
+ */
+.mw-diff-cell pre,
+.mw-diff-cell.markdown-rendered pre {
   font-family: var(--code-font);
   background: var(--vscode-textCodeBlock-background, var(--code));
   padding: 8px 12px;
   border-radius: 4px;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 .mw-diff-cell pre .mw-gd-line {
   margin: 0 -12px;

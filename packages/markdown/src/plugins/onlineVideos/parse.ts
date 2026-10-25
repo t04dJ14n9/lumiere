@@ -1,17 +1,40 @@
 /**
- * Recognise YouTube, Bilibili and Hugging Face model links. Only a fully
- * parsed and validated ID leaves this module; players and cards are built
- * from it, never from the link text.
+ * Recognise YouTube, Bilibili, Hugging Face, Spotify, SoundCloud, npm and
+ * Vimeo links (YouTube playlists and channels, Bilibili bangumi, UP spaces
+ * and live).
+ * Only a fully parsed and validated ID leaves this module; players and
+ * cards are built from it, never from the link text.
  */
-export type VideoProvider = "youtube" | "bilibili" | "huggingface";
+
+import { isSoundcloudHost, isSoundcloudId, soundcloud } from "./soundcloud";
+import { isVimeoId, vimeo } from "./vimeo";
+
+export type VideoProvider =
+  | "youtube"
+  | "bilibili"
+  | "huggingface"
+  | "spotify"
+  | "soundcloud"
+  | "npm"
+  | "vimeo";
+export type MediaKind =
+  "video" | "playlist" | "bangumi" | "channel" | "space" | "live";
 export interface OnlineVideo {
   readonly provider: VideoProvider;
+  /** Video, playlist/channel (YouTube), bangumi, UP space, or live (Bilibili). */
+  readonly kind: MediaKind;
   /**
-   * An 11-character YouTube ID, a Bilibili `BV…` / `av` id, or a Hugging Face
-   * model id (`name` or `owner/name`).
+   * An 11-character YouTube video ID, a YouTube playlist ID, a channel
+   * `UC…` / `@handle` / `c:…` / `user:…`, a Bilibili `BV…` / `av` id, a
+   * bangumi `ep…` / `ss…` id, a space `space:{mid}` id, a live
+   * `live:{room}` id, a Hugging Face
+   * model id (`name` or `owner/name`), a Spotify
+   * `track|album|playlist|episode|show:…` id, a SoundCloud `user/slug`
+   * (or `user/sets/slug`) path, an npm package name (`lodash` or
+   * `@scope/name`), or a Vimeo numeric id.
    */
   readonly id: string;
-  /** YouTube start time in whole seconds. */
+  /** YouTube start time in whole seconds (videos only). */
   readonly start?: number;
   /** Bilibili part number (`?p=`), 1 for the first part. */
   readonly part?: number;
@@ -20,9 +43,25 @@ export interface OnlineVideo {
 }
 
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+/** Common public playlist prefixes; reject short/ambiguous tokens. */
+const YOUTUBE_PLAYLIST = /^(?:PL|UU|LL|FL|OL|RD)[A-Za-z0-9_-]{10,64}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
 const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
+/** Bangumi episode (`ep409506`) or season (`ss40154`) ids. */
+const BANGUMI_ID = /^(?:ep|ss)([1-9][0-9]{0,9})$/;
+/** UP space mid (`space:2`). */
+const SPACE_ID = /^space:([1-9][0-9]{0,15})$/;
+const SPACE_PATH = /^\/([1-9][0-9]{0,15})\/?$/;
+/** Live room id (`live:3`). */
+const LIVE_ID = /^live:([1-9][0-9]{0,15})$/;
+const LIVE_PATH = /^\/([1-9][0-9]{0,15})\/?$/;
+/** YouTube channel id (`UCxxxx…` 24 chars), `@handle`, or `c:`/`user:` custom. */
+const YOUTUBE_CHANNEL_UC = /^UC[A-Za-z0-9_-]{22}$/;
+const YOUTUBE_CHANNEL_HANDLE = /^@[A-Za-z0-9._-]{3,30}$/;
+const YOUTUBE_CHANNEL_CUSTOM = /^(?:c|user):[A-Za-z0-9_-]{2,40}$/;
+const YOUTUBE_CHANNEL_PATH =
+  /^\/(?:channel\/(UC[A-Za-z0-9_-]{22})|(@[A-Za-z0-9._-]{3,30})|c\/([A-Za-z0-9_-]{2,40})|user\/([A-Za-z0-9_-]{2,40}))\/?$/;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -36,7 +75,14 @@ const BILIBILI_HOSTS = new Set([
   "www.bilibili.com",
   "m.bilibili.com",
 ]);
+const BILIBILI_SPACE_HOSTS = new Set(["space.bilibili.com"]);
+const BILIBILI_LIVE_HOSTS = new Set([
+  "live.bilibili.com",
+  "www.live.bilibili.com",
+]);
+
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
+const BANGUMI_PATH = /^\/bangumi\/play\/((?:ep|ss)[1-9][0-9]{0,9})\/?$/i;
 const MAX_INTEGER = 10 ** 9;
 
 /**
@@ -71,18 +117,146 @@ const HF_RESERVED = new Set([
   "collections",
 ]);
 
-/** Whether `id` is an ID `parseVideoUrl` could have produced. */
-export function isVideoId(provider: VideoProvider, id: string): boolean {
+/** Spotify resource id with type prefix (`track:…`). */
+const SPOTIFY_ID = /^(track|album|playlist|episode|show):([A-Za-z0-9]{22})$/;
+
+const SPOTIFY_PATH =
+  /^\/(track|album|playlist|episode|show)\/([A-Za-z0-9]{22})\/?$/;
+
+const SPOTIFY_HOSTS = new Set(["open.spotify.com"]);
+
+const NPM_NAME =
+  /^(?:@[a-z0-9-][a-z0-9-._]{0,213}\/[a-z0-9-][a-z0-9-._]{0,213}|[a-z0-9-][a-z0-9-._]{0,213})$/;
+
+/** Package page; optional `/v/{version}` is normalised away. */
+const NPM_PATH = /^\/package\/(@[^/]+\/[^/]+|[^/@]+)(?:\/v\/[^/]+)?\/?$/;
+
+const NPM_HOSTS = new Set(["www.npmjs.com", "npmjs.com"]);
+
+function npmPackage(name: string): OnlineVideo | undefined {
+  const id = name.toLowerCase();
+  if (!NPM_NAME.test(id) || id.length > 214) {
+    return undefined;
+  }
+  return {
+    provider: "npm",
+    kind: "video",
+    id,
+    page: `https://www.npmjs.com/package/${id}`,
+  };
+}
+
+/** `/track|album|playlist|episode|show/{22-char id}`. */
+function spotify(url: URL): OnlineVideo | undefined {
+  const match = SPOTIFY_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const resourceKind = match[1]!;
+  const resource = match[2]!;
+  const id = `${resourceKind}:${resource}`;
+  return {
+    provider: "spotify",
+    kind: "video",
+    id,
+    page: `https://open.spotify.com/${resourceKind}/${resource}`,
+  };
+}
+
+/** Whether `id` is an ID `parseVideoUrl` could have produced for that kind. */
+export function isVideoId(
+  provider: VideoProvider,
+  id: string,
+  kind: MediaKind = "video",
+): boolean {
+  if (kind === "playlist") {
+    return provider === "youtube" && YOUTUBE_PLAYLIST.test(id);
+  }
+  if (kind === "bangumi") {
+    return provider === "bilibili" && BANGUMI_ID.test(id);
+  }
+  if (kind === "space") {
+    return provider === "bilibili" && SPACE_ID.test(id);
+  }
+  if (kind === "live") {
+    return provider === "bilibili" && LIVE_ID.test(id);
+  }
+  if (kind === "channel") {
+    return (
+      provider === "youtube" &&
+      (YOUTUBE_CHANNEL_UC.test(id) ||
+        YOUTUBE_CHANNEL_HANDLE.test(id) ||
+        YOUTUBE_CHANNEL_CUSTOM.test(id))
+    );
+  }
+  return isProviderVideoId(provider, id);
+}
+
+function isProviderVideoId(provider: VideoProvider, id: string): boolean {
   if (provider === "youtube") {
     return YOUTUBE_ID.test(id);
   }
   if (provider === "bilibili") {
     return BVID.test(id) || CANONICAL_AID.test(id);
   }
-  return id.length <= 200 && HF_ID.test(id);
+  if (provider === "huggingface") {
+    return id.length <= 200 && HF_ID.test(id);
+  }
+  if (provider === "spotify") {
+    return SPOTIFY_ID.test(id);
+  }
+  if (provider === "soundcloud") {
+    return isSoundcloudId(id);
+  }
+  if (provider === "vimeo") {
+    return isVimeoId(id);
+  }
+  return id.length <= 214 && NPM_NAME.test(id);
 }
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
+  const url = httpUrl(raw);
+  if (!url) {
+    return undefined;
+  }
+  const host = url.hostname.toLowerCase();
+  if (host === "youtu.be") {
+    return youtubeVideo(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+  }
+  if (YOUTUBE_HOSTS.has(host)) {
+    return youtubeFromHost(url);
+  }
+  if (BILIBILI_SPACE_HOSTS.has(host)) {
+    return bilibiliSpace(url);
+  }
+  if (BILIBILI_LIVE_HOSTS.has(host)) {
+    return bilibiliLive(url);
+  }
+  if (BILIBILI_HOSTS.has(host)) {
+    return bilibiliFromHost(url);
+  }
+  if (HF_HOSTS.has(host)) {
+    const match = HF_PATH.exec(url.pathname);
+    return match ? huggingface(match[1]!) : undefined;
+  }
+  if (SPOTIFY_HOSTS.has(host)) {
+    return spotify(url);
+  }
+  if (isSoundcloudHost(host)) {
+    return soundcloud(url);
+  }
+  if (NPM_HOSTS.has(host)) {
+    const match = NPM_PATH.exec(url.pathname);
+    return match ? npmPackage(match[1]!) : undefined;
+  }
+  const vimeoVideo = vimeo(url);
+  if (vimeoVideo) {
+    return vimeoVideo;
+  }
+  return undefined;
+}
+
+function httpUrl(raw: string): URL | undefined {
   let url: URL;
   try {
     url = new URL(raw.trim());
@@ -97,31 +271,129 @@ export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   ) {
     return undefined;
   }
-  return parseKnownHost(url.hostname.toLowerCase(), url);
+  return url;
 }
 
-function parseKnownHost(host: string, url: URL): OnlineVideo | undefined {
-  if (host === "youtu.be") {
-    return youtube(/^\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+function youtubeFromHost(url: URL): OnlineVideo | undefined {
+  const playlist = youtubePlaylist(url);
+  if (playlist) {
+    return playlist;
   }
-  if (YOUTUBE_HOSTS.has(host)) {
-    const id =
-      url.pathname === "/watch"
-        ? url.searchParams.get("v")
-        : YOUTUBE_PATHS.exec(url.pathname)?.[1];
-    return youtube(id ?? undefined, url);
+  const channel = youtubeChannel(url);
+  if (channel) {
+    return channel;
   }
-  if (BILIBILI_HOSTS.has(host)) {
-    return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
-  }
-  if (HF_HOSTS.has(host)) {
-    const match = HF_PATH.exec(url.pathname);
-    return match ? huggingface(match[1]!) : undefined;
-  }
-  return undefined;
+  const id =
+    url.pathname === "/watch"
+      ? url.searchParams.get("v")
+      : YOUTUBE_PATHS.exec(url.pathname)?.[1];
+  return youtubeVideo(id ?? undefined, url);
 }
 
-function youtube(id: string | undefined, url: URL): OnlineVideo | undefined {
+function bilibiliFromHost(url: URL): OnlineVideo | undefined {
+  const bangumi = bilibiliBangumi(url);
+  if (bangumi) {
+    return bangumi;
+  }
+  // m.bilibili.com/space/{mid}
+  const space = /^\/space\/([1-9][0-9]{0,15})\/?$/.exec(url.pathname);
+  if (space) {
+    return bilibiliSpaceId(space[1]!);
+  }
+  return bilibili(/^\/video\/([^/]+)\/?$/.exec(url.pathname)?.[1], url);
+}
+
+function bilibiliSpace(url: URL): OnlineVideo | undefined {
+  const match = SPACE_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  return bilibiliSpaceId(match[1]!);
+}
+
+function bilibiliSpaceId(mid: string): OnlineVideo {
+  return {
+    provider: "bilibili",
+    kind: "space",
+    id: `space:${mid}`,
+    page: `https://space.bilibili.com/${mid}`,
+  };
+}
+
+function bilibiliLive(url: URL): OnlineVideo | undefined {
+  const match = LIVE_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const room = match[1]!;
+  return {
+    provider: "bilibili",
+    kind: "live",
+    id: `live:${room}`,
+    page: `https://live.bilibili.com/${room}`,
+  };
+}
+
+/**
+ * Channel URLs: `/channel/UC…`, `/@handle`, `/c/name`, `/user/name`.
+ * Custom paths keep `c:` / `user:` ids (no network resolve for canonical UC).
+ */
+function youtubeChannel(url: URL): OnlineVideo | undefined {
+  const match = YOUTUBE_CHANNEL_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const [, uc, handle, custom, user] = match;
+  let id: string;
+  let page: string;
+  if (uc) {
+    id = uc;
+    page = `https://www.youtube.com/channel/${uc}`;
+  } else if (handle) {
+    id = handle;
+    page = `https://www.youtube.com/${handle}`;
+  } else if (custom) {
+    id = `c:${custom}`;
+    page = `https://www.youtube.com/c/${custom}`;
+  } else {
+    id = `user:${user!}`;
+    page = `https://www.youtube.com/user/${user}`;
+  }
+  return { provider: "youtube", kind: "channel", id, page };
+}
+
+/**
+ * Playlist-only URLs (`/playlist?list=` or `/embed/videoseries?list=`).
+ * A watch URL with both `v` and `list` stays a single video.
+ */
+function youtubePlaylist(url: URL): OnlineVideo | undefined {
+  const list = url.searchParams.get("list");
+  if (!list || !YOUTUBE_PLAYLIST.test(list)) {
+    return undefined;
+  }
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  const playlistPath = path === "/playlist";
+  const videoseries =
+    path === "/embed/videoseries" || path === "/embed/videoseries/";
+  if (!playlistPath && !videoseries) {
+    return undefined;
+  }
+  // Prefer a concrete video when `v=` is present on a non-playlist path.
+  if (!playlistPath && url.searchParams.get("v")) {
+    return undefined;
+  }
+  return {
+    provider: "youtube",
+    kind: "playlist",
+    id: list,
+    page: `https://www.youtube.com/playlist?list=${list}`,
+  };
+}
+
+function youtubeVideo(
+  id: string | undefined,
+  url: URL,
+): OnlineVideo | undefined {
   if (!id || !YOUTUBE_ID.test(id)) {
     return undefined;
   }
@@ -130,8 +402,8 @@ function youtube(id: string | undefined, url: URL): OnlineVideo | undefined {
   );
   const page = `https://www.youtube.com/watch?v=${id}${start ? `&t=${start}s` : ""}`;
   return start
-    ? { provider: "youtube", id, start, page }
-    : { provider: "youtube", id, page };
+    ? { provider: "youtube", kind: "video", id, start, page }
+    : { provider: "youtube", kind: "video", id, page };
 }
 
 function bilibili(id: string | undefined, url: URL): OnlineVideo | undefined {
@@ -143,7 +415,7 @@ function bilibili(id: string | undefined, url: URL): OnlineVideo | undefined {
   }
   const part = positive(url.searchParams.get("p")) ?? 1;
   const page = `https://www.bilibili.com/video/${valid}/${part > 1 ? `?p=${part}` : ""}`;
-  return { provider: "bilibili", id: valid, part, page };
+  return { provider: "bilibili", kind: "video", id: valid, part, page };
 }
 
 function huggingface(id: string): OnlineVideo | undefined {
@@ -156,8 +428,27 @@ function huggingface(id: string): OnlineVideo | undefined {
   }
   return {
     provider: "huggingface",
+    kind: "video",
     id,
     page: `https://huggingface.co/${id}`,
+  };
+}
+
+/** `/bangumi/play/ep409506` or `/bangumi/play/ss40154`. */
+function bilibiliBangumi(url: URL): OnlineVideo | undefined {
+  const match = BANGUMI_PATH.exec(url.pathname);
+  if (!match) {
+    return undefined;
+  }
+  const id = match[1]!.toLowerCase();
+  if (!BANGUMI_ID.test(id)) {
+    return undefined;
+  }
+  return {
+    provider: "bilibili",
+    kind: "bangumi",
+    id,
+    page: `https://www.bilibili.com/bangumi/play/${id}`,
   };
 }
 

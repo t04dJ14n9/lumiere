@@ -77,6 +77,13 @@
 .mw-footnote-number {
   margin-right: 0.5em;
 }
+/* Inline ^[body]: number replaces ^[, body stays raised like Obsidian's
+ * superscript form so the text is not lost when brackets hide (BH-012). */
+.mw-footnote-inline-body {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: 0.5em;
+}
 /* Definition lines (and Obsidian's trailing blank after a def) are a little
  * smaller than the note, like a paper's footnotes. */
 .cm-line.mw-footnote-def {

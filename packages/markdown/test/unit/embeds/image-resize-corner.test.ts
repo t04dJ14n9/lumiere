@@ -43,3 +43,11 @@ test("selected images keep an outline and hosts get Obsidian resize-corner chrom
   assert.match(shown, /opacity:\s*1/);
   assert.match(shown, /var\(--vscode-focusBorder/);
 });
+
+test("selected image hides the caret layer (BH-007)", () => {
+  assert.match(embedsCss, /data-mw-image-selected/);
+  assert.match(
+    embedsCss,
+    /\.cm-editor\[data-mw-image-selected\][^{]*\{[^}]*visibility:\s*hidden/,
+  );
+});

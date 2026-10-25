@@ -1,5 +1,5 @@
-import type { BaseContext } from "@workshop/core";
-import { features } from "../plugins/catalog";
+import type { BaseContext, Plugin } from "@workshop/core";
+import { features, workbenchFeatures } from "../plugins/catalog";
 import type { NoteSettings, PanelShell, HostServices } from "../shared/host";
 import { PluginSwitch } from "../shared/plugin-switch";
 import {
@@ -14,21 +14,35 @@ import {
   onlineVideosHost,
   sourcesPropertyHost,
   cursorBridgePanelHost,
+  obsidianCompatPanelHost,
+  obsidianMarketplacePanelHost,
 } from "../plugins/host";
 
-/** The host halves of editor features: one set per panel. */
-const PANEL_HOSTS = [
+type PanelHost = Plugin<{ panel: PanelShell }>;
+
+/** Host halves needed before the webview ready handshake returns text. */
+const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   linksHost,
   tasksHost,
+  propertiesHost,
+  sourcesPropertyHost,
+  tagsHost,
+  cursorBridgePanelHost,
+  obsidianCompatPanelHost,
+  obsidianMarketplacePanelHost,
+];
+
+/**
+ * Host halves that only answer later RPC (blame, search, suggest, video
+ * cards, …). Started after the ready response so they do not block first
+ * paint on large notes or slow SSH FS.
+ */
+const DEFERRED_PANEL_HOSTS: readonly PanelHost[] = [
   gitGutterHost,
   gitBlameHost,
-  propertiesHost,
-  tagsHost,
   suggestHost,
   searchHost,
   onlineVideosHost,
-  sourcesPropertyHost,
-  cursorBridgePanelHost,
 ];
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
@@ -37,14 +51,48 @@ export function hostFeatures(
   panel: PanelShell,
   host: Pick<HostServices, "settings">,
 ): void {
-  const plugins = new PluginSwitch(root);
-  const names = PANEL_HOSTS.map((plugin) => plugin.name);
+  const critical = new PluginSwitch(root);
+  bindPanelSwitch({
+    root,
+    panel,
+    host,
+    plugins: critical,
+    hosts: CRITICAL_PANEL_HOSTS,
+  });
+
+  let deferred: PluginSwitch | undefined;
+  const startDeferred = () => {
+    if (deferred) {
+      return;
+    }
+    deferred = new PluginSwitch(root);
+    bindPanelSwitch({
+      root,
+      panel,
+      host,
+      plugins: deferred,
+      hosts: DEFERRED_PANEL_HOSTS,
+    });
+  };
+  // Emitted by the panel ready handler after it has answered the webview.
+  root.on("editor/session-ready", startDeferred);
+}
+
+function bindPanelSwitch(options: {
+  root: BaseContext;
+  panel: PanelShell;
+  host: Pick<HostServices, "settings">;
+  plugins: PluginSwitch;
+  hosts: readonly PanelHost[];
+}): void {
+  const { root, panel, host, plugins, hosts } = options;
+  const names = hosts.map((plugin) => plugin.name);
   const refresh = () => {
     void plugins.update(names, () => {
       const settings = host.settings.forNote(panel.document);
-      return PANEL_HOSTS.filter((plugin) =>
-        isEnabled(settings, plugin.name),
-      ).map((plugin) => ({ plugin, config: { panel } }));
+      return hosts
+        .filter((plugin) => isEnabled(settings, plugin.name))
+        .map((plugin) => ({ plugin, config: { panel } }));
     });
   };
   root.effect(() => host.settings.onChange(refresh));
@@ -59,6 +107,8 @@ function isEnabled(settings: NoteSettings, id: string): boolean {
   }
   return (
     settings.features?.[id]?.enabled ??
-    features.some((manifest) => manifest.id === id && manifest.defaultEnabled)
+    [...features, ...workbenchFeatures].some(
+      (manifest) => manifest.id === id && manifest.defaultEnabled,
+    )
   );
 }

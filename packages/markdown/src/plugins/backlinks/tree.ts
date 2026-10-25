@@ -7,6 +7,10 @@ import type { MentionLine } from "../../markdown/mentions";
 
 export const VIEW_ID = contributionId("backlinks");
 export const OPEN_COMMAND = contributionId("backlinks.open");
+export const EXTRA_CONTEXT_SETTING = "backlinks.extraContext";
+export const EXTRA_CONTEXT_CONTEXT = `${VIEW_ID}.extraContext`;
+export const ENABLE_EXTRA_CONTEXT = `${VIEW_ID}.enableExtraContext`;
+export const DISABLE_EXTRA_CONTEXT = `${VIEW_ID}.disableExtraContext`;
 
 /** Obsidian BacklinkView.sortOrder values we can honour (vault index has mtime, not ctime). */
 export const SORT_ORDERS = [
@@ -57,6 +61,7 @@ export class BacklinksTree implements TreeSource {
   constructor(
     private readonly vaults: Vaults,
     private readonly sortOrder: () => BacklinkSortOrder = () => "alphabetical",
+    private readonly extraContext: () => boolean = () => false,
   ) {}
 
   /** Follow a new active note; `undefined` when no note is active. */
@@ -103,12 +108,7 @@ export class BacklinksTree implements TreeSource {
     }
     const lines = this.lines.get(node.id) ?? [];
     const uri = this.uriOf(node.id.slice(node.id.indexOf(":") + 1));
-    return lines.map((line) => ({
-      id: `${node.id}:${line.offset}`,
-      label: line.text,
-      tooltip: line.text,
-      command: { id: OPEN_COMMAND, args: [uri, line.offset] },
-    }));
+    return lines.flatMap((line) => mentionNodes(node.id, uri, line));
   }
 
   private async fileNodes(group: Group): Promise<TreeNode[]> {
@@ -136,9 +136,13 @@ export class BacklinksTree implements TreeSource {
     const isTarget = (source: string) => (linkpath: string) =>
       index.resolveLink(linkpath, source)?.path === note.path;
     const paths = index.backlinks(note.path).map((link) => link.path);
+    const options = { extraContext: this.extraContext() };
     for (const path of paths) {
       const text = await this.vaults.text(this.uriOf(path));
-      this.lines.set(`linked:${path}`, linkedLines(text, isTarget(path)));
+      this.lines.set(
+        `linked:${path}`,
+        linkedLines(text, isTarget(path), options),
+      );
     }
     return this.sorted(paths);
   }
@@ -152,6 +156,7 @@ export class BacklinksTree implements TreeSource {
     ];
     const linked = new Set(index.backlinks(note.path).map((link) => link.path));
     const paths: string[] = [];
+    const options = { extraContext: this.extraContext() };
     for (const file of index.files()) {
       const isCandidate =
         file.extension === "md" &&
@@ -161,7 +166,11 @@ export class BacklinksTree implements TreeSource {
       if (!isCandidate) {
         continue;
       }
-      const lines = unlinkedLines(await this.vaults.text(file.uri), names);
+      const lines = unlinkedLines(
+        await this.vaults.text(file.uri),
+        names,
+        options,
+      );
       if (lines.length > 0) {
         this.lines.set(`unlinked:${file.path}`, lines);
         paths.push(file.path);
@@ -210,4 +219,34 @@ export function sortBacklinkPaths(
     case "byModifiedTimeReverse":
       return [...paths].sort((a, b) => mtimeOf(a) - mtimeOf(b) || byName(a, b));
   }
+}
+
+/** Match row plus optional adjacent context rows (Obsidian extraContext). */
+export function mentionNodes(
+  parentId: string,
+  uri: string,
+  line: MentionLine,
+): TreeNode[] {
+  const nodes: TreeNode[] = [];
+  if (line.before !== undefined) {
+    nodes.push({
+      id: `${parentId}:${line.offset}:before`,
+      label: line.before,
+      tooltip: line.before,
+    });
+  }
+  nodes.push({
+    id: `${parentId}:${line.offset}`,
+    label: line.text,
+    tooltip: line.text,
+    command: { id: OPEN_COMMAND, args: [uri, line.offset] },
+  });
+  if (line.after !== undefined) {
+    nodes.push({
+      id: `${parentId}:${line.offset}:after`,
+      label: line.after,
+      tooltip: line.after,
+    });
+  }
+  return nodes;
 }

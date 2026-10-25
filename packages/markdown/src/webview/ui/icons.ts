@@ -3,6 +3,7 @@ import {
   ClipboardList,
   Info,
   CircleCheck,
+  CircleAlert,
   Flame,
   Check,
   CircleHelp,
@@ -21,6 +22,19 @@ import {
   ChevronRight,
   Text,
   FileQuestion,
+  Plus,
+  Star,
+  Heart,
+  Bookmark,
+  Lightbulb,
+  Terminal,
+  Bell,
+  Sparkles,
+  Rocket,
+  ShieldAlert,
+  Code,
+  Link,
+  Hash,
   type IconNode,
 } from "lucide";
 import {
@@ -43,6 +57,44 @@ const calloutIcons: Record<string, IconNode> = {
   example: List,
   quote: Quote,
 };
+
+const customCalloutIcons: Record<string, IconNode> = {
+  pencil: Pencil,
+  "clipboard-list": ClipboardList,
+  info: Info,
+  "check-circle-2": CircleCheck,
+  "check-circle": CircleCheck,
+  "circle-check": CircleCheck,
+  "alert-circle": CircleAlert,
+  "circle-alert": CircleAlert,
+  flame: Flame,
+  check: Check,
+  "help-circle": CircleHelp,
+  "circle-help": CircleHelp,
+  "alert-triangle": TriangleAlert,
+  "triangle-alert": TriangleAlert,
+  x: X,
+  zap: Zap,
+  bug: Bug,
+  list: List,
+  quote: Quote,
+  calendar: Calendar,
+  clock: Clock,
+  tags: Tags,
+  star: Star,
+  heart: Heart,
+  bookmark: Bookmark,
+  lightbulb: Lightbulb,
+  terminal: Terminal,
+  bell: Bell,
+  sparkles: Sparkles,
+  rocket: Rocket,
+  "shield-alert": ShieldAlert,
+  code: Code,
+  link: Link,
+  hash: Hash,
+};
+
 // lucide >= 1.0 icon nodes hold only the children; the root <svg> attributes are ours.
 const svgAttributes = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -69,7 +121,26 @@ function iconHTML(node: IconNode, cls: string): string {
   return `<svg${attributes(svgAttributes)} class="${cls}" aria-hidden="true">${node.map(([tag, attrs]) => `<${tag}${attributes(attrs)}/>`).join("")}</svg>`;
 }
 export function calloutIcon(kind: string): string {
-  return iconHTML(calloutIcons[kind] ?? Info, "callout-icon");
+  return iconHTML(calloutIcons[kind] ?? Pencil, "callout-icon");
+}
+export function resolveCalloutIcon(rawName: string): string | undefined {
+  const normalized = rawName
+    .trim()
+    .replace(/^['"]+|['"]+$/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/^lucide-/, "");
+  if (!normalized) {
+    return undefined;
+  }
+  const node = customCalloutIcons[normalized] ?? calloutIcons[normalized];
+  if (!node) {
+    return undefined;
+  }
+  return iconHTML(node, "callout-icon").replace(
+    "<svg",
+    `<svg data-lucide="${normalized}"`,
+  );
 }
 export function propertyIcon(
   name: string,
@@ -100,12 +171,17 @@ export function propertyIcon(
 }
 
 export function propertyFlairIcon(
-  kind: "pencil" | "warning" | "collapse",
+  kind: "pencil" | "warning" | "collapse" | "plus",
 ): string {
   const icons = {
     pencil: Pencil,
     warning: TriangleAlert,
     collapse: ChevronRight,
+    plus: Plus,
   };
-  return iconHTML(icons[kind], "property-icon");
+  const html = iconHTML(icons[kind], "property-icon");
+  if (kind === "plus") {
+    return html.replace("<svg", `<svg data-lucide="plus"`);
+  }
+  return html;
 }

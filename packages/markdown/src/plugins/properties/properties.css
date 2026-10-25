@@ -34,16 +34,19 @@
   font-weight: 600;
   cursor: pointer;
 }
-.metadata-collapse-indicator {
+.metadata-collapse-indicator,
+.collapse-indicator.collapse-icon {
   position: absolute;
   left: -20px;
   display: flex;
   color: var(--muted);
 }
-.metadata-collapse-indicator svg {
+.metadata-collapse-indicator svg,
+.collapse-indicator.collapse-icon svg {
   transform: rotate(90deg);
 }
-.is-collapsed .metadata-collapse-indicator svg {
+.is-collapsed .metadata-collapse-indicator svg,
+.is-collapsed .collapse-indicator.collapse-icon svg {
   transform: none;
 }
 [data-properties-heading]:focus-visible {
@@ -105,6 +108,13 @@
   color: inherit;
   font: inherit;
   line-height: inherit;
+}
+/* Obsidian --metadata-input-padding: 4px 8px (value editors, not the key). */
+.metadata-property-value input[data-property-input],
+.metadata-input-longtext,
+.multi-select-input,
+.property-chip-input {
+  padding: 4px 8px;
 }
 .metadata-property-value {
   min-width: 0;
@@ -180,7 +190,11 @@
 .property-row:focus-within .metadata-property-link-flair {
   opacity: 1;
 }
-.properties button[data-property-add] {
+.properties button[data-property-add],
+.properties .metadata-add-button.text-icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -188,6 +202,10 @@
   cursor: pointer;
   padding: 4px 0;
   margin-top: 8px;
+}
+.properties button[data-property-add] .property-icon {
+  width: 14px;
+  height: 14px;
 }
 .property-message,
 .property-type-warning {
@@ -416,17 +434,19 @@
   border: 1px solid var(--line, transparent);
   background: transparent;
   color: inherit;
-  padding: 4px 6px;
+  padding: 4px 8px; /* match --metadata-input-padding */
 }
 
-/* Obsidian unknown nested maps: JSON.stringify, single-line ellipsis. */
+/* Obsidian unknown nested maps: JSON.stringify, single-line ellipsis;
+ * padding matches --metadata-input-padding (REA app.css). */
 .metadata-property-value .mod-unknown {
   display: block;
+  box-sizing: border-box;
   color: var(
     --vscode-editorWarning-foreground,
     var(--vscode-list-warningForeground, #cca700)
   );
-  padding: 0;
+  padding: 4px 8px;
   font-size: inherit;
   text-overflow: ellipsis;
   overflow: hidden;

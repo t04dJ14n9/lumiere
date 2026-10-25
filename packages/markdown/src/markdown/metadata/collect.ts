@@ -1,6 +1,6 @@
 import type { Tree, SyntaxNodeRef } from "@lezer/common";
 import { wikiTarget, linkDestination } from "../html/helpers";
-import { markdownParser } from "../dialect";
+import { markdownParser } from "../dialect/parser";
 import type { NoteMetadata, Position } from "./types";
 
 type Collected = Pick<

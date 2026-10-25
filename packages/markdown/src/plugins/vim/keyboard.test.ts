@@ -119,13 +119,31 @@ for (const [code, shift, expected] of [
   }
 }
 
-test("IME Process digits with Shift leave Chinese line keys to the dedicated mapper", () => {
+test("IME Process digits with Shift map to US shifted glyphs; line keys still win first", () => {
   assert.equal(
     imeVimCommandKey(event("Process", "Digit4", { shiftKey: true }), mode()),
-    undefined,
+    "$",
   );
   assert.equal(
     translatedVimKey(event("Process", "Digit4", { shiftKey: true }), mode()),
+    "$",
+  );
+  assert.equal(
+    imeVimCommandKey(event("Process", "Digit8", { shiftKey: true }), mode()),
+    "*",
+  );
+  assert.equal(
+    translatedVimKey(event("Process", "Digit3", { shiftKey: true }), mode()),
+    "#",
+  );
+});
+
+test("IME Process Shift+Digit4 still yields $ in visual mode where line-key mapping skips", () => {
+  const vim = mode();
+  vim.visualMode = true;
+  assert.equal(shiftedVimLineKey(event("Process", "Digit4"), vim), undefined);
+  assert.equal(
+    translatedVimKey(event("Process", "Digit4", { shiftKey: true }), vim),
     "$",
   );
 });
@@ -174,6 +192,18 @@ for (const [key, code, expected] of [
   });
 }
 
+test("Chinese punctuation with modifiers or prevented default is untouched", () => {
+  for (const field of ["ctrlKey", "altKey", "metaKey", "defaultPrevented"] as const) {
+    assert.equal(
+      translatedVimKey(
+        event("。", "Period", { shiftKey: false, [field]: true }),
+        mode(),
+      ),
+      undefined,
+    );
+  }
+});
+
 for (const [code, shift, expected] of [
   ["Period", false, "."],
   ["Comma", false, ","],
@@ -181,6 +211,12 @@ for (const [code, shift, expected] of [
   ["Slash", false, "/"],
   ["Slash", true, "?"],
   ["Minus", false, "-"],
+  ["Equal", false, "="],
+  ["BracketLeft", false, "["],
+  ["BracketRight", true, "}"],
+  ["Quote", false, "'"],
+  ["Backquote", false, "`"],
+  ["Backslash", true, "|"],
 ] as const) {
   for (const key of ["Process", "Unidentified"] as const) {
     test(`${key} on ${code} becomes ${expected} for Vim punctuation`, () => {

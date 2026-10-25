@@ -140,33 +140,30 @@ test("tables always register a widget and own their document-entry keys and comm
   assert.ok(widget instanceof TableWidget);
   const scrollNote = widget.environment.scrollNote;
   for (const type of ["wheel", "pointerdown", "keydown", "touchstart"]) {
+    const before = scrolls.length;
     scrollNote(120, wheel());
-    assert.deepEqual(scrolls.at(-1), { top: 720, behavior: "smooth" });
+    assert.deepEqual(scrolls.at(-1), { top: 720, behavior: "instant" });
+    // Instant motion has no pending destination; interruption is a no-op.
     dom.dispatchEvent(new Event(type));
-    assert.deepEqual(scrolls.at(-1), { top: 600, behavior: "instant" });
+    assert.equal(scrolls.length, before + 1);
   }
   const forwardedWheel = new Event("wheel", { cancelable: true });
   forwardedWheel.preventDefault();
   scrollNote(120, wheel());
   dom.dispatchEvent(forwardedWheel);
-  assert.equal(scrolls.at(-1)?.behavior, "smooth");
+  assert.equal(scrolls.at(-1)?.behavior, "instant");
   dom.dispatchEvent(new Event("pointerdown"));
-  scrollNote(0.25, wheel({ deltaY: 0.25 }));
-  viewport.scrollTop = 600.1;
-  viewport.dispatchEvent(new Event("scroll"));
-  assert.equal(scrolls.at(-1)?.behavior, "smooth");
   viewport.scrollTop = 600;
-  viewport.dispatchEvent(new Event("scrollend"));
+  scrollNote(0.25, wheel({ deltaY: 0.25 }));
+  assert.deepEqual(scrolls.at(-1), { top: 600.25, behavior: "instant" });
   viewport.scrollTop = 900;
   scrollNote(0.25, wheel({ deltaY: 0.25 }));
-  assert.equal(
-    scrolls.at(-1)?.top,
-    900.25,
-    "scrollend releases a rounded destination",
-  );
+  assert.equal(scrolls.at(-1)?.top, 900.25);
   viewport.scrollTop = 600;
+  const beforeDispose = scrolls.length;
   await root.dispose();
-  assert.deepEqual(scrolls.at(-1), { top: 600, behavior: "instant" });
+  // Disposal stops motion; with no pending destination that is a no-op.
+  assert.equal(scrolls.length, beforeDispose);
   const afterDisposal = scrolls.length;
   dom.dispatchEvent(new Event("wheel"));
   assert.equal(scrolls.length, afterDisposal);

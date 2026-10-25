@@ -2,7 +2,7 @@ import type { Endpoint } from "../shared/rpc/endpoint";
 import type { RootContext } from "@workshop/core";
 import { runtimeStates } from "../shared/plugin-state";
 import { protocol } from "../plugins/editor/protocol";
-import { featureController } from "./features";
+import { featureController, type FeaturePhase } from "./features";
 /** The RPC response waits for queued reconfiguration, so API writes report applied states. */
 export function pluginReporting(
   root: RootContext,
@@ -12,8 +12,12 @@ export function pluginReporting(
   let updates = Promise.resolve();
   const publish = () =>
     rpc.notify(protocol, "pluginsChanged", runtimeStates(root));
-  const update: typeof configure = (settings, defaults) => {
-    updates = configure(settings, defaults).then(publish);
+  const update = (
+    settings: Parameters<typeof configure>[0],
+    defaults?: boolean,
+    phase?: FeaturePhase,
+  ) => {
+    updates = configure(settings, defaults, phase).then(publish);
     return updates;
   };
   root.effect(() =>

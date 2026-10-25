@@ -11,7 +11,8 @@ interface Provider {
    * Whether the card may offer "Play here" (Bilibili, behind the
    * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
    * webview with error 153: the webview origin is not http(s), so the player
-   * gets no referrer to check. Hugging Face has no in-webview player.
+   * gets no referrer to check. Hugging Face, Spotify, SoundCloud, npm and Vimeo
+   * have no in-webview player; Bilibili spaces and live rooms have no embed.
    */
   readonly embeddable: boolean;
 }
@@ -39,6 +40,36 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
       /^\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,99})?)$/,
     embeddable: false,
   },
+  spotify: {
+    name: "Spotify",
+    origin: "https://open.spotify.com",
+    path: "/embed/",
+    pathPattern:
+      /^\/embed\/(?:track|album|playlist|episode|show)\/[A-Za-z0-9]{22}$/,
+    embeddable: false,
+  },
+  soundcloud: {
+    name: "SoundCloud",
+    origin: "https://w.soundcloud.com",
+    path: "/player/",
+    pathPattern: /^\/player\/$/,
+    embeddable: false,
+  },
+  npm: {
+    name: "npm",
+    origin: "https://www.npmjs.com",
+    path: "/package/",
+    pathPattern:
+      /^\/package\/(?:@[a-z0-9-][a-z0-9-._]{0,213}\/[a-z0-9-][a-z0-9-._]{0,213}|[a-z0-9-][a-z0-9-._]{0,213})$/,
+    embeddable: false,
+  },
+  vimeo: {
+    name: "Vimeo",
+    origin: "https://player.vimeo.com",
+    path: "/video/",
+    pathPattern: /^\/video\/[1-9][0-9]{0,15}$/,
+    embeddable: false,
+  },
 };
 
 /** Player frames may run scripts and go full screen, nothing else. */
@@ -46,9 +77,26 @@ export const PLAYER_SANDBOX =
   "allow-scripts allow-same-origin allow-presentation";
 
 export function playerUrl(video: OnlineVideo): string {
+  if (
+    video.kind === "playlist" ||
+    video.kind === "bangumi" ||
+    video.kind === "channel" ||
+    video.kind === "space" ||
+    video.kind === "live"
+  ) {
+    throw new Error(`${video.kind} has no in-webview player`);
+  }
   const provider = providers[video.provider];
   if (video.provider === "huggingface") {
     throw new Error("Hugging Face has no in-webview player");
+  }
+  if (
+    video.provider === "spotify" ||
+    video.provider === "soundcloud" ||
+    video.provider === "npm" ||
+    video.provider === "vimeo"
+  ) {
+    throw new Error(`${video.provider} has no in-webview player`);
   }
   if (video.provider === "youtube") {
     const url = new URL(`${provider.path}${video.id}`, provider.origin);
@@ -105,7 +153,7 @@ export function playerAttributes(video: OnlineVideo): Record<string, string> {
 
 /** YouTube's still for the video; other covers need an API call, so none. */
 export function thumbnailUrl(video: OnlineVideo): string | undefined {
-  return video.provider === "youtube"
+  return video.provider === "youtube" && video.kind === "video"
     ? `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
     : undefined;
 }

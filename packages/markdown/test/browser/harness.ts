@@ -25,7 +25,7 @@ export async function open(
 ) {
   await servePage(
     page,
-    '<!doctype html><html><head><link rel="stylesheet" href="/dist/webview/editor.css"></head><body><main id="app"></main><script src="/artifacts/fake-host.js"></script></body></html>',
+    '<!doctype html><html><head><link rel="stylesheet" href="/dist/webview/editor.css"></head><body><main id="app" data-pdfium-wasm="/dist/webview/pdfium.wasm"></main><script src="/artifacts/fake-host.js"></script></body></html>',
   );
   await page.evaluate(
     async ({

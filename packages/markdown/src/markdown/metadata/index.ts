@@ -1,5 +1,5 @@
 import { Text } from "@codemirror/state";
-import { parseMarkdown, markdownParser } from "../dialect";
+import { parseMarkdown, markdownParser } from "../dialect/parser";
 import { frontmatter } from "../properties";
 import { validTag } from "../tags/grammar";
 import { extractFootnotes, type Footnote } from "./footnote-extract";
@@ -64,9 +64,7 @@ function extractMetadata(doc: Text): NoteMetadata {
   collector.collect({ text: source, syntax: tree });
   collectDefinitions(collector, result.footnotes.definitions);
   result.blocks = extractBlocks(source, tree, position);
-  for (const value of Array.isArray(header?.values?.tags)
-    ? header.values.tags
-    : []) {
+  for (const value of frontmatterTagValues(header?.values?.tags)) {
     // Obsidian trims before it drops the `#`: `" #a "` is the tag `a`, and
     // `"# a"` is none.
     const tag =
@@ -78,7 +76,7 @@ function extractMetadata(doc: Text): NoteMetadata {
   result.aliases = aliasValues(
     header?.values?.aliases ?? header?.values?.alias,
   );
-  result.frontmatterLinks = frontmatterLinks(source, position);
+  result.frontmatterLinks = frontmatterLinks(source, position, header?.yaml);
   return result;
 }
 
@@ -107,4 +105,11 @@ function collectDefinitions(
       inDefinition: true,
     });
   }
+}
+
+function frontmatterTagValues(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return typeof value === "string" ? [value] : [];
 }

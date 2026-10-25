@@ -28,29 +28,55 @@ export default defineManifest({
         editorCommand: "vim:consume-host-shortcut",
         palette: false,
       },
+      // BH-034: host owns ctrl+n (blocks New Untitled) and replays <C-n>→j.
+      {
+        id: "handleVimCtrlN",
+        title: "Vim Ctrl+N",
+        editorCommand: "vim:handle-ctrl-n",
+        palette: false,
+      },
     ],
     keybindings: [
-      "o",
-      "b",
-      "i",
-      "shift+x",
-      "k",
-      "alt+0",
-      "alt+1",
-      "alt+2",
-      "alt+3",
-      "alt+4",
-      "alt+5",
-      "alt+6",
-      "shift+t",
-      "shift+h",
-    ].map((key) => ({
-      id: "consumeVimHostShortcut",
-      key: `ctrl+${key}`,
-      // Vim uses Control on macOS too; Command remains available to the editor.
-      mac: `ctrl+${key}`,
-      // Cursor's Edit key takes precedence over the host-shortcut consumer.
-      ...(key === "k" ? { when: "!lumiere.markdown.isCursorHost" } : {}),
-    })),
+      ...[
+        "o",
+        "b",
+        "i",
+        "k",
+        // BH-030: do not consume ctrl+alt+0..6 — Obsidian Set Heading 0–6
+        // (formatting owns those chords). Vim-core has no <C-A-N> map; the
+        // host noop left Ctrl+Alt+N dead while Vim is on.
+        // BH-026: do not consume ctrl+shift+h — VS Code Replace in Files
+        // (workbench.action.replaceInFiles). Vim-core has no <C-S-h> map; the
+        // host noop left the chord dead while Vim is on.
+        // BH-027: same for ctrl+shift+x (Extensions) and ctrl+shift+t (Reopen
+        // Closed Editor). Vim-core has <C-x>/<C-t>/X, not <C-S-x>/<C-S-t>.
+      ].map((key) => ({
+        id: "consumeVimHostShortcut",
+        key: `ctrl+${key}`,
+        // Vim uses Control on macOS too; Command remains available to the editor.
+        mac: `ctrl+${key}`,
+        // Cursor's Edit key takes precedence over the host-shortcut consumer.
+        // Formatting owns Ctrl+K (Insert Link). Host consume would noop the
+        // chord before insertLink (BH-036), same pattern as Ctrl+B/I (BH-024).
+        ...(key === "k"
+          ? {
+              when: "!lumiere.markdown.isCursorHost && !lumiere.markdown.plugin.formatting",
+            }
+          : {}),
+        // Formatting owns Ctrl+B/I (bold/italic). Host consume would noop the
+        // chord before the webview, so Vim page-back/jumplist never yields to
+        // toggleBold/toggleItalics (BH-024). Physical PageUp still keyToKeys to
+        // <C-b> inside vim-core without this host binding.
+        ...(key === "b" || key === "i"
+          ? { when: "!lumiere.markdown.plugin.formatting" }
+          : {}),
+      })),
+      // BH-034: New Untitled must not steal; replay <C-n> into vim-core.
+      {
+        id: "handleVimCtrlN",
+        key: "ctrl+n",
+        mac: "ctrl+n",
+      },
+    ],
   },
 } as const);

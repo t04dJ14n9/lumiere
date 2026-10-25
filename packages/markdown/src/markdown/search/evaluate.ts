@@ -1,5 +1,5 @@
-import { markdownParser as language } from "../dialect";
-import { parseDocument } from "yaml";
+import { loadYaml } from "../properties/load-yaml";
+import { markdownParser as language } from "../dialect/parser";
 
 import { noteTags } from "../metadata/tags";
 import { taskMarker } from "../tasks";
@@ -77,7 +77,7 @@ function properties(source: string): Record<string, unknown> {
   if (!header) {
     return {};
   }
-  const document = parseDocument(header[1]!, { uniqueKeys: true });
+  const document = loadYaml().parseDocument(header[1]!, { uniqueKeys: true });
   if (document.errors.length) {
     return {};
   }

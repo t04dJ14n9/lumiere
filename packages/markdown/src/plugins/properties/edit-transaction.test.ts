@@ -122,3 +122,16 @@ test("raw YAML drafts reject concurrent same-property and unrelated-header chang
     "generated",
   ]);
 });
+
+test("removing the only property drops the frontmatter fence (BH-013)", () => {
+  const source = "---\naliases: [Destination]\n---\n# Target\n";
+  const document = Text.of(source.split("\n"));
+  const removed = propertyTransaction({
+    document,
+    expected: frontmatter(source)!.raw,
+    displayed: ["aliases"],
+    operation: { type: "remove", keys: ["aliases"] },
+  })!;
+  assert.equal(removed.apply(document).toString(), "# Target\n");
+  assert.equal(frontmatter(removed.apply(document).toString()), undefined);
+});
