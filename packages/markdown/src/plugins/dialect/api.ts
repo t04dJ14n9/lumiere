@@ -1,7 +1,5 @@
-import type {
-  markdownParser,
-  markdownLanguageSupport,
-} from "../../markdown/dialect";
+import type { markdownParser } from "../../markdown/dialect/parser";
+import type { markdownLanguageSupport } from "../../markdown/dialect/language";
 import type { metadata } from "../../markdown/metadata";
 import type { createRenderer } from "../../markdown/html";
 export interface MarkdownService {

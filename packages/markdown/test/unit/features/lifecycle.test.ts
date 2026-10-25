@@ -121,6 +121,14 @@ for (const manifest of features) {
         activeMenu.map((item) => item.label),
         ["Copy Link for Agent"],
       );
+      const ranked = await f.root.pipeline("editor/selectionMenu", [
+        { label: "Clear selected cells", run: () => {} },
+        { label: "Cut", run: () => {} },
+      ]);
+      assert.deepEqual(
+        ranked.map((item) => item.label),
+        ["Copy Link for Agent", "Clear selected cells", "Cut"],
+      );
     }
     if (
       [

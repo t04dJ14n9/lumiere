@@ -1,4 +1,4 @@
-import { stringify } from "yaml";
+import { loadYaml } from "../../markdown/properties/load-yaml";
 import { clipboardProperties } from "./clipboard-values";
 
 interface PropertySelectionActions {
@@ -113,7 +113,7 @@ export class PropertySelection {
         if (!keys.length) {
           return;
         }
-        event.clipboardData.setData("text/plain", stringify(values));
+        event.clipboardData.setData("text/plain", loadYaml().stringify(values));
         event.clipboardData.setData(
           "obsidian/properties",
           JSON.stringify(values),

@@ -87,3 +87,27 @@ export function knownNoteKeys(vault: VaultIndex): string[] {
   }
   return [...keys].sort().slice(0, MAX_KNOWN_NOTES);
 }
+
+/**
+ * Whether an unresolved Markdown destination may create a note on click.
+ * Basename-only note paths (`Note`, `Note.md`) match Obsidian; relative
+ * paths (`./x`, `folder/x`) keep open-only so source-relative lookup stays
+ * correct when `navigation.resolve` prefers the vault root under `create`.
+ */
+export function mayCreateNote(path: string): boolean {
+  if (
+    !path ||
+    path.includes("/") ||
+    path.includes("\\") ||
+    path === "." ||
+    path === ".."
+  ) {
+    return false;
+  }
+  const dot = path.lastIndexOf(".");
+  if (dot <= 0) {
+    return true;
+  }
+  const ext = path.slice(dot + 1).toLowerCase();
+  return ext === "md" || ext === "markdown";
+}

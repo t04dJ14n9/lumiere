@@ -95,6 +95,7 @@ export const WORKBENCH_FEATURE_ORDER = [
   "gitDiffEditor",
   // Compatibility supplies settings; core plugins keep owning their behavior.
   "obsidianCompat",
+  "obsidianMarketplace",
   // OKF before the graph: the graph reads the okf service.
   "okfCore",
   "graph",

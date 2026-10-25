@@ -17,6 +17,10 @@ export interface WantedPlugin {
  * to the ones still on. Updates run one after another, so a slow stop cannot
  * race a newer setting, and a failed update does not block the next one.
  *
+ * Within one reconcile, configuration updates run in parallel, then stops in
+ * parallel, then starts synchronously — plugins do not depend on each other's
+ * apply order beyond the kernel's own service graph.
+ *
  * Used by every feature switch: window plugins, panel host plugins and
  * webview plugins.
  */
@@ -55,30 +59,41 @@ export class PluginSwitch {
     wanted: readonly WantedPlugin[],
   ): Promise<void> {
     const byName = new Map(wanted.map((entry) => [entry.plugin.name, entry]));
-    for (const name of managed) {
-      await this.apply(name, byName.get(name));
-    }
-  }
+    const stops: Promise<void>[] = [];
+    const starts: WantedPlugin[] = [];
+    const updates: Promise<void>[] = [];
 
-  private async apply(
-    name: string,
-    wanted: WantedPlugin | undefined,
-  ): Promise<void> {
-    const current = this.running.get(name);
-    if (!wanted) {
-      if (current) {
-        this.running.delete(name);
-        await current.handle.dispose();
+    for (const name of managed) {
+      const next = byName.get(name);
+      const current = this.running.get(name);
+      if (!next) {
+        if (current) {
+          this.running.delete(name);
+          stops.push(current.handle.dispose());
+        }
+        continue;
       }
-      return;
+      const signature = next.signature ?? "";
+      if (!current) {
+        starts.push(next);
+      } else if (current.signature !== signature) {
+        current.signature = signature;
+        updates.push(current.handle.update(next.config));
+      }
     }
-    const signature = wanted.signature ?? "";
-    if (!current) {
-      const handle = this.root.plugin(wanted.plugin, wanted.config);
-      this.running.set(name, { handle, signature });
-    } else if (current.signature !== signature) {
-      current.signature = signature;
-      await current.handle.update(wanted.config);
+
+    if (updates.length) {
+      await Promise.all(updates);
+    }
+    if (stops.length) {
+      await Promise.all(stops);
+    }
+    for (const entry of starts) {
+      const handle = this.root.plugin(entry.plugin, entry.config);
+      this.running.set(entry.plugin.name, {
+        handle,
+        signature: entry.signature ?? "",
+      });
     }
   }
 }

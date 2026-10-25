@@ -18,6 +18,9 @@ native history), stops the shell from seeing them, and leaves INPUT/TEXTAREA plu
 Properties `[data-property-input]` / `[data-property-list-input]` contenteditables
 to native DOM undo (not CodeMirror's contenteditable). Save stays on the
 CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Save.
+Ctrl/Cmd+E is owned the same way so `@replit/codemirror-vim` cannot treat it as
+scroll-window (BH-003); the host Toggle Text Editor command runs instead
+(Lumière product choice over Obsidian-vim scroll). Ctrl/Cmd+P is owned in capture phase (BH-021): try suggest `moveCompletionSelection` first, else host Quick Open. Vim also unmaps `<C-p>` → `k` so line-up cannot win.
 
 ## Files
 
@@ -30,6 +33,9 @@ CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Sa
 - `history-keys.ts`: capture-phase Ctrl/Cmd+Z / Shift+Z / Y ownership so VS Code's
   webview key forwarding cannot double-fire or swallow note undo/redo.
 - `history-keys.test.ts`: shortcut mapping, text-field and property-editor exemption, listener disposal.
+- `toggle-text-editor-keys.ts`: capture-phase Ctrl/Cmd+E so Vim cannot
+  scroll-window (BH-003); runs host `toggleTextEditor`.
+- `toggle-text-editor-keys.test.ts`: Mod+E mapping and native-field skip.
 - `registry.ts`: per-editor unique-ID command map.
 - `registry.test.ts`: command results, duplicate rejection, removal and failures.
 

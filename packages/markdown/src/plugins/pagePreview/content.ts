@@ -35,7 +35,7 @@ export async function renderPreview(options: {
     const preview = notePreview(resource.text, href, resource.source);
     return render.into(body, preview.text, preview.context);
   }
-  if (["image", "pdf", "audio", "video"].includes(resource.kind)) {
+  if (["image", "pdf", "audio", "video", "base"].includes(resource.kind)) {
     return render.into(
       body,
       `<span${wiki ? ' data-wiki="true"' : ""}${attr("data-resource", href)}>${escape(href)}</span>`,

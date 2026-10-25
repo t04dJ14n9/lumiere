@@ -25,6 +25,51 @@ interface CardOptions {
  * itself as well. "Play here" swaps in a player frame built from the
  * validated ID.
  */
+
+function mediaNoun(video: OnlineVideo): string {
+  if (video.provider === "spotify") {
+    return video.id.split(":")[0]!;
+  }
+  if (video.provider === "soundcloud") {
+    return video.id.includes("/sets/") ? "playlist" : "track";
+  }
+  if (video.kind === "playlist") {
+    return "playlist";
+  }
+  if (video.kind === "bangumi") {
+    return "bangumi";
+  }
+  if (video.kind === "channel") {
+    return "channel";
+  }
+  if (video.kind === "space") {
+    return "space";
+  }
+  if (video.kind === "live") {
+    return "live";
+  }
+  return "video";
+}
+
+function openLabel(kind: OnlineVideo["kind"], providerName: string): string {
+  if (kind === "playlist") {
+    return `Open playlist on ${providerName}`;
+  }
+  if (kind === "bangumi") {
+    return `Open bangumi on ${providerName}`;
+  }
+  if (kind === "channel") {
+    return `Open channel on ${providerName}`;
+  }
+  if (kind === "space") {
+    return `Open space on ${providerName}`;
+  }
+  if (kind === "live") {
+    return `Open live on ${providerName}`;
+  }
+  return `Open on ${providerName}`;
+}
+
 export function videoCard(
   video: OnlineVideo,
   options: CardOptions,
@@ -36,12 +81,12 @@ export function videoCard(
   const title = element(
     "span",
     "mw-video-title",
-    label || `${provider.name} video`,
+    label || `${provider.name} ${mediaNoun(video)}`,
   );
   const meta = element(
     "span",
     "mw-video-meta",
-    videoMeta(provider.name, video.id),
+    videoMeta(provider.name, video.id, {}, video.kind),
   );
   meta.title = video.id;
   const thumbnail = options.trusted ? thumbnailUrl(video) : undefined;
@@ -51,11 +96,16 @@ export function videoCard(
   const body = element("span", "mw-video-body");
   body.append(title, meta);
   const actions = element("span", "mw-video-actions");
-  if (options.trusted && options.player && provider.embeddable) {
+  if (
+    options.trusted &&
+    options.player &&
+    provider.embeddable &&
+    video.kind === "video"
+  ) {
     actions.append(playButton(card, video, options));
   }
   const open = opener(video, "mw-video-open", options);
-  open.textContent = `Open on ${provider.name}`;
+  open.textContent = openLabel(video.kind, provider.name);
   actions.append(open);
   body.append(actions);
   if (!options.trusted) {
@@ -103,6 +153,7 @@ function showDetails({
     providers[video.provider].name,
     video.id,
     details,
+    video.kind,
   );
   if (
     details.cover &&

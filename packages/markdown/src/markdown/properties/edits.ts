@@ -1,4 +1,5 @@
-import { isMap, isNode, isScalar, parseDocument } from "yaml";
+import type { Document } from "yaml";
+import { loadYaml } from "./load-yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import { orderPropertyBody } from "./order";
 import { validPropertyName } from "./types";
@@ -57,10 +58,10 @@ export function propertyChanges(
   if (!header) {
     return createHeader(source, edit);
   }
-  const document = parseDocument(header.body, { uniqueKeys: true });
+  const document = loadYaml().parseDocument(header.body, { uniqueKeys: true });
   if (
     document.errors.length ||
-    (document.contents !== null && !isMap(document.contents))
+    (document.contents !== null && !loadYaml().isMap(document.contents))
   ) {
     return undefined;
   }
@@ -125,11 +126,13 @@ function createHeader(
 class PropertyMapEdits {
   constructor(
     private readonly header: Header,
-    private readonly document: ReturnType<typeof parseDocument>,
+    private readonly document: Document,
   ) {}
 
   private get items() {
-    return isMap(this.document.contents) ? this.document.contents.items : [];
+    return loadYaml().isMap(this.document.contents)
+      ? this.document.contents.items
+      : [];
   }
 
   changes(source: string, edit: KeyEdit): PropertyChange[] | undefined {
@@ -142,7 +145,8 @@ class PropertyMapEdits {
         return this.remove(edit.keys);
       case "set": {
         const pair = this.items.find(
-          (pair) => isScalar(pair.key) && pair.key.value === edit.key,
+          (pair) =>
+            loadYaml().isScalar(pair.key) && pair.key.value === edit.key,
         );
         return setPropertyChanges({
           source,
@@ -173,7 +177,10 @@ class PropertyMapEdits {
     if (this.document.has(edit.key)) {
       return undefined;
     }
-    if (isMap(this.document.contents) && this.document.contents.flow) {
+    if (
+      loadYaml().isMap(this.document.contents) &&
+      this.document.contents.flow
+    ) {
       this.document.set(edit.key, edit.value ?? null);
       return this.wholeMap();
     }
@@ -191,11 +198,11 @@ class PropertyMapEdits {
     edit: Extract<KeyEdit, { type: "rename" }>,
   ): PropertyChange[] | undefined {
     const pair = this.items.find(
-      (pair) => isScalar(pair.key) && pair.key.value === edit.key,
+      (pair) => loadYaml().isScalar(pair.key) && pair.key.value === edit.key,
     );
     if (
       !pair ||
-      !isScalar(pair.key) ||
+      !loadYaml().isScalar(pair.key) ||
       !pair.key.range ||
       (edit.key !== edit.name && this.document.has(edit.name))
     ) {
@@ -216,13 +223,26 @@ class PropertyMapEdits {
     ) {
       return undefined;
     }
-    if (isMap(this.document.contents) && this.document.contents.flow) {
+    const stored = this.items.flatMap((item) =>
+      loadYaml().isScalar(item.key) && typeof item.key.value === "string"
+        ? [item.key.value]
+        : [],
+    );
+    // Obsidian drops the empty `---` fence when the last property is removed
+    // (BH-013); leaving `---\n---` would count as body and inflate stats.
+    if (stored.length > 0 && stored.every((key) => keys.includes(key))) {
+      return dropFrontmatterFence(this.header);
+    }
+    if (
+      loadYaml().isMap(this.document.contents) &&
+      this.document.contents.flow
+    ) {
       keys.forEach((key) => this.document.delete(key));
       return this.wholeMap();
     }
     return this.items.flatMap((item) => {
       if (
-        !isScalar(item.key) ||
+        !loadYaml().isScalar(item.key) ||
         typeof item.key.value !== "string" ||
         !keys.includes(item.key.value) ||
         !item.key.range
@@ -232,7 +252,7 @@ class PropertyMapEdits {
       const start =
         this.header.body.lastIndexOf("\n", item.key.range[0] - 1) + 1;
       let end =
-        isNode(item.value) && item.value.range
+        loadYaml().isNode(item.value) && item.value.range
           ? item.value.range[2]
           : item.key.range[2];
       if (this.header.body[end] === "\r") {
@@ -250,6 +270,11 @@ class PropertyMapEdits {
       ];
     });
   }
+}
+
+/** Remove the opening fence, body and closing fence (always at offset 0). */
+function dropFrontmatterFence(header: Header): PropertyChange[] {
+  return [{ from: 0, to: header.end, insert: "" }];
 }
 
 function newPropertyLine(
@@ -336,9 +361,23 @@ function verifyChanges(
 ): PropertyChange[] | undefined {
   try {
     const before = frontmatter(source)?.values;
-    const checked = frontmatter(applyChanges(source, changes));
+    if (!before) {
+      return undefined;
+    }
+    const result = applyChanges(source, changes);
+    const checked = frontmatter(result);
     const after = checked?.values;
-    if (!before || !after || checked?.error) {
+    // Last property removed: the empty fence is gone, so there is no header.
+    if (
+      edit.type === "remove" &&
+      after === undefined &&
+      checked === undefined
+    ) {
+      return Object.keys(before).every((key) => edit.keys.includes(key))
+        ? changes
+        : undefined;
+    }
+    if (!after || checked?.error) {
       return undefined;
     }
     if (edit.type === "set" && !sameWritten(after[edit.key], edit.value)) {

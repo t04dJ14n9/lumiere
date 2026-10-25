@@ -114,6 +114,33 @@ test("a fenced block shows its language and copy button in the hidden opening fe
   await expect(page.locator(".cm-line.md-code-fence-close")).toHaveText("```");
 });
 
+test("Copy appears while hovering any line of a fence (BH-015)", async ({
+  page,
+}) => {
+  await open(
+    page,
+    'Before\n\n```python\ndef greet(name):\n    return f"Hello, {name}"\n```\n\nAfter',
+  );
+  const fence = page.locator(".cm-line.md-code-fence-open");
+  const copy = fence.getByRole("button", { name: "Copy code" });
+  const language = fence.locator(".code-language");
+  const body = page.locator(".cm-line.md-code-line", { hasText: "return" });
+  const before = page.locator(".cm-line", { hasText: "Before" });
+  await expect(language).toHaveText("Python");
+  // Park the pointer off the fence so Copy starts hidden.
+  await before.hover();
+  await expect(fence).not.toHaveClass(/is-fence-hovered/);
+  await expect(copy).toHaveCSS("opacity", "0");
+  await body.hover();
+  await expect(fence).toHaveClass(/is-fence-hovered/);
+  await expect(copy).toHaveCSS("opacity", "1");
+  await expect(language).toHaveCSS("opacity", "0");
+  await before.hover();
+  await expect(fence).not.toHaveClass(/is-fence-hovered/);
+  await expect(copy).toHaveCSS("opacity", "0");
+  await expect(language).toHaveCSS("opacity", "1");
+});
+
 /** Reveals that show their source in place (audited; none may jump). */
 const inPlace: Record<string, string> = {
   "a heading": "## A heading",
@@ -133,35 +160,20 @@ for (const [name, block] of Object.entries(inPlace)) {
   });
 }
 
-test("block math keeps its preview height while its source is shown above it", async ({
+test("block math replaces its preview with source while the caret is inside (BH-009)", async ({
   page,
 }) => {
-  // As in Obsidian, editing adds the source lines above the unchanged render.
   await open(page, "Before\n\n$$\n\\frac{a}{b}\n$$\n\nAfter");
-  // Fractional line heights: measure rects, not rounded offsets.
-  const measure = () =>
-    page.evaluate(() => {
-      const height = (element: Element) =>
-        element.getBoundingClientRect().height;
-      const after = [...document.querySelectorAll(".cm-line")].find(
-        (line) => line.textContent === "After",
-      )!;
-      const source = [
-        ...document.querySelectorAll(".cm-line.md-math-source"),
-      ].reduce((sum, line) => sum + height(line), 0);
-      return {
-        after: after.getBoundingClientRect().top,
-        source,
-        math: height(document.querySelector(".hybrid-math")!),
-      };
-    });
-  const outside = await caretAt(page, 0).then(measure);
-  expect(outside.source).toBe(0);
+  const math = page.locator(".hybrid-math");
+  const delimiters = page.locator(".md-math-delimiter");
+  await expect(math).toHaveCount(1);
+  await expect(delimiters).toHaveCount(0);
   await caretAt(page, 10);
-  const inside = await measure();
-  expect(inside.source).toBeGreaterThan(0);
-  expect(inside.math).toBeCloseTo(outside.math, 1);
-  expect(inside.after).toBeCloseTo(outside.after + inside.source, 0);
+  await expect(math).toHaveCount(0);
+  await expect(delimiters).toHaveCount(2);
+  await caretAt(page, 0);
+  await expect(math).toHaveCount(1);
+  await expect(delimiters).toHaveCount(0);
 });
 
 /** The test vault's Code.md, where the owner saw lines 7→8 jump. */

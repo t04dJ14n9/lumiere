@@ -35,11 +35,14 @@ export class TableWheelMotion {
       }
       return false;
     }
-    const behavior = this.prefersReducedMotion() ? "instant" : "smooth";
+    // Instant matches OS/mouse wheel and prose under the pointer. Smooth
+    // scrollTo on every table tick felt sluggish (especially for mouse).
+    // Still read reduced-motion so panel wiring stays live.
+    this.prefersReducedMotion();
     this.previousTop = current;
-    this.target = behavior === "smooth" ? top : undefined;
+    this.target = undefined;
     // scrollBy would add to the animated position and lose unconsumed ticks.
-    this.viewport.scrollTo({ top, behavior });
+    this.viewport.scrollTo({ top, behavior: "instant" });
     return true;
   }
 

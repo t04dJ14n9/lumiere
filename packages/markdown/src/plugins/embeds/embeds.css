@@ -205,6 +205,13 @@ img.md-image-selected {
   outline-offset: 1px;
 }
 
+/* Selected image: outline only (Obsidian). Hide the caret — at a block
+   embed it inherits the widget height (including a tall |W| minHeight
+   reserve) and draws a long bar below the card. */
+#app .cm-editor[data-mw-image-selected] > .cm-scroller > .mw-caret-layer {
+  visibility: hidden;
+}
+
 /* Obsidian image-embed host + resize-corner chevron (app.css ~11969–12070).
    VS Code theme tokens; pointer-events none — resize stays on +/− keys. */
 .image-embed {
@@ -251,4 +258,268 @@ img.md-image-selected {
 .image-embed:has(img.md-image-selected) .image-resize-corner::after {
   opacity: 1;
   border-color: var(--vscode-focusBorder, var(--accent));
+}
+
+/* Embedded Obsidian Bases (.base) views: table, cards, and list. */
+.file-embed.bases-embed,
+.file-embed:has(.bases-header) {
+  display: block;
+}
+.bases-embed {
+  position: relative;
+  margin: 6px 0;
+  border: 1px solid var(--line, rgba(128, 128, 128, 0.25));
+  border-radius: 6px;
+  background: var(--code, rgba(128, 128, 128, 0.04));
+  overflow: hidden;
+}
+.bases-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 32px 6px 10px;
+  border-bottom: 1px solid var(--line, rgba(128, 128, 128, 0.2));
+  font-size: 0.85em;
+}
+.bases-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+.bases-toolbar-views-menu {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.bases-toolbar-view-name {
+  font-weight: 600;
+}
+.bases-view-tab {
+  font: inherit;
+  color: var(--muted, inherit);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.bases-view-tab:hover {
+  background: var(--hover, rgba(128, 128, 128, 0.12));
+}
+.bases-view-tab.is-active {
+  color: var(--vscode-editor-foreground, inherit);
+  background: var(--hover, rgba(128, 128, 128, 0.16));
+  border-color: var(--line, rgba(128, 128, 128, 0.25));
+  font-weight: 600;
+}
+.bases-toolbar-results-menu {
+  color: var(--muted, #888);
+  font-variant-numeric: tabular-nums;
+}
+.bases-table-container {
+  overflow-x: auto;
+}
+.bases-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.bases-th,
+.bases-td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line, rgba(128, 128, 128, 0.15));
+}
+.bases-th.bases-table-header {
+  font-weight: 600;
+  color: var(--muted, inherit);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.bases-th.bases-table-header:hover {
+  background: var(--hover, rgba(128, 128, 128, 0.1));
+}
+.bases-group-row .bases-group-cell {
+  background: rgba(128, 128, 128, 0.06);
+  font-weight: 600;
+}
+.bases-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bases-group-count {
+  color: var(--muted, #888);
+  font-size: 0.85em;
+}
+.bases-summary-row .bases-summary-cell {
+  font-size: 0.85em;
+  color: var(--muted, #888);
+  border-bottom: 0;
+}
+.bases-rendered-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.multi-select-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.85em;
+  background: var(--hover, rgba(128, 128, 128, 0.15));
+}
+.bases-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 10px;
+}
+.bases-cards-group {
+  display: contents;
+}
+.bases-cards-item {
+  padding: 10px;
+  border: 1px solid var(--line, rgba(128, 128, 128, 0.2));
+  border-radius: 6px;
+  background: var(--vscode-editor-background, transparent);
+}
+.bases-cards-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.bases-cards-line {
+  font-size: 0.85em;
+  margin-top: 2px;
+}
+.bases-cards-label {
+  color: var(--muted, #888);
+}
+.bases-list-container {
+  padding: 8px 12px;
+}
+.bases-list-group-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.bases-list-item {
+  margin: 3px 0;
+}
+.bases-empty,
+.bases-error {
+  padding: 12px;
+  color: var(--muted, #888);
+  font-size: 0.9em;
+}
+
+/* Inline PDF embeds (Obsidian .pdf-embed conventions + EmbedPDF canvas). */
+.file-embed:has(.pdf-embed) {
+  display: block;
+  width: 100%;
+}
+.pdf-embed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 520px;
+  margin: 6px 0;
+  border: 1px solid var(--line, rgba(128, 128, 128, 0.28));
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--vscode-editorWidget-background, var(--code, #1e1e1e));
+}
+.pdf-embed .pdf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line, rgba(128, 128, 128, 0.25));
+  background: var(--vscode-editorWidget-background, var(--code, #252526));
+  font-size: 0.85em;
+  flex-shrink: 0;
+}
+.pdf-embed .pdf-toolbar-left,
+.pdf-embed .pdf-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pdf-embed .pdf-embed-title {
+  font-weight: 600;
+  color: var(--vscode-editor-foreground, inherit);
+  margin-right: 4px;
+}
+.pdf-embed .pdf-nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--line, rgba(128, 128, 128, 0.3));
+  border-radius: 4px;
+  color: var(--vscode-editor-foreground, inherit);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+}
+.pdf-embed .pdf-nav-button:hover:not(:disabled) {
+  background: var(--hover, rgba(128, 128, 128, 0.15));
+}
+.pdf-embed .pdf-nav-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pdf-embed .pdf-page-numbers {
+  color: var(--muted, #888);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5em;
+  text-align: center;
+}
+.pdf-embed .pdf-open-button {
+  position: static;
+  padding: 3px 8px;
+  border: 1px solid var(--line, rgba(128, 128, 128, 0.3));
+  border-radius: 4px;
+  color: var(--accent);
+  background: transparent;
+  font-size: 0.95em;
+  cursor: pointer;
+}
+.pdf-embed .pdf-open-button:hover {
+  background: var(--hover, rgba(128, 128, 128, 0.15));
+}
+.pdf-embed .pdf-viewer-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12px;
+  background: color-mix(
+    in srgb,
+    var(--vscode-editor-background, #1e1e1e) 92%,
+    #000 8%
+  );
+}
+.pdf-embed .pdf-page-wrapper {
+  display: inline-flex;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  border-radius: 2px;
+  overflow: hidden;
+  background: #fff;
+  max-width: 100%;
+}
+.pdf-embed .pdf-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }

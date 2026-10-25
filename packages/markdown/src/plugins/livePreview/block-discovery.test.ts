@@ -4,7 +4,8 @@ import { Compartment, EditorState, StateEffect } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
 import type { BlockRenderer } from "./api";
 import { blockIndex } from "./blocks";
-import { documentTree } from "./document-tree";
+import { documentTree, replaceDocumentTree } from "./document-tree";
+import { parseMarkdown } from "../../markdown/dialect";
 import { blockRenderers } from "./registry";
 
 class UnmountedWidget extends WidgetType {
@@ -40,6 +41,12 @@ test("renderer registration discovers block syntax once and matches only declare
     ).join("\n\n"),
     extensions: [documentTree, compartment.of([])],
   });
+  // Discovery cache coverage needs the full tree, not the first-paint prefix.
+  if (state.field(documentTree).length < state.doc.length) {
+    state = state.update({
+      effects: replaceDocumentTree.of(parseMarkdown(state.doc)),
+    }).state;
+  }
   const tree = state.field(documentTree);
   const spy = mock.method(tree, "iterate");
   let matched = 0;

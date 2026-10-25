@@ -32,8 +32,10 @@ and otherwise they indent or outdent the lines the selection touches, even
 with the caret mid-line. Home (Cmd+Left on macOS), with Shift to select, goes
 first to the start of a list item's, task's or quote's text, then to the line
 start (`line-start.ts`).
-Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's: it
-shows "N / M" for the selected match (counting stops at 1000), Enter and
+Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's (capture-phase ownership so Vim cannot treat it as page-forward, BH-023; Ctrl/Cmd+H opens Replace the same way, BH-025): it
+shows "N / M" for the selected match (counting stops at 1000), typing extends
+the query at the caret even when the current query already has matches
+(CodeMirror's findNext would otherwise select-all the field), Enter and
 Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,
 Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
 Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
@@ -94,10 +96,13 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
 - `associations.ts`: **Use Lumière for Markdown in This Workspace**.
 - `toggle-text-editor.ts`: **Toggle Text Editor** (Ctrl/Cmd+E) between Lumière
-  and the host default text editor.
+  and the host default text editor. Capture-phase Mod+E ownership (BH-003) lives
+  in `commands/toggle-text-editor-keys.ts`.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
-- `indentation.ts`: Tab and Shift+Tab commands.
-- `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
+- `indentation.ts`: Tab and Shift+Tab commands (capture-phase for Vim NORMAL, BH-040).
+- `find.ts`, `find-panel.ts`, `find-caret.ts`, `find-count.ts`, `find.css`: in-note find and replace.
+- `find-keys.ts`: capture-phase Ctrl/Cmd+F Find and Ctrl/Cmd+H Replace (BH-023 / BH-025).
+- `find-keys.test.ts`: Mod+F/H mapping and native-field skip.
 - `select-all.ts`: stops VS Code's own Select All from undoing the
   editor's Ctrl/Cmd+A (VS Code forwards every webview keydown).
 - `focus-report.ts`: reports the webview's focus for
@@ -156,10 +161,13 @@ Clean text tabs are closed; dirty text tabs keep their native document and undo.
 **Toggle Text Editor** (Ctrl/Cmd+E) switches the active note between Lumière
 and the host's default text editor via `vscode.openWith` (`default` ↔
 `lumiere.markdown.editor`). Opening as text still sets the reclaim bypass so
-Cursor does not yank the note back for 10 s. This is **not** Obsidian's
-Ctrl/Cmd+E (Live Preview ↔ Source); Source mode stays on the unbound
-**Toggle Live Preview/Source Mode** command. Selection and caret are not
-restored across the switch (`vscode.openWith` carries no range).
+Cursor does not yank the note back for 10 s. After `openWith`, the previous
+view's tab for the same URI is closed in the active group (clean tabs only),
+so the toggle leaves one tab rather than Lumière + Text Editor side by side
+(BH-011 / BH-003). This is **not** Obsidian's Ctrl/Cmd+E (Live Preview ↔
+Source); Source mode stays on the unbound **Toggle Live Preview/Source Mode**
+command. Selection and caret are not restored across the switch
+(`vscode.openWith` carries no range).
 
 **Open as Text** keeps the text editor for 10 s. A just-reclaimed note also
 ignores repeated tab notifications for 10 s; an explicit native command jump

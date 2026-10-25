@@ -24,13 +24,16 @@ note's basename and aliases as whole words, outside links and properties.
 
 - Injects the host services `settings`, `hostCommands`, `views` and `activeEditor`, plus `vaults`. Listens to `vault/resolved`.
 - Settings: `lumiere.markdown.plugins.backlinks.enabled`;
-  `lumiere.markdown.backlinks.sortOrder` (default `alphabetical`).
+  `lumiere.markdown.backlinks.sortOrder` (default `alphabetical`);
+  `lumiere.markdown.backlinks.extraContext` (default false).
 
 ## Limits and differences from Obsidian
 
-- The view is an Explorer section rather than a sidebar pane, and has no
-  "show more context" toggle yet. File lists honour Obsidian sortOrder for
-  file name and modified time (title-bar cycle); created-time sorts are
-  omitted because the vault index stores mtime only.
+- The view is an Explorer section rather than a sidebar pane. File lists
+  honour Obsidian sortOrder for file name and modified time (title-bar
+  cycle); created-time sorts are omitted because the vault index stores
+  mtime only. "Show more context" matches Obsidian's extraContext (adjacent
+  lines; off by default; view title toggle +
+  `lumiere.markdown.backlinks.extraContext`).
 - Unlinked mentions read every candidate note when expanded, which takes a
   moment in large vaults. Excluded files are skipped, as in Obsidian.

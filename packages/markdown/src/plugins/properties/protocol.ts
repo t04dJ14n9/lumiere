@@ -3,6 +3,7 @@ import { defineProtocol } from "../../shared/rpc/protocol";
 import { propertyKinds } from "../../markdown/properties/types";
 const kind = Schema.union(propertyKinds);
 export const types = Schema.record(kind);
+const snippets = Schema.array(Schema.string().max(500_000)).max(200);
 export const protocol = defineProtocol("properties", {
   requests: {
     types: { params: Schema.object({}), result: types },
@@ -22,6 +23,14 @@ export const protocol = defineProtocol("properties", {
       }),
       result: types,
     },
+    snippets: {
+      params: Schema.object({}),
+      result: snippets,
+    },
   },
-  notifications: { types: types, collapsed: Schema.boolean() },
+  notifications: {
+    types: types,
+    collapsed: Schema.boolean(),
+    snippets: snippets,
+  },
 });

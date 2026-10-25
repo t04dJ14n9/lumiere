@@ -52,4 +52,6 @@ selections are supported. Saved line references do not export attachments,
 snapshots or chat messages.
 
 Static editor selection actions use VS Code's native webview context menu; table
-actions continue through `editor/selectionMenu`.
+actions continue through `editor/selectionMenu`. Copy Link for Agent is always
+prepended so it ranks first in that menu, and the native item uses menu group
+`0_agent@1` (ahead of Selection Actions).

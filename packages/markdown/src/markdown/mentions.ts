@@ -9,6 +9,15 @@ export interface MentionLine {
   /** Offset of the mention in the note's text. */
   offset: number;
   text: string;
+  /** Previous source line when Obsidian extraContext ("show more context") is on. */
+  before?: string;
+  /** Next source line when extraContext is on. */
+  after?: string;
+}
+
+export interface MentionOptions {
+  /** Obsidian BacklinkView.extraContext — surround the match with adjacent lines. */
+  extraContext?: boolean;
 }
 
 const CONTEXT_LENGTH = 200;
@@ -17,11 +26,12 @@ const CONTEXT_LENGTH = 200;
 export function linkedLines(
   text: string,
   isTarget: (linkpath: string) => boolean,
+  options: MentionOptions = {},
 ): MentionLine[] {
   const lines = text.split("\n");
   return vaultLinks(metadata(text))
     .filter((link) => isTarget(linkpathOf(link)!))
-    .map((link) => contextLine(lines, link.position))
+    .map((link) => contextLine(lines, link.position, options.extraContext))
     .sort((a, b) => a.offset - b.offset);
 }
 
@@ -33,6 +43,7 @@ export function linkedLines(
 export function unlinkedLines(
   text: string,
   names: readonly string[],
+  options: MentionOptions = {},
 ): MentionLine[] {
   const pattern = namePattern(names);
   if (!pattern) {
@@ -52,7 +63,9 @@ export function unlinkedLines(
       ([from, to]) => offset >= from! && offset < to!,
     );
     if (offset >= bodyStart && !isInside) {
-      mentions.push(contextLine(lines, positionAt(lines, offset)));
+      mentions.push(
+        contextLine(lines, positionAt(lines, offset), options.extraContext),
+      );
     }
   }
   return mentions.sort((a, b) => a.offset - b.offset);
@@ -89,10 +102,36 @@ function positionAt(lines: string[], offset: number): Position {
   return { start: point, end: point };
 }
 
-function contextLine(lines: string[], position: Position): MentionLine {
+function contextLine(
+  lines: string[],
+  position: Position,
+  extraContext = false,
+): MentionLine {
   const { line, col, offset } = position.start;
   const raw = (lines[line] ?? "").replace(/\r$/, "");
-  return { line, col, offset, text: trimContext(raw, col) };
+  const mention: MentionLine = {
+    line,
+    col,
+    offset,
+    text: trimContext(raw, col),
+  };
+  if (extraContext) {
+    if (line > 0) {
+      mention.before = trimAdjacent(lines[line - 1]!);
+    }
+    if (line + 1 < lines.length) {
+      mention.after = trimAdjacent(lines[line + 1]!);
+    }
+  }
+  return mention;
+}
+
+function trimAdjacent(line: string): string {
+  const text = line.replace(/\r$/, "").trim();
+  if (text.length <= CONTEXT_LENGTH) {
+    return text;
+  }
+  return `${text.slice(0, CONTEXT_LENGTH).trim()}…`;
 }
 
 /** Keep the mention visible when the line is long. */

@@ -14,9 +14,11 @@ export type OpenLink = (
 ) => Promise<boolean>;
 
 /**
- * Clicks on rendered links, as in Obsidian: a click opens the link, Cmd-click
- * in a tab of its own, Cmd+Alt-click beside; Alt- and Shift-clicks place or
- * extend the caret. The press is the link's, so the caret stays put.
+ * Clicks on rendered links (BH-020 / user-stated Obsidian Live Preview parity):
+ * plain click does not follow — CodeMirror places the caret so the link source
+ * reveals; Ctrl/Cmd-click follows in the same editor; Ctrl/Cmd+Alt-click opens
+ * beside. Shift-click extends the selection without following. The Mod-press is
+ * the link's, so the caret stays put while the link opens.
  */
 export function linkClickHandlers(
   view: EditorView,
@@ -29,7 +31,7 @@ export function linkClickHandlers(
       if (
         event.button === 0 &&
         link?.hasAttribute("data-href") &&
-        allowsLinkClick(event, link)
+        allowsLinkClick(event)
       ) {
         event.preventDefault();
         event.stopPropagation();
@@ -42,10 +44,11 @@ export function linkClickHandlers(
       if (!link) {
         return false;
       }
+      // Always stop <a href> navigation; only Mod follows through `open`.
       event.preventDefault();
       const selection = view.dom.ownerDocument.getSelection();
       if (
-        !allowsLinkClick(event, link) ||
+        !allowsLinkClick(event) ||
         (selection &&
           !selection.isCollapsed &&
           (link.contains(selection.anchorNode) ||
@@ -73,12 +76,18 @@ function isWikiLink(link: HTMLElement): boolean {
   );
 }
 
-/** As in Obsidian: Cmd-click opens a tab of its own, Cmd+Alt-click beside. */
+/**
+ * Where a Mod-follow opens. Once plain click reveals (BH-020), Ctrl/Cmd alone
+ * means "follow" in the **same** editor (`tab: false`) — preferred over the
+ * older Obsidian-when-plain-opens mapping that treated every Mod-follow as a
+ * new tab. Ctrl/Cmd+Alt still opens beside. New-tab remains
+ * `editor:open-link-in-new-leaf` / the command palette.
+ */
 export function placeOfClick(
   event: Pick<MouseEvent, "metaKey" | "ctrlKey" | "altKey">,
 ): { side: boolean; tab: boolean } {
   const mod = event.metaKey || event.ctrlKey;
-  return { side: mod && event.altKey, tab: mod && !event.altKey };
+  return { side: mod && event.altKey, tab: false };
 }
 
 const LINK = "a, [data-href]";
@@ -116,13 +125,9 @@ export function holds(
   return x >= box.left && x < box.right && y >= box.top && y < box.bottom;
 }
 
-function allowsLinkClick(event: MouseEvent, link: HTMLElement): boolean {
-  return (
-    event.metaKey ||
-    event.ctrlKey ||
-    link.tagName === "A" ||
-    (!event.altKey &&
-      !event.shiftKey &&
-      link.classList.contains("md-link-rendered"))
-  );
+/** Follow only when Ctrl (Linux) or Cmd (macOS) is held. */
+export function allowsLinkClick(
+  event: Pick<MouseEvent, "metaKey" | "ctrlKey">,
+): boolean {
+  return event.metaKey || event.ctrlKey;
 }

@@ -7,4 +7,5 @@ export {
   isVideoId,
   type OnlineVideo,
   type VideoProvider,
+  type MediaKind,
 } from "./parse";

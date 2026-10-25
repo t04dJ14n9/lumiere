@@ -36,6 +36,7 @@ export class BrowserHost {
   propertyTypes: PropertyTypes = {};
   propertyNames: string[] = ["status", "list"];
   propertiesCollapsed = false;
+  snippets: string[] = [];
   /** Workspace trust sent to the editor; set before `open`. */
   trusted = false;
   /** Links the editor asked the host to open. */
@@ -49,6 +50,7 @@ export class BrowserHost {
   videoDetails: Record<string, Record<string, unknown>> = {};
   /** Sibling notes by basename (no `.md`) for embed resolve in remount probes. */
   notes: Record<string, string> = {};
+  pdfs: Record<string, string> = {};
   readonly videoRequests: string[] = [];
   /** The git baseline the change bars compare with; undefined: no repository. */
   gitBaseline: string | undefined;
@@ -56,6 +58,13 @@ export class BrowserHost {
   gitStaged = 0;
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
+
+  setSnippets(snippets: string[]): void {
+    this.snippets = snippets;
+    this.endpoints.forEach((endpoint) =>
+      endpoint.notify(propertiesProtocol, "snippets", snippets),
+    );
+  }
 
   /** Push an inline-title value (browser remount / height probes). */
   applyTitle(title: string, error?: string): void {
@@ -240,6 +249,12 @@ export class BrowserHost {
     });
     host.handle(resourcesProtocol, "load", ({ target }) => {
       const path = target.split("|")[0]!.split("#")[0]!.trim();
+      if (/\.pdf$/iu.test(path)) {
+        const uri = `file:///fixture/${path}`;
+        const url =
+          this.pdfs[path] ?? "/test/fixtures/vault/attachments/sample.pdf";
+        return { kind: "pdf" as const, source: uri, url };
+      }
       const name = path.replace(/\.md$/iu, "").split("/").at(-1) ?? path;
       const body = this.notes[name] ?? this.notes[path];
       if (body === undefined) {
@@ -281,6 +296,7 @@ export class BrowserHost {
       );
       return collapsed;
     });
+    host.handle(propertiesProtocol, "snippets", () => this.snippets);
     host.handle(gitGutterProtocol, "baseline", () =>
       this.gitBaseline === undefined
         ? { status: "unavailable" as const }

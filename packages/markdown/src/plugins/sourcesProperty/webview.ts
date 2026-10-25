@@ -62,6 +62,10 @@ export const sourcesPropertyWebview: Plugin<Infer<typeof config>> = {
             {
               onExpand: () => {
                 sourcesExpanded = true;
+                // Preview markup omits extras; remount with expanded rows.
+                if (ctx.isLive) {
+                  ctx.emit("render/changed");
+                }
               },
             },
           ),

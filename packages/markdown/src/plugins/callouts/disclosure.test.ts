@@ -4,7 +4,7 @@ import { bindDisclosure } from "./webview";
 
 // A summary's descendants bubble clicks to it in the browser. Dispatch at
 // that boundary to check disclosure ownership without a browser regression.
-test("the fold control toggles, title text stays editable, and disposal releases listeners", (t) => {
+test("title text and the fold control toggle disclosure; disposal releases listeners", (t) => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, "Element");
   class Element extends EventTarget {
     constructor(readonly isTitleText = false) {
@@ -44,21 +44,18 @@ test("the fold control toggles, title text stays editable, and disposal releases
   const textClick = new Event("click", { cancelable: true });
   Object.defineProperty(textClick, "target", { value: new Element(true) });
   title.dispatchEvent(textClick);
-  assert.equal(
-    details.open,
-    false,
-    "title source editing must not toggle the fold",
-  );
-  assert.equal(remembered, 0);
-  for (const expected of [true, false]) {
+  assert.equal(details.open, true, "title click must toggle the fold");
+  assert.equal(textClick.defaultPrevented, true);
+  assert.equal(remembered, 1);
+  for (const expected of [false, true]) {
     const event = new Event("click", { cancelable: true });
     title.dispatchEvent(event);
     assert.equal(details.open, expected);
     assert.equal(event.defaultPrevented, true);
   }
-  assert.equal(remembered, 2);
+  assert.equal(remembered, 3);
   abort.abort();
   title.dispatchEvent(new Event("click"));
-  assert.equal(details.open, false);
-  assert.equal(remembered, 2);
+  assert.equal(details.open, true);
+  assert.equal(remembered, 3);
 });

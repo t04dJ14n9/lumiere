@@ -67,6 +67,9 @@ every line).
   kept as the same objects; blocks after it are shifted copies. A region over
   half the note, or a block found there that reaches outside it, falls back
   to a full index.
+- Below-fold blocks use `DeferredBlockWidget` until `blockHotRanges`
+  (viewport + margin, plus the caret) covers them; see
+  `docs/perf/startup-viewport-2026-10-22.md`.
 - `blockDecorations` rebuilds decorations only for blocks that are new to
   the index or touched by an invalidation, found by binary search;
   `metadata` (or more than half the blocks dirty) rebuilds all. A caret move

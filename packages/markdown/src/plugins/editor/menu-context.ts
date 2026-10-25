@@ -24,16 +24,19 @@ export interface DomSelection {
 }
 
 /**
- * Whether the menu offers selection items. The browser's selection is the
- * newer one when it lies in the content: CodeMirror reads it back only on
- * the next `selectionchange`, after the menu has opened.
+ * Whether the menu offers selection items.
+ *
+ * Prefer a non-collapsed browser selection in the content (macOS secondary
+ * click selects the word before CodeMirror reads it). Otherwise trust
+ * CodeMirror: Vim character-visual keeps a CM range while the DOM caret
+ * stays collapsed, and that must still offer Copy Link for Agent (BH-048).
  */
 export function menuHasSelection(
   dom: DomSelection | null,
   isStateEmpty: boolean,
 ): boolean {
-  if (dom?.isInContent) {
-    return !dom.isCollapsed;
+  if (dom?.isInContent && !dom.isCollapsed) {
+    return true;
   }
   return !isStateEmpty;
 }

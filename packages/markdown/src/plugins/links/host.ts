@@ -19,6 +19,7 @@ import {
   externalScheme,
   knownNoteKeys,
   linkParts,
+  mayCreateNote,
   openedVaultTarget,
 } from "./target";
 export const linksHost: Plugin<{ panel: PanelShell }> = {
@@ -184,7 +185,7 @@ async function openInternal(
       ...(intent ? { intent } : {}),
       source: sourceUri,
       path,
-      create: request.wiki,
+      create: request.wiki || mayCreateNote(path),
       newNoteFolder: String(
         ctx.settings.forNote(panel.document).features?.links?.config
           .newNoteFolder ?? "",
