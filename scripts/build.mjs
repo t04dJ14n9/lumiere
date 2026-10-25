@@ -11,6 +11,7 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
 import { lazyBridgeServer } from "../packages/pdf/scripts/lazy-bridge-server.mjs";
+import { lazyYaml } from "../packages/markdown/scripts/lazy-yaml.mjs";
 
 const production = process.argv.includes("--production");
 const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
@@ -41,7 +42,10 @@ const host = await esbuild.build({
   minify: production,
   metafile: true,
   logLevel: "info",
-  plugins: [lazyBridgeServer("./pdf/agent-bridge-server.js")],
+  plugins: [
+    lazyBridgeServer("./pdf/agent-bridge-server.js"),
+    lazyYaml("./markdown/yaml-runtime.cjs"),
+  ],
 });
 for (const name of products) {
   await cp(path.join(root, "packages", name, "dist"), path.join(dist, name), {
@@ -63,6 +67,32 @@ for (const name of products) {
     ...inputs.map((input) => path.join("packages", name, input)),
   );
 }
+// Fail loudly if Follow Link create-on-click for basename Markdown links
+// was dropped (wrong @workshop/markdown resolution / stale foreign worktree).
+const extensionJs = await readFile(path.join(dist, "extension.js"), "utf8");
+if (!/create:\w+\.wiki\s*\|\|/.test(extensionJs)) {
+  throw new Error(
+    "dist/extension.js missing Markdown basename create path (expected create:<wiki>||...)",
+  );
+}
+if (production && !/yaml-runtime\.cjs/.test(extensionJs)) {
+  throw new Error(
+    "dist/extension.js must lazy-require markdown/yaml-runtime.cjs",
+  );
+}
+const hostInputs = Object.keys(host.metafile.inputs);
+const linksHost = hostInputs.find((input) =>
+  input.replaceAll("\\", "/").endsWith("plugins/links/host.ts"),
+);
+const expectedLinksHost = path
+  .join("packages", "markdown", "src", "plugins", "links", "host.ts")
+  .replaceAll("\\", "/");
+if (!linksHost || linksHost.replaceAll("\\", "/") !== expectedLinksHost) {
+  throw new Error(
+    `extension bundle must include ${expectedLinksHost}, got ${linksHost ?? "(missing)"}`,
+  );
+}
+
 await mkdir(path.join(root, "artifacts"), { recursive: true });
 await writeFile(
   path.join(root, "artifacts/bundle-inputs.json"),

@@ -164,3 +164,63 @@ test("searchVault emits partial snapshots as matches accumulate", async () => {
     ["other/A #.md", "folder/Note.md"],
   );
 });
+
+test("searchVault supports EMBEDS.md query syntax (tag:#project status:done) and blanks origin query fences", async () => {
+  const { metadata } = await import("../../../src/markdown/metadata");
+  const { queryRequirements } =
+    await import("../../../src/markdown/search/plan");
+  const { parseSearch } = await import("../../../src/markdown/search/query");
+  const index = vault();
+  const docs: Record<string, string> = {
+    "folder/Note.md": [
+      "---",
+      "status: done",
+      "---",
+      "# Search Host",
+      "",
+      "```query",
+      "tag:#project status:done launch",
+      "```",
+    ].join("\n"),
+    "other/A #.md": [
+      "---",
+      "tags: project/alpha",
+      "status: done",
+      "---",
+      "Ready to launch the release.",
+    ].join("\n"),
+  };
+  for (const [path, text] of Object.entries(docs)) {
+    index.setMetadata(path, metadata(text));
+  }
+  const query = "tag:#project status:done launch";
+  const needs = queryRequirements(parseSearch(query));
+  const worker: SearchEvaluator = {
+    ready: Promise.resolve(),
+    includesFiles: false,
+    requiresText: needs.text,
+    requiresMetadata: needs.metadata,
+    stopped: false,
+    matches: async (doc) => compileSearch(query)(doc),
+    dispose: async () => {},
+  };
+  const result = await searchVault({
+    vault: index,
+    source: "file:///vault/folder/Note.md",
+    query,
+    worker,
+    token: new CancelToken(),
+    read: async (uri: string) => {
+      const path = uri.replace("file:///vault/", "");
+      return docs[path] ?? "";
+    },
+  });
+  assert.deepEqual(
+    result.results.map((item) => item.path),
+    ["other/A #.md"],
+  );
+  assert.equal(
+    result.results[0]?.matches?.[0]?.text,
+    "Ready to launch the release.",
+  );
+});

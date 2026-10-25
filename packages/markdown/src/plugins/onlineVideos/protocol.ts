@@ -14,9 +14,30 @@ export const protocol = defineProtocol("onlineVideos", {
   requests: {
     details: {
       params: Schema.object({
-        provider: Schema.union(["youtube", "bilibili", "huggingface"]),
-        /** Hugging Face model ids are at most 200 chars. */
-        id: Schema.string().max(200),
+        provider: Schema.union([
+          "youtube",
+          "bilibili",
+          "huggingface",
+          "spotify",
+          "soundcloud",
+          "npm",
+          "vimeo",
+        ]),
+        /**
+         * SoundCloud ids are `user/sets/slug` (up to 256 chars). Hugging Face
+         * model ids are at most 200; npm package names at most 214.
+         */
+        id: Schema.string().max(300),
+        kind: Schema.union([
+          "video",
+          "playlist",
+          "bangumi",
+          "channel",
+          "space",
+          "live",
+        ]).default("video"),
+        /** Bilibili multi-part index (`?p=`), 1-based. */
+        part: Schema.number().min(1).max(10_000).optional(),
       }),
       result: videoDetails,
     },

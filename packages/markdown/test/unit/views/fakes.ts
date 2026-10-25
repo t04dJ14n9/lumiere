@@ -150,6 +150,7 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
     },
     textEditor: () => undefined,
     onTextSelectionChanged: () => () => {},
+    closeSiblingTabs: async () => {},
   };
   const host = fakeHost({
     views,

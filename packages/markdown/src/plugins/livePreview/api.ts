@@ -41,8 +41,9 @@ export interface BlockRenderer {
   showSource?(state: EditorState, block: RenderBlock): boolean;
   /**
    * While the caret is in a revealed block, keep the rendered result below
-   * the source, and mark the source lines with this class, as Obsidian
-   * does for block math.
+   * the source and mark the source lines with this class. Math no longer
+   * uses this (BH-009: source only while editing); the hook remains for
+   * other block kinds that want an Obsidian-style editing preview.
    */
   editingPreview?: { sourceClass: string };
   range?(node: SyntaxNodeRef, state: EditorState): { from: number; to: number };

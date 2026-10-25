@@ -1,4 +1,5 @@
-import { isMap, isScalar, parseDocument, type YAMLMap } from "yaml";
+import type { Document, YAMLMap } from "yaml";
+import { loadYaml } from "./load-yaml";
 
 /** Move complete YAML entries so comments, quoting and multiline values travel together. */
 export function orderPropertyBody(
@@ -7,11 +8,11 @@ export function orderPropertyBody(
   eol: string,
 ): string | undefined {
   try {
-    const original = parseDocument(body, {
+    const original = loadYaml().parseDocument(body, {
       uniqueKeys: true,
       keepSourceTokens: true,
     });
-    if (original.errors.length || !isMap(original.contents)) {
+    if (original.errors.length || !loadYaml().isMap(original.contents)) {
       return keys.length === 0 && original.contents === null ? body : undefined;
     }
     const map = original.contents;
@@ -41,7 +42,7 @@ export function orderPropertyBody(
 function propertyEntries(map: YAMLMap) {
   return map.items.map((pair, index) => {
     if (
-      !isScalar(pair.key) ||
+      !loadYaml().isScalar(pair.key) ||
       typeof pair.key.value !== "string" ||
       !pair.key.range
     ) {
@@ -57,7 +58,7 @@ interface ReorderOptions {
   body: string;
   keys: readonly string[];
   eol: string;
-  original: ReturnType<typeof parseDocument>;
+  original: Document;
   entries: ReturnType<typeof propertyEntries>;
 }
 
@@ -69,7 +70,7 @@ function reorderEntries({
   entries,
 }: ReorderOptions): string | undefined {
   const map = original.contents;
-  if (!isMap(map)) {
+  if (!loadYaml().isMap(map)) {
     return undefined;
   }
   const byKey = new Map(entries.map((entry) => [entry.key, entry]));
@@ -96,18 +97,18 @@ function preservesValues(
   ordered: string,
   keys: readonly string[],
 ): boolean {
-  const before = parseDocument(body).toJS({ maxAliasCount: 100 }) as Record<
-    string,
-    unknown
-  >;
-  const check = parseDocument(ordered, { uniqueKeys: true });
-  if (check.errors.length || !isMap(check.contents)) {
+  const before = loadYaml()
+    .parseDocument(body)
+    .toJS({ maxAliasCount: 100 }) as Record<string, unknown>;
+  const check = loadYaml().parseDocument(ordered, { uniqueKeys: true });
+  if (check.errors.length || !loadYaml().isMap(check.contents)) {
     return false;
   }
   const after = check.toJS({ maxAliasCount: 100 }) as Record<string, unknown>;
   if (
     check.contents.items.some(
-      (pair, index) => !isScalar(pair.key) || pair.key.value !== keys[index],
+      (pair, index) =>
+        !loadYaml().isScalar(pair.key) || pair.key.value !== keys[index],
     ) ||
     keys.some(
       (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]),

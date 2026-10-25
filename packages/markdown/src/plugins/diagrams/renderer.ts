@@ -4,10 +4,22 @@ import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";
 import { createMermaidTrust, type MermaidTrust } from "./trust";
 
+export interface MermaidLinkPlace {
+  side: boolean;
+  tab: boolean;
+}
+
+export type MermaidLinkOpen = (
+  target: string,
+  place: MermaidLinkPlace,
+  pass: RenderPass,
+) => void;
+
 interface DiagramRender {
   fence: Fence;
   pass: RenderPass;
   isActive: boolean;
+  events: AbortController;
 }
 
 export class DiagramRenderer {
@@ -16,20 +28,29 @@ export class DiagramRenderer {
   private queue = Promise.resolve();
   private readonly cleanups = new Set<() => void>();
   private readonly trust: MermaidTrust;
+  private readonly openLink: MermaidLinkOpen | undefined;
 
   constructor(
     private readonly logger: Logger,
     trust: MermaidTrust = createMermaidTrust(),
+    openLink?: MermaidLinkOpen,
   ) {
     this.trust = trust;
+    this.openLink = openLink;
   }
 
   render(fence: Fence, pass: RenderPass): void {
-    const request = { fence, pass, isActive: true };
+    const request: DiagramRender = {
+      fence,
+      pass,
+      isActive: true,
+      events: new AbortController(),
+    };
     const original = fence.element.innerHTML;
     let failure: HTMLElement | undefined;
     const cleanup = () => {
       request.isActive = false;
+      request.events.abort();
       fence.element.innerHTML = original;
       failure?.remove();
       this.cleanups.delete(cleanup);
@@ -94,8 +115,148 @@ export class DiagramRenderer {
     }
     request.fence.element.innerHTML = sanitizeGraphics(result.svg);
     request.fence.element.setAttribute("aria-label", "Mermaid diagram");
+    if (this.openLink) {
+      wireMermaidInternalLinks(
+        request.fence.element,
+        (target, place) => this.openLink?.(target, place, request.pass),
+        request.events.signal,
+      );
+    }
     request.pass.measure();
   }
+}
+
+/** Where a Mermaid internal-link click or key press opens the note. */
+export function placeOfMermaidClick(event: {
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+}): MermaidLinkPlace {
+  const mod = Boolean(event.metaKey || event.ctrlKey);
+  return { side: mod && Boolean(event.altKey), tab: false };
+}
+
+/**
+ * Extract the target note name for a Mermaid `.internal-link` SVG node.
+ * Prefers explicit link attributes, then the rendered node label text, and
+ * falls back to `data-id` or the Mermaid flowchart/state/class node ID.
+ */
+export function mermaidInternalLinkTarget(node: Element): string | undefined {
+  return (
+    trimmedAttr(node, "data-href") ??
+    trimmedAttr(node, "href") ??
+    mermaidNodeLabelText(node) ??
+    trimmedAttr(node, "data-id") ??
+    nodeIdFallback(trimmedAttr(node, "id") ?? "")
+  );
+}
+
+function trimmedAttr(node: Element, name: string): string | undefined {
+  return node.getAttribute(name)?.trim() || undefined;
+}
+
+function mermaidNodeLabelText(node: Element): string | undefined {
+  const text =
+    node.querySelector?.(".label")?.textContent ??
+    node.querySelector?.("text")?.textContent ??
+    node.textContent;
+  return text?.trim() || undefined;
+}
+
+function nodeIdFallback(rawId: string): string | undefined {
+  for (const marker of ["-flowchart-", "-state-", "-classId-"]) {
+    const start = rawId.indexOf(marker);
+    const dash = rawId.lastIndexOf("-");
+    if (start >= 0 && dash > start + marker.length - 1) {
+      return rawId.slice(start + marker.length, dash).trim() || undefined;
+    }
+  }
+  for (const prefix of ["flowchart-", "state-", "classId-"]) {
+    const dash = rawId.lastIndexOf("-");
+    if (rawId.startsWith(prefix) && dash >= prefix.length) {
+      return rawId.slice(prefix.length, dash).trim() || undefined;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Wire `.internal-link` nodes inside a rendered Mermaid SVG container so
+ * clicking or pressing Enter/Space opens the target note via the links service.
+ */
+export function wireMermaidInternalLinks(
+  host: ParentNode,
+  open: (target: string, place: MermaidLinkPlace) => void,
+  signal?: AbortSignal,
+): number {
+  let wired = 0;
+  for (const node of host.querySelectorAll(".internal-link")) {
+    if (hasInternalLinkAncestor(node, host)) {
+      continue;
+    }
+    const target = mermaidInternalLinkTarget(node);
+    if (!target) {
+      continue;
+    }
+    bindMermaidInternalLinkNode(node, target, open, signal);
+    wired++;
+  }
+  return wired;
+}
+
+function hasInternalLinkAncestor(node: Element, host: ParentNode): boolean {
+  const ancestor = node.parentElement?.closest?.(".internal-link");
+  return Boolean(ancestor && ancestor !== host && host.contains?.(ancestor));
+}
+
+function bindMermaidInternalLinkNode(
+  node: Element,
+  target: string,
+  open: (target: string, place: MermaidLinkPlace) => void,
+  signal?: AbortSignal,
+): void {
+  node.setAttribute("data-href", target);
+  node.setAttribute("data-wiki", "true");
+  node.setAttribute("role", "link");
+  node.setAttribute("tabindex", "0");
+  const options = signal ? { signal } : undefined;
+  node.addEventListener(
+    "mousedown",
+    (event) => {
+      if ((event as MouseEvent).button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    options,
+  );
+  node.addEventListener(
+    "click",
+    (event) => {
+      const mouse = event as MouseEvent;
+      if (mouse.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      open(target, placeOfMermaidClick(mouse));
+    },
+    options,
+  );
+  node.addEventListener(
+    "keydown",
+    (event) => {
+      const key = event as KeyboardEvent;
+      if (key.key !== "Enter" && key.key !== " ") {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      open(target, placeOfMermaidClick(key));
+    },
+    options,
+  );
 }
 
 export interface MermaidGuardOptions {

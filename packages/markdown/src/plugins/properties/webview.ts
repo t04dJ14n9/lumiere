@@ -15,6 +15,7 @@ import { PropertyEditing } from "./editing";
 import { PropertyPresentation } from "./presentation";
 import { propertyHeadingFocus } from "./heading";
 import { frontmatterBodyStart, propertyCaretGuard } from "./caret-guard";
+import { noteCssClassesExtension, registerVaultSnippets } from "./css-classes";
 import type { PropertyContext } from "./context";
 import { createPropertyRenderers } from "./renderers";
 import type {} from "./renderers";
@@ -91,6 +92,7 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     registerAddProperty(ctx, editing);
     registerPreferences(ctx, editing, lifetime.signal);
     registerDisclosure(ctx, editing, lifetime.signal);
+    registerVaultSnippets(ctx, lifetime.signal);
     registerDraftFlush(ctx);
   },
 };
@@ -248,6 +250,7 @@ function registerEditorControls(
   const { presentation } = options;
   ctx.effect(() => {
     const stop = ctx.editor.extend([
+      noteCssClassesExtension(),
       options.heading,
       propertyCaretGuard(() => presentation.isWidget),
       Prec.high(

@@ -136,4 +136,33 @@ test.describe("add row and add column buttons", () => {
       .poll(() => page.evaluate(() => window.harness.text.split("\n")[6]))
       .toBe("|     |     |     |");
   });
+
+  test("a horizontal drag on the add-row strip pans without inserting (BH-019)", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 640, height: 480 });
+    const columns = Array.from({ length: 12 }, (_, i) => `Col${i}`);
+    const header = `| ${columns.join(" | ")} |`;
+    const rule = `| ${columns.map(() => "---").join(" | ")} |`;
+    const body = `| ${columns.map((_, i) => `v${i}`).join(" | ")} |`;
+    const source = `${header}\n${rule}\n${body}\n`;
+    await open(page, source);
+    const table = page.locator(".hybrid-table");
+    const scroll = table.locator(".table-scroll");
+    const row = table.getByRole("button", { name: "Add row below" });
+    await expect(row).toHaveCount(1);
+    const before = await page.evaluate(() => window.harness.text);
+    const strip = (await row.boundingBox())!;
+    const startX = strip.x + 40;
+    const y = strip.y + strip.height / 2;
+    await page.mouse.move(startX, y);
+    await expect.poll(() => opacity(row)).toBe("1");
+    await page.mouse.down();
+    await page.mouse.move(startX + 120, y, { steps: 8 });
+    await page.mouse.up();
+    await expect
+      .poll(() => scroll.evaluate((el) => el.scrollLeft))
+      .toBeGreaterThan(40);
+    expect(await page.evaluate(() => window.harness.text)).toBe(before);
+  });
 });

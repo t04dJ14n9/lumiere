@@ -21,7 +21,11 @@ const TEXT = 14;
 const LINE = TEXT * 1.5;
 const ROW_PADDING = 0;
 const ROW_GAP = 3;
-const VALUE_MIN = TEXT * 1.75;
+/**
+ * Obsidian input pad 4px 8px on border-box min-height 1.75em: line box + pad
+ * exceeds 1.75em (~+4px), so remount reserve must include that growth.
+ */
+const VALUE_MIN = TEXT * 1.75 + 4;
 const ROW = ROW_PADDING + VALUE_MIN;
 const HEADING = TEXT * 1.5 + 8;
 const ADD_BUTTON = 8 + 8 + LINE;
@@ -69,10 +73,11 @@ export function propertiesEstimatedHeight(input: {
     ...(input.expandedLists ? { expandedLists: input.expandedLists } : {}),
     ...(input.renderValue ? { renderValue: input.renderValue } : {}),
   });
-  return markupHeight(markup);
+  return propertiesHeightFromMarkup(markup);
 }
 
-function markupHeight(markup: string): number {
+/** Height from already-built sheet markup (avoids a second renderProperties). */
+export function propertiesHeightFromMarkup(markup: string): number {
   if (markup.length === 0) {
     return 0;
   }

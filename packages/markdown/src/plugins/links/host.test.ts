@@ -121,7 +121,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     undefined,
   ]);
   assert.equal((opens.at(-2) as { source: string }).source, panel.document.uri);
-  // Cmd-click: a tab of its own; a plain click: the current group.
+  // open({ tab }) still supports a kept tab; Mod-click now follows here (BH-020).
   for (const [tab, place] of [
     [true, "tab"],
     [false, "here"],
@@ -133,6 +133,31 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
       tab,
     });
     assert.equal((opens.at(-1) as unknown[])[3], place);
+  }
+  // Host GUI: basename MD (with/without .md) create+open; relative stay open-only.
+  for (const href of ["MissingNote", "MissingNote.md"] as const) {
+    opens.length = 0;
+    await client.call(protocol, "open", {
+      href,
+      wiki: false,
+      side: false,
+    });
+    const created = opens[0] as unknown as { create: boolean; path: string };
+    assert.equal(created.create, true, href);
+    assert.equal(created.path, href, href);
+  }
+  for (const href of ["folder/Missing", "./no-such-relative"] as const) {
+    opens.length = 0;
+    await client.call(protocol, "open", {
+      href,
+      wiki: false,
+      side: false,
+    });
+    assert.equal(
+      (opens[0] as unknown as { create: boolean }).create,
+      false,
+      href,
+    );
   }
   await fiber.dispose();
   await assert.rejects(

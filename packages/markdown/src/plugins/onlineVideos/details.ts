@@ -3,11 +3,43 @@
  * fetched by the extension host (the webview CSP allows no network). Every
  * failure resolves to `{}`, so the card simply stays as it is.
  */
-import type { VideoProvider } from "./parse";
+import type { MediaKind, VideoProvider } from "./parse";
 import { isVideoId } from "./parse";
+import {
+  oEmbedThumbnail,
+  soundcloudThumbnail,
+  spotifyThumbnail,
+  vimeoThumbnail,
+} from "./thumbnails";
+import { npmRegistryPath, parseNpmPackage } from "./npm";
+
+export {
+  oEmbedThumbnail,
+  soundcloudThumbnail,
+  spotifyThumbnail,
+  vimeoThumbnail,
+} from "./thumbnails";
+export { npmRegistryPath, parseNpmPackage } from "./npm";
 
 import type { VideoDetails } from "./protocol";
 export type { VideoDetails };
+import { imageDataUrl } from "./imageData";
+export { imageDataUrl } from "./imageData";
+import {
+  parseBilibiliCard,
+  parseBilibiliLive,
+  parseBilibiliSeason,
+  parseBilibiliView,
+} from "./bilibili";
+export {
+  coverUrl,
+  parseBilibiliCard,
+  parseBilibiliLive,
+  parseBilibiliSeason,
+  parseBilibiliView,
+} from "./bilibili";
+import { parseHuggingFaceModel, parseOEmbed } from "./oembed";
+export { parseHuggingFaceModel, parseOEmbed } from "./oembed";
 
 /** The part of `fetch` this module uses, so tests can pass a fake. */
 export type Fetch = (
@@ -41,19 +73,8 @@ export interface DetailsOptions {
 
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
 export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
-const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";
-const SIGNATURES: readonly [string, (bytes: Uint8Array) => boolean][] = [
-  ["image/jpeg", (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff],
-  ["image/png", (b) => ascii(b, 1, 4) === "PNG" && b[0] === 0x89],
-  ["image/gif", (b) => ascii(b, 0, 4) === "GIF8"],
-  [
-    "image/webp",
-    (b) => ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 12) === "WEBP",
-  ],
-];
-
 export class VideoDetailsSource {
   private readonly cache = new Map<
     string,
@@ -77,17 +98,25 @@ export class VideoDetailsSource {
     this.concurrency = options.concurrency ?? 4;
   }
 
-  get(provider: VideoProvider, id: string): Promise<VideoDetails> {
-    if (!isVideoId(provider, id)) {
+  get(
+    provider: VideoProvider,
+    id: string,
+    kind: MediaKind = "video",
+    part = 1,
+  ): Promise<VideoDetails> {
+    if (!isVideoId(provider, id, kind)) {
       return Promise.resolve({});
     }
-    const key = `${provider}:${id}`;
+    const page = Number.isInteger(part) && part > 0 ? part : 1;
+    const key = `${provider}:${kind}:${id}:${page}`;
     const cached = this.cache.get(key);
     if (cached && cached.expires > this.now()) {
       return cached.value;
     }
     const entry = { expires: Infinity, value: Promise.resolve({}) };
-    entry.value = this.queued(() => this.lookup(provider, id)).catch(() => {
+    entry.value = this.queued(() =>
+      this.lookup(provider, id, kind, page),
+    ).catch(() => {
       entry.expires = this.now() + this.retryAfterMs;
       return {};
     });
@@ -118,6 +147,8 @@ export class VideoDetailsSource {
   private async lookup(
     provider: VideoProvider,
     id: string,
+    kind: MediaKind,
+    part: number,
   ): Promise<VideoDetails> {
     const timeout = new AbortController();
     const timer = setTimeout(
@@ -125,24 +156,27 @@ export class VideoDetailsSource {
       this.timeoutMs,
     );
     try {
-      return await this.fetchDetails(provider, id, timeout.signal);
+      return await this.fetchDetails(
+        { provider, id, kind, part },
+        timeout.signal,
+      );
     } finally {
       clearTimeout(timer);
     }
   }
 
   private async fetchDetails(
-    provider: VideoProvider,
-    id: string,
+    video: {
+      provider: VideoProvider;
+      id: string;
+      kind: MediaKind;
+      part: number;
+    },
     signal: AbortSignal,
   ): Promise<VideoDetails> {
+    const { provider, id, kind, part } = video;
     if (provider === "youtube") {
-      const page = `https://www.youtube.com/watch?v=${id}`;
-      const body = await this.json(
-        `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`,
-        signal,
-      );
-      return parseOEmbed(body);
+      return this.fetchYoutube(id, kind, signal);
     }
     if (provider === "huggingface") {
       const body = await this.json(
@@ -151,22 +185,198 @@ export class VideoDetailsSource {
       );
       return parseHuggingFaceModel(body);
     }
-    const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
+    if (provider === "spotify") {
+      return this.fetchSpotify(id, signal);
+    }
+    if (provider === "soundcloud") {
+      return this.fetchSoundcloud(id, signal);
+    }
+    if (provider === "npm") {
+      const body = await this.json(
+        `https://registry.npmjs.org/${npmRegistryPath(id)}`,
+        signal,
+      );
+      return parseNpmPackage(body);
+    }
+    if (provider === "vimeo") {
+      return this.fetchVimeo(id, signal);
+    }
+    if (kind === "bangumi") {
+      return this.fetchBangumi(id, signal);
+    }
+    if (kind === "space") {
+      return this.fetchBilibiliSpace(id, signal);
+    }
+    if (kind === "live") {
+      return this.fetchBilibiliLive(id, signal);
+    }
+    return this.fetchBilibiliView(id, part, signal);
+  }
+
+  private async fetchYoutube(
+    id: string,
+    kind: MediaKind,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    // Channels have no keyless oEmbed; the card keeps alt text / id.
+    if (kind === "channel") {
+      return {};
+    }
+    const page =
+      kind === "playlist"
+        ? `https://www.youtube.com/playlist?list=${id}`
+        : `https://www.youtube.com/watch?v=${id}`;
     const body = await this.json(
-      `https://api.bilibili.com/x/web-interface/view?${query}`,
+      `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(page)}`,
       signal,
     );
-    const { details, cover } = parseBilibiliView(body);
+    const details = parseOEmbed(body);
+    if (kind === "playlist") {
+      await this.attachCover(details, oEmbedThumbnail(body), signal);
+    }
+    return details;
+  }
+
+  private async fetchSpotify(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const colon = id.indexOf(":");
+    const resourceKind = id.slice(0, colon);
+    const resource = id.slice(colon + 1);
+    const page = `https://open.spotify.com/${resourceKind}/${resource}`;
+    const body = await this.json(
+      `https://open.spotify.com/oembed?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, spotifyThumbnail(body), signal);
+    return details;
+  }
+
+  private async fetchSoundcloud(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://soundcloud.com/${id}`;
+    const body = await this.json(
+      `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, soundcloudThumbnail(body), signal);
+    return details;
+  }
+
+  /** Vimeo oEmbed, plus a CDN thumbnail when the host is allowlisted. */
+  private async fetchVimeo(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const page = `https://vimeo.com/${id}`;
+    const body = await this.json(
+      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(page)}`,
+      signal,
+    );
+    const details = parseOEmbed(body);
+    await this.attachCover(details, vimeoThumbnail(body), signal);
+    return details;
+  }
+
+  private async fetchBangumi(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const query = id.startsWith("ep")
+      ? `ep_id=${id.slice(2)}`
+      : `season_id=${id.slice(2)}`;
+    const body = await this.json(
+      `https://api.bilibili.com/pgc/view/web/season?${query}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliSeason(body, id);
+    await this.attachCover(
+      details,
+      cover ? cover + COVER_SIZE : undefined,
+      signal,
+    );
+    return details;
+  }
+
+  /** UP space card API, plus a scaled face when the cover host is allowed. */
+  private async fetchBilibiliSpace(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const mid = id.slice("space:".length);
+    const body = await this.json(
+      `https://api.bilibili.com/x/web-interface/card?mid=${mid}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliCard(body);
+    await this.attachCover(
+      details,
+      cover ? cover + COVER_SIZE : undefined,
+      signal,
+    );
+    return details;
+  }
+
+  /** Live room API, plus a scaled cover with a raw keyframe fallback. */
+  private async fetchBilibiliLive(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const room = id.slice("live:".length);
+    const body = await this.json(
+      `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${room}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliLive(body);
     if (cover) {
-      // A missing cover still leaves the title.
-      const image = await this.image(cover + COVER_SIZE, signal).catch(
-        () => undefined,
-      );
+      // Live keyframes often reject Bilibili's @WxH scaler; try scaled then raw.
+      const image = await this.image(cover + COVER_SIZE, signal)
+        .catch(() => this.image(cover, signal))
+        .catch(() => undefined);
       if (image !== undefined) {
         details.cover = image;
       }
     }
     return details;
+  }
+
+  private async fetchBilibiliView(
+    id: string,
+    part: number,
+    signal: AbortSignal,
+  ): Promise<VideoDetails> {
+    const query = id.startsWith("BV") ? `bvid=${id}` : `aid=${id.slice(2)}`;
+    const body = await this.json(
+      `https://api.bilibili.com/x/web-interface/view?${query}`,
+      signal,
+    );
+    const { details, cover } = parseBilibiliView(body, part);
+    // A missing cover still leaves the title.
+    await this.attachCover(
+      details,
+      cover ? cover + COVER_SIZE : undefined,
+      signal,
+    );
+    return details;
+  }
+
+  private async attachCover(
+    details: VideoDetails,
+    cover: string | undefined,
+    signal: AbortSignal,
+  ): Promise<void> {
+    if (!cover) {
+      return;
+    }
+    const image = await this.image(cover, signal).catch(() => undefined);
+    if (image !== undefined) {
+      details.cover = image;
+    }
   }
 
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
@@ -205,132 +415,4 @@ export class VideoDetailsSource {
     }
     return response;
   }
-}
-
-export function parseOEmbed(body: unknown): VideoDetails {
-  if (!isRecord(body)) {
-    throw new Error("Unexpected oEmbed response");
-  }
-  return withoutUndefined({
-    title: text(body.title, 300),
-    author: text(body.author_name, 100),
-  });
-}
-
-/**
- * Hugging Face model API (`/api/models/{id}`): pipeline tag or model id as
- * title; author from `author` or the owner segment of the id. No cover.
- */
-export function parseHuggingFaceModel(body: unknown): VideoDetails {
-  if (!isRecord(body)) {
-    throw new Error("Unexpected Hugging Face response");
-  }
-  const modelId =
-    text(body.modelId, 200) ?? text(body.id, 200) ?? text(body._id, 200);
-  const pipeline = text(body.pipeline_tag, 100);
-  const title =
-    pipeline && modelId ? `${pipeline} · ${modelId}` : (pipeline ?? modelId);
-  return withoutUndefined({
-    title,
-    author: huggingfaceAuthor(body, modelId),
-  });
-}
-
-function huggingfaceAuthor(
-  body: Record<string, unknown>,
-  modelId: string | undefined,
-): string | undefined {
-  const direct = text(body.author, 100);
-  if (direct) {
-    return direct;
-  }
-  const owner = modelId?.includes("/") ? modelId.split("/")[0] : undefined;
-  return text(owner, 100);
-}
-
-/** The view API's details and the cover's https URL, if it is on hdslb.com. */
-export function parseBilibiliView(body: unknown): {
-  details: VideoDetails;
-  cover?: string;
-} {
-  if (!isRecord(body) || body.code !== 0 || !isRecord(body.data)) {
-    throw new Error("Unexpected Bilibili response");
-  }
-  const data = body.data;
-  const owner = isRecord(data.owner) ? data.owner : {};
-  const duration =
-    typeof data.duration === "number" &&
-    Number.isInteger(data.duration) &&
-    data.duration > 0 &&
-    data.duration < 1_000_000
-      ? data.duration
-      : undefined;
-  const cover = coverUrl(data.pic);
-  return {
-    details: withoutUndefined({
-      title: text(data.title, 300),
-      author: text(owner.name, 100),
-      duration,
-    }),
-    ...(cover ? { cover } : {}),
-  };
-}
-
-export function coverUrl(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return undefined;
-  }
-  if (
-    !/^https?:$/.test(url.protocol) ||
-    !COVER_HOSTS.has(url.hostname) ||
-    url.port ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    !/^\/bfs\/[A-Za-z0-9_\-/]+\.(?:jpg|jpeg|png|webp|gif)$/i.test(url.pathname)
-  ) {
-    return undefined;
-  }
-  return `https://${url.hostname}${url.pathname}`;
-}
-
-/** A data URL typed by the image's own signature, not the server's header. */
-export function imageDataUrl(bytes: Uint8Array): string {
-  const type = SIGNATURES.find(([, matches]) => matches(bytes))?.[0];
-  if (!type) {
-    throw new Error("Unrecognised image");
-  }
-  return `data:${type};base64,${Buffer.from(bytes).toString("base64")}`;
-}
-
-function text(value: unknown, max: number): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.replace(/\s+/g, " ").trim();
-  return trimmed ? trimmed.slice(0, max) : undefined;
-}
-
-function ascii(bytes: Uint8Array, from: number, to: number): string {
-  return String.fromCharCode(...bytes.subarray(from, to));
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** Parsing yields undefined for a missing or invalid field; drop those keys. */
-function withoutUndefined(details: {
-  [K in keyof VideoDetails]?: VideoDetails[K] | undefined;
-}): VideoDetails {
-  return Object.fromEntries(
-    Object.entries(details).filter(([, value]) => value !== undefined),
-  ) as VideoDetails;
 }

@@ -1,7 +1,12 @@
 import type { Plugin } from "@workshop/core";
 import type {} from "../vault/api";
+import type { HostSettings } from "../../shared/host";
 import {
   BacklinksTree,
+  DISABLE_EXTRA_CONTEXT,
+  ENABLE_EXTRA_CONTEXT,
+  EXTRA_CONTEXT_CONTEXT,
+  EXTRA_CONTEXT_SETTING,
   NEXT_SORT,
   OPEN_COMMAND,
   SORT_ALPHABETICAL_CONTEXT,
@@ -21,6 +26,10 @@ import {
 /** Refreshes wait for a burst of file events to end. */
 const REFRESH_DELAY_MS = 300;
 
+function wantsExtraContext(settings: HostSettings): boolean {
+  return settings.get<boolean>(EXTRA_CONTEXT_SETTING, false);
+}
+
 type BacklinksCtx = Parameters<NonNullable<Plugin["apply"]>>[0];
 
 function wireRefresh(
@@ -32,6 +41,13 @@ function wireRefresh(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const refresh = async () => {
     void syncBacklinksSortContext(ctx).catch(() => undefined);
+    void Promise.resolve(
+      ctx.hostCommands.execute(
+        "setContext",
+        EXTRA_CONTEXT_CONTEXT,
+        wantsExtraContext(ctx.settings),
+      ) as unknown,
+    ).catch(() => undefined);
     await source.setNote(ctx.activeEditor.note());
     tree.setMessage(
       source.hasNote ? undefined : "Open a note to see its backlinks.",
@@ -54,7 +70,7 @@ function wireRefresh(
   };
   ctx.effect(() => () => clearTimeout(timer));
   ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
-  ctx.on("vault/resolved", schedule);
+  ctx.effect(() => ctx.on("vault/resolved", schedule));
   ctx.effect(() =>
     ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
       ctx.vaults.open(String(uri), { offset: Number(offset) }),
@@ -108,6 +124,58 @@ function wireSortMenus(ctx: BacklinksCtx, schedule: () => void) {
   void syncBacklinksSortContext(ctx).catch(() => undefined);
 }
 
+function seedExtraContext(ctx: BacklinksCtx): void {
+  void Promise.resolve(
+    ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      wantsExtraContext(ctx.settings),
+    ) as unknown,
+  ).catch(() => undefined);
+}
+
+function clearExtraContext(ctx: BacklinksCtx): void {
+  try {
+    const done = ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      undefined,
+    ) as unknown;
+    if (done && typeof (done as Promise<void>).then === "function") {
+      void Promise.resolve(done).catch(() => undefined);
+    }
+  } catch {
+    // ignore teardown races
+  }
+}
+
+function wireExtraContext(ctx: BacklinksCtx, refresh: () => Promise<void>) {
+  const setExtraContext = async (enabled: boolean) => {
+    await ctx.settings.access.update(EXTRA_CONTEXT_SETTING, enabled);
+    await ctx.hostCommands.execute(
+      "setContext",
+      EXTRA_CONTEXT_CONTEXT,
+      enabled,
+    );
+    await refresh();
+  };
+  ctx.effect(() =>
+    ctx.hostCommands.register(ENABLE_EXTRA_CONTEXT, () =>
+      setExtraContext(true),
+    ),
+  );
+  ctx.effect(() =>
+    ctx.hostCommands.register(DISABLE_EXTRA_CONTEXT, () =>
+      setExtraContext(false),
+    ),
+  );
+  // Do not call settings.onChange here — leave-no-trace fakes keep a
+  // single listener for feature enablement. Context syncs on refresh /
+  // enable-disable commands instead.
+  seedExtraContext(ctx);
+  ctx.effect(() => () => clearExtraContext(ctx));
+}
+
 /** The Backlinks view and status bar count, following the active note. */
 export const backlinksHost: Plugin = {
   name: "backlinks",
@@ -117,13 +185,16 @@ export const backlinksHost: Plugin = {
   apply(ctx) {
     const sortOrder = (): BacklinkSortOrder =>
       parseSortOrder(ctx.settings.get(SORT_SETTING, "alphabetical"));
-    const source = new BacklinksTree(ctx.vaults, sortOrder);
+    const source = new BacklinksTree(ctx.vaults, sortOrder, () =>
+      wantsExtraContext(ctx.settings),
+    );
     const tree = ctx.views.tree(VIEW_ID, source);
     const status = ctx.views.status("lumiere.markdown.backlinks", 100);
     ctx.effect(() => () => tree.dispose());
     ctx.effect(() => () => status.dispose());
     const { refresh, schedule } = wireRefresh(ctx, source, tree, status);
     wireSortMenus(ctx, schedule);
+    wireExtraContext(ctx, refresh);
     void refresh();
   },
 };

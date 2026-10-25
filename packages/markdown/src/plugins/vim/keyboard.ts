@@ -20,6 +20,12 @@ const PUNCTUATION_CODES: Record<string, readonly [string, string]> = {
   Semicolon: [";", ":"],
   Slash: ["/", "?"],
   Minus: ["-", "_"],
+  Equal: ["=", "+"],
+  BracketLeft: ["[", "{"],
+  BracketRight: ["]", "}"],
+  Quote: ["'", '"'],
+  Backquote: ["`", "~"],
+  Backslash: ["\\", "|"],
 };
 
 /** US-layout Shift+digit glyphs; Digit4/6 also cover `$`/`^` when line-key mapping skips (e.g. visual). */

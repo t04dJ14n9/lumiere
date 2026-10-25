@@ -104,3 +104,13 @@ test("active list guide column follows nested Live Preview caret depth", () => {
   assert.equal(at(doc.indexOf("grand")), 1);
   assert.equal(at(doc.indexOf("After")), undefined);
 });
+
+test("list continuation CSS paints guides from list-guide-depth", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("./indentGuides.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(css, /md-list-continuation/);
+  assert.match(css, /--list-guide-depth/);
+});

@@ -12,6 +12,7 @@ import {
   setSearchQuery,
 } from "@codemirror/search";
 import { countLabel, countMatches } from "./find-count";
+import { readFindCaret, restoreFindCaret } from "./find-caret";
 
 const panels = new WeakMap<EditorView, FindPanel>();
 
@@ -143,6 +144,8 @@ export class FindPanel implements Panel {
     if (query.eq(getSearchQuery(this.view.state))) {
       return;
     }
+    // Capture before findNext's selectSearchInput select-alls the field.
+    const caret = readFindCaret(this.find);
     this.view.dispatch({ effects: setSearchQuery.of(query) });
     if (jump && query.valid) {
       // Search from where the current match starts, so typing more of the
@@ -152,6 +155,8 @@ export class FindPanel implements Panel {
         this.view.dispatch({ selection: EditorSelection.cursor(from) });
         findNext(this.view);
       });
+      // findNext selects [main-field] while focused; restore so typing appends.
+      restoreFindCaret(this.find, this.view.root.activeElement, caret);
     }
   }
 

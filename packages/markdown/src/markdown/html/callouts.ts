@@ -17,21 +17,6 @@ const calloutAliases: Record<string, string> = {
   error: "danger",
   cite: "quote",
 };
-const calloutKinds = new Set([
-  "note",
-  "abstract",
-  "info",
-  "todo",
-  "tip",
-  "success",
-  "question",
-  "warning",
-  "failure",
-  "danger",
-  "bug",
-  "example",
-  "quote",
-]);
 interface Callout {
   kind: string;
   title: string;
@@ -120,7 +105,7 @@ function calloutData(match: RegExpExecArray): Callout {
   const canonical = calloutAliases[raw] ?? raw;
   const fold = match[2];
   return {
-    kind: calloutKinds.has(canonical) ? canonical : "note",
+    kind: canonical,
     title: match[3] || defaultTitle(raw),
     ...(fold === undefined ? {} : { fold }),
   };

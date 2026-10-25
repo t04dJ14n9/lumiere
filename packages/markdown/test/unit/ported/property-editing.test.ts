@@ -270,3 +270,24 @@ test("structured merge retains truthy values on null and replaces falsy values",
   });
   assert.ok(result.endsWith("---\nBody"));
 });
+
+test("removing the last property drops the empty frontmatter fence (BH-013)", () => {
+  const source = "---\naliases: [Destination]\n---\n# Target\n";
+  assert.equal(
+    edit(source, { type: "remove", keys: ["aliases"] }),
+    "# Target\n",
+  );
+  const crlf = "---\r\naliases: [Destination]\r\n---\r\n# Target\r\n";
+  assert.equal(
+    edit(crlf, { type: "remove", keys: ["aliases"] }),
+    "# Target\r\n",
+  );
+  const flow = "---\n{aliases: [Destination]}\n---\n# Target\n";
+  assert.equal(edit(flow, { type: "remove", keys: ["aliases"] }), "# Target\n");
+  // Removing one of several keys still leaves the fence.
+  const multi = "---\na: 1\nb: 2\n---\nBody\n";
+  assert.equal(
+    edit(multi, { type: "remove", keys: ["a"] }),
+    "---\nb: 2\n---\nBody\n",
+  );
+});

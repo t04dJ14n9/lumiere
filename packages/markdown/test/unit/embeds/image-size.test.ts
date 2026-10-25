@@ -9,7 +9,7 @@ import {
   writtenWidth,
 } from "../../../src/plugins/embeds/image-size";
 
-// Measured in Obsidian 1.14.4: + and - on a selected image.
+// Measured in Obsidian 1.14.4: +/= and - on a selected image.
 test("a step goes to the next or previous multiple of 25, within the text's width", () => {
   // A 64 px image: 75, 100, 125, then back 100, 75, 50, 25.
   const up = [64];

@@ -13,16 +13,17 @@ export type OpenSearchResult = (target: {
 export function bindSearchBlock(input: {
   fence: Fence;
   pass: RenderPass;
-  client: QueryClient;
+  client: Pick<QueryClient, "watch">;
   source: string;
   open?: OpenSearchResult;
 }): () => void {
   const { fence, pass, client, source, open } = input;
   const document = fence.element.ownerDocument;
-  fence.element.classList.add("embedded-search");
+  fence.element.classList.add("embedded-search", "internal-query");
   const header = document.createElement("div");
-  header.className = "search-header";
+  header.className = "search-header internal-query-header";
   const code = document.createElement("code");
+  code.className = "internal-query-header-title";
   code.textContent = fence.source.trim();
   const refresh = document.createElement("button");
   refresh.type = "button";
@@ -32,6 +33,7 @@ export function bindSearchBlock(input: {
   const status = document.createElement("p");
   status.setAttribute("role", "status");
   const results = document.createElement("ul");
+  results.className = "search-result-container";
   results.setAttribute("aria-label", "Search results");
   fence.element.replaceChildren(header, status, results);
   let stop: (() => void) | undefined;
@@ -102,6 +104,9 @@ function paintMatches(
     const link = doc.createElement("a");
     link.href = result.href;
     link.textContent = result.path;
+    if (open) {
+      wireSearchOpen(link, { path: result.path }, open);
+    }
     item.append(link);
     const lines = result.matches ?? [];
     if (lines.length > 0) {
@@ -116,25 +121,7 @@ function paintMatches(
         row.setAttribute("aria-label", `Open ${result.path} at match`);
         paintMatchText(row, line);
         if (open) {
-          const go = (event: MouseEvent | KeyboardEvent) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const side =
-              "metaKey" in event &&
-              (event.metaKey || event.ctrlKey) &&
-              event.altKey;
-            open({
-              path: result.path,
-              offset: line.offset,
-              ...(side ? { side: true } : {}),
-            });
-          };
-          row.onclick = go;
-          row.onkeydown = (event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              go(event);
-            }
-          };
+          wireSearchOpen(row, { path: result.path, offset: line.offset }, open);
         }
         nest.append(row);
       }
@@ -142,6 +129,27 @@ function paintMatches(
     }
     results.append(item);
   }
+}
+
+function wireSearchOpen(
+  node: HTMLElement,
+  target: { path: string; offset?: number },
+  open: OpenSearchResult,
+): void {
+  const go = (event: MouseEvent | KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const side =
+      ("metaKey" in event || "ctrlKey" in event) &&
+      Boolean((event.metaKey || event.ctrlKey) && event.altKey);
+    open({ ...target, ...(side ? { side: true } : {}) });
+  };
+  node.onclick = go;
+  node.onkeydown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      go(event);
+    }
+  };
 }
 function paintMatchText(
   row: HTMLElement,

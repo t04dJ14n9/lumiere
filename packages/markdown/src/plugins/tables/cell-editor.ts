@@ -1,15 +1,14 @@
 import { defaultKeymap } from "@codemirror/commands";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import type { Transaction } from "@codemirror/state";
-import { EditorView, keymap } from "@codemirror/view";
-import { getCM } from "@replit/codemirror-vim";
+import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import type { Cell, CellPosition, Table } from "../../markdown/tables/model";
 import { difference } from "../../shared/document/wire";
 import type { InputGrouping } from "../document/api";
 import { editGroup } from "../document/api";
 import { CellSource, cellSyntax } from "./cell-source";
 import type { Action, TableEnvironment } from "./environment";
-import { cellNavigation, type CellStep } from "./navigation";
+import { cellNavKey, cellNavigation, type CellStep } from "./navigation";
 import { installCellWordNavigation } from "./word-navigation";
 import type { WordMotion } from "./word-motion";
 
@@ -78,9 +77,15 @@ export class CellEditor {
         extensions: [
           options.environment.language,
           cellSyntax,
-          cellNavigation((step, extend) => options.arrow(step, extend)),
+          cellNavigation(
+            (step, extend) => options.arrow(step, extend),
+            (view) => options.environment.vim?.mode(view),
+          ),
           this.groups.extension,
           cellKeymap(options),
+          // Nested cells are not `.mw-editor`, so stock drawSelection stays
+          // visible (outer CSS only hides the note-level selection layer).
+          drawSelection(),
           // Table navigation gets the first chance at a cell boundary.
           this.vim.of(
             options.vim ? (this.environment.vim?.extension() ?? []) : [],
@@ -123,23 +128,36 @@ export class CellEditor {
   private bindMode(): void {
     this.unbindMode?.();
     delete this.unbindMode;
-    const inner = getCM(this.view);
-    if (!inner?.state.vim) {
+    if (!this.vimEnabled || !this.environment.vim) {
       return;
     }
-    this.environment.vim?.sync(this.outer, this.view);
-    const sync = (): void => this.environment.vim?.sync(this.view, this.outer);
-    inner.on("vim-mode-change", sync);
-    const words = installCellWordNavigation(
-      this.view,
-      inner,
-      this.word,
-      this.documentLine,
-    );
+    const view = this.view;
+    const outer = this.outer;
+    const environment = this.environment;
+    const word = this.word;
+    const documentLine = this.documentLine;
+    let cancelled = false;
     this.unbindMode = () => {
-      words.destroy();
-      inner.off("vim-mode-change", sync);
+      cancelled = true;
     };
+    // Load the Vim adapter only when a cell actually enables Vim.
+    void import("@replit/codemirror-vim").then(({ getCM }) => {
+      if (cancelled) {
+        return;
+      }
+      const inner = getCM(view);
+      if (!inner?.state.vim) {
+        return;
+      }
+      environment.vim?.sync(outer, view);
+      const sync = (): void => environment.vim?.sync(view, outer);
+      inner.on("vim-mode-change", sync);
+      const words = installCellWordNavigation(view, inner, word, documentLine);
+      this.unbindMode = () => {
+        words.destroy();
+        inner.off("vim-mode-change", sync);
+      };
+    });
   }
 
   label(position: CellPosition): void {
@@ -203,7 +221,26 @@ export class CellEditor {
 }
 
 export function cellKeymap(options: CellEditorOptions) {
-  return Prec.highest(
+  // Tab / Enter must use DOM handlers (like cellNavigation arrows): Vim's
+  // normal-mode keydown swallows keymap Tab/Enter before Prec.highest keymaps
+  // run (BH-039). Insert-mode and Vim-off already reached the keymap path.
+  return Prec.highest([
+    EditorView.domEventHandlers({
+      keydown(event, view) {
+        const nav = cellNavKey(event);
+        if (!nav) {
+          return false;
+        }
+        if (nav === "br") {
+          view.dispatch(view.state.replaceSelection("<br>"));
+        } else if (!options.move(nav.row, nav.column)) {
+          return false;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      },
+    }),
     keymap.of([
       {
         key: "Mod-Enter",
@@ -234,16 +271,6 @@ export function cellKeymap(options: CellEditorOptions) {
         run: (view) => options.environment.wrap("*", view),
         stopPropagation: true,
       },
-      { key: "Tab", run: () => options.move(0, 1) },
-      { key: "Shift-Tab", run: () => options.move(0, -1) },
-      { key: "Enter", run: () => options.move(1, 0) },
-      {
-        key: "Shift-Enter",
-        run: (view) => {
-          view.dispatch(view.state.replaceSelection("<br>"));
-          return true;
-        },
-      },
     ]),
-  );
+  ]);
 }

@@ -19,6 +19,7 @@
 }
 .hybrid-block:hover .copy-code,
 .cm-line:hover > .md-code-flair .copy-code,
+.cm-line.is-fence-hovered > .md-code-flair .copy-code,
 .copy-code:focus-visible {
   opacity: 1;
 }
@@ -40,7 +41,8 @@
   transition: opacity 120ms;
 }
 .hybrid-block:hover .code-language,
-.cm-line:hover > .md-code-flair .code-language {
+.cm-line:hover > .md-code-flair .code-language,
+.cm-line.is-fence-hovered > .md-code-flair .code-language {
   opacity: 0;
 }
 /* In the hidden opening fence line, the flair takes no room of its own. */

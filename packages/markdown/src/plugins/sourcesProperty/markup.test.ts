@@ -7,15 +7,16 @@ import {
   viewerFragment,
 } from "./open";
 
-test("sources markup is stacked, keeps every row, and has no Copy id", () => {
+test("sources markup is stacked, previews first rows, and has no Copy id", () => {
   const entries = Array.from({ length: 9 }, (_, index) => ({
     resource: `https://example.com/${index}`,
     title: `Source ${index}`,
   }));
   const html = renderSources(entries, {});
   assert.match(html, /Showing 3 of 9/);
-  assert.match(html, /data-source-extra/);
-  assert.equal(html.match(/data-source-index=/g)?.length, 9);
+  // Collapsed cold open omits hidden extras — expand remounts full rows.
+  assert.doesNotMatch(html, /data-source-extra| hidden/);
+  assert.equal(html.match(/data-source-index=/g)?.length, 3);
   assert.doesNotMatch(html, /contenteditable|Add source|data-property-list/);
   assert.doesNotMatch(html, /Copy id|data-source-copy/);
 });

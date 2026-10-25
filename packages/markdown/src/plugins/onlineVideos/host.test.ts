@@ -57,6 +57,7 @@ test("the host looks up details only in a trusted workspace", async (t) => {
     client.call(protocol, "details", {
       provider: "youtube",
       id: "dQw4w9WgXcQ",
+      kind: "video",
     });
   await assert.rejects(ask(), /trusted workspace/);
   assert.deepEqual(requests, []);
