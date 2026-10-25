@@ -119,6 +119,20 @@ for (const [code, shift, expected] of [
   }
 }
 
+test("Dead key and Alt/Meta modifiers on KeyG stay untouched", () => {
+  assert.equal(
+    imeVimCommandKey(event("Dead", "KeyG", { shiftKey: false }), mode()),
+    undefined,
+  );
+  assert.equal(
+    translatedVimKey(
+      event("Process", "KeyG", { shiftKey: false, altKey: true }),
+      mode(),
+    ),
+    undefined,
+  );
+});
+
 test("IME Process digits with Shift map to US shifted glyphs; line keys still win first", () => {
   assert.equal(
     imeVimCommandKey(event("Process", "Digit4", { shiftKey: true }), mode()),
