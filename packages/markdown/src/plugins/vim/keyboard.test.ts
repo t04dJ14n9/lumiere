@@ -241,3 +241,24 @@ test("ASCII punctuation and Chinese glyphs on the wrong code stay with the depen
     undefined,
   );
 });
+
+test("shifted and unshifted brackets, quotes, and operators map under IME Process", () => {
+  for (const [code, unshifted, shifted] of [
+    ["Minus", "-", "_"],
+    ["Equal", "=", "+"],
+    ["BracketLeft", "[", "{"],
+    ["BracketRight", "]", "}"],
+    ["Quote", "'", '"'],
+    ["Backquote", "`", "~"],
+    ["Backslash", "\\", "|"],
+  ] as const) {
+    assert.equal(
+      translatedVimKey(event("Process", code, { shiftKey: false }), mode()),
+      unshifted,
+    );
+    assert.equal(
+      translatedVimKey(event("Process", code, { shiftKey: true }), mode()),
+      shifted,
+    );
+  }
+});

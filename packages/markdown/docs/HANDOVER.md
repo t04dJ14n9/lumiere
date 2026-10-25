@@ -76,7 +76,7 @@ completion and Phase 8 records) first.
 - Editing: Tab/Shift+Tab indent in the note (9a3e55c); smart Enter and
   Backspace in lists (50e7b47); find and replace bar with a match count on
   Ctrl/Cmd+F (f7105ac); Ctrl/Cmd+B, I and K apply once (8a24c2e).
-- Rendering: block math reveals its source above the preview (281ade2);
+- Rendering: block math reveals source only while editing (BH-009; was source-above-preview in 281ade2);
   indented code blocks (0ab6231); faint revealed markers (8689def); list
   indent steps, guides, muted markers and hanging indents (8c8f26d); quote
   text at normal colour (514fee8); inline HTML such as `<kbd>` and `<u>`

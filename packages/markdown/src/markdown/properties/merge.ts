@@ -1,4 +1,5 @@
-import { isMap, isScalar, parseDocument } from "yaml";
+import type { Document } from "yaml";
+import { loadYaml } from "./load-yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import {
   scalarValue,
@@ -60,10 +61,12 @@ export function mergeProperties(
     if (!header || !current || !validIncoming(incoming)) {
       return undefined;
     }
-    const document = parseDocument(header.body, { uniqueKeys: true });
+    const document = loadYaml().parseDocument(header.body, {
+      uniqueKeys: true,
+    });
     if (
       document.errors.length ||
-      (document.contents !== null && !isMap(document.contents))
+      (document.contents !== null && !loadYaml().isMap(document.contents))
     ) {
       return undefined;
     }
@@ -100,18 +103,20 @@ class MergeEdits {
   constructor(
     private readonly source: string,
     private readonly header: NonNullable<ReturnType<typeof headerParts>>,
-    private readonly document: ReturnType<typeof parseDocument>,
+    private readonly document: Document,
   ) {}
 
   set(key: string, value: unknown): boolean {
     const { document, source, header } = this;
-    if (isMap(document.contents) && document.contents.flow) {
+    if (loadYaml().isMap(document.contents) && document.contents.flow) {
       document.set(key, value);
       return true;
     }
-    const items = isMap(document.contents) ? document.contents.items : [];
+    const items = loadYaml().isMap(document.contents)
+      ? document.contents.items
+      : [];
     const pair = items.find(
-      (pair) => isScalar(pair.key) && pair.key.value === key,
+      (pair) => loadYaml().isScalar(pair.key) && pair.key.value === key,
     );
     if (!pair) {
       this.added += `${yamlKey(key)}:${valueAfterKey(value, header.eol)}${header.eol}`;
@@ -151,7 +156,7 @@ class MergeEdits {
 
   finish(): PropertyChange[] {
     const { document, header } = this;
-    if (isMap(document.contents) && document.contents.flow) {
+    if (loadYaml().isMap(document.contents) && document.contents.flow) {
       this.changes.push({
         from: header.offset,
         to: header.offset + header.body.length,

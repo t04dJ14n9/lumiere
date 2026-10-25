@@ -1,12 +1,11 @@
 import type { Plugin } from "@workshop/core";
-import {
-  markdownParser,
-  markdownLanguageSupport,
-} from "../../markdown/dialect";
+import { markdownParser } from "../../markdown/dialect/parser";
+import { markdownLanguageSupport } from "../../markdown/dialect/language";
 import { metadata } from "../../markdown/metadata";
 import { createRenderer, type RendererOptions } from "../../markdown/html";
 import type {} from "./api";
-/** One dialect everywhere; only the webview's renderer draws callout icons. */
+
+/** Webview dialect: parser, CM language, metadata and HTML renderer. */
 export function dialectPlugin(options: RendererOptions = {}): Plugin {
   return {
     name: "dialect",

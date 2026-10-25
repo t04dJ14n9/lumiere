@@ -105,6 +105,9 @@ test("panel host features start blame by default and follow resource settings", 
   root.provide("rpc", pair.host);
   hostFeatures(root, { document } as PanelShell, host);
   await root.settled();
+  // Deferred panel hosts (blame, search, …) start after session-ready.
+  root.emit("editor/session-ready");
+  await root.settled();
 
   const request = { line: 1, contents: "note", version: 1 };
   assert.deepEqual(await pair.client.call(protocol, "blameLine", request), {

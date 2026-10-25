@@ -15,11 +15,12 @@ import { blockRenderers, inlineRenderers } from "./registry";
 import {
   blockIndex,
   visiblePosition,
-  blockDecorations,
   renderRevision,
   refreshRender,
 } from "./blocks";
-import { documentTree } from "./document-tree";
+import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
+import { documentTree, documentTreeCompleter } from "./document-tree";
+import { frontmatterPlaceholderRenderer } from "./frontmatter-placeholder";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
@@ -125,6 +126,13 @@ function registerFallbackBlocks(ctx: Context): void {
       { slot: "base" },
     ),
   );
+  // Collapse a complete YAML fence before Properties chrome configures so
+  // heading/body can enter the viewport from core Live Preview (wave 12).
+  ctx.effect(() =>
+    ctx.editor.extend(blockRenderers.of(frontmatterPlaceholderRenderer()), {
+      slot: "base",
+    }),
+  );
 }
 
 function registerModeCommand(ctx: Context, service: LivePreview): void {
@@ -139,6 +147,7 @@ function registerModeCommand(ctx: Context, service: LivePreview): void {
 function engineExtensions(ctx: Context) {
   return [
     documentTree,
+    documentTreeCompleter,
     markdownBlockWidthTracker,
     renderRevision,
     pointerSelectionTracking,
@@ -147,6 +156,7 @@ function engineExtensions(ctx: Context) {
     ruleClick,
     hybridInline,
     blockIndex,
+    ...blockViewportSupport,
     blockDecorations((error) =>
       ctx.logger.error("Block renderer failed", error),
     ),

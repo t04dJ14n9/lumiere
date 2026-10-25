@@ -26,6 +26,8 @@ export class PropertyNameSuggestions {
   constructor(
     private readonly input: HTMLInputElement,
     private readonly accept: () => void,
+    /** Escape dismisses the unfinished draft (BH-008), not only the list. */
+    private readonly onEscape?: () => void,
   ) {
     this.popup = input.ownerDocument.createElement("div");
     this.popup.className = "property-name-suggestions";
@@ -37,6 +39,15 @@ export class PropertyNameSuggestions {
     input.addEventListener("input", () => this.filter());
     input.addEventListener("focus", () => this.render());
     input.addEventListener("blur", () => this.hide());
+    // Do not stopPropagation: form capture/bubble also dismisses the draft row.
+    input.addEventListener("keydown", (event) => {
+      if (event.isComposing || event.key !== "Escape" || !this.onEscape) {
+        return;
+      }
+      event.preventDefault();
+      // Do not stopPropagation — form capture also dismisses; either path may win.
+      this.onEscape();
+    });
     this.hide();
   }
 

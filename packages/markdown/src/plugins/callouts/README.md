@@ -10,10 +10,11 @@ render service. The post-processor binds disclosures to panel-local memory.
 That memory is a `folds` view-state contribution, restored on registration and
 mapped across renamed source identities. Each pass owns its event listeners and
 bindings; plugin disposal removes registrations and remaining pass handlers.
-The fold button toggles disclosure; a `-` callout starts closed. Clicking title
-text, body or padding reveals and selects the whole callout source, as does its
-Edit button. Typing replaces that visible selection. Links and controls keep
-their own clicks; keyboard navigation can reveal source with a caret.
+Foldable titles (and the fold button) toggle disclosure; a `-` callout starts
+closed. Clicking the body or padding reveals and selects the whole callout
+source, as does its Edit button. Typing replaces that visible selection. Links
+and controls keep their own clicks; keyboard navigation can reveal source with
+a caret.
 
 ## Files
 
@@ -24,7 +25,7 @@ their own clicks; keyboard navigation can reveal source with a caret.
 - `callouts.test.ts`: recognition and insertion units.
 - `view-state.test.ts`: persistence, restore and source-remapping units.
 - `disclosure.test.ts`: title/chevron toggling and listener disposal.
-- `../../../test/unit/callouts/interaction.test.ts`: rendered-click and button source editing.
+- `../../../test/unit/callouts/interaction.test.ts`: body/button source editing (title folds).
 - `callouts.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
@@ -36,6 +37,8 @@ Insert Callout has no default keybinding.
 
 ## Limits and differences from Obsidian
 
-Colors follow VS Code's theme rather than Obsidian assets. Disclosure state belongs
-to each panel, while text and undo belong to VS Code. Exact visual parity awaits
-the owner's manual comparison.
+Colors follow VS Code's theme rather than Obsidian assets. Live Preview zeros the
+outer callout margin (as Obsidian CM6) and keeps nested callouts at `1em` vertical
+margin; titles use `flex-start` and a 4px icon gap (`--size-4-1`). Disclosure state
+belongs to each panel, while text and undo belong to VS Code. Exact colour parity
+awaits the owner's manual comparison.

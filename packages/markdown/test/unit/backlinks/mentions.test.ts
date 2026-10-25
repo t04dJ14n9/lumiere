@@ -56,3 +56,16 @@ test("long context lines are cut around the mention", () => {
   assert.ok(line!.text.includes("Target"));
   assert.ok(line!.text.startsWith("…") && line!.text.endsWith("…"));
 });
+
+test("extraContext surrounds the match with adjacent lines", () => {
+  const text = ["alpha", "see [[Target]] here", "omega"].join("\n");
+  const [only] = linkedLines(text, (linkpath) => /^target$/i.test(linkpath), {
+    extraContext: true,
+  });
+  assert.equal(only?.text, "see [[Target]] here");
+  assert.equal(only?.before, "alpha");
+  assert.equal(only?.after, "omega");
+  const [plain] = linkedLines(text, (linkpath) => /^target$/i.test(linkpath));
+  assert.equal(plain?.before, undefined);
+  assert.equal(plain?.after, undefined);
+});

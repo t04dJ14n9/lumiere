@@ -5,6 +5,8 @@ import { mediaRecovery } from "./webm";
 import { inspectImage } from "./image-dialog";
 import { mountImageEmbedActions } from "./embed-actions";
 import { embeddedNote, MissingSection } from "./note";
+import { renderBaseEmbed } from "./base-embed";
+import { mountPdfEmbed } from "./pdf-embed";
 
 interface EmbedOptions {
   pass: RenderPass;
@@ -138,6 +140,23 @@ class EmbedPass {
       this.showMedia(node, target, resource);
     } else if (resource.kind === "note" && resource.text !== undefined) {
       await this.showNote(node, target, resource, wiki);
+    } else if (resource.kind === "base") {
+      renderBaseEmbed(node, {
+        target,
+        wiki,
+        resource,
+        open: (href, isWiki) => this.options.open(href, isWiki),
+      });
+    } else if (resource.kind === "pdf") {
+      mountPdfEmbed({
+        node,
+        target,
+        url: resource.url,
+        wiki,
+        signal: this.events.signal,
+        measure: this.options.pass.measure,
+        open: (openTarget, isWiki) => this.options.open(openTarget, isWiki),
+      });
     } else {
       node.replaceChildren(
         this.openButton(target, wiki, target, "attachment-open"),

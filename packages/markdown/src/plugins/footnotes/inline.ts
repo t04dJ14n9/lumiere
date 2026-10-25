@@ -13,6 +13,10 @@ import { FootnoteReference, referenceText } from "./reference-widget";
  * reference, and a definition as that number leading its text. References
  * stay rendered under selections (Ctrl+A included); only a caret reveals them.
  * Definition markers reveal when a selection touches their first line.
+ *
+ * Inline `^[body]` keeps its body visible after the number (Obsidian shows the
+ * whole `^[body]` as superscript; we keep the LaTeX number and leave the body
+ * readable so it is not lost when the brackets are replaced).
  */
 export function footnoteInline(
   render: RenderService,
@@ -35,6 +39,17 @@ export function footnoteInline(
       }
       if (hasCaretWithin(cx.state, node.from, node.to)) {
         markReferenceSource(cx, node.from, node.to, note);
+        return;
+      }
+      if (!note.label) {
+        decorateInlineFootnote({
+          cx,
+          from: node.from,
+          to: node.to,
+          note,
+          render,
+          navigate,
+        });
         return;
       }
       cx.replace(
@@ -77,6 +92,28 @@ function markReferenceSource(
   }
   cx.mark(from, from + 2, "md-syntax-mark");
   cx.mark(to - 1, to, "md-syntax-mark");
+}
+
+/**
+ * Inline footnote off the caret: LaTeX number for `^[`, body stays visible
+ * (superscript-sized, like Obsidian's raised `^[body]`), closing `]` hidden.
+ */
+function decorateInlineFootnote(options: {
+  cx: InlineContext;
+  from: number;
+  to: number;
+  note: Footnote;
+  render: RenderService;
+  navigate: (jump: () => void) => void;
+}): void {
+  const { cx, from, to, note, render, navigate } = options;
+  cx.replace(from, from + 2, new FootnoteReference(note, render, navigate));
+  if (from + 2 < to - 1) {
+    cx.mark(from + 2, to - 1, "mw-footnote-inline-body");
+  }
+  if (to - 1 < to) {
+    cx.hide(to - 1, to);
+  }
 }
 
 function decorateDefinition(cx: InlineContext, note: Footnote): void {

@@ -72,6 +72,21 @@ test("search property filters preserve existence, alternatives and numeric compa
   });
   assert.equal(parseSearch("[status:Draft OR Published]").kind, "property");
   assert.equal(parseSearch("[aliases:null]").kind, "property");
+  assert.deepEqual(parseSearch("tag:#project status:done"), {
+    kind: "and",
+    terms: [
+      {
+        kind: "scope",
+        scope: "tag",
+        term: { kind: "text", value: "#project" },
+      },
+      {
+        kind: "property",
+        name: { kind: "text", value: "status" },
+        value: { kind: "text", value: "done" },
+      },
+    ],
+  });
 });
 test("malformed or unsupported searches fail rather than silently becoming literal text", () => {
   for (const query of [
@@ -82,7 +97,7 @@ test("malformed or unsupported searches fail rather than silently becoming liter
     "[status:",
     '"unclosed',
     "/[bad/",
-    "unknown:value",
+    "status:",
     "path:",
     "-",
   ]) {
@@ -159,7 +174,9 @@ test("property filters distinguish null and empty values and compare numeric pro
   for (const query of [
     "[aliases]",
     "[aliases:Draft OR Published]",
+    "aliases:Draft",
     "[duration:<5]",
+    "duration:<5",
     "[duration:>=4]",
     "[empty:null]",
     '[quoted:""]',

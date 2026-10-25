@@ -1,13 +1,20 @@
-import { prepareResources } from "./resources";
-import type {} from "../resources/api";
-import type {} from "../gitGutter/api";
 import type { Context, Plugin } from "@workshop/core";
-import type { DiffPanel, DiffSide, OpenedDiff } from "../../shared/git";
+import type {
+  DiffPanel,
+  DiffSide,
+  DiffViews,
+  OpenedDiff,
+} from "../../shared/git";
 import { registerReportedCommands } from "../../shared/reported-command";
 import { contributionId } from "../../shared/setting-schema";
 import { describedComparison, titledComparison } from "./comparison";
+import { applySideLabels, fileName, sideLabel } from "./labels";
 import { openFullDiff } from "./open-snapshot";
-import type { DiffViews } from "../../shared/git";
+import { prepareResources } from "./resources";
+import type {} from "../resources/api";
+import type {} from "../gitGutter/api";
+
+export { fileName, sideLabel, sideLabels } from "./labels";
 
 /** What a rendered diff compares: two URIs, the left one read-only. */
 interface Comparison {
@@ -17,34 +24,8 @@ interface Comparison {
   readonly preview: boolean;
 }
 
-/** The last path segment, without query or fragment (no regex on the URI). */
-export function fileName(uri: string): string {
-  const query = uri.search(/[?#]/);
-  const path = query < 0 ? uri : uri.slice(0, query);
-  const name = path.slice(path.lastIndexOf("/") + 1);
-  try {
-    return decodeURIComponent(name);
-  } catch {
-    return name;
-  }
-}
-
-/** "HEAD", "Index" or "Working tree", from a git: URI's query or its scheme. */
-export function sideLabel(uri: string): string {
-  if (!uri.startsWith("git:")) {
-    return "Working tree";
-  }
-  try {
-    const query = decodeURIComponent(uri.slice(uri.indexOf("?") + 1));
-    const ref = (JSON.parse(query) as { ref?: string }).ref ?? "";
-    if (ref === "" || ref === "~") {
-      return "Index";
-    }
-    return /^[0-9a-f]{40}$/.test(ref) ? ref.slice(0, 7) : ref;
-  } catch {
-    return "Git";
-  }
-}
+const identicalComparison = (comparison: Comparison) =>
+  comparison.original === comparison.modified;
 
 /**
  * Rendered side-by-side diffs. With `diffEditor: rendered` it takes over
@@ -241,19 +222,14 @@ interface Prepared {
 
 const MAX_REREADS = 5;
 
-async function prepare(
-  ctx: Context,
-  life: Life,
-  comparison: Comparison,
-): Promise<Prepared | undefined> {
-  // Subscribe before reading, so an edit during the first read is seen.
-  let changed = false;
+/** Follow both URIs until a panel takes ownership (or prepare fails). */
+function beginFollow(ctx: Context, life: Life, comparison: Comparison) {
+  let dirty = false;
   let onChange: (() => void) | undefined;
-  const notify = () => {
-    changed = true;
+  const unsubscribe = followSources(ctx, comparison, () => {
+    dirty = true;
     onChange?.();
-  };
-  const unsubscribe = followSources(ctx, comparison, notify);
+  });
   let stopped = false;
   const stop = () => {
     if (!stopped) {
@@ -262,38 +238,66 @@ async function prepare(
       void unsubscribe();
     }
   };
-  // Owned by the plugin until a panel takes it over.
   life.pending.add(stop);
+  return {
+    stop,
+    listen(next: () => void) {
+      onChange = next;
+      if (dirty) {
+        next();
+      }
+    },
+    reset() {
+      dirty = false;
+    },
+    changed: () => dirty,
+  };
+}
+
+async function prepare(
+  ctx: Context,
+  life: Life,
+  comparison: Comparison,
+): Promise<Prepared | undefined> {
+  if (identicalComparison(comparison)) {
+    report(
+      ctx,
+      "Could not read the diff",
+      new Error("Both sides resolve to the same URI"),
+    );
+    return undefined;
+  }
+  const follow = beginFollow(ctx, life, comparison);
   try {
     let sides: [DiffSide, DiffSide];
     let reads = 0;
     do {
-      changed = false;
+      follow.reset();
       sides = await Promise.all([
         readSide(ctx, comparison.original),
         readSide(ctx, comparison.modified),
       ]);
       if (!life.live) {
-        stop();
+        follow.stop();
         return undefined;
       }
-    } while (changed && ++reads < MAX_REREADS);
-    const [left, right] = sides;
+    } while (follow.changed() && ++reads < MAX_REREADS);
+    const { left, right } = applySideLabels(
+      comparison.original,
+      comparison.modified,
+      sides[0],
+      sides[1],
+    );
     const resources = await prepareResources(ctx, left, right);
     return {
       left,
       right,
       resources,
-      stop,
-      listen(next) {
-        onChange = next;
-        if (changed) {
-          next();
-        }
-      },
+      stop: follow.stop,
+      listen: follow.listen,
     };
   } catch (error) {
-    stop();
+    follow.stop();
     if (life.live) {
       report(ctx, "Could not read the diff", error);
     }
@@ -347,30 +351,47 @@ function present(
     },
   });
   let open = true;
-  let version = 0;
   life.panels.add(panel);
   // The panel owns the subscription from here; its disposal releases it.
   life.pending.delete(prepared.stop);
   panel.onDispose(() => {
     open = false;
-    version++;
     prepared.stop();
     life.panels.delete(panel);
   });
-  // A versioned refresh: an older read that lands late is discarded.
+  watchPrepared({ ctx, life, comparison, prepared, panel, isOpen: () => open });
+}
+
+/** A versioned refresh: an older read that lands late is discarded. */
+function watchPrepared(args: {
+  ctx: Context;
+  life: Life;
+  comparison: Comparison;
+  prepared: Prepared;
+  panel: DiffPanel;
+  isOpen: () => boolean;
+}): void {
+  const { ctx, life, comparison, prepared, panel, isOpen } = args;
+  let version = 0;
   prepared.listen(() => {
     const mine = ++version;
     Promise.all([
       readSide(ctx, comparison.original),
       readSide(ctx, comparison.modified),
     ]).then(
-      ([left, right]) => {
-        if (open && life.live && mine === version) {
-          panel.update(left, right);
+      ([leftRaw, rightRaw]) => {
+        if (isOpen() && life.live && mine === version) {
+          const labeled = applySideLabels(
+            comparison.original,
+            comparison.modified,
+            leftRaw,
+            rightRaw,
+          );
+          panel.update(labeled.left, labeled.right);
         }
       },
       (error: unknown) => {
-        if (open && life.live && mine === version) {
+        if (isOpen() && life.live && mine === version) {
           ctx.logger.warn("Could not refresh the diff", error);
         }
       },
