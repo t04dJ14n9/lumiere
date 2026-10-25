@@ -119,14 +119,17 @@ for (const [code, shift, expected] of [
   }
 }
 
-test("Dead key on KeyG resolves to g and G for gg/G motions", () => {
+test("Dead key and Alt/Meta modifiers on KeyG stay untouched", () => {
   assert.equal(
     imeVimCommandKey(event("Dead", "KeyG", { shiftKey: false }), mode()),
-    "g",
+    undefined,
   );
   assert.equal(
-    translatedVimKey(event("Dead", "KeyG", { shiftKey: true }), mode()),
-    "G",
+    translatedVimKey(
+      event("Process", "KeyG", { shiftKey: false, altKey: true }),
+      mode(),
+    ),
+    undefined,
   );
 });
 
