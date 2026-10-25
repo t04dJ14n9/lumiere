@@ -1,4 +1,5 @@
 import type { EditorView } from "@codemirror/view";
+import { selectRenderedSource } from "../../webview/ui/source-selection";
 
 /** Where a link opens (beside, or in a tab of its own), and the note it is in. */
 export interface OpenOptions {
@@ -14,11 +15,12 @@ export type OpenLink = (
 ) => Promise<boolean>;
 
 /**
- * Clicks on rendered links (BH-020 / user-stated Obsidian Live Preview parity):
+ * Clicks on rendered links (BH-020 + Alt-edit):
  * plain click does not follow — CodeMirror places the caret so the link source
  * reveals; Ctrl/Cmd-click follows in the same editor; Ctrl/Cmd+Alt-click opens
- * beside. Shift-click extends the selection without following. The Mod-press is
- * the link's, so the caret stays put while the link opens.
+ * beside; Alt alone places a single caret to edit the link source (no
+ * multi-cursor); Shift-click extends the selection without following. The
+ * Mod-press is the link's, so the caret stays put while the link opens.
  */
 export function linkClickHandlers(
   view: EditorView,
@@ -28,11 +30,20 @@ export function linkClickHandlers(
   return {
     mousedown(event: MouseEvent) {
       const link = clickedLink(event);
-      if (
-        event.button === 0 &&
-        link?.hasAttribute("data-href") &&
-        allowsLinkClick(event)
-      ) {
+      if (event.button !== 0 || !link?.hasAttribute("data-href")) {
+        return false;
+      }
+      // Alt alone on a rendered link: Obsidian places one caret to edit.
+      // Without this, EditorView.clickAddsSelectionRange adds a second caret
+      // and the next keys insert at both the old caret and the link.
+      if (isAltEditLinkClick(event, link)) {
+        event.preventDefault();
+        event.stopPropagation();
+        placeCaretToEditLink(view, link, event);
+        return true;
+      }
+      // BH-020: only Mod-click follows; preventDefault so CM does not also move.
+      if (allowsLinkClick(event)) {
         event.preventDefault();
         event.stopPropagation();
         return true;
@@ -46,6 +57,9 @@ export function linkClickHandlers(
       }
       // Always stop <a href> navigation; only Mod follows through `open`.
       event.preventDefault();
+      if (isAltEditLinkClick(event, link)) {
+        return true;
+      }
       const selection = view.dom.ownerDocument.getSelection();
       if (
         !allowsLinkClick(event) ||
@@ -68,6 +82,43 @@ export function linkClickHandlers(
       return true;
     },
   };
+}
+
+/**
+ * Whether Alt alone on a rendered LP link should place a single edit caret
+ * instead of opening the link or adding a CodeMirror multi-cursor.
+ */
+export function isAltEditLinkClick(
+  event: Pick<
+    MouseEvent,
+    "altKey" | "metaKey" | "ctrlKey" | "shiftKey" | "button"
+  >,
+  link: { classList: { contains(name: string): boolean } },
+): boolean {
+  return (
+    event.button === 0 &&
+    event.altKey &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    link.classList.contains("md-link-rendered")
+  );
+}
+
+function placeCaretToEditLink(
+  view: EditorView,
+  link: HTMLElement,
+  event: MouseEvent,
+): void {
+  const coords = view.posAtCoords({ x: event.clientX, y: event.clientY });
+  const at = Math.max(
+    0,
+    Math.min(
+      view.state.doc.length,
+      coords ?? view.posAtDOM(link, Math.floor(link.childNodes.length / 2)),
+    ),
+  );
+  selectRenderedSource(view, { from: at, to: at }, { settled: true });
 }
 
 function isWikiLink(link: HTMLElement): boolean {

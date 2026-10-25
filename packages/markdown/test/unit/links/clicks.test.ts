@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   allowsLinkClick,
   holds,
+  isAltEditLinkClick,
   placeOfClick,
 } from "../../../src/plugins/links/clicks";
 
@@ -56,4 +57,65 @@ test("a link's box holds a click up to, not including, its right and bottom edge
   assert.equal(holds(box, 130.23, 44), false);
   assert.equal(holds(box, 120, 54), false);
   assert.equal(holds(box, 100, 44), false);
+});
+
+test("Alt alone on a rendered link is an edit-caret click, not open or multi-cursor", () => {
+  const rendered = {
+    classList: { contains: (name: string) => name === "md-link-rendered" },
+    tagName: "SPAN",
+  };
+  assert.equal(
+    isAltEditLinkClick(
+      {
+        button: 0,
+        altKey: true,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+      },
+      rendered,
+    ),
+    true,
+  );
+  // Cmd+Alt still opens beside — not an edit click.
+  assert.equal(
+    isAltEditLinkClick(
+      {
+        button: 0,
+        altKey: true,
+        metaKey: true,
+        ctrlKey: false,
+        shiftKey: false,
+      },
+      rendered,
+    ),
+    false,
+  );
+  // Plain click opens; Shift extends.
+  assert.equal(
+    isAltEditLinkClick(
+      {
+        button: 0,
+        altKey: false,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+      },
+      rendered,
+    ),
+    false,
+  );
+  assert.equal(
+    isAltEditLinkClick(
+      {
+        button: 0,
+        altKey: false,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: true,
+      },
+      rendered,
+    ),
+    false,
+  );
 });
