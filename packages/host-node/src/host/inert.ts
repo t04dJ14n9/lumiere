@@ -9,7 +9,18 @@ import type {
   GitAccess,
   WorkbenchViews,
   HostNeed,
+  VaultCodeTrust,
 } from "@workshop/markdown/portable";
+
+/**
+ * An embedder that cannot ask its owner (DSH, so far) runs no code from a
+ * vault: every vault reads as refused, so nothing asks either.
+ */
+export const noVaultCode: VaultCodeTrust = {
+  answer: () => false,
+  request: async () => false,
+  onDidChange: () => () => {},
+};
 
 export const noGit: GitAccess = {
   blameLine: async () => ({ status: "unavailable", repoGeneration: 0 }),

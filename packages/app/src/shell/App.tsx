@@ -7,6 +7,7 @@
 import { useEffect, useReducer } from "react";
 import { useShortcuts, type CommandHandlers } from "./commands";
 import { ErrorBanner } from "./components/ErrorBanner";
+import { TrustDialog } from "./components/TrustDialog";
 import { VaultPicker } from "./components/VaultPicker";
 import { Workspace } from "./components/Workspace";
 import {
@@ -26,6 +27,7 @@ import {
 } from "./tabs";
 import { closeWindow } from "./tauri";
 import { setColorTheme } from "./theme";
+import { useTrustQuestions } from "./trust";
 import { useUiState, type UiStateHandle } from "./ui-state";
 
 export function App() {
@@ -35,7 +37,11 @@ export function App() {
   const ui = useUiState(errors.report);
   const [tabs, dispatch] = useReducer(tabsReducer, noTabs);
   const opening = useOpening(vaults, dispatch, errors.report);
-  useServerEvents(opening.onServerEvent);
+  const trust = useTrustQuestions(errors.report);
+  useServerEvents((event) => {
+    opening.onServerEvent(event);
+    trust.onServerEvent(event);
+  });
   useEffect(() => setColorTheme(ui.state.theme), [ui.state.theme]);
   const commands = windowCommands({ tabs, dispatch, ui, opening });
   useMenuCommands(commands);
@@ -45,6 +51,7 @@ export function App() {
   return (
     <>
       <ErrorBanner message={errors.message} onDismiss={errors.dismiss} />
+      <TrustDialog question={trust.question} onAnswer={trust.answer} />
       {showsWorkspace ? (
         <Workspace
           vault={vaults.current}

@@ -17,6 +17,7 @@ import type {
   DiagnosticSink,
   Extensions,
   HostWorkspace,
+  VaultCodeTrust,
   WorkspaceFiles,
   WorkspaceStorage,
 } from "@workshop/markdown/portable";
@@ -28,13 +29,20 @@ import {
 } from "./paths";
 import { watchFile } from "./watch";
 
+/**
+ * `vaultCode`: the embedder's answer to whether a vault's own code may run
+ * (it asks its owner, as the app does); see inert.ts for one that cannot ask.
+ */
 export function createHostWorkspace(
   roots: () => readonly string[],
+  vaultCode: VaultCodeTrust,
 ): HostWorkspace {
   return {
     folders: roots,
-    // The host runs only what its owner installed and opened.
+    // The owner opened these folders in their own app: remote images and
+    // media load. Code that came with a vault is a separate question.
     isTrusted: () => true,
+    vaultCode,
     read: async (uri) => readFile(await pathInsideRoots(roots(), uri)),
     stat: async (uri) => {
       const info = await lstat(await pathInsideRoots(roots(), uri));

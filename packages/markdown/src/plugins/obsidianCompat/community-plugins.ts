@@ -32,27 +32,14 @@ export class CommunityPluginLoader {
   ): Promise<LoadedCommunityPlugins> {
     const configDirUri = resolveConfigDirectory(vaultRoot, configFolder);
     const configDir = relativeConfigName(vaultRoot, configDirUri);
-    if (!this.host.workspace.isTrusted()) {
-      return {
-        trusted: false,
-        configDir,
-        configDirUri: configDirUri,
-        plugins: [],
-      };
+    if (!this.allows(vaultRoot)) {
+      return { trusted: false, configDir, configDirUri, plugins: [] };
     }
-    const listUri = joinContained(configDirUri, "community-plugins.json");
-    if (!listUri) {
-      return {
-        trusted: true,
-        configDir,
-        configDirUri: configDirUri,
-        plugins: [],
-      };
-    }
-    const rawList = await this.readOptionalUtf8(vaultRoot, listUri);
-    const enabledIds = parseEnabledPluginIds(rawList);
     const plugins: CommunityPluginBundle[] = [];
-    for (const pluginId of enabledIds) {
+    for (const pluginId of await this.enabledPluginIds(
+      vaultRoot,
+      configFolder,
+    )) {
       const bundle = await this.loadSinglePlugin(
         vaultRoot,
         configDirUri,
@@ -63,12 +50,25 @@ export class CommunityPluginLoader {
         plugins.push(bundle);
       }
     }
-    return {
-      trusted: true,
-      configDir,
-      configDirUri: configDirUri,
-      plugins,
-    };
+    return { trusted: true, configDir, configDirUri, plugins };
+  }
+
+  /**
+   * The plugins the vault turns on (`community-plugins.json`). Reading the
+   * list runs nothing, so it needs no trust: it is what the owner is asked about.
+   */
+  async enabledPluginIds(
+    vaultRoot: string,
+    configFolder: string | undefined,
+  ): Promise<string[]> {
+    const configDirUri = resolveConfigDirectory(vaultRoot, configFolder);
+    const listUri = joinContained(configDirUri, "community-plugins.json");
+    if (!listUri) {
+      return [];
+    }
+    return parseEnabledPluginIds(
+      await this.readOptionalUtf8(vaultRoot, listUri),
+    );
   }
 
   async loadPluginData(
@@ -76,7 +76,7 @@ export class CommunityPluginLoader {
     configFolder: string | undefined,
     pluginId: string,
   ): Promise<unknown> {
-    this.assertTrusted("load plugin data");
+    this.assertAllowed(vaultRoot, "load plugin data");
     const dataUri = await this.authorizePluginFile(
       vaultRoot,
       configFolder,
@@ -96,7 +96,7 @@ export class CommunityPluginLoader {
     pluginId: string,
     data: unknown,
   ): Promise<void> {
-    this.assertTrusted("save plugin data");
+    this.assertAllowed(vaultRoot, "save plugin data");
     const dataUri = await this.authorizePluginFile(
       vaultRoot,
       configFolder,
@@ -207,9 +207,13 @@ export class CommunityPluginLoader {
     await check(vaultRoot, uri);
   }
 
-  private assertTrusted(operation: string): void {
-    if (!this.host.workspace.isTrusted()) {
-      throw new Error(`Cannot ${operation} in an untrusted workspace.`);
+  private allows(vaultRoot: string): boolean {
+    return this.host.workspace.vaultCode.answer(vaultRoot) === true;
+  }
+
+  private assertAllowed(vaultRoot: string, operation: string): void {
+    if (!this.allows(vaultRoot)) {
+      throw new Error(`Cannot ${operation} in an untrusted vault.`);
     }
   }
 }

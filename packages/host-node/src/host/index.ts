@@ -19,6 +19,8 @@ export {
   type EditorRoutes,
 } from "./routes";
 export type { HostIdentity } from "./services";
+/** What an embedder implements to let a vault's own code run (StartOptions.vaultCode). */
+export type { VaultCodeTrust } from "@workshop/markdown/portable";
 export type { MenuContribution } from "./context-menu";
 export { serveFile, serveStatic } from "./static";
 export { listVault, isInside } from "./vault";

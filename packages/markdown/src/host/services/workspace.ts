@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type {
   Extensions,
   HostWorkspace,
+  VaultCodeTrust,
   WorkspaceStorage,
 } from "../../shared/host";
 import { createDiagnostics } from "../diagnostics";
@@ -15,6 +16,7 @@ export function createHostWorkspace(): HostWorkspace {
         folder.uri.toString(),
       ),
     isTrusted: () => vscode.workspace.isTrusted,
+    vaultCode: workspaceTrust,
     read: async (uri) => vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
     async stat(uri) {
       const info = await vscode.workspace.fs.stat(vscode.Uri.parse(uri));
@@ -29,6 +31,19 @@ export function createHostWorkspace(): HostWorkspace {
     revealTextEditor,
   };
 }
+
+/**
+ * VS Code asks for trust itself, once for the whole window, and offers it
+ * again from its Restricted Mode banner; a vault's code follows that answer.
+ */
+const workspaceTrust: VaultCodeTrust = {
+  answer: () => vscode.workspace.isTrusted,
+  request: async () => vscode.workspace.isTrusted,
+  onDidChange(listener) {
+    const subscription = vscode.workspace.onDidGrantWorkspaceTrust(listener);
+    return () => subscription.dispose();
+  },
+};
 
 /** The extension's workspace state (a VS Code Memento). */
 export function createWorkspaceStorage(

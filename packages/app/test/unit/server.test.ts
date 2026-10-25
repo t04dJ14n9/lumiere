@@ -351,3 +351,19 @@ test("the window's layout and theme are kept, and only valid changes apply", asy
     },
   );
 });
+
+test("no request can trust a vault that did not ask", async (t) => {
+  const { server, vault, cookie } = await fixture(t);
+  const questions = await send(server.port, "/api/trust", {
+    headers: { cookie },
+  });
+  assert.deepEqual(JSON.parse(questions.body), []);
+  const granted = await send(server.port, "/api/trust", {
+    method: "POST",
+    headers: { cookie, "content-type": "application/json" },
+    body: JSON.stringify({ vault, allowed: true }),
+  });
+  assert.equal(granted.status, 400);
+  const unauthenticated = await send(server.port, "/api/trust");
+  assert.equal(unauthenticated.status, 401);
+});

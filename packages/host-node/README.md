@@ -50,6 +50,16 @@ Paths are checked as VS Code's host checks them (`paths.ts`): inside the
 workspace after `..` is resolved, and still inside through symbolic links.
 The workspace may not be the filesystem root.
 
+A vault's own code (Obsidian community plugins) runs only where the
+embedder says so. `startLumiere({ vaultCode })` takes its answer, a
+`VaultCodeTrust` (exported from the main entry): may this vault's code run,
+and ask the owner, once per vault. The plugins see it as
+`workspace.vaultCode`. Without it, `noVaultCode` (`inert.ts`) refuses every
+vault and asks no one; DSH runs this way. The app asks in its window
+(`packages/app`). `workspace.isTrusted()` stays true: the owner opened these
+folders, so remote images and media load. A vault's code is the separate,
+per-vault question.
+
 ## The contracts it defines
 
 | Module | Between | What |
@@ -81,7 +91,7 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/ui-services.ts`: dialogs, the clipboard and the active editor, drawn by the page.
 - `src/host/workspace.ts`, `src/host/watch.ts`: workspace files and state, and file watching.
 - `src/host/paths.ts`: containment and safe writes.
-- `src/host/inert.ts`: Git, diffs, status entries and panels, which have no counterpart yet.
+- `src/host/inert.ts`: Git, diffs, status entries and panels, which have no counterpart yet; `noVaultCode`, for an embedder that cannot ask.
 - `src/page/shim.ts`, `src/page/ui.ts`, `src/page/theme.ts`: the page's stand-in for VS Code.
 - `scripts/assets.mjs`: what every embedder ships beside its code (the editor, the shim, the settings).
 

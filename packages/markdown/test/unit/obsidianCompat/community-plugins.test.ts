@@ -222,7 +222,9 @@ test("CommunityPluginLoader loads enabled bundles, enforces path containment and
   t.after(() => f.root.dispose());
 
   let trusted = true;
-  f.workbench.workspace.isTrusted = () => trusted;
+  Object.assign(f.workbench.workspace.vaultCode, {
+    answer: () => trusted,
+  });
 
   await f.change(
     `${ROOT_A}/.obsidian/community-plugins.json`,
@@ -284,6 +286,6 @@ test("CommunityPluginLoader loads enabled bundles, enforces path containment and
   assert.equal(untrustedLoaded.plugins.length, 0);
   await assert.rejects(
     loader.savePluginData(ROOT_A, ".obsidian", "valid-plugin", { count: 7 }),
-    /untrusted workspace/,
+    /untrusted vault/,
   );
 });

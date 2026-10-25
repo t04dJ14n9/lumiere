@@ -168,6 +168,24 @@ Each contract is written once, in code. Change both sides in the same PR.
 | Server process | `packages/app/src/server/contract.ts` | server ↔ `apps/desktop/src-tauri/src/server.rs` |
 | Server API | `packages/app/src/server/api.ts` (table in its README) | server ↔ window, desktop |
 | Window ↔ Tauri | `packages/app/src/shell/tauri.ts` | window ↔ `capabilities/shell.json`, `menu.rs` |
+| Vault code trust | `VaultCodeTrust` in `packages/markdown/src/shared/host/workspace.ts` | plugins ↔ VS Code adapter, host-node ← app |
+
+A vault's own code (Obsidian community plugins) runs only where the owner
+said yes. The plugins ask `HostWorkspace.vaultCode`: its answer for a vault,
+a request to ask, and a change event. Vaults are named by root URI.
+
+- VS Code answers with workspace trust (Restricted Mode) and never asks
+  itself.
+- host-node takes the embedder's answer as `StartOptions.vaultCode`. An
+  embedder that cannot ask leaves it out and gets `noVaultCode` (`inert.ts`):
+  every vault refused, nobody asked. DSH does this.
+- The app asks once per vault (`vault-trust.ts`). A waiting question reaches
+  the window as the `{"type":"trust"}` event on `GET /api/events`; the window
+  reads the questions with `GET /api/trust` and posts the answer to
+  `POST /api/trust` `{"vault","allowed"}`, accepted only for a vault that
+  asked. Answers are kept in `trust.json` in the data folder.
+- `isTrusted()` stays true outside VS Code: it covers remote images and
+  media, not a vault's code.
 
 ## 5. Milestones
 
@@ -288,7 +306,38 @@ The pass, in the Tauri window:
      tab.
    - With the app already running, the same file goes to the running window.
 9. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
-10. **Errors.** Rename the vault folder while it is open, or start with a
+10. **Vault plugins.** In a second throwaway vault, never the owner's, with
+    one harmless plugin that marks the page:
+
+    ```bash
+    v=/tmp/lumiere-plugin-vault; p=$v/.obsidian/plugins/hello-test
+    mkdir -p "$p" && echo '# One' > "$v/One.md" && echo '# Two' > "$v/Two.md"
+    echo '["hello-test"]' > "$v/.obsidian/community-plugins.json"
+    echo '{"id":"hello-test","name":"Hello Test","version":"1.0.0"}' > "$p/manifest.json"
+    cat > "$p/main.js" <<'EOF'
+    const { Plugin, Notice } = require("obsidian");
+    module.exports = class extends Plugin {
+      onload() {
+        document.documentElement.dataset.helloTest = "on";
+        new Notice("Hello Test is on");
+      }
+    };
+    EOF
+    ```
+
+    - Opening a note asks once, even with both notes open. Keep Them Off
+      has the focus.
+    - Keep Them Off: no notice, and `data-hello-test` is missing from the
+      note's `<html>`. After a relaunch nothing asks, and
+      `/tmp/lumiere-dev/trust.json` holds the answer.
+    - Open Obsidian Community Plugins Marketplace asks again after a no.
+    - Trust and Turn On: the notice shows in every open note of the vault
+      without reopening it.
+    - A copy of the vault at another path is asked about separately.
+    - DSH on the same vault never asks and never runs the plugin.
+    - VS Code and Cursor follow workspace trust: in Restricted Mode the
+      plugin stays off, and trusting the folder turns it on.
+11. **Errors.** Rename the vault folder while it is open, or start with a
    broken `LUMIERE_SERVER`: a message appears, never a blank window.
 
 Report each problem as an issue or a PR. For each fix:

@@ -12,6 +12,7 @@ import {
   pluginRank,
   type ContributedSetting,
   type HostSettings,
+  type VaultCodeTrust,
 } from "@workshop/markdown/portable";
 import {
   ContextKeys,
@@ -19,6 +20,7 @@ import {
   type MenuContribution,
 } from "./context-menu";
 import { NoteDocuments } from "./documents";
+import { noVaultCode } from "./inert";
 import { PanelHub } from "./panels";
 import {
   createHostCommands,
@@ -39,6 +41,11 @@ export interface StartOptions {
   /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
   readonly logger: Logger;
+  /**
+   * Asks the owner whether a vault's own code (Obsidian community plugins)
+   * may run, once per vault. Without it, none runs.
+   */
+  readonly vaultCode?: VaultCodeTrust;
 }
 
 export interface LumiereHost {
@@ -74,6 +81,7 @@ export async function startLumiere(
     markdownDist,
     data: options.data,
     log,
+    vaultCode: options.vaultCode ?? noVaultCode,
   });
   const vault = createNodeVaultSystem({
     documents,

@@ -13,13 +13,21 @@ export interface FileEntry {
   readonly kind: "note" | "pdf" | "image" | "other";
 }
 
+/** A vault waiting for the owner to say whether its plugins may run. */
+export interface TrustQuestion {
+  readonly vault: string;
+  readonly plugins: readonly string[];
+}
+
 export type ServerEvent =
   | {
       readonly type: "vaults";
       readonly open: readonly string[];
       readonly added?: string;
     }
-  | { readonly type: "open"; readonly vault: string; readonly path: string };
+  | { readonly type: "open"; readonly vault: string; readonly path: string }
+  /** The questions waiting changed; read them with `trustQuestions`. */
+  | { readonly type: "trust" };
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -48,6 +56,9 @@ export const api = {
     ).files,
   /** A note or folder from outside the shell (a menu, a dropped path). */
   open: (path: string) => post("/api/open", { path }),
+  trustQuestions: () => request<TrustQuestion[]>("/api/trust"),
+  decideTrust: (vault: string, allowed: boolean) =>
+    post("/api/trust", { vault, allowed }),
   events(listener: (event: ServerEvent) => void): () => void {
     const source = new EventSource("/api/events");
     source.onmessage = (message: MessageEvent<string>) =>

@@ -56,6 +56,21 @@ async function openMarketplaceCommand(
     arg && typeof arg === "object"
       ? (arg as { query?: string; quickPick?: boolean })
       : {};
+  const vault = await resolveTargetVault(ctx.vaults, ctx.activeEditor.note());
+  if (!vault) {
+    ctx.dialogs.error(
+      "Open a vault folder to manage Obsidian community plugins.",
+    );
+    return;
+  }
+  // Opening the marketplace asks for plugins in this vault, so the owner is
+  // asked about its code even after an earlier no.
+  if (!(await ctx.workspace.vaultCode.request(vault.index.root, []))) {
+    ctx.dialogs.error(
+      "Trust this folder to browse and install Obsidian community plugins.",
+    );
+    return;
+  }
   const activePanel = ctx.editors.active();
   if (activePanel && !options.quickPick) {
     activePanel.rpc.notify(protocol, "openModal", {
@@ -63,28 +78,15 @@ async function openMarketplaceCommand(
     });
     return;
   }
-  await runQuickPickMarketplace(ctx, service, options.query);
+  await runQuickPickMarketplace(ctx, service, vault, options.query);
 }
 
 async function runQuickPickMarketplace(
   ctx: Context,
   service: CommunityMarketplaceService,
+  vault: Vault,
   initialQuery?: string,
 ): Promise<void> {
-  if (!ctx.workspace.isTrusted()) {
-    ctx.dialogs.error(
-      "Trust this workspace to browse and install Obsidian community plugins.",
-    );
-    return;
-  }
-  const activeUri = ctx.activeEditor.note();
-  const vault = await resolveTargetVault(ctx.vaults, activeUri);
-  if (!vault) {
-    ctx.dialogs.error(
-      "Open a vault folder to manage Obsidian community plugins.",
-    );
-    return;
-  }
   const configFolder =
     ctx.settings.effective?.get(
       "obsidianCompat.configFolder",
