@@ -52,6 +52,14 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     registerNativeActions(ctx);
     registerExCommands(ctx);
     registerVimExtension(ctx);
+    // BH-021: default <C-p>→k steals Quick Open and races suggest Ctrl+P.
+    releaseQuickOpenFromVim(ctx);
+    // BH-029: default <C-a> increment steals Select All.
+    releaseSelectAllFromVim(ctx);
+    // BH-046: vim-core has foldCode but no za/zc/zo maps; wire Obsidian folds.
+    installVimFoldKeys(ctx);
+    // BH-047: INSERT Ctrl+[ must outdent (Obsidian), not Esc.
+    installVimBracketIndentKeys(ctx);
   },
 };
 
@@ -97,6 +105,17 @@ function registerVimService(ctx: Context): void {
 function registerShortcutConsumer(ctx: Context): void {
   ctx.effect(() =>
     ctx.commands.register("vim:consume-host-shortcut", () => true),
+  );
+  // BH-034: host keybinding blocks files.newUntitledFile; replay <C-n> so
+  // vim-core's keyToKey → j (and insert-mode completion) still run.
+  ctx.effect(() =>
+    ctx.commands.register("vim:handle-ctrl-n", () => {
+      const cm = getCM(ctx.editor.view);
+      if (cm) {
+        Vim.handleKey(cm, "<C-n>", "api");
+      }
+      return true;
+    }),
   );
 }
 
@@ -210,4 +229,88 @@ function vimExtensions(ctx: Context, status: boolean) {
       },
     }),
   ];
+}
+
+/** BH-046: map za/zc/zo/zM/zR onto Lumière fold commands (gutter/Toggle Fold already work). */
+function installVimFoldKeys(ctx: Context): void {
+  ctx.effect(() => {
+    const run = (id: string) => {
+      void ctx.commands.run(id);
+    };
+    Vim.defineAction("lumiereToggleFold", () => {
+      run("editor:toggle-fold");
+    });
+    Vim.defineAction("lumiereFoldMore", () => {
+      run("editor:fold-more");
+    });
+    Vim.defineAction("lumiereFoldLess", () => {
+      run("editor:fold-less");
+    });
+    Vim.defineAction("lumiereFoldAll", () => {
+      run("editor:fold-all");
+    });
+    Vim.defineAction("lumiereUnfoldAll", () => {
+      run("editor:unfold-all");
+    });
+    const maps: readonly (readonly [string, string])[] = [
+      ["za", "lumiereToggleFold"],
+      ["zc", "lumiereFoldMore"],
+      ["zo", "lumiereFoldLess"],
+      ["zM", "lumiereFoldAll"],
+      ["zR", "lumiereUnfoldAll"],
+    ];
+    for (const [keys, name] of maps) {
+      Vim.mapCommand(keys, "action", name, {}, {});
+    }
+    return () => {
+      const anyMode = undefined as unknown as string;
+      for (const [keys] of maps) {
+        Vim.unmap(keys, anyMode);
+      }
+    };
+  });
+}
+
+/** BH-047: drop vim-core <C-[>→<Esc>; editor capture outdents (indentationDom). */
+function installVimBracketIndentKeys(ctx: Context): void {
+  ctx.effect(() => {
+    const anyMode = undefined as unknown as string;
+    Vim.unmap("<C-[>", "insert");
+    Vim.unmap("<C-[>", anyMode);
+    return () => {
+      Vim.map("<C-[>", "<Esc>", anyMode);
+      Vim.map("<C-[>", "<Esc>", "insert");
+    };
+  });
+}
+
+/** Drop vim-core's <C-p>→k so host Quick Open / suggest Ctrl+P can run (BH-021). */
+function releaseQuickOpenFromVim(ctx: Context): void {
+  ctx.effect(() => {
+    // Default <C-p>→k has no mode context; typings require a string.
+    const anyMode = undefined as unknown as string;
+    Vim.unmap("<C-p>", anyMode);
+    return () => {
+      // Restore the library default when this vim fiber stops.
+      Vim.map("<C-p>", "k", anyMode);
+    };
+  });
+}
+
+/** Drop vim-core's <C-a> increment so Select All can run (BH-029). */
+function releaseSelectAllFromVim(ctx: Context): void {
+  ctx.effect(() => {
+    const anyMode = undefined as unknown as string;
+    Vim.unmap("<C-a>", anyMode);
+    return () => {
+      // Library default is an action map, not keyToKey; re-map via Ex.
+      Vim.mapCommand(
+        "<C-a>",
+        "action",
+        "incrementNumberToken",
+        { increase: true, backtrack: false },
+        { isEdit: true },
+      );
+    };
+  });
 }

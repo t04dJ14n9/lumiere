@@ -107,6 +107,57 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     );
     assert.ok(!binding.mac?.includes("cmd"));
   }
+  // BH-024: formatting owns Ctrl+B/I; consume must yield when formatting is on.
+  for (const chord of ["ctrl+b", "ctrl+i"]) {
+    const binding = vim.find((item) => item.key === chord);
+    assert.ok(binding, chord);
+    assert.match(binding!.when ?? "", /!lumiere\.markdown\.plugin\.formatting/);
+  }
+  // BH-034: Ctrl+N owned by handleVimCtrlN (blocks Untitled; replays <C-n>).
+  assert.ok(
+    keybindings.some(
+      (binding) =>
+        binding.command === "lumiere.markdown.handleVimCtrlN" &&
+        binding.key === "ctrl+n" &&
+        binding.mac === "ctrl+n",
+    ),
+    "handleVimCtrlN must bind ctrl+n",
+  );
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+n"),
+    "consumeVimHostShortcut must not bind ctrl+n (handleVimCtrlN owns it)",
+  );
+  // BH-026: Ctrl+Shift+H must reach workbench Replace in Files (not consumed).
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+shift+h"),
+    "consumeVimHostShortcut must not bind ctrl+shift+h",
+  );
+  // BH-027: Ctrl+Shift+X → Extensions; Ctrl+Shift+T → Reopen Closed Editor.
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+shift+x"),
+    "consumeVimHostShortcut must not bind ctrl+shift+x",
+  );
+  assert.ok(
+    !vim.some((binding) => binding.key === "ctrl+shift+t"),
+    "consumeVimHostShortcut must not bind ctrl+shift+t",
+  );
+  // BH-030: Ctrl+Alt+0..6 → Set Heading; vim-core has no <C-A-N>.
+  for (let level = 0; level <= 6; level++) {
+    const chord = `ctrl+alt+${level}`;
+    assert.ok(
+      !vim.some((binding) => binding.key === chord),
+      `consumeVimHostShortcut must not bind ${chord}`,
+    );
+    assert.ok(
+      keybindings.some(
+        (binding) =>
+          binding.command === `lumiere.markdown.setHeading${level}` &&
+          binding.key === chord &&
+          binding.mac === `cmd+alt+${level}`,
+      ),
+      `setHeading${level} must bind ${chord} / cmd+alt+${level}`,
+    );
+  }
   assert.ok(
     keybindings.some(
       (binding) =>
@@ -184,6 +235,26 @@ test("Go to Heading overrides the symbol shortcut only for enabled Workshop pane
     menus.commandPalette.find((item) => item.command === GO_TO_HEADING_COMMAND)
       ?.when,
     "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline",
+  );
+});
+
+test("Go to Line owns Ctrl+G for Lumière panels (BH-033)", async () => {
+  const { commands, keybindings, menus } = await contributions();
+  const commandId = "lumiere.markdown.goToLine";
+  assert.equal(
+    commands.find((command) => command.command === commandId)?.title,
+    "Go to Line…",
+  );
+  const binding = keybindings.find((binding) => binding.command === commandId)!;
+  assert.equal(binding.key, "ctrl+g");
+  assert.equal(binding.mac, "ctrl+g");
+  assert.equal(
+    binding.when,
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.editorFocus",
+  );
+  assert.equal(
+    menus.commandPalette.find((item) => item.command === commandId)?.when,
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor",
   );
 });
 

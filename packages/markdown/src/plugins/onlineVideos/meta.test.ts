@@ -25,3 +25,61 @@ test("the card line shows author and length when known, else the ID", () => {
     "YouTube · Rick Astley",
   );
 });
+
+test("playlist meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("YouTube", "PLrAXtmRdnEQy6nuLMVjHUkRUhDiXqVc1J", {}, "playlist"),
+    "YouTube · Playlist",
+  );
+  assert.equal(
+    videoMeta(
+      "YouTube",
+      "PLrAXtmRdnEQy6nuLMVjHUkRUhDiXqVc1J",
+      { author: "Redlist" },
+      "playlist",
+    ),
+    "YouTube · Playlist · Redlist",
+  );
+});
+
+test("bangumi meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("Bilibili", "ep409506", {}, "bangumi"),
+    "Bilibili · Bangumi",
+  );
+  assert.equal(
+    videoMeta(
+      "Bilibili",
+      "ep409506",
+      { author: "哔哩哔哩番剧", duration: 1441 },
+      "bangumi",
+    ),
+    "Bilibili · Bangumi · 哔哩哔哩番剧 · 24:01",
+  );
+});
+
+test("channel meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("YouTube", "UC_x5XG1OV2P6uZZ5FSM9Ttw", {}, "channel"),
+    "YouTube · Channel",
+  );
+});
+
+test("space meta labels the kind before author or id", () => {
+  assert.equal(
+    videoMeta("Bilibili", "space:2", {}, "space"),
+    "Bilibili · Space",
+  );
+  assert.equal(
+    videoMeta("Bilibili", "space:2", { title: "碧诗" }, "space"),
+    "Bilibili · Space",
+  );
+});
+
+test("live meta labels the kind before author or id", () => {
+  assert.equal(videoMeta("Bilibili", "live:3", {}, "live"), "Bilibili · Live");
+  assert.equal(
+    videoMeta("Bilibili", "live:3", { title: "哔哩哔哩音悦台" }, "live"),
+    "Bilibili · Live",
+  );
+});

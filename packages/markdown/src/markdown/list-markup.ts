@@ -35,6 +35,31 @@ export function continuationPrefix(text: string): string {
   return quotes + " ".repeat(marker.length + task.length);
 }
 
+/**
+ * Optional quotes, then a CommonMark thematic break (≤3 spaces, 3+ of the
+ * same `*`/`-`/`_` with optional spaces). Used so Shift+Enter does not treat
+ * `- - -` / `* * *` as list items (BH-093).
+ */
+const thematicBreakLine =
+  /^((?:[ \t]*>[ \t]?)*)( {0,3}([-*_])(?:[ \t]*\3){2,}[ \t]*)$/u;
+
+/**
+ * Soft-break prefix for Shift+Enter: same as `continuationPrefix`, except a
+ * thematic-break line keeps only its quote markers (BH-093). Spaced HRs like
+ * `- - -` otherwise look like a list marker and pick up a 2-space indent.
+ */
+export function isThematicBreakLine(text: string): boolean {
+  return thematicBreakLine.test(text);
+}
+
+export function softBreakPrefix(text: string): string {
+  const match = thematicBreakLine.exec(text);
+  if (match) {
+    return match[1] ?? "";
+  }
+  return continuationPrefix(text);
+}
+
 /** Whether the line is only blockquote markers, as an empty quoted line is. */
 export function isEmptyQuote(text: string): boolean {
   const { quotes, marker } = lineMarkup(text);

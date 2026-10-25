@@ -39,12 +39,13 @@ test("a sheet without frontmatter reserves nothing unless an empty draft is open
 });
 
 test("each simple property row is one control, plus the heading and add button", () => {
-  assert.equal(estimate("---\nfield: value\n---\n"), 130.5);
+  // VALUE_MIN includes +4px: pad grows past 1.75em border-box min-height.
+  assert.equal(estimate("---\nfield: value\n---\n"), 134.5);
   const rows = Array.from(
     { length: 28 },
     (_, index) => `field${index}: value ${index}`,
   ).join("\n");
-  assert.equal(estimate(`---\n${rows}\n---\n`), 873);
+  assert.equal(estimate(`---\n${rows}\n---\n`), 985);
 });
 
 test("a collapsed sheet reserves the heading, not the rows", () => {

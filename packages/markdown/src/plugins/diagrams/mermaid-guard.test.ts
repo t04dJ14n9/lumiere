@@ -1,28 +1,46 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { showMermaidGuard } from "./renderer";
+import {
+  mermaidInternalLinkTarget,
+  placeOfMermaidClick,
+  showMermaidGuard,
+  wireMermaidInternalLinks,
+} from "./renderer";
 import { createMermaidTrust, MERMAID_TRUST_KEY } from "./trust";
+
+type StubEvent = {
+  button?: number;
+  key?: string;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  defaultPrevented?: boolean;
+  propagationStopped?: boolean;
+  preventDefault(): void;
+  stopPropagation(): void;
+};
 
 type Stub = {
   className: string;
   attrs: Record<string, string>;
   children: Stub[];
+  parentElement?: Stub;
   textContent: string;
   type?: string;
-  listeners: Record<
-    string,
-    ((event: { preventDefault(): void; stopPropagation(): void }) => void)[]
-  >;
+  listeners: Record<string, ((event: StubEvent) => void)[]>;
   append(...nodes: Stub[]): void;
   replaceChildren(...nodes: Stub[]): void;
   removeAttribute(name: string): void;
   setAttribute(name: string, value: string): void;
+  getAttribute(name: string): string | null;
+  querySelector?(selector: string): Stub | null;
+  querySelectorAll?(selector: string): Stub[];
+  closest?(selector: string): Stub | null;
+  contains?(other: unknown): boolean;
   addEventListener?(
     type: string,
-    listener: (event: {
-      preventDefault(): void;
-      stopPropagation(): void;
-    }) => void,
+    listener: (event: StubEvent) => void,
+    options?: { signal?: AbortSignal },
   ): void;
   createElement?(tag: string): Stub;
 };
@@ -35,10 +53,14 @@ function el(_tag = "div"): Stub {
     textContent: "",
     listeners: {},
     append(...nodes) {
-      this.children.push(...nodes);
+      for (const child of nodes) {
+        child.parentElement = this;
+        this.children.push(child);
+      }
     },
     replaceChildren(...nodes) {
-      this.children = [...nodes];
+      this.children = [];
+      this.append(...nodes);
     },
     removeAttribute(name) {
       delete this.attrs[name];
@@ -46,11 +68,77 @@ function el(_tag = "div"): Stub {
     setAttribute(name, value) {
       this.attrs[name] = value;
     },
-    addEventListener(type, listener) {
-      (this.listeners[type] ??= []).push(listener);
+    getAttribute(name) {
+      return this.attrs[name] ?? null;
+    },
+    querySelector(selector) {
+      return this.querySelectorAll!(selector)[0] ?? null;
+    },
+    querySelectorAll(selector) {
+      const results: Stub[] = [];
+      const visit = (current: Stub) => {
+        for (const child of current.children) {
+          if (matchesSelector(child, selector)) {
+            results.push(child);
+          }
+          visit(child);
+        }
+      };
+      visit(this);
+      return results;
+    },
+    closest(selector) {
+      let cur: Stub | undefined = node;
+      while (cur) {
+        if (matchesSelector(cur, selector)) {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return null;
+    },
+    contains(other) {
+      if (other === this) {
+        return true;
+      }
+      return this.children.some((child) => child.contains!(other));
+    },
+    addEventListener(type, listener, options) {
+      if (options?.signal?.aborted) {
+        return;
+      }
+      const list = (this.listeners[type] ??= []);
+      list.push(listener);
+      options?.signal?.addEventListener("abort", () => {
+        const index = list.indexOf(listener);
+        if (index >= 0) {
+          list.splice(index, 1);
+        }
+      });
     },
   };
   return node;
+}
+
+function matchesSelector(node: Stub, selector: string): boolean {
+  if (selector.startsWith(".")) {
+    const token = selector.slice(1);
+    return node.className.split(/\s+/).includes(token);
+  }
+  return false;
+}
+
+function makeEvent(init: Partial<StubEvent> = {}): StubEvent {
+  return {
+    button: 0,
+    ...init,
+    preventDefault() {
+      this.defaultPrevented = true;
+    },
+    stopPropagation() {
+      this.propagationStopped = true;
+    },
+  };
 }
 
 function hostWithDoc() {
@@ -126,10 +214,7 @@ test("showMermaidGuard offers Allow until the vault is trusted", () => {
   const button = actions!.children[0]!;
   assert.equal(button.textContent, "Allow");
   assert.equal(button.type, "button");
-  button.listeners.click![0]!({
-    preventDefault() {},
-    stopPropagation() {},
-  });
+  button.listeners.click![0]!(makeEvent());
   assert.equal(allowed, true);
 });
 
@@ -147,4 +232,93 @@ test("mermaid trust persists Allow like Obsidian mermaid-vault-trust", () => {
   assert.equal(trust.isTrusted(), true);
   assert.equal(bag.get(MERMAID_TRUST_KEY), "1");
   assert.equal(createMermaidTrust(storage).isTrusted(), true);
+});
+
+test("mermaidInternalLinkTarget resolves label text, data-id, and flowchart id fallback", () => {
+  const labeled = el("g");
+  labeled.className = "node default internal-link";
+  const label = el("g");
+  label.className = "label";
+  label.textContent = "  Biology  ";
+  labeled.append(label);
+  assert.equal(
+    mermaidInternalLinkTarget(labeled as unknown as Element),
+    "Biology",
+  );
+
+  const byDataId = el("g");
+  byDataId.className = "node default internal-link";
+  byDataId.setAttribute("data-id", "Chemistry");
+  assert.equal(
+    mermaidInternalLinkTarget(byDataId as unknown as Element),
+    "Chemistry",
+  );
+
+  const byFlowchartId = el("g");
+  byFlowchartId.className = "node default internal-link";
+  byFlowchartId.setAttribute("id", "mw-1a2b-3c4d-1-flowchart-Physics-0");
+  assert.equal(
+    mermaidInternalLinkTarget(byFlowchartId as unknown as Element),
+    "Physics",
+  );
+});
+
+test("wireMermaidInternalLinks binds click, modifier keys, keyboard, and abort cleanup", () => {
+  const host = el("pre");
+  const svg = el("svg");
+  const nodeA = el("g");
+  nodeA.className = "node default internal-link";
+  const labelA = el("g");
+  labelA.className = "label";
+  labelA.textContent = "Biology";
+  nodeA.append(labelA);
+
+  const nodeB = el("g");
+  nodeB.className = "node default internal-link";
+  nodeB.setAttribute("data-id", "Chemistry");
+  svg.append(nodeA, nodeB);
+  host.append(svg);
+
+  const opened: { target: string; side: boolean; tab: boolean }[] = [];
+  const abort = new AbortController();
+  const count = wireMermaidInternalLinks(
+    host as unknown as ParentNode,
+    (target, place) => opened.push({ target, ...place }),
+    abort.signal,
+  );
+  assert.equal(count, 2);
+  assert.equal(nodeA.getAttribute("data-href"), "Biology");
+  assert.equal(nodeA.getAttribute("data-wiki"), "true");
+  assert.equal(nodeA.getAttribute("role"), "link");
+  assert.equal(nodeA.getAttribute("tabindex"), "0");
+
+  const clickPlain = makeEvent({ button: 0 });
+  nodeA.listeners.click![0]!(clickPlain);
+  assert.equal(clickPlain.defaultPrevented, true);
+  assert.equal(clickPlain.propagationStopped, true);
+  assert.deepEqual(opened.at(-1), {
+    target: "Biology",
+    side: false,
+    tab: false,
+  });
+
+  const clickSide = makeEvent({ button: 0, ctrlKey: true, altKey: true });
+  nodeB.listeners.click![0]!(clickSide);
+  assert.deepEqual(opened.at(-1), {
+    target: "Chemistry",
+    side: true,
+    tab: false,
+  });
+
+  const keyEnter = makeEvent({ key: "Enter" });
+  nodeA.listeners.keydown![0]!(keyEnter);
+  assert.equal(opened.length, 3);
+
+  assert.deepEqual(placeOfMermaidClick({ metaKey: true, altKey: false }), {
+    side: false,
+    tab: false,
+  });
+
+  abort.abort();
+  assert.equal(nodeA.listeners.click?.length ?? 0, 0);
 });

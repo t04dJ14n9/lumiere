@@ -79,9 +79,20 @@ test("Properties inline widgets, pending rows, pill keys and shared presentation
   await page.keyboard.press("ControlOrMeta+;");
   const pending = sheet.locator("[data-property-new]");
   await expect(pending.locator("input")).toBeFocused();
+  // Host GUI BH-008: suggestions are open on an empty name; Escape must remove
+  // the draft row (not only close the list).
+  await expect(pending.locator('[role="option"]').first()).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(pending).toHaveCount(1);
+  await expect(pending).toHaveCount(0);
   expect(await page.evaluate(() => window.harness.text)).toBe(beforePending);
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("ControlOrMeta+;");
+  await expect(pending.locator("input")).toBeFocused();
+  await page.getByRole("textbox", { name: "Markdown content" }).click();
+  await expect(pending).toHaveCount(0);
+  expect(await page.evaluate(() => window.harness.text)).toBe(beforePending);
+  await page.keyboard.press("ControlOrMeta+;");
+  await expect(pending.locator("input")).toBeFocused();
   await pending.locator("input").fill("title");
   await page.keyboard.press("Enter");
   await expect(pending.locator("input")).toBeFocused();
@@ -123,5 +134,42 @@ test("Properties inline widgets, pending rows, pill keys and shared presentation
   });
   await expect(page.locator(".metadata-container").nth(1)).toHaveClass(
     /is-collapsed/,
+  );
+});
+
+test("cssclasses frontmatter applies classes onto editor DOM and custom callouts honor CSS custom properties", async ({
+  page,
+}) => {
+  const doc = [
+    "---",
+    "cssclasses:",
+    "  - custom-showcase-page",
+    "  - wide-card-note",
+    "---",
+    "",
+    "> [!custom-question-type] Custom Callout Title",
+    "> Styled via custom CSS callout rules.",
+  ].join("\n");
+  await open(page, doc);
+  await page.evaluate(() => {
+    window.harness.setSnippets([
+      `.cm-editor.custom-showcase-page .callout[data-callout="custom-question-type"] {
+        --callout-color: 0, 184, 212;
+        --callout-icon: lucide-alert-circle;
+      }`,
+    ]);
+  });
+  const editor = page.locator(".cm-editor").first();
+  await expect(editor).toHaveClass(/custom-showcase-page/);
+  await expect(editor).toHaveClass(/wide-card-note/);
+  await expect(editor).toHaveAttribute(
+    "data-cssclasses",
+    "custom-showcase-page wide-card-note",
+  );
+  const callout = page.locator(`.callout[data-callout="custom-question-type"]`);
+  await expect(callout).toBeVisible();
+  await expect(callout.locator(".callout-icon")).toHaveAttribute(
+    "data-lucide",
+    "alert-circle",
   );
 });

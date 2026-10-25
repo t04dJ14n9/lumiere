@@ -78,6 +78,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `toggleSourceMode` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `openAsText` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `toggleTextEditor` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `goToLine` | Go to line | Ctrl+G prompts for a line and jumps in Live Preview / Source (Host GUI BH-033) | Unit + Host GUI BH-033 | not observed |
 | Default editing mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Readable line length | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Strict line breaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -100,8 +101,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Default location for new attachments | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Excluded files | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | (no equivalent) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **links**: plain click opens a rendered link | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Cmd/Ctrl-click opens revealed   source | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **links**: plain click reveals a rendered link (BH-020) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Cmd/Ctrl-click follows in the same editor (BH-020) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | a click that ends a text selection only selects | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Unresolved   wikilinks get `is-unresolved` styling while not revealed, from   `vault.unresolvedLinks` (the host pushes the note's set when it changes after   each re-resolution, through `VaultIndex.onDidResolve`: panel kernels do not   see the window's `vault/resolved` event) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Opening goes through `links/open` (§16) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -139,6 +140,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.toggleTextEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.goToLine | Go to line | Ctrl+G Go to Line… on custom editor (Host GUI BH-033) | Unit + Host GUI BH-033 | not observed |
 | Command: lumiere.markdown.ideContext.copy | no Obsidian equivalent | Copy deeper IDE-context packet (clipboard-first) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
 | Command: lumiere.markdown.ideContext.send | no Obsidian equivalent | Send IDE-context packet via forced/sole-agent/picker (never silent-guess) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
 | Command: lumiere.markdown.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
@@ -355,11 +357,16 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.backlinks.sortByAlphabeticalReverse | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.backlinks.sortByModifiedTime | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.backlinks.sortByModifiedTimeReverse | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByAlphabetical | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByModifiedTime | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.toggle | not observed | not manually observed | Unit command routing and shortcut guard tests; relocated-view manual scenario pending | not observed |
 | Command: lumiere.markdown.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
+| Setting: lumiere.markdown.outgoingLinks.sortOrder | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
@@ -373,9 +380,19 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.obsidianMarketplace.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.obsidianMarketplace.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.foldMore | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
 | Command: lumiere.markdown.foldLess | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
 | Command: lumiere.markdown.toggleFoldProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential probe | behaviour measured |
 | Command: lumiere.markdown.addAlias | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: an empty `aliases` property (a new header right before the text), then the caret in it | Differential probe; unit tests | behaviour measured |
 | Command: lumiere.markdown.clearProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: the whole properties block goes | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.backlinks.enableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.backlinks.disableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.backlinks.extraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.math.macros | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.enableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outgoingLinks.disableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.outgoingLinks.extraContext | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.handleVimCtrlN | not observed | not manually observed | Manual scenario pending | not observed |

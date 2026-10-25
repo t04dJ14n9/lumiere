@@ -9,9 +9,12 @@ The plugin provides mode inspection and transfer through the injected Vim servic
 A shared keyboard adapter translates Chinese Shift+4 (`￥`/`¥`) and Shift+6
 (`……`/`…`), including `Process` events with those physical codes, to `$` and `^`
 in normal mode. The same capture path also maps IME `Process`/`Unidentified`
-keydowns on `KeyA`–`KeyZ` and unshifted `Digit0`–`Digit9` to the matching Latin
-command keys in normal and visual mode (so `gg`, counts and motions still run
-when the host's beforeinput guard blocks Vim's text-input fallback). It delivers
+keydowns on `KeyA`–`KeyZ`, `Digit0`–`Digit9` (Shift for `*`/`#`/`$`/…), and punctuation codes
+(`.`, `,`, `;`, `/`, `?`, `-`, `[]`, `'`, backticks, …) to the matching Latin command keys in normal
+and visual mode (so `gg`, `G`, word motions, counts, `dd`/`yy`, `f`/`t` and
+`.`-repeat still run when the host's beforeinput guard blocks Vim's text-input
+fallback). Chinese punctuation glyphs `。`/`，`/`；` map to `.`/`,`/`;` except
+in insert mode and while `f`/`t`/`r` wait for a literal argument. It delivers
 the translated key through the ordinary Vim dispatcher so counts, operators,
 mappings and recording keep their native behavior. Insert mode, prompts and
 active composition are excluded; ASCII keys are never rewritten.
@@ -54,7 +57,7 @@ Keyboard-created visual selections keep Vim's text-object behavior.
 - `manifest.ts`: default enablement and host shortcut contributions.
 - `api.ts`: mode, extension, mode-transfer and buffer-handoff contract.
 - `key-routing.ts`: adapter-scoped mapping/macro handoff and dispatcher restoration.
-- `keyboard.ts`: shared note/cell translation of Chinese shifted line-motion keys and IME Process command keys.
+- `keyboard.ts`: shared note/cell translation of Chinese shifted line-motion keys, Chinese punctuation, and IME Process/Unidentified letter/digit/punctuation command keys.
 - `keyboard.test.ts`: key variants, physical codes, modifiers, IME Process letters and mode guards.
 - `click-insert.ts`: first-key insert handoff from a rendered-source selection.
 - `../../../test/unit/livePreview/click-position.test.ts`: source selection, typing and Vim handoff units.
@@ -99,7 +102,7 @@ API, so stopped callbacks are deactivated rather than removed. Text, save and
 undo remain VS Code's. Mode transfer preserves selection; exact Vim/IME
 interaction parity awaits the owner's manual testing.
 
-The host-shortcut consumer is hidden from the command palette. Its collision
+Default `<C-p>` → `k` is unmapped while Vim is on so Ctrl+P stays Quick Open / suggest navigation (BH-021). Ctrl+B/I host consume yields while the formatting plugin is enabled so bold/italic win over page-back/jumplist (BH-024); Ctrl+K host consume yields while formatting is enabled so Insert Link wins (BH-036); physical PageUp still keyToKeys to `<C-b>` inside vim-core. Ctrl+Shift+H is not consumed so Replace in Files stays available (BH-026). Ctrl+Shift+X / Ctrl+Shift+T are not consumed so Extensions and Reopen Closed Editor stay available (BH-027). Ctrl+Alt+0..6 are not consumed so Set Heading stays available (BH-030). Formatting capture owns Ctrl+D for select-next-occurrence over vim half-page scroll (BH-028); Ctrl+Shift+L selects all occurrences, expanding an empty caret to the word first (BH-037/038); PageDown still pages. Editor capture owns Ctrl+A for Select All over vim increment (BH-029); Ctrl+X with a selection cuts (empty Ctrl+X still decrements). Ctrl+V pastes and Ctrl+C with a selection copies over vim block-visual / Esc (BH-032). Vim-core exposes `foldCode` but ships no `za`/`zc`/`zo` maps; Lumière maps `za`→Toggle Fold, `zc`→Fold More, `zo`→Fold Less, `zM`→Fold All, `zR`→Unfold All so heading folds match the gutter and command palette (BH-046). The host-shortcut consumer is hidden from the command palette. Its collision
 bindings use Control on macOS as well as other platforms, leaving Command
 shortcuts to the editor. No verify shortcut is assigned.
 

@@ -13,6 +13,42 @@ type KeyEvent = Pick<
   | "defaultPrevented"
 >;
 
+/** US-layout punctuation Vim uses; values are [unshifted, shifted]. */
+const PUNCTUATION_CODES: Record<string, readonly [string, string]> = {
+  Period: [".", ">"],
+  Comma: [",", "<"],
+  Semicolon: [";", ":"],
+  Slash: ["/", "?"],
+  Minus: ["-", "_"],
+  Equal: ["=", "+"],
+  BracketLeft: ["[", "{"],
+  BracketRight: ["]", "}"],
+  Quote: ["'", '"'],
+  Backquote: ["`", "~"],
+  Backslash: ["\\", "|"],
+};
+
+/** US-layout Shift+digit glyphs; Digit4/6 also cover `$`/`^` when line-key mapping skips (e.g. visual). */
+const SHIFTED_DIGITS: Record<string, string> = {
+  Digit1: "!",
+  Digit2: "@",
+  Digit3: "#",
+  Digit4: "$",
+  Digit5: "%",
+  Digit6: "^",
+  Digit7: "&",
+  Digit8: "*",
+  Digit9: "(",
+  Digit0: ")",
+};
+
+/** Chinese IME full-width glyphs for the same physical punctuation keys. */
+const CHINESE_PUNCTUATION: Record<string, string> = {
+  "。": ".",
+  "，": ",",
+  "；": ";",
+};
+
 /** Translate only the shifted Chinese number-row keys used for line motions. */
 export function shiftedVimLineKey(
   event: KeyEvent,
@@ -67,18 +103,61 @@ export function imeVimCommandKey(
     return event.shiftKey ? value : value.toLowerCase();
   }
   const digit = /^Digit([0-9])$/.exec(event.code);
-  if (digit && !event.shiftKey) {
-    return digit[1];
+  if (digit) {
+    if (!event.shiftKey) {
+      return digit[1];
+    }
+    return SHIFTED_DIGITS[event.code];
+  }
+  const punct = PUNCTUATION_CODES[event.code];
+  if (punct) {
+    return event.shiftKey ? punct[1] : punct[0];
   }
   return undefined;
 }
 
-/** Resolve either the Chinese line-motion keys or an IME Process command key. */
+/**
+ * Chinese punctuation mode emits `。`/`，`/`；` instead of `.`/`,`/`;`. Map
+ * those glyphs in normal/visual mode so repeat and f/t-repeat still work.
+ * Literal arguments (`f`/`t`/`r`) keep the Chinese glyph.
+ */
+export function chineseVimPunctuationKey(
+  event: KeyEvent,
+  mode: VimMode,
+): string | undefined {
+  if (
+    !mode ||
+    mode.insertMode ||
+    mode.expectLiteralNext ||
+    event.defaultPrevented ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.metaKey ||
+    event.shiftKey
+  ) {
+    return undefined;
+  }
+  const mapped = CHINESE_PUNCTUATION[event.key];
+  if (!mapped) {
+    return undefined;
+  }
+  const punct = PUNCTUATION_CODES[event.code];
+  if (!punct || punct[0] !== mapped) {
+    return undefined;
+  }
+  return mapped;
+}
+
+/** Resolve Chinese line keys, Chinese punctuation, or an IME Process command. */
 export function translatedVimKey(
   event: KeyEvent,
   mode: VimMode,
 ): string | undefined {
-  return shiftedVimLineKey(event, mode) ?? imeVimCommandKey(event, mode);
+  return (
+    shiftedVimLineKey(event, mode) ??
+    chineseVimPunctuationKey(event, mode) ??
+    imeVimCommandKey(event, mode)
+  );
 }
 
 /** The note and temporary cell buffers share the same keyboard translation. */

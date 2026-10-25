@@ -6,7 +6,13 @@ import type { VimService } from "../vim/api";
 import type { LinksService } from "../links/api";
 import type { TableWheelEvent } from "./wheel-scroll";
 export type Action =
-  "save" | "undo" | "redo" | "close" | "saveClose" | "openAsText";
+  | "save"
+  | "undo"
+  | "redo"
+  | "close"
+  | "saveClose"
+  | "openAsText"
+  | "toggleTextEditor";
 /** Services captured by one table plugin instance, shared with its cell views. */
 export interface TableEnvironment {
   language: Extension;

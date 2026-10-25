@@ -29,6 +29,14 @@ test("players come from the provider's embed origin with the parsed ID", () => {
     playerUrl(video("https://www.bilibili.com/video/av170001")),
     "https://player.bilibili.com/player.html?aid=170001&p=1&autoplay=0",
   );
+  assert.throws(
+    () => playerUrl(video("https://space.bilibili.com/2")),
+    /space has no in-webview player/,
+  );
+  assert.throws(
+    () => playerUrl(video("https://live.bilibili.com/3")),
+    /live has no in-webview player/,
+  );
 });
 
 test("player frames are sandboxed, lazy and send only the origin as referrer", () => {
@@ -73,6 +81,7 @@ test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => 
   );
   assert.equal(providers.youtube.embeddable, false);
   assert.equal(providers.bilibili.embeddable, true);
+  assert.equal(providers.vimeo.embeddable, false);
 });
 
 test("Hugging Face refuses an in-webview player", () => {
@@ -83,5 +92,68 @@ test("Hugging Face refuses an in-webview player", () => {
   );
   assert.throws(() =>
     playerUrl(video("https://huggingface.co/google/gemma-2-2b")),
+  );
+});
+
+test("Spotify refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(video("https://open.spotify.com/track/11dFghVXANMlKmJXsNCbNl")),
+  );
+  assert.equal(providers.spotify.embeddable, false);
+});
+
+test("SoundCloud refuses an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(video("https://soundcloud.com/forss/flickermood")),
+  );
+  assert.equal(providers.soundcloud.embeddable, false);
+});
+
+test("npm refuses an in-webview player", () => {
+  assert.equal(providers.npm.embeddable, false);
+  assert.equal(
+    thumbnailUrl(video("https://www.npmjs.com/package/lodash")),
+    undefined,
+  );
+  assert.throws(() => playerUrl(video("https://www.npmjs.com/package/lodash")));
+});
+
+test("Vimeo refuses an in-webview player", () => {
+  assert.equal(providers.vimeo.embeddable, false);
+  assert.equal(thumbnailUrl(video("https://vimeo.com/22439234")), undefined);
+  assert.throws(
+    () => playerUrl(video("https://vimeo.com/22439234")),
+    /vimeo has no in-webview player/,
+  );
+});
+
+test("bangumi, playlists, channels, spaces and live refuse an in-webview player", () => {
+  assert.throws(() =>
+    playerUrl(video("https://www.bilibili.com/bangumi/play/ep409506")),
+  );
+  assert.throws(() => playerUrl(video("https://space.bilibili.com/2")));
+  assert.throws(
+    () => playerUrl(video("https://live.bilibili.com/3")),
+    /live has no in-webview player/,
+  );
+  assert.throws(() =>
+    playerUrl(video("https://www.youtube.com/@GoogleDevelopers")),
+  );
+  assert.equal(
+    thumbnailUrl(video("https://www.bilibili.com/bangumi/play/ep409506")),
+    undefined,
+  );
+  assert.equal(
+    thumbnailUrl(
+      video("https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw"),
+    ),
+    undefined,
+  );
+  assert.throws(() =>
+    playerUrl(
+      video(
+        "https://www.youtube.com/playlist?list=PL4cUxeGkcC9gZD-Tvwfod2gaISzfRiP9d",
+      ),
+    ),
   );
 });

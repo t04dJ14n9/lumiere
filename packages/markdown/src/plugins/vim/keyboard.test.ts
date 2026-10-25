@@ -119,13 +119,42 @@ for (const [code, shift, expected] of [
   }
 }
 
-test("IME Process digits with Shift leave Chinese line keys to the dedicated mapper", () => {
+test("Dead key on KeyG resolves to g and G for gg/G motions", () => {
+  assert.equal(
+    imeVimCommandKey(event("Dead", "KeyG", { shiftKey: false }), mode()),
+    "g",
+  );
+  assert.equal(
+    translatedVimKey(event("Dead", "KeyG", { shiftKey: true }), mode()),
+    "G",
+  );
+});
+
+test("IME Process digits with Shift map to US shifted glyphs; line keys still win first", () => {
   assert.equal(
     imeVimCommandKey(event("Process", "Digit4", { shiftKey: true }), mode()),
-    undefined,
+    "$",
   );
   assert.equal(
     translatedVimKey(event("Process", "Digit4", { shiftKey: true }), mode()),
+    "$",
+  );
+  assert.equal(
+    imeVimCommandKey(event("Process", "Digit8", { shiftKey: true }), mode()),
+    "*",
+  );
+  assert.equal(
+    translatedVimKey(event("Process", "Digit3", { shiftKey: true }), mode()),
+    "#",
+  );
+});
+
+test("IME Process Shift+Digit4 still yields $ in visual mode where line-key mapping skips", () => {
+  const vim = mode();
+  vim.visualMode = true;
+  assert.equal(shiftedVimLineKey(event("Process", "Digit4"), vim), undefined);
+  assert.equal(
+    translatedVimKey(event("Process", "Digit4", { shiftKey: true }), vim),
     "$",
   );
 });
@@ -157,6 +186,69 @@ test("IME Process command keys stay literal in insert mode and with modifiers", 
   );
   assert.equal(
     imeVimCommandKey(event("g", "KeyG", { shiftKey: false }), mode()),
+    undefined,
+  );
+});
+
+for (const [key, code, expected] of [
+  ["。", "Period", "."],
+  ["，", "Comma", ","],
+  ["；", "Semicolon", ";"],
+] as const) {
+  test(`Chinese ${key} on ${code} becomes ${expected} for Vim commands`, () => {
+    assert.equal(
+      translatedVimKey(event(key, code, { shiftKey: false }), mode()),
+      expected,
+    );
+  });
+}
+
+for (const [code, shift, expected] of [
+  ["Period", false, "."],
+  ["Comma", false, ","],
+  ["Semicolon", false, ";"],
+  ["Slash", false, "/"],
+  ["Slash", true, "?"],
+  ["Minus", false, "-"],
+  ["Equal", false, "="],
+  ["BracketLeft", false, "["],
+  ["BracketRight", true, "}"],
+  ["Quote", false, "'"],
+  ["Backquote", false, "`"],
+  ["Backslash", true, "|"],
+] as const) {
+  for (const key of ["Process", "Unidentified"] as const) {
+    test(`${key} on ${code} becomes ${expected} for Vim punctuation`, () => {
+      assert.equal(
+        imeVimCommandKey(event(key, code, { shiftKey: shift }), mode()),
+        expected,
+      );
+      assert.equal(
+        translatedVimKey(event(key, code, { shiftKey: shift }), mode()),
+        expected,
+      );
+    });
+  }
+}
+
+test("Chinese punctuation stays literal in insert mode and for f/t/r arguments", () => {
+  for (const field of ["insertMode", "expectLiteralNext"] as const) {
+    const vim = mode();
+    vim[field] = true;
+    assert.equal(
+      translatedVimKey(event("。", "Period", { shiftKey: false }), vim),
+      undefined,
+    );
+  }
+});
+
+test("ASCII punctuation and Chinese glyphs on the wrong code stay with the dependency", () => {
+  assert.equal(
+    translatedVimKey(event(".", "Period", { shiftKey: false }), mode()),
+    undefined,
+  );
+  assert.equal(
+    translatedVimKey(event("。", "Comma", { shiftKey: false }), mode()),
     undefined,
   );
 });

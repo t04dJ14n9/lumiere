@@ -12,7 +12,15 @@ test("pure dialect, metadata and renderer run unchanged in Chromium", async ({
     import { markdownLanguageSupport, markdownParser } from './src/markdown/dialect';
     const doc = Text.of(['# Browser', '', '[[Note]] #tag']);
     const result = metadata(doc);
-    if (markdownLanguageSupport().language.parser !== markdownParser) throw new Error('Parser mismatch');
+    // Host/workers use the base Lezer parser; LanguageSupport wraps it with
+    // CodeMirror language-data props (a configured copy). Both must share the
+    // same dialect root type — reference equality would fail after the split.
+    const support = markdownLanguageSupport();
+    if (support.language.name !== 'markdown') throw new Error('not markdown');
+    const sample = '# Browser\\n\\n[[Note]]';
+    if (markdownParser.parse(sample).type.name !== support.language.parser.parse(sample).type.name) {
+      throw new Error('Parser mismatch');
+    }
     document.body.innerHTML = createRenderer().renderMarkdown(doc.toString());
     document.body.dataset.links = String(result.links.length);
   `,

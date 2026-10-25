@@ -68,8 +68,9 @@ refresh interval. The popup uses CodeMirror's UI. A vault-wide block search
 
 With `links.useWikilinks` off, accepting a link/head/block completion replaces
 the entire partial wiki token with a Markdown link. Existing `]]` are consumed.
-Unresolved Markdown destinations follow normal Markdown-link opening; unlike
-unresolved wikilinks, they do not create missing notes on click.
+Unresolved basename Markdown destinations (`Note`, `Note.md`) create missing
+notes on click like wikilinks; relative paths (`./x`, `folder/x`) stay open-only
+so source-relative lookup is preserved.
 
 Tag suggestions open inside fenced/inline code and source-mode frontmatter
 (Obsidian). Link, heading, block and local (highlight) lists stay blocked in

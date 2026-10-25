@@ -4,12 +4,28 @@ import { insertNewlineContinueMarkupCommand } from "@codemirror/lang-markdown";
 import { syntaxTree } from "@codemirror/language";
 import type { SyntaxNode } from "@lezer/common";
 import {
-  continuationPrefix,
+  softBreakPrefix,
+  isThematicBreakLine,
   isEmptyQuote,
   lineMarkup,
   outerQuotes,
+  textStart,
 } from "../../markdown/list-markup";
 import { renumberAround } from "../../markdown/ordered-lists";
+import {
+  continueFootnoteDefinition,
+  softBreakFootnoteDefinition,
+  unwrapEmptyFootnoteDefinition,
+} from "./footnote-enter";
+import { softBreakLinkReferenceDefinition } from "./linkref-break";
+import {
+  continueLinkReferenceDefinition,
+  unwrapEmptyLinkReferenceDefinition,
+} from "./linkref-enter";
+import { exitSetextHeading } from "./setext-enter";
+import { exitAtxHeading } from "./atx-enter";
+import { exitCalloutTitle } from "./callout-enter";
+import { exitHtmlComment } from "./html-comment-enter";
 
 interface Target {
   state: EditorState;
@@ -32,7 +48,114 @@ function run(state: EditorState): Transaction | null {
       result = tr;
     },
   });
-  return ok && result ? keepSpaceBeforeCaret(state, result) : null;
+  return ok && result
+    ? matchSourceIndent(state, keepSpaceBeforeCaret(state, result))
+    : null;
+}
+
+/** Column width of leading whitespace, tabs expanded by `tabSize`. */
+function indentWidth(pad: string, tabSize: number): number {
+  let column = 0;
+  for (const char of pad) {
+    column = char === "\t" ? column + tabSize - (column % tabSize) : column + 1;
+  }
+  return column;
+}
+
+/**
+ * When `useTabs` is on, CodeMirror continues a spaces-only indented item with a
+ * tab (4 spaces → one tab). Obsidian keeps the line's indent style. Expand
+ * leading tabs in the continue insert to spaces so siblings stay spaces (BH-051).
+ */
+function matchSourceIndent(state: EditorState, tr: Transaction): Transaction {
+  const caret = state.selection.main.head;
+  const sourcePad = /^[ \t]*/u.exec(state.doc.lineAt(caret).text)?.[0] ?? "";
+  if (sourcePad.length === 0 || sourcePad.includes("\t")) {
+    return tr;
+  }
+  const changes: ChangeSpec[] = [];
+  let changed = false;
+  tr.changes.iterChanges((...change) => {
+    const [fromA, toA, , , inserted] = change;
+    let text = inserted.toString();
+    if (text.includes("\t")) {
+      const next = text.replace(
+        /(^|\n)(\t+)/g,
+        (_m, lead: string, tabs: string) =>
+          lead + " ".repeat(tabs.length * state.tabSize),
+      );
+      if (next !== text) {
+        text = next;
+        changed = true;
+      }
+    }
+    changes.push({ from: fromA, to: toA, insert: text });
+  });
+  if (!changed) {
+    return tr;
+  }
+  const set = state.changes(changes);
+  return state.update({
+    changes: set,
+    selection: EditorSelection.cursor(set.mapPos(caret, 1)),
+    scrollIntoView: true,
+    userEvent: "input",
+  });
+}
+
+/** Empty bullet/number item (no task box): Enter outdents or leaves the list. */
+function isEmptyListItem(text: string): boolean {
+  const { marker, task } = lineMarkup(text);
+  return (
+    marker !== "" && task === "" && text.slice(textStart(text)).trim() === ""
+  );
+}
+
+/**
+ * Enter on an empty nested item steps out one list level; on a top-level empty
+ * item it leaves the list. Done here so a tab-indented empty sibling under a
+ * spaces-indented parent cannot become `\t--` via CodeMirror (BH-051).
+ */
+function leaveEmptyListItem(
+  target: Target,
+  line: { from: number; to: number; number: number; text: string },
+): boolean {
+  const { state } = target;
+  const { quotes, marker } = lineMarkup(line.text);
+  if (quotes.includes(">")) {
+    return false;
+  }
+  const width = indentWidth(quotes, state.tabSize);
+  let insert: string;
+  if (width === 0) {
+    insert = "";
+  } else {
+    let newPad: string | null = null;
+    for (let n = line.number - 1; n >= 1; n--) {
+      const prev = state.doc.line(n);
+      if (prev.text.trim() === "") {
+        continue;
+      }
+      const previous = lineMarkup(prev.text);
+      if (previous.marker === "") {
+        break;
+      }
+      if (indentWidth(previous.quotes, state.tabSize) < width) {
+        newPad = previous.quotes;
+        break;
+      }
+    }
+    insert = (newPad ?? "") + marker;
+  }
+  target.dispatch(
+    state.update({
+      changes: { from: line.from, to: line.to, insert },
+      selection: EditorSelection.cursor(line.from + insert.length),
+      scrollIntoView: true,
+      userEvent: "input",
+    }),
+  );
+  return true;
 }
 
 /**
@@ -74,8 +197,12 @@ function keepSpaceBeforeCaret(
 }
 
 /**
- * Enter: continue bullets, numbers, quotes and tasks; leave the list on an
- * empty item, and a quote level on an empty quoted line.
+ * Enter: continue bullets, numbers, quotes, tasks, footnote and link-ref definitions
+ * (incl. quoted footnotes, BH-073); callout title content-start exits intact (BH-085)
+ * or empty unwrap (BH-086);
+ * leave the list on an empty item, a quote level on an empty quoted line, and
+ * a footnote on an empty indented continuation (BH-060). Empty footnote
+ * definition lines unwrap the marker (BH-091).
  */
 export function continueList(target: Target): boolean {
   const { state } = target;
@@ -83,16 +210,51 @@ export function continueList(target: Target): boolean {
   if (state.selection.ranges.length > 1 || !range.empty) {
     return false;
   }
+  if (exitSetextHeading(target)) {
+    return true;
+  }
+  if (exitAtxHeading(target, false)) {
+    return true;
+  }
+  if (exitCalloutTitle(target)) {
+    return true;
+  }
+  if (exitHtmlComment(target, false)) {
+    return true;
+  }
+  if (continueFootnoteDefinition(target)) {
+    return true;
+  }
+  if (continueLinkReferenceDefinition(target)) {
+    return true;
+  }
   const line = state.doc.lineAt(range.head);
   if (isEmptyQuote(line.text)) {
     return leaveQuoteLevel(target, line);
+  }
+  if (
+    isEmptyListItem(line.text) &&
+    range.head >= line.from + textStart(line.text) &&
+    leaveEmptyListItem(target, line)
+  ) {
+    return true;
   }
   const item = continuedItem(state, range.head);
   if (item) {
     return newItemAfter(target, item);
   }
+  return continueTaskOrMarkup(target, line, range.head);
+}
+
+/** Task box continue / empty-task leave, else lang-markdown continueMarkup. */
+function continueTaskOrMarkup(
+  target: Target,
+  line: { from: number; text: string },
+  head: number,
+): boolean {
+  const { state } = target;
   const match = task.exec(line.text);
-  if (!match || range.head < line.from + match[0].length) {
+  if (!match || head < line.from + match[0].length) {
     return dispatchResult(target, run(state));
   }
   const [, marker = "", taskBox = ""] = match;
@@ -107,16 +269,19 @@ export function continueList(target: Target): boolean {
   if (!tr) {
     return false;
   }
-  const head = tr.newSelection.main.head;
-  const next = tr.newDoc.lineAt(head);
-  if (!listStart.test(next.text.slice(0, head - next.from))) {
+  const nextHead = tr.newSelection.main.head;
+  const next = tr.newDoc.lineAt(nextHead);
+  if (!listStart.test(next.text.slice(0, nextHead - next.from))) {
     return dispatchResult(target, tr);
   }
-  const box2 = ChangeSet.of([{ from: head, insert: "[ ] " }], tr.newDoc.length);
+  const box2 = ChangeSet.of(
+    [{ from: nextHead, insert: "[ ] " }],
+    tr.newDoc.length,
+  );
   target.dispatch(
     state.update({
       changes: tr.changes.compose(box2),
-      selection: EditorSelection.cursor(head + 4),
+      selection: EditorSelection.cursor(nextHead + 4),
       scrollIntoView: true,
       userEvent: "input",
     }),
@@ -151,10 +316,6 @@ function dispatchResult(target: Target, tr: Transaction | null): boolean {
   return true;
 }
 
-/**
- * Enter on an empty quoted line, as in Obsidian: the line steps out one
- * quote level and the next line starts at that level.
- */
 function leaveQuoteLevel(
   target: Target,
   line: { from: number; to: number; text: string },
@@ -222,17 +383,81 @@ function newItemAfter(target: Target, item: SyntaxNode): boolean {
 
 /**
  * Shift+Enter: a line break inside the block, as in Obsidian: the new line
- * keeps the quotes and lines up with a list item's text.
+ * keeps the quotes and lines up with a list item's text. Thematic breaks
+ * (`---`, `- - -`) keep quotes only — no list continuation indent (BH-093). Setext headings
+ * exit below the underline like Enter (BH-076 / BH-059). ATX headings exit
+ * below the heading line or unwrap empty markers (BH-084). Callout titles
+ * exit intact at content start or unwrap empty openers (BH-085 / BH-086).
+ * Footnote definitions soft-break with
+ * a tab body indent (BH-077 / BH-060). Link reference definitions soft-break
+ * with a tab body indent (BH-079).
+ *
+ * When the caret is on an empty line under a list/quote (the usual place a
+ * Live Preview click or End lands once the file has a trailing newline),
+ * fill that line with the previous item's continuation indent instead of
+ * inserting another bare break (BH-049). Empty lines under footnotes or
+ * link-refs fill with the body indent.
  */
 export function continueLine(target: Target): boolean {
   const { state } = target;
   if (state.selection.ranges.length > 1) {
     return false;
   }
+  // Same setext exit as Enter (BH-076): soft-break must not orphan ===/---.
+  if (exitSetextHeading(target)) {
+    return true;
+  }
+  // ATX exit / empty unwrap (BH-084): soft-break must not orphan `# ` titles.
+  if (exitAtxHeading(target, true)) {
+    return true;
+  }
+  // Callout title content-start exit / empty unwrap (BH-085 / BH-086).
+  if (exitCalloutTitle(target)) {
+    return true;
+  }
+  // HTML comment: soft-break must not split CommentBlock / Comment (BH-097).
+  if (exitHtmlComment(target, true)) {
+    return true;
+  }
+  // Empty footnote-def unwrap (BH-091) before footnote soft-break (BH-077).
+  if (unwrapEmptyFootnoteDefinition(target)) {
+    return true;
+  }
+  // Footnote soft-break (BH-077) before link-ref (BH-079); footnotes use [^].
+  if (softBreakFootnoteDefinition(target)) {
+    return true;
+  }
+  // Empty link-ref unwrap (BH-092) before link-ref soft-break (BH-079).
+  if (unwrapEmptyLinkReferenceDefinition(target)) {
+    return true;
+  }
+  if (softBreakLinkReferenceDefinition(target)) {
+    return true;
+  }
   const line = state.doc.lineAt(state.selection.main.head);
+  if (line.text === "" && line.number > 1) {
+    const prev = state.doc.line(line.number - 1);
+    // Empty line under a thematic break: do not fill list indent or insert
+    // another bare break (BH-093 / BH-049 fill must not treat `- - -` as a list).
+    if (isThematicBreakLine(prev.text)) {
+      return true;
+    }
+    const prefix = softBreakPrefix(prev.text);
+    if (prefix !== "" && textStart(prev.text) > 0) {
+      target.dispatch(
+        state.update({
+          changes: { from: line.from, to: line.to, insert: prefix },
+          selection: EditorSelection.cursor(line.from + prefix.length),
+          scrollIntoView: true,
+          userEvent: "input",
+        }),
+      );
+      return true;
+    }
+  }
   target.dispatch(
     state.update(
-      state.replaceSelection(state.lineBreak + continuationPrefix(line.text)),
+      state.replaceSelection(state.lineBreak + softBreakPrefix(line.text)),
       { scrollIntoView: true, userEvent: "input" },
     ),
   );

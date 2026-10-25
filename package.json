@@ -2,7 +2,7 @@
   "name": "lumiere",
   "displayName": "Lumière: Markdown Editor and PDF Reader",
   "description": "Obsidian-style Live Preview for Markdown and a PDF reader, in VS Code and Cursor, with links your AI agent can follow.",
-  "version": "0.1.3",
+  "version": "0.1.5-pr-BH073",
   "publisher": "t04dj14n9",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -108,6 +108,16 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.backlinks.enableExtraContext",
+        "title": "Show More Context",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.backlinks.disableExtraContext",
+        "title": "✓ Show More Context",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.bridge.copyEnvelope",
         "title": "Copy Bridge Envelope",
         "category": "Lumière"
@@ -199,6 +209,11 @@
       {
         "command": "lumiere.markdown.toggleTextEditor",
         "title": "Toggle Text Editor",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.goToLine",
+        "title": "Go to Line…",
         "category": "Lumière"
       },
       {
@@ -505,6 +520,41 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.obsidianMarketplace.open",
+        "title": "Open Obsidian Community Plugins Marketplace",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.sortByAlphabetical",
+        "title": "✓ File name (A to Z)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse",
+        "title": "✓ File name (Z to A)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.sortByModifiedTime",
+        "title": "✓ Modified time (new to old)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse",
+        "title": "✓ Modified time (old to new)",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.enableExtraContext",
+        "title": "Show More Context",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.outgoingLinks.disableExtraContext",
+        "title": "✓ Show More Context",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.outline.expandAll",
         "title": "Expand All",
         "category": "Lumière",
@@ -765,6 +815,11 @@
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "title": "Consume Vim Host Shortcut",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.handleVimCtrlN",
+        "title": "Vim Ctrl+N",
         "category": "Lumière"
       },
       {
@@ -1088,6 +1143,12 @@
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
+        "command": "lumiere.markdown.goToLine",
+        "key": "ctrl+g",
+        "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.editorFocus"
+      },
+      {
         "command": "lumiere.markdown.toggleTextEditor",
         "key": "ctrl+e",
         "mac": "cmd+e",
@@ -1109,6 +1170,48 @@
         "command": "lumiere.markdown.toggleItalics",
         "key": "ctrl+i",
         "mac": "cmd+i",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading0",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading1",
+        "key": "ctrl+alt+1",
+        "mac": "cmd+alt+1",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading2",
+        "key": "ctrl+alt+2",
+        "mac": "cmd+alt+2",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading3",
+        "key": "ctrl+alt+3",
+        "mac": "cmd+alt+3",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading4",
+        "key": "ctrl+alt+4",
+        "mac": "cmd+alt+4",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading5",
+        "key": "ctrl+alt+5",
+        "mac": "cmd+alt+5",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading6",
+        "key": "ctrl+alt+6",
+        "mac": "cmd+alt+6",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
@@ -1160,78 +1263,24 @@
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+b",
         "mac": "ctrl+b",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+i",
         "mac": "ctrl+i",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+shift+x",
-        "mac": "ctrl+shift+x",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+k",
         "mac": "ctrl+k",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.isCursorHost && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+0",
-        "mac": "ctrl+alt+0",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+1",
-        "mac": "ctrl+alt+1",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+2",
-        "mac": "ctrl+alt+2",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+3",
-        "mac": "ctrl+alt+3",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+4",
-        "mac": "ctrl+alt+4",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+5",
-        "mac": "ctrl+alt+5",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+6",
-        "mac": "ctrl+alt+6",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+shift+t",
-        "mac": "ctrl+shift+t",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+shift+h",
-        "mac": "ctrl+shift+h",
+        "command": "lumiere.markdown.handleVimCtrlN",
+        "key": "ctrl+n",
+        "mac": "ctrl+n",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
@@ -1437,6 +1486,14 @@
           "when": "false"
         },
         {
+          "command": "lumiere.markdown.backlinks.enableExtraContext",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.disableExtraContext",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.bridge.copyEnvelope",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.bridge.enabled"
         },
@@ -1506,6 +1563,10 @@
         {
           "command": "lumiere.markdown.toggleTextEditor",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' || (editorLangId == 'markdown' && !activeCustomEditorId)"
+        },
+        {
+          "command": "lumiere.markdown.goToLine",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
         },
         {
           "command": "lumiere.markdown.insertEmbed",
@@ -1748,6 +1809,34 @@
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.math"
         },
         {
+          "command": "lumiere.markdown.obsidianMarketplace.open",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.obsidianMarketplace.enabled"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByAlphabetical",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByModifiedTime",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.enableExtraContext",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.disableExtraContext",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.outline.expandAll",
           "when": "false"
         },
@@ -1941,6 +2030,10 @@
           "when": "false"
         },
         {
+          "command": "lumiere.markdown.handleVimCtrlN",
+          "when": "false"
+        },
+        {
           "command": "lumiere.markdown.wiki.copyForAgent",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.wiki.enabled"
         },
@@ -2110,12 +2203,12 @@
         {
           "command": "lumiere.markdown.copyLinkForAgent",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
-          "group": "agent"
+          "group": "0_agent@1"
         },
         {
           "command": "lumiere.markdown.selectionActions",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection && lumiere.markdown.hasSelectionActions",
-          "group": "agent"
+          "group": "0_agent@2"
         },
         {
           "command": "lumiere.markdown.toggleBold",
@@ -2293,6 +2386,46 @@
           "command": "lumiere.markdown.backlinks.sortByModifiedTimeReverse",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.sortByModifiedTimeReverse",
           "group": "backlinksSort@1"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.enableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && !lumiere.markdown.backlinks.extraContext",
+          "group": "backlinks@1"
+        },
+        {
+          "command": "lumiere.markdown.backlinks.disableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled && view == lumiere.markdown.backlinks && lumiere.markdown.backlinks.extraContext",
+          "group": "backlinks@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByAlphabetical",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.sortAlphabetical",
+          "group": "outgoingSort@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.sortAlphabeticalReverse",
+          "group": "outgoingSort@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByModifiedTime",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.sortByModifiedTime",
+          "group": "outgoingSort@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse",
+          "group": "outgoingSort@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.enableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && !lumiere.markdown.outgoingLinks.extraContext",
+          "group": "outgoing@1"
+        },
+        {
+          "command": "lumiere.markdown.outgoingLinks.disableExtraContext",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled && view == lumiere.markdown.outgoingLinks && lumiere.markdown.outgoingLinks.extraContext",
+          "group": "outgoing@1"
         },
         {
           "command": "lumiere.markdown.outline.expandAll",
@@ -2699,6 +2832,12 @@
             "scope": "resource",
             "description": "Use Obsidian property types and vault settings in Lumière."
           },
+          "lumiere.markdown.plugins.obsidianMarketplace.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Browse, install, enable, disable and uninstall Obsidian community plugins in the vault."
+          },
           "lumiere.markdown.plugins.okfCore.enabled": {
             "type": "boolean",
             "default": true,
@@ -2850,6 +2989,12 @@
             ],
             "default": "alphabetical",
             "description": "Order of Linked and Unlinked mentions in the Backlinks view (Obsidian sortOrder). Created-time sorts are omitted: the vault index has mtime only.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.backlinks.extraContext": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show the lines above and below each backlink match (Obsidian “Show more context”). Off by default.",
             "scope": "resource"
           },
           "lumiere.markdown.editor.defaultMode": {
@@ -3050,6 +3195,16 @@
             "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workshop remembers a deck.",
             "scope": "resource"
           },
+          "lumiere.markdown.math.macros": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "default": {},
+            "description": "MathJax TeX macros (name → replacement), as in Obsidian’s MathJax macros setting. Use #1…#9 for arguments.",
+            "scope": "resource"
+          },
           "lumiere.markdown.obsidianCompat.configFolder": {
             "type": "string",
             "default": ".obsidian",
@@ -3071,6 +3226,23 @@
             "type": "boolean",
             "default": false,
             "description": "Offer **Play here** on Bilibili cards in trusted workspaces. Off by default: Bilibili's player does not play inside VS Code's webview.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.outgoingLinks.sortOrder": {
+            "enum": [
+              "alphabetical",
+              "alphabeticalReverse",
+              "byModifiedTime",
+              "byModifiedTimeReverse"
+            ],
+            "default": "alphabetical",
+            "description": "Order of Links, Not created yet, and Unlinked mentions in the Outgoing links view (Obsidian sortOrder). Created-time sorts are omitted: the vault index has mtime only.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.outgoingLinks.extraContext": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show the lines above and below each Unlinked mention match (Obsidian “Show more context”). Off by default.",
             "scope": "resource"
           },
           "lumiere.markdown.outline.followCursor": {

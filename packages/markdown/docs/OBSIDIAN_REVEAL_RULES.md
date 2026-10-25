@@ -19,7 +19,7 @@ For every case the caret was moved to every character offset (`editor.setCursor`
 6. **Block-level exceptions** (revealed when the caret is anywhere in the block):
    - fenced code: the opening fence line (with language) and the closing fence are both shown; the body is always raw;
    - callouts: a rendered widget until the caret enters it; then every line becomes source (`> [!note] title`), with `>` shown only on the caret's line and inline elements still per-element;
-   - display math `$$ … $$`: widget until the caret is inside, then the whole source, with the rendered formula kept below it (measured 2026-10-17: same height as before, under the closing `$$`);
+   - display math `$$ … $$`: widget until the caret is inside, then the whole source, with the rendered formula kept below it (measured 2026-10-17: same height as before, under the closing `$$`). **Lumière differs (BH-009 / BH-004):** revealed display math is source only — no stacked preview under the `$$` lines;
    - HTML blocks: widget until the caret is inside, then the whole source.
 7. **Task items**: `- [ ]` is revealed only when the caret touches that range (columns 0 to 5 inclusive, so not after the space); the item text never changes.
 8. **Footnote definitions** `[^1]: text`: the `[^1]:` marker is revealed when the caret is on the line (a rendered number otherwise); inline elements in it follow rule 1.
@@ -29,8 +29,8 @@ For every case the caret was moved to every character offset (`editor.setCursor`
 11. **Clicking a rendered block** (measured 2026-10-17 in a throwaway vault, by mouse clicks over the DevTools protocol): display math and callouts reveal on a click, which selects the formula (without the `$$` lines) or the whole callout, with the selection's head at its start. Inline math selects the formula without its `$`. Mermaid and other rendered code blocks stay rendered on a click or double-click; their "Edit this block" button reveals them with the code between the fences selected. The button does the same for math (the formula) and callouts (the whole block).
 
 12. **Clicking links, tags, embeds, images and rules** (measured 2026-10-17 in a throwaway vault, 74 click cases, by clicking the same rendered element in Obsidian and in Workshop's editor and comparing the selection, the note and what was opened):
-    - a plain click on a rendered link, wikilink, bare URL or autolink opens it and leaves the caret where it was, anywhere on its text including its first and last pixel, and inside headings, lists, quotes, callouts (body and title) and table cells; a double click opens it twice;
-    - Cmd-click opens a note in a new tab, Cmd+Alt-click in a split; Alt-click places the caret in the link's source and Shift-click extends the selection there, without opening;
+    - Obsidian (measured 2026-10-17): a plain click on a rendered link, wikilink, bare URL or autolink opens it and leaves the caret where it was; Cmd-click opens a note in a new tab, Cmd+Alt-click in a split; Alt-click places the caret in the link's source and Shift-click extends the selection there, without opening;
+    - **Lumière (BH-020 / user 2026-10-22):** plain click reveals the link source and places the caret (does not navigate); Ctrl/Cmd-click follows in the same editor; Ctrl/Cmd+Alt-click opens beside; Shift-click extends without following;
     - an unresolved wikilink opens (Obsidian creates the note);
     - a click on a tag places the caret where it was clicked and searches for `tag:#name`;
     - a click on an embedded note's content selects the whole embed source, the head at its start; a link inside the embedded note opens instead;
@@ -47,7 +47,7 @@ For every case the caret was moved to every character offset (`editor.setCursor`
 
     Obsidian's Live Preview does not render a list inside a plain quote (`> - [ ] task` stays text), so there is no checkbox there to click. Workshop renders and toggles it, as Obsidian's reading view does: a deliberate difference.
 
-Decision for our editor: follow all of this, **except** footnote references: ours stay LaTeX-style superscript with raw text when the caret is inside (the user's preference).
+Decision for our editor: follow all of this, **except** footnote references (ours stay LaTeX-style superscript with raw text when the caret is inside) and **rendered link clicks** (plain reveals / Mod follows — BH-020; the user's preference, diverging from the 2026-10-17 Obsidian measurement above).
 
 ## Detail
 

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { holds, placeOfClick } from "../../../src/plugins/links/clicks";
+import {
+  allowsLinkClick,
+  holds,
+  placeOfClick,
+} from "../../../src/plugins/links/clicks";
 
 const click = (
   keys: Partial<Record<"metaKey" | "ctrlKey" | "altKey", boolean>>,
@@ -11,25 +15,37 @@ const click = (
   ...keys,
 });
 
-test("as in Obsidian, Cmd-click opens a tab of its own and Cmd+Alt-click opens beside", () => {
+test("Mod alone follows in the same editor; Mod+Alt opens beside (BH-020)", () => {
   assert.deepEqual(placeOfClick(click({})), { side: false, tab: false });
   assert.deepEqual(placeOfClick(click({ metaKey: true })), {
     side: false,
-    tab: true,
+    tab: false,
   });
   assert.deepEqual(placeOfClick(click({ ctrlKey: true })), {
     side: false,
-    tab: true,
+    tab: false,
   });
   assert.deepEqual(placeOfClick(click({ metaKey: true, altKey: true })), {
     side: true,
     tab: false,
   });
-  // Alt alone places the caret: no link is opened, so where does not matter.
+  assert.deepEqual(placeOfClick(click({ ctrlKey: true, altKey: true })), {
+    side: true,
+    tab: false,
+  });
+  // Alt alone does not follow; placeOfClick is unused for that gesture.
   assert.deepEqual(placeOfClick(click({ altKey: true })), {
     side: false,
     tab: false,
   });
+});
+
+test("follow requires Ctrl or Cmd; plain click does not open (BH-020)", () => {
+  assert.equal(allowsLinkClick(click({})), false);
+  assert.equal(allowsLinkClick(click({ altKey: true })), false);
+  assert.equal(allowsLinkClick(click({ ctrlKey: true })), true);
+  assert.equal(allowsLinkClick(click({ metaKey: true })), true);
+  assert.equal(allowsLinkClick(click({ ctrlKey: true, altKey: true })), true);
 });
 
 test("a link's box holds a click up to, not including, its right and bottom edges", () => {

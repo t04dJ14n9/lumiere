@@ -346,10 +346,10 @@ title, then set `lumiere.markdown.plugins.inlineTitle.enabled` to true.
 
 `Links.md`.
 
-1. Off the caret, a wikilink shows its label; a plain click follows it.
-   With the caret in its source, a plain click edits and Mod-click follows;
-   Mod+Alt-click opens it to the side. Selecting across a link does not
-   follow it.
+1. Off the caret, a wikilink shows its label; a plain click reveals its
+   source and places the caret (does not navigate). Mod-click follows in the
+   same editor; Mod+Alt-click opens it to the side. Selecting across a link
+   does not follow it.
 2. Follow heading, block (`#^key-point`) and same-note links: the target
    scrolls into view. **Follow Link** and **Open Link to Side** work with
    the caret in link syntax.
@@ -795,9 +795,10 @@ On by default.
    its marker. In a scratch copy, add an ordered parent with three-space child
    indentation, tab-indented lists and task children: they use the same visual
    nesting steps. Long items keep
-   guides through soft wraps without a second set at source tab stops. Separate
-   source continuation lines have no guides; indented code and non-list text
-   retain source-column guides.
+   guides through soft wraps without a second set at source tab stops. Hang
+   list-prose continuations keep ancestor nesting guides only; deeper space-step
+   continuations add Obsidian nobullet `cm-indent` columns. Indented code and
+   non-list text retain source-column guides.
 2. Toggle `lumiere.markdown.plugins.indentGuides.enabled` off: every guide
    disappears while bullets and indentation stay in place. Turn it on and
    switch to Source mode: guides follow source tab stops. Switch back: list
@@ -845,7 +846,7 @@ Off by default.
 
 1. Normal, insert and visual modes; `:w`, `:q`, `:wq`, `:x`, `:u`, `:red`
    use VS Code's save, close and undo. IME in normal mode inserts nothing.
-2. With Vim on, Control+O, B, I, K, Shift+X, Shift+T, Shift+H and Alt+0–6 reach
+2. With Vim on, Control+O, B, I, K and Alt+0–6 reach
    Vim instead of VS Code; with Vim off they do not. With focus outside the
    note (Explorer, terminal, chat) they reach VS Code even with Vim on.
 3. In a plain paragraph in `Formatting.md`, compare with the built-in editor
@@ -1108,12 +1109,13 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
 | `lumiere.markdown.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
-| `lumiere.markdown.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
-| `lumiere.markdown.cursorBridge.dismissEditMirror` — Return to Lumière | unbound (status bar) | After verified Edit, click the left status-bar item (or run the command) to abandon the mirror and reopen Lumière when needed. |
 | `lumiere.markdown.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.ideContext.copy` — Copy IDE Context | unbound | On a disposable fixture, run Copy IDE Context; confirm clipboard markdown includes active/tabs/diagnostics and no agent opens. Repeat after disable/re-enable. |
-| `lumiere.markdown.ideContext.send` — Send IDE Context to Agent… | unbound | On a disposable fixture, run Send IDE Context to Agent…; confirm clipboard always updates and agent open follows forced/sole-agent/picker rules (never silent-guess). |
+| `lumiere.markdown.backlinks.sortByAlphabetical` — ✓ File name (A to Z) | unbound | On a disposable fixture, run ✓ File name (A to Z); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.backlinks.sortByAlphabeticalReverse` — ✓ File name (Z to A) | unbound | On a disposable fixture, run ✓ File name (Z to A); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.backlinks.sortByModifiedTime` — ✓ Modified time (new to old) | unbound | On a disposable fixture, run ✓ Modified time (new to old); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.backlinks.sortByModifiedTimeReverse` — ✓ Modified time (old to new) | unbound | On a disposable fixture, run ✓ Modified time (old to new); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.backlinks.enableExtraContext` — Show More Context | unbound | On a disposable fixture, run Show More Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.backlinks.disableExtraContext` — ✓ Show More Context | unbound | On a disposable fixture, run ✓ Show More Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.insertCallout` — Insert Callout | unbound | On a disposable fixture, run Insert Callout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1123,12 +1125,16 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.close` — Close | unbound | On a disposable fixture, run Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.toggleTextEditor` — Toggle Text Editor | Ctrl/Cmd+E | On a disposable `.md` fixture open in Lumière, press Ctrl/Cmd+E; the same URI reopens in the host default text editor. Press again while that text editor is focused; it reopens in Lumière. Confirm Toggle Live Preview/Source Mode stays unbound from E. Selection/caret need not survive the switch. |
+| `lumiere.markdown.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | On a disposable fixture, run Cursor Chat with Selection; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | On a disposable fixture, run Cursor Edit Selection; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.cursorBridge.dismissEditMirror` — Return to Lumière | unbound | On a disposable fixture, run Return to Lumière; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.jumpBack` — Go Back in Note | unbound | On a disposable fixture, run Go Back in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.jumpForward` — Go Forward in Note | unbound | On a disposable fixture, run Go Forward in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.useForMarkdownInWorkspace` — Use Lumière for Markdown in This Workspace | unbound | On a disposable fixture, run Use Lumière for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleTextEditor` — Toggle Text Editor | ctrl+e (Mac cmd+e); ctrl+e (Mac cmd+e) | On a disposable fixture, run Toggle Text Editor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.goToLine` — Go to Line… | ctrl+g (Mac ctrl+g) | On a disposable fixture, run Go to Line…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.insertEmbed` — Insert Embed | unbound | On a disposable fixture, run Insert Embed; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.foldAll` — Fold All | unbound | On a disposable fixture, run Fold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.unfoldAll` — Unfold All | unbound | On a disposable fixture, run Unfold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1140,12 +1146,12 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.toggleItalics` — Toggle Italics | ctrl+i (Mac cmd+i) | On a disposable fixture, run Toggle Italics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleStrikethrough` — Toggle Strikethrough | unbound | On a disposable fixture, run Toggle Strikethrough; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleHighlight` — Toggle Highlight | unbound | On a disposable fixture, run Toggle Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.toggleHighlightRed` — Toggle Red Highlight | unbound | On a disposable fixture, select a word and run Toggle Red Highlight; confirm `==` and the red emoji wrap it and it renders red; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `lumiere.markdown.toggleHighlightOrange` — Toggle Orange Highlight | unbound | On a disposable fixture, select a word and run Toggle Orange Highlight; confirm `==` and the orange emoji wrap it and it renders orange; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `lumiere.markdown.toggleHighlightYellow` — Toggle Yellow Highlight | unbound | On a disposable fixture, select a word and run Toggle Yellow Highlight; confirm `==` and the yellow emoji wrap it and it renders yellow; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `lumiere.markdown.toggleHighlightGreen` — Toggle Green Highlight | unbound | On a disposable fixture, select a word and run Toggle Green Highlight; confirm `==` and the green emoji wrap it and it renders green; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `lumiere.markdown.toggleHighlightBlue` — Toggle Blue Highlight | unbound | On a disposable fixture, select a word and run Toggle Blue Highlight; confirm `==` and the blue emoji wrap it and it renders blue; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `lumiere.markdown.toggleHighlightPurple` — Toggle Purple Highlight | unbound | On a disposable fixture, select a word and run Toggle Purple Highlight; confirm `==` and the purple emoji wrap it and it renders purple; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleHighlightRed` — Toggle Red Highlight | unbound | On a disposable fixture, run Toggle Red Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlightOrange` — Toggle Orange Highlight | unbound | On a disposable fixture, run Toggle Orange Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlightYellow` — Toggle Yellow Highlight | unbound | On a disposable fixture, run Toggle Yellow Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlightGreen` — Toggle Green Highlight | unbound | On a disposable fixture, run Toggle Green Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlightBlue` — Toggle Blue Highlight | unbound | On a disposable fixture, run Toggle Blue Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlightPurple` — Toggle Purple Highlight | unbound | On a disposable fixture, run Toggle Purple Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleCode` — Toggle Inline Code | unbound | On a disposable fixture, run Toggle Inline Code; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleComment` — Toggle Comment | unbound | On a disposable fixture, run Toggle Comment; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.insertLink` — Insert Link | ctrl+k (Mac cmd+k) | On a disposable fixture, run Insert Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1161,24 +1167,26 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.toggleBlockquote` — Toggle Blockquote | unbound | On a disposable fixture, run Toggle Blockquote; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.swapLineUp` — Swap Line Up | unbound | On a disposable fixture, run Swap Line Up; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.swapLineDown` — Swap Line Down | unbound | On a disposable fixture, run Swap Line Down; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading0` — Set Heading 0 | unbound | On a disposable fixture, run Set Heading 0; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading1` — Set Heading 1 | unbound | On a disposable fixture, run Set Heading 1; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading2` — Set Heading 2 | unbound | On a disposable fixture, run Set Heading 2; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading3` — Set Heading 3 | unbound | On a disposable fixture, run Set Heading 3; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading4` — Set Heading 4 | unbound | On a disposable fixture, run Set Heading 4; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading5` — Set Heading 5 | unbound | On a disposable fixture, run Set Heading 5; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.setHeading6` — Set Heading 6 | unbound | On a disposable fixture, run Set Heading 6; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading0` — Set Heading 0 | ctrl+alt+0 (Mac cmd+alt+0) | On a disposable fixture, run Set Heading 0; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading1` — Set Heading 1 | ctrl+alt+1 (Mac cmd+alt+1) | On a disposable fixture, run Set Heading 1; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading2` — Set Heading 2 | ctrl+alt+2 (Mac cmd+alt+2) | On a disposable fixture, run Set Heading 2; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading3` — Set Heading 3 | ctrl+alt+3 (Mac cmd+alt+3) | On a disposable fixture, run Set Heading 3; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading4` — Set Heading 4 | ctrl+alt+4 (Mac cmd+alt+4) | On a disposable fixture, run Set Heading 4; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading5` — Set Heading 5 | ctrl+alt+5 (Mac cmd+alt+5) | On a disposable fixture, run Set Heading 5; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading6` — Set Heading 6 | ctrl+alt+6 (Mac cmd+alt+6) | On a disposable fixture, run Set Heading 6; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.gitDiffEditor.open` — Open Rendered Git Diff | unbound | On a disposable fixture, run Open Rendered Git Diff; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.gitGutter.nextChange` — Go to Next Git Change | alt+f5 | On a disposable fixture, run Go to Next Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.gitGutter.previousChange` — Go to Previous Git Change | shift+alt+f5 | On a disposable fixture, run Go to Previous Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.gitGutter.showChange` — Show Git Change | alt+f3 | On a disposable fixture, run Show Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.graph.open` — Open Vault Graph | unbound | On a disposable fixture, run Open Vault Graph; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.graph.chooseBundle` — Choose Vault Graph Bundle | unbound | On a disposable fixture, run Choose Vault Graph Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.graph.chooseBundle` — Choose Vault Graph Scope | unbound | On a disposable fixture, run Choose Vault Graph Scope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.ideContext.copy` — Copy IDE Context | unbound | On a disposable fixture, run Copy IDE Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.ideContext.send` — Send IDE Context to Agent… | unbound | On a disposable fixture, run Send IDE Context to Agent…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.renameHeading` — Rename Heading… | unbound | On a disposable fixture, run Rename Heading…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.insertWikilink` — Insert Wikilink | unbound | On a disposable fixture, run Insert Wikilink; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.followLink` — Follow Link | unbound | On a disposable fixture, run Follow Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.openLinkToSide` — Open Link to Side | unbound | On a disposable fixture, run Open Link to Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.openLinkInNewTab` — Open Link in New Tab | unbound | On a disposable fixture, run Open Link in New Tab; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.renameHeading` — Rename Heading… | unbound | On a disposable fixture, run Rename Heading…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.openLinkToSide` — Open Link to Side | unbound | On a disposable fixture, run Open Link to Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleSourceMode` — Toggle Live Preview/Source Mode | unbound | On a disposable fixture, run Toggle Live Preview/Source Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.marp.preview` — Open Marp Preview to the Side | unbound | On a disposable fixture, run Open Marp Preview to the Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1187,23 +1195,21 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.marp.keepInWorkshop` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.backlinks.sortByAlphabetical` — ✓ File name (A to Z) | unbound | On a disposable fixture with Backlinks open, cycle the view title sort; confirm Linked mentions reorder, then undo where applicable. |
-| `lumiere.markdown.backlinks.sortByAlphabeticalReverse` — ✓ File name (Z to A) | unbound | On a disposable fixture with Backlinks open, cycle the view title sort; confirm Linked mentions reorder, then undo where applicable. |
-| `lumiere.markdown.backlinks.sortByModifiedTime` — ✓ Modified time (new to old) | unbound | On a disposable fixture with Backlinks open, cycle the view title sort; confirm Linked mentions reorder, then undo where applicable. |
-| `lumiere.markdown.backlinks.sortByModifiedTimeReverse` — ✓ Modified time (old to new) | unbound | On a disposable fixture with Backlinks open, cycle the view title sort; confirm Linked mentions reorder, then undo where applicable. |
+| `lumiere.markdown.outgoingLinks.sortByAlphabetical` — ✓ File name (A to Z) | unbound | On a disposable fixture, run ✓ File name (A to Z); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outgoingLinks.sortByAlphabeticalReverse` — ✓ File name (Z to A) | unbound | On a disposable fixture, run ✓ File name (Z to A); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outgoingLinks.sortByModifiedTime` — ✓ Modified time (new to old) | unbound | On a disposable fixture, run ✓ Modified time (new to old); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outgoingLinks.sortByModifiedTimeReverse` — ✓ Modified time (old to new) | unbound | On a disposable fixture, run ✓ Modified time (old to new); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outgoingLinks.enableExtraContext` — Show More Context | unbound | On a disposable fixture, run Show More Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outgoingLinks.disableExtraContext` — ✓ Show More Context | unbound | On a disposable fixture, run ✓ Show More Context; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.outline.toggle` — Toggle Markdown Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Markdown Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
-| `lumiere.markdown.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workshop; switch to a plain text split and confirm its native symbol shortcut remains available. |
-| `lumiere.markdown.tags.sortByFrequency` — ✓ Sort by Frequency | unbound | On a disposable fixture with Tags open, use the view title sort; confirm frequency order and checkmark, then undo where applicable. |
-| `lumiere.markdown.tags.sortByName` — ✓ Sort by Name | unbound | On a disposable fixture with Tags open, use the view title sort; confirm name order and checkmark, then undo where applicable. |
-| `lumiere.markdown.tags.enableNested` — Show Nested Tags | unbound | On a disposable fixture with Tags open, enable nested tags from the view title; confirm nesting returns. |
-| `lumiere.markdown.tags.disableNested` — ✓ Show Nested Tags | unbound | On a disposable fixture with Tags open, disable nested tags from the view title; confirm a flat list. |
+| `lumiere.markdown.outline.toggle` — Toggle Markdown Outline | ctrl+alt+o (Mac ctrl+cmd+o) | On a disposable fixture, run Toggle Markdown Outline; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outline.goToHeading` — Go to Heading… | ctrl+shift+o (Mac cmd+shift+o) | On a disposable fixture, run Go to Heading…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.toggleFoldProperties` — Toggle Fold Properties | unbound | On a disposable fixture, run Toggle Fold Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.addAlias` — Add Alias | unbound | On a disposable fixture, run Add Alias; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.clearProperties` — Clear File Properties | unbound | On a disposable fixture, run Clear File Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleFoldProperties` — Toggle Fold Properties | unbound | On a disposable fixture, run Toggle Fold Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.openCopiedAgentReference` — Open Copied Agent Reference | unbound | On a disposable fixture, run Open Copied Agent Reference; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.showPluginStatus` — Show Plugin Status | unbound | On a disposable fixture, run Show Plugin Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1213,8 +1219,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.openSettings` — Open Settings | unbound | On a disposable fixture, run Open Settings; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.changeSetting` — Change Setting… | unbound | On a disposable fixture, run Change Setting…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.setNoteFontSize` — Set Note Font Size | unbound | On a disposable fixture, run Set Note Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.increaseFontSize` — Increase Font Size | unbound | On a disposable fixture, run Increase Font Size twice; confirm the note text grows a pixel each time with no notice, and stops at 30. |
-| `lumiere.markdown.decreaseFontSize` — Decrease Font Size | unbound | On a disposable fixture, run Decrease Font Size twice; confirm the note text shrinks a pixel each time with no notice, and stops at 10. |
+| `lumiere.markdown.increaseFontSize` — Increase Font Size | unbound | On a disposable fixture, run Increase Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.decreaseFontSize` — Decrease Font Size | unbound | On a disposable fixture, run Decrease Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleLineNumbers` — Toggle Line Numbers | unbound | On a disposable fixture, run Toggle Line Numbers; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | On a disposable fixture, run Toggle Readable Line Width; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleMermaid` — Toggle Mermaid Diagrams | unbound | On a disposable fixture, run Toggle Mermaid Diagrams; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1240,9 +1246,14 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.tableAlignRight` — Table: Align Right | unbound | On a disposable fixture, run Table: Align Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.tableSortAscending` — Table: Sort Ascending | unbound | On a disposable fixture, run Table: Sort Ascending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.tableSortDescending` — Table: Sort Descending | unbound | On a disposable fixture, run Table: Sort Descending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tags.sortByFrequency` — ✓ Sort by Frequency | unbound | On a disposable fixture, run ✓ Sort by Frequency; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tags.sortByName` — ✓ Sort by Name | unbound | On a disposable fixture, run ✓ Sort by Name; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tags.enableNested` — Show Nested Tags | unbound | On a disposable fixture, run Show Nested Tags; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tags.disableNested` — ✓ Show Nested Tags | unbound | On a disposable fixture, run ✓ Show Nested Tags; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleChecklist` — Toggle Checklist Status | unbound | On a disposable fixture, run Toggle Checklist Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.cycleListChecklist` — Cycle List Checklist | unbound | On a disposable fixture, run Cycle List Checklist; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (Mac ctrl+o); ctrl+b (Mac ctrl+b); ctrl+i (Mac ctrl+i); ctrl+shift+x (Mac ctrl+shift+x); ctrl+k (Mac ctrl+k); ctrl+alt+0 (Mac ctrl+alt+0); ctrl+alt+1 (Mac ctrl+alt+1); ctrl+alt+2 (Mac ctrl+alt+2); ctrl+alt+3 (Mac ctrl+alt+3); ctrl+alt+4 (Mac ctrl+alt+4); ctrl+alt+5 (Mac ctrl+alt+5); ctrl+alt+6 (Mac ctrl+alt+6); ctrl+shift+t (Mac ctrl+shift+t); ctrl+shift+h (Mac ctrl+shift+h) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
+| `lumiere.markdown.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (Mac ctrl+o); ctrl+b (Mac ctrl+b); ctrl+i (Mac ctrl+i); ctrl+k (Mac ctrl+k) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
+| `lumiere.markdown.handleVimCtrlN` — Vim Ctrl+N | ctrl+n (Mac ctrl+n) | Enable Vim in Live Preview and press Ctrl+N; must not open Untitled and must move like j (<C-n>). Disable Vim: Ctrl+N opens Untitled. Hidden from the palette. |
 | `lumiere.markdown.wiki.copyForAgent` — Copy Wiki Reference for Agent | unbound | On a disposable fixture, run Copy Wiki Reference for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.wiki.copyEnvelope` — Copy Wiki Bridge Envelope | unbound | On a disposable fixture, run Copy Wiki Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.wiki.showLayout` — Show Wiki Layout | unbound | On a disposable fixture, run Show Wiki Layout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1251,24 +1262,24 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Setting | Default | Procedure |
 | --- | --- | --- |
 | `lumiere.markdown.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.cursorBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.backlinks.sortOrder` | `alphabetical` | Backlinks view sort (Obsidian sortOrder); change and confirm the title menu checkmark and list order. |
 | `lumiere.markdown.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.ideContext.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.callouts.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.codeBlocks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.cursorBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.diagrams.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.embeds.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.folding.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.footnotes.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.formatting.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.gitBlame.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.gitDiffEditor.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.gitGutter.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.gitInline.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.graph.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.ideContext.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.inlineTitle.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1277,6 +1288,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.marp.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.math.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.obsidianCompat.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.obsidianMarketplace.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.obsidianMarketplace.open` | command | Open Obsidian Community Plugins Marketplace modal or QuickPick. |
 | `lumiere.markdown.plugins.okfCore.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.outgoingLinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1290,26 +1303,28 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.sourcesProperty.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.stickyScroll.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.suggest.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.tables.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.tags.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.tasks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.vim.caretStyle` | `"obsidian"` | obsidian / vscodevim / codemirror; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.backlinks.sortOrder` | `"alphabetical"` | alphabetical / alphabeticalReverse / byModifiedTime / byModifiedTimeReverse; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.backlinks.extraContext` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.reclaimTextEditor` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.warmTextDocument` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.dragScrollSpeed` | `4` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.tabSize` | `4` | integer; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.editor.dragScrollSpeed` | `4` | number 1–10; text-selection auto-scroll multiplier (1 = original CodeMirror speed); Editor scenario 8, then reset the override. |
 | `lumiere.markdown.editor.fontSize` | `16` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.lineHeight` | `1.5` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.folding.heading` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1328,17 +1343,22 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.files.newNoteFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.files.attachmentFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.marp.open` | `"workbench"` | workbench / textEditor; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.math.macros` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.obsidianCompat.configFolder` | `".obsidian"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.okfCore.bundles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.outgoingLinks.sortOrder` | `"alphabetical"` | alphabetical / alphabeticalReverse / byModifiedTime / byModifiedTimeReverse; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.outgoingLinks.extraContext` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.outline.followCursor` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.properties.listPreviewCount` | `3` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.scratch.folder` | `"scratch"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.tags.viewSort` | `"name"` | name / frequency; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.stickyScroll.maxLines` | `5` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.tags.viewSort` | `"frequency"` | name / frequency; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.tags.viewNested` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.vault.rootMarkers` | `[".obsidian"]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.vault.excludedFiles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.vim.caretStyle` | `"obsidian"` | obsidian / vscodevim / codemirror; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.copyLinkForAgent.target` | `"auto"` | auto / cursor / chat / claudeCode / codex / clipboard; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.debug.logging` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

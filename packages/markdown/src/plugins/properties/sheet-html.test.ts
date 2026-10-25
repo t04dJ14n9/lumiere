@@ -269,3 +269,18 @@ test("verified map and list use OKF typed provenance UI", () => {
   assert.match(list, /mod-okf-verified-list/);
   assert.match(list, /okf-provenance-by[^>]*>human:a</);
 });
+
+test("sheet heading and add control use Obsidian class aliases and lucide-plus", () => {
+  const html = renderProperties("---\nfield: value\n---\n");
+  assert.match(html, /class="metadata-properties-title"/);
+  assert.match(
+    html,
+    /class="metadata-collapse-indicator collapse-indicator collapse-icon"/,
+  );
+  assert.match(
+    html,
+    /class="metadata-add-button text-icon-button"[^>]*data-property-add/,
+  );
+  assert.match(html, /data-lucide="plus"/);
+  assert.doesNotMatch(html, /＋/);
+});
