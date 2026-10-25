@@ -38,3 +38,8 @@ export const MARKDOWN_EDITOR: EditorProvider = Object.freeze({
 export function whenActive(provider: EditorProvider): string {
   return `activeCustomEditorId == '${provider.viewType}'`;
 }
+
+/** `webviewId == '<viewType>'`, for webview/context when-clauses. */
+export function whenWebview(provider: EditorProvider): string {
+  return `webviewId == '${provider.viewType}'`;
+}
