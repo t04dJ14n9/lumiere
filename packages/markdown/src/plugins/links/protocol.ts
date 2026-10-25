@@ -15,9 +15,14 @@ export const request = Schema.object({
   tab: Schema.boolean().optional(),
 });
 export const MAX_UNRESOLVED = 10_000;
+export const MAX_KNOWN_NOTES = 150_000;
 /** Lower-cased link paths in the note that name no vault file. */
 export const unresolvedLinkpaths = Schema.array(Schema.string().max(8192)).max(
   MAX_UNRESOLVED,
+);
+/** Vault note lookup keys (basename / path / aliases), lower-cased. */
+export const knownNoteKeys = Schema.array(Schema.string().max(8192)).max(
+  MAX_KNOWN_NOTES,
 );
 export const protocol = defineProtocol("links", {
   requests: {
@@ -46,8 +51,10 @@ export const protocol = defineProtocol("links", {
       }),
       result: unresolvedLinkpaths,
     },
+    knownNotes: { params: Schema.object({}), result: knownNoteKeys },
   },
   notifications: {
     unresolvedChanged: unresolvedLinkpaths,
+    knownNotesChanged: knownNoteKeys,
   },
 });

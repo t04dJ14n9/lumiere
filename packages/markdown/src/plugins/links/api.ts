@@ -41,7 +41,39 @@ export const unresolvedLinks = StateField.define<ReadonlySet<string>>({
   },
 });
 
+export const setKnownNotes = StateEffect.define<ReadonlySet<string>>();
+
+/** Vault note lookup keys for optimistic unresolved styling. */
+export const knownNotes = StateField.define<ReadonlySet<string>>({
+  create: () => new Set(),
+  update(value, transaction) {
+    for (const effect of transaction.effects) {
+      if (effect.is(setKnownNotes)) {
+        value = effect.value;
+      }
+    }
+    return value;
+  },
+});
+
 export function isUnresolved(state: EditorState, href: string): boolean {
   const key = unresolvedKey(href);
-  return key !== "" && !!state.field(unresolvedLinks, false)?.has(key);
+  if (key === "") {
+    return false;
+  }
+  if (state.field(unresolvedLinks, false)?.has(key)) {
+    return true;
+  }
+  const known = state.field(knownNotes, false);
+  if (!known || known.size === 0) {
+    return false;
+  }
+  if (known.has(key)) {
+    return false;
+  }
+  const slash = key.lastIndexOf("/");
+  if (slash >= 0 && known.has(key.slice(slash + 1))) {
+    return false;
+  }
+  return true;
 }
