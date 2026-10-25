@@ -108,6 +108,13 @@ export default defineManifest({
         group: "backlinks@1",
       },
     ],
-    views: [{ id: "backlinks", name: "Backlinks", scope: "workbench" }],
+    views: [
+      {
+        id: "backlinks",
+        name: "Backlinks",
+        scope: "workbench",
+        visibility: "collapsed",
+      },
+    ],
   },
 } as const);

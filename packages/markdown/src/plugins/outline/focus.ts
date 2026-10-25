@@ -41,7 +41,6 @@ export type OutlineFocusOptions = {
   /** This product's custom editor id (defaults to Lumière). */
   ownEditorViewType?: string;
   outlineViewId?: string;
-  tagsViewId?: string;
   leaveDelayMs?: number;
   schedule?: OutlineFocusSchedule;
 };
@@ -62,8 +61,9 @@ type FocusState = {
 
 /**
  * One-shot sidebar swap while a Lumière custom editor is active:
- * hide the native Outline, show Markdown Outline and Tags, then restore the
- * native Outline on leave (debounced for Workshop↔PDF handoffs).
+ * hide the native Outline, focus Markdown Outline (expanded), leave Tags and
+ * other Explorer subpanels collapsed, then restore the native Outline on leave
+ * (debounced for Workshop↔PDF handoffs).
  */
 export function createOutlineFocus(options: OutlineFocusOptions): {
   sync: (workshopActive: boolean) => void;
@@ -104,7 +104,6 @@ type ResolvedFocus = {
   activeViewType: () => string | undefined;
   ownEditorViewType: string;
   outlineViewId: string;
-  tagsViewId: string;
   leaveDelayMs: number;
   schedule: OutlineFocusSchedule;
 };
@@ -116,7 +115,6 @@ function resolveOptions(options: OutlineFocusOptions): ResolvedFocus {
     activeViewType: () => options.activeCustomEditorViewType?.(),
     ownEditorViewType: options.ownEditorViewType ?? MARKDOWN_WORKSHOP_EDITOR,
     outlineViewId: options.outlineViewId ?? VIEW_ID,
-    tagsViewId: options.tagsViewId ?? TAGS_VIEW_ID,
     leaveDelayMs: options.leaveDelayMs ?? LEAVE_RESTORE_MS,
     schedule: options.schedule ?? defaultSchedule,
   };
@@ -136,7 +134,6 @@ function enterFocus(
   enqueue(async () => {
     await options.execute(`${NATIVE_OUTLINE_ID}.removeView`);
     await options.execute(`${options.outlineViewId}.focus`);
-    await options.execute(`${options.tagsViewId}.focus`);
     await options.focusEditor();
   });
 }

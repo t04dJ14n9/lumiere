@@ -83,6 +83,7 @@ export default defineManifest({
         name: "Tags",
         scope: "workbench",
         when: whenActive(MARKDOWN_EDITOR),
+        visibility: "collapsed",
       },
     ],
   },

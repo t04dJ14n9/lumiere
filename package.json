@@ -1430,32 +1430,38 @@
         {
           "id": "lumiere.markdown.backlinks",
           "name": "Backlinks",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled",
+          "visibility": "collapsed"
         },
         {
           "id": "lumiere.markdown.cursorBridge.editPromptProbe",
           "name": "\u00b7",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.cursorBridge.enabled && (editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.cursorBridge.enabled && (editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed",
+          "visibility": "collapsed"
         },
         {
           "id": "lumiere.markdown.outgoingLinks",
           "name": "Outgoing Links",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled",
+          "visibility": "collapsed"
         },
         {
           "id": "lumiere.markdown.outline",
           "name": "Markdown Outline",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && activeCustomEditorId == 'lumiere.markdown.editor'"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled && activeCustomEditorId == 'lumiere.markdown.editor'",
+          "visibility": "visible"
         },
         {
           "id": "lumiere.markdown.tags",
           "name": "Tags",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && activeCustomEditorId == 'lumiere.markdown.editor'"
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.tags.enabled && activeCustomEditorId == 'lumiere.markdown.editor'",
+          "visibility": "collapsed"
         },
         {
           "id": "lumiere.pdf.outline",
           "name": "PDF Outline",
-          "when": "lumiere.pdf.pdfActive"
+          "when": "lumiere.pdf.pdfActive",
+          "visibility": "visible"
         }
       ]
     },

@@ -16,7 +16,8 @@
       {
         "id": "lumiere.pdf.outline",
         "name": "PDF Outline",
-        "when": "lumiere.pdf.pdfActive"
+        "when": "lumiere.pdf.pdfActive",
+        "visibility": "visible"
       }
     ]
   },
