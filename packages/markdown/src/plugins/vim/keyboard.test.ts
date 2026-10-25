@@ -119,6 +119,20 @@ for (const [code, shift, expected] of [
   }
 }
 
+test("Dead key and Alt/Meta modifiers on KeyG stay untouched", () => {
+  assert.equal(
+    imeVimCommandKey(event("Dead", "KeyG", { shiftKey: false }), mode()),
+    undefined,
+  );
+  assert.equal(
+    translatedVimKey(
+      event("Process", "KeyG", { shiftKey: false, altKey: true }),
+      mode(),
+    ),
+    undefined,
+  );
+});
+
 test("IME Process digits with Shift map to US shifted glyphs; line keys still win first", () => {
   assert.equal(
     imeVimCommandKey(event("Process", "Digit4", { shiftKey: true }), mode()),
@@ -136,6 +150,19 @@ test("IME Process digits with Shift map to US shifted glyphs; line keys still wi
     translatedVimKey(event("Process", "Digit3", { shiftKey: true }), mode()),
     "#",
   );
+});
+
+test("all Shift+Digit0..Digit9 map to their US shifted symbols under IME Process", () => {
+  const expected = [")", "!", "@", "#", "$", "%", "^", "&", "*", "("];
+  for (let d = 0; d <= 9; d++) {
+    assert.equal(
+      translatedVimKey(
+        event("Process", `Digit${d}`, { shiftKey: true }),
+        mode(),
+      ),
+      expected[d],
+    );
+  }
 });
 
 test("IME Process Shift+Digit4 still yields $ in visual mode where line-key mapping skips", () => {
@@ -192,6 +219,23 @@ for (const [key, code, expected] of [
   });
 }
 
+test("Chinese punctuation with modifiers or prevented default is untouched", () => {
+  for (const field of [
+    "ctrlKey",
+    "altKey",
+    "metaKey",
+    "defaultPrevented",
+  ] as const) {
+    assert.equal(
+      translatedVimKey(
+        event("。", "Period", { shiftKey: false, [field]: true }),
+        mode(),
+      ),
+      undefined,
+    );
+  }
+});
+
 for (const [code, shift, expected] of [
   ["Period", false, "."],
   ["Comma", false, ","],
@@ -240,4 +284,25 @@ test("ASCII punctuation and Chinese glyphs on the wrong code stay with the depen
     translatedVimKey(event("。", "Comma", { shiftKey: false }), mode()),
     undefined,
   );
+});
+
+test("shifted and unshifted brackets, quotes, and operators map under IME Process", () => {
+  for (const [code, unshifted, shifted] of [
+    ["Minus", "-", "_"],
+    ["Equal", "=", "+"],
+    ["BracketLeft", "[", "{"],
+    ["BracketRight", "]", "}"],
+    ["Quote", "'", '"'],
+    ["Backquote", "`", "~"],
+    ["Backslash", "\\", "|"],
+  ] as const) {
+    assert.equal(
+      translatedVimKey(event("Process", code, { shiftKey: false }), mode()),
+      unshifted,
+    );
+    assert.equal(
+      translatedVimKey(event("Process", code, { shiftKey: true }), mode()),
+      shifted,
+    );
+  }
 });

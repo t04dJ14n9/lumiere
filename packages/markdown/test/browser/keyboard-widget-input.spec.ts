@@ -130,6 +130,24 @@ test("callout title click toggles fold without editing (BH-017)", async ({
   await expect(body).toBeHidden();
 });
 
+test("expanded (+) callout title click collapses without editing (BH-035)", async ({
+  page,
+}) => {
+  const callout =
+    "> [!question]+ Expanded, foldable\n> Click the title to collapse.";
+  await open(page, `before\n\n${callout}\n\nafter`);
+  const body = page.locator(".callout-content p");
+  await expect(body).toBeVisible();
+  await page.locator(".callout-title-text").click();
+  await expect(body).toBeHidden();
+  await expect(page.locator(".hybrid-callout")).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`before\n\n${callout}\n\nafter`);
+  await page.locator(".callout-title-text").click();
+  await expect(body).toBeVisible();
+});
+
 test("callout fold button toggles without editing, then its body accepts input", async ({
   page,
 }) => {
@@ -197,4 +215,30 @@ test("typing after clicking a footnote superscript inserts at the definition", a
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("See the note.[^1]\n\nafter\n\nxyz[^1]: Footnote body.");
+});
+
+test("Alt-click on a rendered wikilink places one caret so typing edits the link", async ({
+  page,
+}) => {
+  const source = "prefix [[Note]] suffix";
+  await open(page, source);
+  await page.evaluate((p) => window.harness.reveal(p), source.length);
+  const link = page.locator(".md-link-rendered").first();
+  await expect(link).toBeVisible();
+  const box = await link.boundingBox();
+  await page.keyboard.down("Alt");
+  await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.keyboard.up("Alt");
+  await expect
+    .poll(async () => {
+      const html = await page.evaluate(
+        () => document.querySelector(".cm-line")?.innerHTML ?? "",
+      );
+      return html.includes("[[") && !html.includes("md-link-rendered");
+    })
+    .toBe(true);
+  await page.keyboard.type("Z");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("prefix [[NoZte]] suffix");
 });

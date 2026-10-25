@@ -5,7 +5,13 @@ import type {
 } from "../../markdown/properties/types";
 import type { MenuItem } from "../editor/api";
 export type Action =
-  "save" | "undo" | "redo" | "close" | "saveClose" | "openAsText";
+  | "save"
+  | "undo"
+  | "redo"
+  | "close"
+  | "saveClose"
+  | "openAsText"
+  | "toggleTextEditor";
 /** Internal sheet adapter. No cross-plugin capability callbacks live in render passes. */
 export interface PropertyContext {
   source: string;

@@ -33,3 +33,10 @@ test("diagrams.css styles Obsidian mermaid-guard-actions Allow control", () => {
   assert.match(rule(".mermaid-guard-actions"), /display:\s*flex/);
   assert.match(rule(".mermaid-guard-actions button"), /cursor:\s*pointer/);
 });
+
+test("diagrams.css styles Mermaid internal-link nodes with pointer cursor", () => {
+  assert.match(
+    rule('pre[data-fence="mermaid"] svg .internal-link tspan'),
+    /cursor:\s*pointer/,
+  );
+});

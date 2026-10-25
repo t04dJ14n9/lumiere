@@ -32,7 +32,7 @@ and otherwise they indent or outdent the lines the selection touches, even
 with the caret mid-line. Home (Cmd+Left on macOS), with Shift to select, goes
 first to the start of a list item's, task's or quote's text, then to the line
 start (`line-start.ts`).
-Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's: it
+Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's (capture-phase ownership so Vim cannot treat it as page-forward, BH-023; Ctrl/Cmd+H opens Replace the same way, BH-025): it
 shows "N / M" for the selected match (counting stops at 1000), typing extends
 the query at the caret even when the current query already has matches
 (CodeMirror's findNext would otherwise select-all the field), Enter and
@@ -96,10 +96,13 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
 - `associations.ts`: **Use Lumière for Markdown in This Workspace**.
 - `toggle-text-editor.ts`: **Toggle Text Editor** (Ctrl/Cmd+E) between Lumière
-  and the host default text editor.
+  and the host default text editor. Capture-phase Mod+E ownership (BH-003) lives
+  in `commands/toggle-text-editor-keys.ts`.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
-- `indentation.ts`: Tab and Shift+Tab commands.
+- `indentation.ts`: Tab and Shift+Tab commands (capture-phase for Vim NORMAL, BH-040).
 - `find.ts`, `find-panel.ts`, `find-caret.ts`, `find-count.ts`, `find.css`: in-note find and replace.
+- `find-keys.ts`: capture-phase Ctrl/Cmd+F Find and Ctrl/Cmd+H Replace (BH-023 / BH-025).
+- `find-keys.test.ts`: Mod+F/H mapping and native-field skip.
 - `select-all.ts`: stops VS Code's own Select All from undoing the
   editor's Ctrl/Cmd+A (VS Code forwards every webview keydown).
 - `focus-report.ts`: reports the webview's focus for

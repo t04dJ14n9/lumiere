@@ -2,7 +2,7 @@
   "name": "lumiere",
   "displayName": "Lumière: Markdown Editor and PDF Reader",
   "description": "Obsidian-style Live Preview for Markdown and a PDF reader, in VS Code and Cursor, with links your AI agent can follow.",
-  "version": "0.1.5",
+  "version": "0.1.5-pr-BH073",
   "publisher": "t04dj14n9",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -209,6 +209,11 @@
       {
         "command": "lumiere.markdown.toggleTextEditor",
         "title": "Toggle Text Editor",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.goToLine",
+        "title": "Go to Line…",
         "category": "Lumière"
       },
       {
@@ -515,6 +520,11 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.obsidianMarketplace.open",
+        "title": "Open Obsidian Community Plugins Marketplace",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.outgoingLinks.sortByAlphabetical",
         "title": "✓ File name (A to Z)",
         "category": "Lumière"
@@ -805,6 +815,11 @@
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "title": "Consume Vim Host Shortcut",
+        "category": "Lumière"
+      },
+      {
+        "command": "lumiere.markdown.handleVimCtrlN",
+        "title": "Vim Ctrl+N",
         "category": "Lumière"
       },
       {
@@ -1128,6 +1143,12 @@
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
       },
       {
+        "command": "lumiere.markdown.goToLine",
+        "key": "ctrl+g",
+        "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor && lumiere.markdown.editorFocus"
+      },
+      {
         "command": "lumiere.markdown.toggleTextEditor",
         "key": "ctrl+e",
         "mac": "cmd+e",
@@ -1149,6 +1170,48 @@
         "command": "lumiere.markdown.toggleItalics",
         "key": "ctrl+i",
         "mac": "cmd+i",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading0",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading1",
+        "key": "ctrl+alt+1",
+        "mac": "cmd+alt+1",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading2",
+        "key": "ctrl+alt+2",
+        "mac": "cmd+alt+2",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading3",
+        "key": "ctrl+alt+3",
+        "mac": "cmd+alt+3",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading4",
+        "key": "ctrl+alt+4",
+        "mac": "cmd+alt+4",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading5",
+        "key": "ctrl+alt+5",
+        "mac": "cmd+alt+5",
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
+      },
+      {
+        "command": "lumiere.markdown.setHeading6",
+        "key": "ctrl+alt+6",
+        "mac": "cmd+alt+6",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
@@ -1200,78 +1263,24 @@
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+b",
         "mac": "ctrl+b",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+i",
         "mac": "ctrl+i",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+shift+x",
-        "mac": "ctrl+shift+x",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
         "command": "lumiere.markdown.consumeVimHostShortcut",
         "key": "ctrl+k",
         "mac": "ctrl+k",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.isCursorHost && lumiere.markdown.editorFocus"
+        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && !lumiere.markdown.isCursorHost && !lumiere.markdown.plugin.formatting && lumiere.markdown.editorFocus"
       },
       {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+0",
-        "mac": "ctrl+alt+0",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+1",
-        "mac": "ctrl+alt+1",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+2",
-        "mac": "ctrl+alt+2",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+3",
-        "mac": "ctrl+alt+3",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+4",
-        "mac": "ctrl+alt+4",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+5",
-        "mac": "ctrl+alt+5",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+alt+6",
-        "mac": "ctrl+alt+6",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+shift+t",
-        "mac": "ctrl+shift+t",
-        "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
-      },
-      {
-        "command": "lumiere.markdown.consumeVimHostShortcut",
-        "key": "ctrl+shift+h",
-        "mac": "ctrl+shift+h",
+        "command": "lumiere.markdown.handleVimCtrlN",
+        "key": "ctrl+n",
+        "mac": "ctrl+n",
         "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.vim && lumiere.markdown.editorFocus"
       },
       {
@@ -1556,6 +1565,10 @@
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' || (editorLangId == 'markdown' && !activeCustomEditorId)"
         },
         {
+          "command": "lumiere.markdown.goToLine",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.editor"
+        },
+        {
           "command": "lumiere.markdown.insertEmbed",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.embeds"
         },
@@ -1796,6 +1809,10 @@
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.math"
         },
         {
+          "command": "lumiere.markdown.obsidianMarketplace.open",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.obsidianMarketplace.enabled"
+        },
+        {
           "command": "lumiere.markdown.outgoingLinks.sortByAlphabetical",
           "when": "false"
         },
@@ -2010,6 +2027,10 @@
         },
         {
           "command": "lumiere.markdown.consumeVimHostShortcut",
+          "when": "false"
+        },
+        {
+          "command": "lumiere.markdown.handleVimCtrlN",
           "when": "false"
         },
         {
@@ -2810,6 +2831,12 @@
             "default": true,
             "scope": "resource",
             "description": "Use Obsidian property types and vault settings in Lumière."
+          },
+          "lumiere.markdown.plugins.obsidianMarketplace.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Browse, install, enable, disable and uninstall Obsidian community plugins in the vault."
           },
           "lumiere.markdown.plugins.okfCore.enabled": {
             "type": "boolean",

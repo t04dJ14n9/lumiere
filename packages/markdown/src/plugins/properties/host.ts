@@ -3,10 +3,12 @@ import type { PanelShell, WorkspaceStorage } from "../../shared/host";
 import type {} from "../vault/api";
 import type {} from "./api";
 import { canSetPropertyType } from "../../markdown/properties/types";
+import { joinContained } from "../../shared/workspace-path";
 import { PropertyTypeStore } from "./type-store";
 import { PropertyCollapseStore } from "./collapse-store";
 import { vaultPropertyNames } from "./property-names";
 import { protocol } from "./protocol";
+import { loadVaultCssSnippets } from "./snippets";
 
 interface PropertyStores {
   types: PropertyTypeStore;
@@ -16,12 +18,16 @@ const stores = new WeakMap<WorkspaceStorage, PropertyStores>();
 
 export const propertiesHost: Plugin<{ panel: PanelShell }> = {
   name: "properties",
-  inject: { required: ["rpc", "storage", "vault"] },
+  inject: {
+    required: ["rpc", "storage", "vault"],
+    optional: ["workspace", "settings"],
+  },
   apply(ctx, { panel }) {
     const preferences = sharedStores(ctx.storage);
     registerTypes(ctx, preferences.types);
     registerPropertyNames(ctx, preferences.types);
     registerDisclosure(ctx, preferences.collapse, panel.document.uri);
+    registerSnippets(ctx);
   },
 };
 
@@ -99,4 +105,58 @@ function registerDisclosure(
       }
     }),
   );
+}
+
+function resolveSnippetsConfigFolder(ctx: Context): string {
+  return (
+    ctx.settings?.effective.get(
+      "obsidianCompat.configFolder",
+      ".obsidian",
+      ctx.vault.root,
+    ) ?? ".obsidian"
+  );
+}
+
+function registerSnippets(ctx: Context): void {
+  const readSnippets = async (): Promise<string[]> => {
+    if (!ctx.workspace) {
+      return [];
+    }
+    const snippets = await loadVaultCssSnippets(
+      ctx.workspace,
+      ctx.vault.root,
+      resolveSnippetsConfigFolder(ctx),
+    );
+    return [...snippets];
+  };
+  ctx.effect(() => ctx.rpc.handle(protocol, "snippets", readSnippets));
+  if (!ctx.workspace) {
+    return;
+  }
+  const configDir = joinContained(
+    ctx.vault.root,
+    resolveSnippetsConfigFolder(ctx),
+  );
+  if (!configDir) {
+    return;
+  }
+  const notifySnippets = () => {
+    void readSnippets()
+      .then((snippets) => {
+        if (ctx.isLive) {
+          ctx.rpc.notify(protocol, "snippets", snippets);
+        }
+      })
+      .catch(() => {
+        // Ignore transient watch read failures.
+      });
+  };
+  const appearanceUri = joinContained(configDir, "appearance.json");
+  if (appearanceUri) {
+    ctx.effect(() => ctx.workspace!.watch(appearanceUri, notifySnippets));
+  }
+  const snippetsDir = joinContained(configDir, "snippets");
+  if (snippetsDir) {
+    ctx.effect(() => ctx.workspace!.watch(snippetsDir, notifySnippets));
+  }
 }

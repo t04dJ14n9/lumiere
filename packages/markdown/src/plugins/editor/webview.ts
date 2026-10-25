@@ -16,7 +16,6 @@ import { ViewContributions } from "./contributions";
 import { createMenu } from "../../webview/ui/menu";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
-import { defaultKeymap } from "@codemirror/commands";
 import { getSyncedVersion, sendableUpdates } from "@codemirror/collab";
 import type { Context, Plugin, Infer } from "@workshop/core";
 import type {} from "../document/api";
@@ -25,10 +24,18 @@ import { protocol, type viewState } from "./protocol";
 import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
-import { indentationKeymap } from "./indentation";
+import { indentationDom, indentationKeymap } from "./indent-capture";
 import { lineStartKeymap } from "./line-start";
-import { findExtension } from "./find";
+import { findExtension, openFind } from "./find";
+import { keepFindKey } from "./find-keys";
 import { keepSelectAllInEditor } from "./select-all";
+import { keepEditKeys } from "./edit-keys";
+import {
+  defaultKeymap,
+  deleteCharBackward,
+  selectAll,
+} from "@codemirror/commands";
+import { getCM } from "@replit/codemirror-vim";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
@@ -110,6 +117,8 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerJumpRecorder(ctx, editor, presentation);
     registerReveal(ctx, view);
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
+    registerEditKeyOwnership(ctx, view);
+    registerFindKeyOwnership(ctx, view);
     ctx.effect(() =>
       reportWebviewFocus(window, (hasFocus) =>
         ctx.rpc.notify(
@@ -123,6 +132,61 @@ export const editorWebview: Plugin<EditorConfig> = {
     view.focus();
   },
 };
+
+/** Capture Mod/Ctrl+A/X/C/V so Select All / Cut / Copy / Paste beat Vim (BH-029 / BH-032). */
+function registerEditKeyOwnership(ctx: Context, view: EditorView): void {
+  ctx.effect(() =>
+    keepEditKeys(view.dom.ownerDocument, {
+      selectAll: () => {
+        selectAll(view);
+      },
+      cut: () => {
+        if (view.state.readOnly) {
+          return false;
+        }
+        if (view.state.selection.ranges.every((range) => range.empty)) {
+          return false;
+        }
+        view.focus();
+        return view.dom.ownerDocument.execCommand("cut");
+      },
+      copy: () => {
+        if (view.state.selection.ranges.every((range) => range.empty)) {
+          return false;
+        }
+        view.focus();
+        return view.dom.ownerDocument.execCommand("copy");
+      },
+      paste: () => {
+        if (view.state.readOnly) {
+          return false;
+        }
+        view.focus();
+        return view.dom.ownerDocument.execCommand("paste");
+      },
+    }),
+  );
+}
+
+/** Capture Mod/Ctrl+F/H so Find/Replace beat Vim and the workbench (BH-023/025).
+ * BH-045: Vim INSERT Ctrl+H deletes the prior character instead of opening Replace. */
+function registerFindKeyOwnership(ctx: Context, view: EditorView): void {
+  ctx.effect(() =>
+    keepFindKey(
+      view.dom.ownerDocument,
+      (replace) => {
+        openFind(view, replace);
+      },
+      undefined,
+      {
+        isInsertMode: () => Boolean(getCM(view)?.state.vim?.insertMode),
+        onInsertCtrlH: () => {
+          deleteCharBackward(view);
+        },
+      },
+    ),
+  );
+}
 
 function createEditorView(
   ctx: Context,
@@ -169,6 +233,8 @@ function createEditorView(
         }),
         menuSelectionContext,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
+        // BH-040/047: Tab/Shift+Tab and Mod-[/] via DOM so Vim cannot swallow indent.
+        indentationDom(),
         Prec.low(
           keymap.of([
             ...indentationKeymap,

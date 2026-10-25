@@ -5,14 +5,20 @@ import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type { InlineRenderer } from "../livePreview/api";
-import { isUnresolved, setUnresolved, unresolvedLinks } from "./api";
+import {
+  isUnresolved,
+  knownNotes,
+  setKnownNotes,
+  setUnresolved,
+  unresolvedLinks,
+} from "./api";
 import { sourceUnresolved } from "./source-unresolved";
-export { isUnresolved, unresolvedLinks } from "./api";
+export { isUnresolved, knownNotes, unresolvedLinks } from "./api";
+import { tagUnresolvedAnchors } from "./tag-unresolved-anchors";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
 import { linkAt, followCaretLink } from "./caret-link";
 import { linkClickHandlers, type OpenLink } from "./clicks";
-import { tagUnresolvedAnchors } from "./tag-unresolved-anchors";
 export { linkAt } from "./caret-link";
 
 export const linksWebview: Plugin = {
@@ -32,6 +38,7 @@ export const linksWebview: Plugin = {
     registerNavigation(ctx, navigate);
     registerUnresolvedLinks(ctx);
     registerEmbedUnresolved(ctx);
+    registerKnownNotes(ctx);
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
@@ -149,6 +156,26 @@ function registerUnresolvedLinks(ctx: Context): void {
     .call(protocol, "unresolved", {})
     .then(apply)
     .catch((error) => ctx.logger.warn("Unresolved links unavailable", error));
+}
+
+/** Ask the host for vault note keys, then follow index resolution. */
+function registerKnownNotes(ctx: Context): void {
+  const view = ctx.editor.view;
+  let live = true;
+  ctx.effect(() => () => {
+    live = false;
+  });
+  const apply = (keys: readonly string[]) => {
+    if (live) {
+      view.dispatch({ effects: setKnownNotes.of(new Set(keys)) });
+    }
+  };
+  ctx.effect(() => ctx.editor.extend(knownNotes));
+  ctx.effect(() => ctx.rpc.on(protocol, "knownNotesChanged", apply));
+  void ctx.rpc
+    .call(protocol, "knownNotes", {})
+    .then(apply)
+    .catch((error) => ctx.logger.warn("Known notes unavailable", error));
 }
 
 /**

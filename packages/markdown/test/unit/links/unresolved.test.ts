@@ -7,9 +7,13 @@ import { createRoot } from "@workshop/core";
 import { metadata } from "../../../src/markdown/metadata";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
-import { unresolvedKey } from "../../../src/plugins/links/target";
+import {
+  unresolvedKey,
+  knownNoteKeys,
+} from "../../../src/plugins/links/target";
 import {
   unresolvedLinks,
+  knownNotes,
   wikiLinkRenderer,
 } from "../../../src/plugins/links/webview";
 import { documentTree } from "../../../src/plugins/livePreview/document-tree";
@@ -27,7 +31,12 @@ test("an unresolved key is the link path as written, lower-cased, without subpat
 });
 
 /** The classes of every wikilink mark, with the cursor at `cursor`. */
-function wikiLinkClasses(doc: string, cursor: number, unresolved: string[]) {
+function wikiLinkClasses(
+  doc: string,
+  cursor: number,
+  unresolved: string[],
+  known: string[] = [],
+) {
   const state = EditorState.create({
     doc,
     selection: EditorSelection.cursor(cursor),
@@ -35,6 +44,7 @@ function wikiLinkClasses(doc: string, cursor: number, unresolved: string[]) {
       documentTree,
       inlineRenderers.of(wikiLinkRenderer),
       unresolvedLinks.init(() => new Set(unresolved)),
+      knownNotes.init(() => new Set(known)),
     ],
   });
   const classes: Record<string, string> = {};
@@ -234,4 +244,47 @@ test("unresolved accepts an embedded note URI for that note's outbound misses", 
   await root.dispose();
   host.dispose();
   client.dispose();
+});
+
+test("known note keys include path, basename and aliases", () => {
+  const index = new MemoryVaultIndex({
+    root: "memory:///vault",
+    folderNote: "",
+    linkFormat: "shortest",
+  });
+  index.replaceFiles([
+    {
+      uri: "memory:///vault/Folder/Note.md",
+      path: "Folder/Note.md",
+      mtime: 1,
+      size: 1,
+    },
+  ]);
+  index.setMetadata(
+    "Folder/Note.md",
+    metadata("---\naliases: [Big Map]\n---\n"),
+  );
+  assert.deepEqual(knownNoteKeys(index), ["big map", "folder/note", "note"]);
+});
+
+test("a missing link dims from vault known-keys before the unresolved set updates", () => {
+  const doc = "[[Missing]] [[Here]] end";
+  // Authoritative unresolved set still empty (overlay lag); known notes loaded.
+  assert.deepEqual(wikiLinkClasses(doc, doc.length, [], ["here"]), {
+    Missing: "md-link md-link-rendered is-unresolved",
+    Here: "md-link md-link-rendered",
+  });
+  // Without known notes, keep prior behaviour (looks resolved until re-index).
+  assert.deepEqual(wikiLinkClasses(doc, doc.length, [], []), {
+    Missing: "md-link md-link-rendered",
+    Here: "md-link md-link-rendered",
+  });
+});
+
+test("the path basename matches known notes for folder/Note keys", () => {
+  const doc = "[[Folder/Note]] end";
+  assert.equal(
+    wikiLinkClasses(doc, doc.length, [], ["note"])["Folder/Note"],
+    "md-link md-link-rendered",
+  );
 });

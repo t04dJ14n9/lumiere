@@ -8,7 +8,9 @@ import {
   editImage,
   editingImage,
   escapeImage,
+  imageKeyFromEvent,
   inspectButtonBesideImage,
+  runSelectedImageKey,
   selectedImage,
   selectImage,
 } from "./image-selection";
@@ -133,5 +135,90 @@ test("Escape on a selected image clears the outline", () => {
   } as unknown as EditorView;
 
   assert.equal(escapeImage(view), true);
+  assert.equal(state.field(selectedImage), null);
+});
+
+test("imageKeyFromEvent maps Space and grow keys without Mod", () => {
+  assert.equal(
+    imageKeyFromEvent({
+      key: " ",
+      code: "Space",
+      shiftKey: false,
+      ctrlKey: false,
+      altKey: false,
+      metaKey: false,
+    }),
+    "Space",
+  );
+  assert.equal(
+    imageKeyFromEvent({
+      key: "=",
+      code: "Equal",
+      shiftKey: false,
+      ctrlKey: false,
+      altKey: false,
+      metaKey: false,
+    }),
+    "=",
+  );
+  assert.equal(
+    imageKeyFromEvent({
+      key: "+",
+      code: "Equal",
+      shiftKey: true,
+      ctrlKey: false,
+      altKey: false,
+      metaKey: false,
+    }),
+    "+",
+  );
+  assert.equal(
+    imageKeyFromEvent({
+      key: " ",
+      code: "Space",
+      shiftKey: false,
+      ctrlKey: true,
+      altKey: false,
+      metaKey: false,
+    }),
+    undefined,
+  );
+});
+
+test("runSelectedImageKey no-ops without a selected image", () => {
+  let state = EditorState.create({
+    doc: "![[pic.png]]",
+    extensions: [selectedImage, editingImage],
+  });
+  const view = {
+    get state() {
+      return state;
+    },
+    dispatch(spec: TransactionSpec) {
+      state = state.update(spec).state;
+    },
+  } as unknown as EditorView;
+  assert.equal(runSelectedImageKey(view, "Space"), false);
+  assert.equal(runSelectedImageKey(view, "="), false);
+  assert.equal(runSelectedImageKey(view, "Escape"), false);
+});
+
+test("runSelectedImageKey Escape clears a selected outline (BH-006 path)", () => {
+  const range = { from: 0, to: 12 };
+  let state = EditorState.create({
+    doc: "![[pic.png]]",
+    selection: { anchor: 0 },
+    extensions: [selectedImage, editingImage],
+  });
+  state = state.update({ effects: selectImage.of(range) }).state;
+  const view = {
+    get state() {
+      return state;
+    },
+    dispatch(spec: TransactionSpec) {
+      state = state.update(spec).state;
+    },
+  } as unknown as EditorView;
+  assert.equal(runSelectedImageKey(view, "Escape"), true);
   assert.equal(state.field(selectedImage), null);
 });
