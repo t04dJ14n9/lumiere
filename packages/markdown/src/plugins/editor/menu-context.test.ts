@@ -35,9 +35,11 @@ test("without a browser selection in the content, CodeMirror's selection decides
 
 test("the menu context shadows the global selection key", () => {
   assert.deepEqual(JSON.parse(menuContext(true)), {
+    webviewSection: "markdownContent",
     "lumiere.markdown.hasSelection": true,
   });
   assert.deepEqual(JSON.parse(menuContext(false)), {
+    webviewSection: "markdownContent",
     "lumiere.markdown.hasSelection": false,
   });
 });
