@@ -206,6 +206,23 @@ for (const [key, code, expected] of [
   });
 }
 
+test("Chinese punctuation with modifiers or prevented default is untouched", () => {
+  for (const field of [
+    "ctrlKey",
+    "altKey",
+    "metaKey",
+    "defaultPrevented",
+  ] as const) {
+    assert.equal(
+      translatedVimKey(
+        event("。", "Period", { shiftKey: false, [field]: true }),
+        mode(),
+      ),
+      undefined,
+    );
+  }
+});
+
 for (const [code, shift, expected] of [
   ["Period", false, "."],
   ["Comma", false, ","],
