@@ -18,6 +18,28 @@ interface MathMount {
   macros: Record<string, string>;
 }
 
+export interface MathJaxModule {
+  ensureBrowser(): Promise<void>;
+  setUserMacros(raw: Record<string, string> | undefined): void;
+  typeset(expression: string, display: boolean): Promise<string>;
+  typesetSync(expression: string, display: boolean): string | undefined;
+}
+let mathjaxMod: MathJaxModule | undefined;
+let mathjaxLoad: Promise<MathJaxModule> | undefined;
+
+function loadMathJax(): Promise<MathJaxModule> {
+  return (mathjaxLoad ??= import("./mathjax").then((mod) => {
+    mathjaxMod = mod;
+    return mod;
+  }));
+}
+
+/** Test hook to prime the MathJax module reference for synchronous postProcess tests. */
+export function primeMathJaxForTest(mod: MathJaxModule | undefined): void {
+  mathjaxMod = mod;
+  mathjaxLoad = mod ? Promise.resolve(mod) : undefined;
+}
+
 const mounts = new WeakMap<Context, MathMount>();
 
 export const mathWebview: Plugin<Infer<typeof config>> = {
@@ -34,20 +56,27 @@ export const mathWebview: Plugin<Infer<typeof config>> = {
       return false;
     }
     mount.macros = options.macros;
-    void import("./mathjax").then(({ setUserMacros }) =>
-      setUserMacros(mount.macros),
-    );
+    if (mathjaxMod) {
+      mathjaxMod.setUserMacros(mount.macros);
+    } else {
+      void loadMathJax().then(({ setUserMacros }) =>
+        setUserMacros(mount.macros),
+      );
+    }
     return true;
   },
   apply(ctx, options) {
     const mount: MathMount = { macros: options.macros };
     mounts.set(ctx, mount);
-    void import("./mathjax").then(({ setUserMacros }) =>
-      setUserMacros(mount.macros),
-    );
+    void loadMathJax().then((mod) => {
+      mod.setUserMacros(mount.macros);
+      if (typeof window !== "undefined" && typeof document !== "undefined") {
+        void mod.ensureBrowser();
+      }
+    });
     const cleanups = registerMathCleanup(ctx);
-    registerMathRenderers(ctx);
     registerTypesetting(ctx, cleanups, mount);
+    registerMathRenderers(ctx);
     registerMathCommands(ctx);
   },
 };
@@ -162,13 +191,56 @@ interface TypesetOptions {
   mount: MathMount;
 }
 
-function typesetNode({
-  node,
-  pass,
-  cleanups,
-  logger,
-  mount,
-}: TypesetOptions): void {
+function applyMathResult(
+  node: HTMLElement,
+  pass: RenderPass,
+  expression: string,
+  html: string,
+): void {
+  node.innerHTML = sanitizeGraphics(html);
+  node.setAttribute("aria-label", expression);
+  pass.measure();
+}
+
+function applyMathError(
+  node: HTMLElement,
+  logger: Context["logger"],
+  error: unknown,
+): void {
+  node.classList.add("render-error");
+  node.title = errorMessage(error);
+  logger.warn("Math rendering failed", error);
+}
+
+function tryTypesetSync(
+  options: TypesetOptions,
+  expression: string,
+  display: boolean,
+  isActive: () => boolean,
+): boolean {
+  if (!mathjaxMod) {
+    return false;
+  }
+  mathjaxMod.setUserMacros(options.mount.macros);
+  try {
+    const html = mathjaxMod.typesetSync(expression, display);
+    if (html === undefined) {
+      return false;
+    }
+    if (isActive()) {
+      applyMathResult(options.node, options.pass, expression, html);
+    }
+    return true;
+  } catch (error) {
+    if (isActive()) {
+      applyMathError(options.node, options.logger, error);
+    }
+    return true;
+  }
+}
+
+function typesetNode(options: TypesetOptions): void {
+  const { node, pass, cleanups, logger, mount } = options;
   const original = node.textContent;
   // A disposed pass must not receive the result of a lazy MathJax load.
   let active = true;
@@ -180,25 +252,23 @@ function typesetNode({
   cleanups.add(cleanup);
   pass.onDispose(cleanup);
   const expression = decodeURIComponent(node.dataset.math ?? "");
-  void import("./mathjax")
+  const display = node.dataset.display === "true";
+  if (tryTypesetSync(options, expression, display, () => active)) {
+    return;
+  }
+  void loadMathJax()
     .then(({ typeset, setUserMacros }) => {
       setUserMacros(mount.macros);
-      return typeset(expression, node.dataset.display === "true");
+      return typeset(expression, display);
     })
     .then((html) => {
-      if (!active) {
-        return;
+      if (active) {
+        applyMathResult(node, pass, expression, html);
       }
-      node.innerHTML = sanitizeGraphics(html);
-      node.setAttribute("aria-label", expression);
-      pass.measure();
     })
     .catch((error) => {
-      if (!active) {
-        return;
+      if (active) {
+        applyMathError(node, logger, error);
       }
-      node.classList.add("render-error");
-      node.title = errorMessage(error);
-      logger.warn("Math rendering failed", error);
     });
 }

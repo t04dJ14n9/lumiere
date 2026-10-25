@@ -127,3 +127,46 @@ test("inline math CSS keeps the CM line from growing past Obsidian", () => {
     /mjx-container\s+svg\s*\{[^}]*overflow:\s*visible/s,
   );
 });
+
+import { liteAdaptor } from "@mathjax/src/cjs/adaptors/liteAdaptor.js";
+import { RegisterHTMLHandler } from "@mathjax/src/cjs/handlers/html.js";
+import {
+  clearMathCache,
+  setMathAdaptorForTest,
+  setUserMacros,
+  typeset,
+  typesetSync,
+} from "./mathjax";
+
+test("typesetSync converts standard TeX synchronously once initialized and caches dynamic-font formulas after typeset()", async () => {
+  clearMathCache();
+  setMathAdaptorForTest(undefined);
+  assert.equal(typesetSync("x^2 + 1", false), undefined);
+
+  const adaptor = liteAdaptor();
+  RegisterHTMLHandler(adaptor);
+  setMathAdaptorForTest(adaptor);
+  try {
+    const syncSvg = typesetSync("\\frac{a}{b}", false);
+    assert.ok(
+      syncSvg && syncSvg.includes("<svg"),
+      "expected synchronous SVG output",
+    );
+    // Second call hits LRU cache synchronously.
+    assert.equal(typesetSync("\\frac{a}{b}", false), syncSvg);
+
+    // Macro changes isolate cache keys.
+    setUserMacros({ "\\foo": "\\alpha + \\beta" });
+    const macroSvg = typesetSync("\\foo", false);
+    assert.ok(macroSvg && macroSvg.includes("<svg"));
+    setUserMacros({});
+
+    // Dynamic font chunk (e.g. \mathbb{R}) falls back to async typeset() on first use, then hits cache synchronously.
+    const asyncSvg = await typeset("\\mathbb{R}", true);
+    assert.ok(asyncSvg.includes("<svg"));
+    assert.equal(typesetSync("\\mathbb{R}", true), asyncSvg);
+  } finally {
+    setMathAdaptorForTest(undefined);
+    clearMathCache();
+  }
+});

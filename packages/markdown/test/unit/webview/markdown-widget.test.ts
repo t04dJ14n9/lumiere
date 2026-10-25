@@ -354,3 +354,147 @@ test("duplicate mouseup without release ownership does not clear mapped selectio
   };
   assert.equal(ownsFenceGuardRelease(press), true);
 });
+
+import type { EditorView } from "@codemirror/view";
+import type { RenderBlock } from "../../../src/plugins/livePreview/api";
+import type {
+  RenderPass,
+  RenderService,
+} from "../../../src/plugins/render/api";
+import {
+  clearMarkdownBlockHtmlCache,
+  MarkdownBlock,
+} from "../../../src/webview/ui/markdown-widget";
+
+test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is present and seeds cached HTML on async remount", async () => {
+  clearMarkdownBlockHtmlCache();
+  const prevDoc = globalThis.document;
+  const prevIdle = (globalThis as Record<string, unknown>).requestIdleCallback;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      classes: new Set<string>(),
+      add: (...tokens: string[]) =>
+        tokens.forEach((t) => this.classList.classes.add(t)),
+      contains: (token: string) => this.classList.classes.has(token),
+    };
+    setAttribute(): void {}
+    addEventListener(): void {}
+    append(...nodes: StubElement[]): void {
+      this.children.push(...nodes);
+    }
+    getBoundingClientRect() {
+      return { height: 48 };
+    }
+  }
+
+  let idleCalled = false;
+  (globalThis as Record<string, unknown>).requestIdleCallback = () => {
+    idleCalled = true;
+    return 1;
+  };
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+
+  try {
+    const block: RenderBlock = {
+      kind: "blockquote",
+      from: 0,
+      to: 14,
+      source: "> [!note]\n> hi",
+    };
+    const view = {
+      contentDOM: { clientWidth: 640 },
+      state: {
+        doc: {
+          lineAt: () => ({ number: 1 }),
+        },
+      },
+      requestMeasure() {},
+    } as unknown as EditorView;
+
+    let syncCalls = 0;
+    const syncRender: RenderService = {
+      trusted: true,
+      async into(container) {
+        syncCalls++;
+        container.innerHTML = '<div class="callout">hi</div>';
+        return {
+          source: block.source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: block.source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+
+    const widget = new MarkdownBlock(block, syncRender);
+    const shell = widget.toDOM(view) as unknown as StubElement;
+    const body = shell.children[1]!;
+    assert.equal(
+      idleCalled,
+      false,
+      "toDOM must not defer behind requestIdleCallback",
+    );
+    assert.equal(
+      syncCalls,
+      1,
+      "render.into must run synchronously inside toDOM",
+    );
+    assert.equal(body.innerHTML, '<div class="callout">hi</div>');
+    widget.destroy(shell as unknown as HTMLElement);
+
+    // Remount with an async RenderService: cached HTML seeds body immediately in 0ms.
+    let resolveAsync!: () => void;
+    const asyncRender: RenderService = {
+      trusted: true,
+      into(container) {
+        return new Promise<RenderPass>((resolve) => {
+          resolveAsync = () => {
+            container.innerHTML = '<div class="callout">updated</div>';
+            resolve({
+              source: block.source,
+              container,
+              sourceLine: 0,
+              ancestry: [],
+              renderKey: block.source,
+              measure() {},
+              onDispose() {},
+              async dispose() {},
+            } as RenderPass);
+          };
+        });
+      },
+    };
+    const remountWidget = new MarkdownBlock(block, asyncRender);
+    const remountShell = remountWidget.toDOM(view) as unknown as StubElement;
+    const remountBody = remountShell.children[1]!;
+    assert.equal(
+      remountBody.innerHTML,
+      '<div class="callout">hi</div>',
+      "cached HTML snapshot should populate body synchronously on remount",
+    );
+    resolveAsync();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(remountBody.innerHTML, '<div class="callout">updated</div>');
+    remountWidget.destroy(remountShell as unknown as HTMLElement);
+  } finally {
+    clearMarkdownBlockHtmlCache();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+    (globalThis as Record<string, unknown>).requestIdleCallback = prevIdle;
+  }
+});
