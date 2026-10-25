@@ -3,6 +3,10 @@ import type { Fence, RenderPass } from "../render/api";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";
 import { createMermaidTrust, type MermaidTrust } from "./trust";
+import {
+  MermaidViewportScheduler,
+  observeNearViewport,
+} from "./viewport-schedule";
 
 export interface MermaidLinkPlace {
   side: boolean;
@@ -15,20 +19,13 @@ export type MermaidLinkOpen = (
   pass: RenderPass,
 ) => void;
 
-interface DiagramRender {
-  fence: Fence;
-  pass: RenderPass;
-  isActive: boolean;
-  events: AbortController;
-}
-
 export class DiagramRenderer {
   private readonly prefix = `mw-${Array.from(crypto.getRandomValues(new Uint32Array(2)), (value) => value.toString(16)).join("-")}`;
   private sequence = 0;
-  private queue = Promise.resolve();
   private readonly cleanups = new Set<() => void>();
   private readonly trust: MermaidTrust;
   private readonly openLink: MermaidLinkOpen | undefined;
+  private readonly scheduler: MermaidViewportScheduler;
 
   constructor(
     private readonly logger: Logger,
@@ -37,45 +34,58 @@ export class DiagramRenderer {
   ) {
     this.trust = trust;
     this.openLink = openLink;
+    // Mermaid mutates shared engine state; the scheduler keeps renders serial,
+    // prefetches on idle into an SVG cache, and paints after near-viewport settle.
+    this.scheduler = new MermaidViewportScheduler({
+      watch: observeNearViewport,
+      settleMs: 80,
+      render: (source) => this.renderMermaidSvg(source),
+      cacheKey: (source) => this.cacheKeyFor(source),
+    });
   }
 
   render(fence: Fence, pass: RenderPass): void {
-    const request: DiagramRender = {
-      fence,
-      pass,
-      isActive: true,
-      events: new AbortController(),
-    };
     const original = fence.element.innerHTML;
+    const events = new AbortController();
     let failure: HTMLElement | undefined;
+    let cancelSchedule = () => {};
     const cleanup = () => {
-      request.isActive = false;
-      request.events.abort();
+      cancelSchedule();
+      events.abort();
       fence.element.innerHTML = original;
       failure?.remove();
       this.cleanups.delete(cleanup);
     };
     this.cleanups.add(cleanup);
-    pass.onDispose(cleanup);
-    // Mermaid mutates shared renderer state; one plugin's renders must be serial.
-    this.queue = this.queue
-      .then(() => this.renderQueued(request))
-      .catch((error) => {
-        if (request.isActive) {
-          // Obsidian-style guarded chrome: title, error, Allow, and source.
-          failure = showMermaidGuard(fence.element, error, fence.source, {
-            showAllow: !this.trust.isTrusted(),
-            onAllow: () => {
-              this.trust.allow();
-              failure?.remove();
-              failure = undefined;
-              this.render(fence, pass);
-            },
-          });
-          pass.measure();
-          this.logger.warn("Diagram rendering failed", error);
+    cancelSchedule = this.scheduler.schedule(fence.element, fence.source, {
+      onSvg: (svg) => {
+        fence.element.innerHTML = sanitizeGraphics(svg);
+        fence.element.setAttribute("aria-label", "Mermaid diagram");
+        if (this.openLink) {
+          wireMermaidInternalLinks(
+            fence.element,
+            (target, place) => this.openLink?.(target, place, pass),
+            events.signal,
+          );
         }
-      });
+        pass.measure();
+      },
+      onError: (error) => {
+        // Obsidian-style guarded chrome: title, error, Allow, and source.
+        failure = showMermaidGuard(fence.element, error, fence.source, {
+          showAllow: !this.trust.isTrusted(),
+          onAllow: () => {
+            this.trust.allow();
+            failure?.remove();
+            failure = undefined;
+            this.render(fence, pass);
+          },
+        });
+        pass.measure();
+        this.logger.warn("Diagram rendering failed", error);
+      },
+    });
+    pass.onDispose(cleanup);
   }
 
   dispose(): void {
@@ -85,14 +95,18 @@ export class DiagramRenderer {
     this.cleanups.clear();
   }
 
-  private async renderQueued(request: DiagramRender): Promise<void> {
-    if (!request.isActive) {
-      return;
-    }
+  /** Theme + trust + source — SVG is not reusable across those axes. */
+  private cacheKeyFor(source: string): string {
+    const light =
+      typeof document !== "undefined" &&
+      document.body?.classList?.contains("vscode-light");
+    const theme = light ? "default" : "dark";
+    const trust = this.trust.isTrusted() ? "t" : "u";
+    return `${theme}|${trust}|${source}`;
+  }
+
+  private async renderMermaidSvg(source: string): Promise<string> {
     const { default: mermaid } = await import("mermaid");
-    if (!request.isActive) {
-      return;
-    }
     // Obsidian Allow (`mermaid-vault-trust`) enables HTML labels; Lumière still
     // sanitizes SVG output. Untrusted stays strict with htmlLabels off.
     const trusted = this.trust.isTrusted();
@@ -108,21 +122,9 @@ export class DiagramRenderer {
     });
     const result = await mermaid.render(
       `${this.prefix}-${++this.sequence}`,
-      request.fence.source,
+      source,
     );
-    if (!request.isActive) {
-      return;
-    }
-    request.fence.element.innerHTML = sanitizeGraphics(result.svg);
-    request.fence.element.setAttribute("aria-label", "Mermaid diagram");
-    if (this.openLink) {
-      wireMermaidInternalLinks(
-        request.fence.element,
-        (target, place) => this.openLink?.(target, place, request.pass),
-        request.events.signal,
-      );
-    }
-    request.pass.measure();
+    return result.svg;
   }
 }
 
