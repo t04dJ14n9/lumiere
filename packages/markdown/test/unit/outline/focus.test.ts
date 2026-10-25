@@ -9,7 +9,7 @@ import {
 } from "../../../src/plugins/outline/focus";
 import { VIEW_ID } from "../../../src/plugins/outline/commands";
 
-test("entering a Workshop editor hides native Outline and shows ours plus Tags", async () => {
+test("entering a Workshop editor hides native Outline and expands only Markdown Outline", async () => {
   const executed: string[] = [];
   const focus = createOutlineFocus({
     execute: async (command) => {
@@ -25,9 +25,12 @@ test("entering a Workshop editor hides native Outline and shows ours plus Tags",
   assert.deepEqual(executed, [
     `${NATIVE_OUTLINE_ID}.removeView`,
     `${VIEW_ID}.focus`,
-    `${TAGS_VIEW_ID}.focus`,
     "focusEditor",
   ]);
+  assert.ok(
+    !executed.includes(`${TAGS_VIEW_ID}.focus`),
+    "Tags must stay collapsed: do not call tags.focus on enter",
+  );
   executed.length = 0;
   focus.sync(true);
   await settle();

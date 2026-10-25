@@ -52,6 +52,7 @@ export async function contributions() {
       when: [whenEnabled(manifest, view.scope), view.when]
         .filter(Boolean)
         .join(" && "),
+      ...(view.visibility ? { visibility: view.visibility } : {}),
     })),
   );
   return {
