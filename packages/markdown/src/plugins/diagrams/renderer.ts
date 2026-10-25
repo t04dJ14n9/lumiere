@@ -35,7 +35,7 @@ export class DiagramRenderer {
     this.trust = trust;
     this.openLink = openLink;
     // Mermaid mutates shared engine state; the scheduler keeps renders serial,
-    // prefetechs on idle into an SVG cache, and paints after near-viewport settle.
+    // prefetches on idle into an SVG cache, and paints after near-viewport settle.
     this.scheduler = new MermaidViewportScheduler({
       watch: observeNearViewport,
       settleMs: 80,
@@ -57,7 +57,6 @@ export class DiagramRenderer {
       this.cleanups.delete(cleanup);
     };
     this.cleanups.add(cleanup);
-    pass.onDispose(cleanup);
     cancelSchedule = this.scheduler.schedule(fence.element, fence.source, {
       onSvg: (svg) => {
         fence.element.innerHTML = sanitizeGraphics(svg);
@@ -86,6 +85,7 @@ export class DiagramRenderer {
         this.logger.warn("Diagram rendering failed", error);
       },
     });
+    pass.onDispose(cleanup);
   }
 
   dispose(): void {
@@ -93,6 +93,16 @@ export class DiagramRenderer {
       cleanup();
     }
     this.cleanups.clear();
+  }
+
+  /** Theme + trust + source — SVG is not reusable across those axes. */
+  private cacheKeyFor(source: string): string {
+    const light =
+      typeof document !== "undefined" &&
+      document.body?.classList?.contains("vscode-light");
+    const theme = light ? "default" : "dark";
+    const trust = this.trust.isTrusted() ? "t" : "u";
+    return `${theme}|${trust}|${source}`;
   }
 
   private async renderMermaidSvg(source: string): Promise<string> {

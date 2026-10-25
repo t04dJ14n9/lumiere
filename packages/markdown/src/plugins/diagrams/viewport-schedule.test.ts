@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   MermaidSvgCache,
   MermaidViewportScheduler,
+  observeNearViewport,
   type VisibilityWatch,
 } from "./viewport-schedule";
 
@@ -217,7 +218,6 @@ test("cache hit on remount paints immediately without calling Mermaid", async ()
   scheduler.schedule(el as unknown as Element, "cached", {
     onSvg: (svg) => painted.push(svg),
   });
-  await delay(0);
   assert.deepEqual(calls, []);
   assert.equal(painted.length, 1);
   assert.match(painted[0]!, /data-src="cached"/);
@@ -232,4 +232,37 @@ test("MermaidSvgCache evicts least-recently used entries", () => {
   assert.equal(cache.get("a"), "A");
   assert.equal(cache.get("b"), undefined);
   assert.equal(cache.get("c"), "C");
+});
+
+test("observeNearViewport marks connected near-viewport elements visible immediately via getBoundingClientRect", () => {
+  const prevIO = globalThis.IntersectionObserver;
+  const prevWin = (globalThis as { window?: unknown }).window;
+  try {
+    (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver =
+      class {
+        observe() {}
+        disconnect() {}
+      };
+    (globalThis as { window?: unknown }).window = {
+      innerHeight: 800,
+      innerWidth: 1200,
+    };
+    const seen: boolean[] = [];
+    const el = {
+      isConnected: true,
+      getBoundingClientRect: () => ({
+        top: 100,
+        bottom: 100,
+        left: 20,
+        right: 20,
+      }),
+    } as unknown as Element;
+    const stop = observeNearViewport(el, (v) => seen.push(v));
+    stop();
+    assert.deepEqual(seen, [true]);
+  } finally {
+    (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver =
+      prevIO;
+    (globalThis as { window?: unknown }).window = prevWin;
+  }
 });

@@ -10,7 +10,7 @@
  * 1. Cache hit → paint immediately (no Mermaid).
  * 2. Idle prefetch on mount → fill the cache without painting.
  * 3. Near-viewport settle → paint from cache, or run Mermaid at paint priority.
- * 4. Dispose cancels unpainted work. Finished prefetechs (while still mounted)
+ * 4. Dispose cancels unpainted work. Finished prefetches (while still mounted)
  *    land in the cache so a remount / revisit paints instantly.
  */
 
@@ -92,25 +92,56 @@ const defaultCache = new MermaidSvgCache();
 
 /**
  * Default near-viewport observer. `rootMargin` keeps a short warm band so
- * Mermaid can finish just before the diagram enters the screen.
+ * Mermaid can finish just before the diagram enters the screen. An initial
+ * `getBoundingClientRect` check starts settle immediately for connected
+ * near-viewport fences without waiting on IntersectionObserver.
  */
 export function observeNearViewport(
   element: Element,
   onVisible: (visible: boolean) => void,
   rootMargin = "200px",
 ): () => void {
+  const marginPx = Number.parseFloat(rootMargin) || 0;
   if (typeof IntersectionObserver !== "function") {
     onVisible(true);
     return () => {};
   }
+  if (isNearViewport(element, marginPx)) {
+    onVisible(true);
+  }
   const observer = new IntersectionObserver(
     (entries) => {
-      onVisible(entries.some((entry) => entry.isIntersecting));
+      const visible =
+        entries.some((entry) => entry.isIntersecting) ||
+        isNearViewport(element, marginPx);
+      onVisible(visible);
     },
     { root: null, rootMargin, threshold: 0 },
   );
   observer.observe(element);
   return () => observer.disconnect();
+}
+
+function isNearViewport(element: Element, marginPx: number): boolean {
+  if (
+    !element.isConnected ||
+    typeof element.getBoundingClientRect !== "function" ||
+    typeof window === "undefined"
+  ) {
+    return false;
+  }
+  const vh = window.innerHeight || 0;
+  const vw = window.innerWidth || 0;
+  if (vh <= 0 || vw <= 0) {
+    return false;
+  }
+  const rect = element.getBoundingClientRect();
+  return (
+    rect.bottom >= -marginPx &&
+    rect.top <= vh + marginPx &&
+    rect.right >= -marginPx &&
+    rect.left <= vw + marginPx
+  );
 }
 
 function defaultScheduleIdle(run: () => void): () => void {
@@ -173,7 +204,7 @@ export class MermaidViewportScheduler {
   ): () => void {
     const cached = this.cache.get(this.cacheKey(source));
     if (cached !== undefined) {
-      queueMicrotask(() => handlers.onSvg(cached));
+      handlers.onSvg(cached);
       return () => {};
     }
     const job: Job = {
@@ -211,12 +242,18 @@ export class MermaidViewportScheduler {
       if (job.painted) {
         return;
       }
-      clearSettle();
       if (!visible) {
+        clearSettle();
         job.settled = false;
         return;
       }
-      settleTimer = setTimeout(() => this.onSettled(job), this.settleMs);
+      if (job.settled || settleTimer !== undefined) {
+        return;
+      }
+      settleTimer = setTimeout(() => {
+        settleTimer = undefined;
+        this.onSettled(job);
+      }, this.settleMs);
     });
     return () => {
       clearSettle();
