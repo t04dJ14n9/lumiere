@@ -41,23 +41,28 @@ class EmbedPass {
     )) {
       const target = node.dataset.resource ?? "";
       this.rememberPlaceholder(node);
+      const handleError = (error: unknown) => {
+        if (this.isActive) {
+          node.classList.add("unresolved-embed");
+          node.textContent = missingEmbedText(target, {
+            note: noteName(pass.documentUri),
+            section: error instanceof MissingSection,
+          });
+          node.title = String(error);
+          pass.measure();
+        }
+      };
       const resource = this.resolve(node, target);
       if (!resource) {
         continue;
       }
-      void resource
-        .then((resource) => this.apply(node, target, resource))
-        .catch((error) => {
-          if (this.isActive) {
-            node.classList.add("unresolved-embed");
-            node.textContent = missingEmbedText(target, {
-              note: noteName(pass.documentUri),
-              section: error instanceof MissingSection,
-            });
-            node.title = String(error);
-            pass.measure();
-          }
-        });
+      if (isPromise(resource)) {
+        void resource
+          .then((resolved) => this.apply(node, target, resolved))
+          .catch(handleError);
+      } else {
+        void this.apply(node, target, resource).catch(handleError);
+      }
     }
   }
 
@@ -88,24 +93,36 @@ class EmbedPass {
   private resolve(
     node: HTMLElement,
     target: string,
-  ): Promise<Resource> | undefined {
+  ): Resource | Promise<Resource> | undefined {
     const { render, resources, pass } = this.options;
     if (/^https?:/i.test(target)) {
       if (!render.trusted) {
         node.title = "Remote content is disabled in an untrusted workspace";
         return undefined;
       }
-      return Promise.resolve({
+      return {
         kind: mediaKind(target) ?? "image",
         source: target,
         url: target,
-      });
+      };
     }
     if (/^data:image\//i.test(target)) {
-      return Promise.resolve({ kind: "image", source: target, url: target });
+      return { kind: "image", source: target, url: target };
     }
     const syntax = node.dataset.wiki === "true" ? "wikilink" : "markdown";
-    return resources.load(target, pass.documentUri, syntax);
+    const key = `${syntax}\0${pass.documentUri ?? ""}\0${target}`;
+    const cached =
+      resources.peek?.(target, pass.documentUri, syntax) ??
+      getCachedEmbedResource(resources, key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    return resources.load(target, pass.documentUri, syntax).then((resolved) => {
+      if (resolved.kind !== "note" && resolved.kind !== "base") {
+        setCachedEmbedResource(resources, key, resolved);
+      }
+      return resolved;
+    });
   }
 
   private openButton(
@@ -178,7 +195,8 @@ class EmbedPass {
       node instanceof HTMLImageElement ? node : document.createElement("img");
     image.src = resource.url;
     image.alt ||= target;
-    image.loading = "lazy";
+    image.removeAttribute?.("loading");
+    image.decoding = "async";
     if (node.dataset.width) {
       image.width = Number(node.dataset.width);
     }
@@ -314,4 +332,53 @@ export function missingEmbedText(
 function noteName(uri: string | undefined): string | undefined {
   const name = uri?.split("/").at(-1);
   return name && decodeURIComponent(name).replace(/\.md$/iu, "");
+}
+
+const EMBED_CACHE_LIMIT = 256;
+const embedResourceCaches = new WeakMap<
+  EmbedOptions["resources"],
+  Map<string, Resource>
+>();
+
+function isPromise(
+  value: Resource | Promise<Resource>,
+): value is Promise<Resource> {
+  return typeof (value as { then?: unknown }).then === "function";
+}
+
+function getCachedEmbedResource(
+  resources: EmbedOptions["resources"],
+  key: string,
+): Resource | undefined {
+  const map = embedResourceCaches.get(resources);
+  if (!map) {
+    return undefined;
+  }
+  const cached = map.get(key);
+  if (cached !== undefined) {
+    map.delete(key);
+    map.set(key, cached);
+  }
+  return cached;
+}
+
+function setCachedEmbedResource(
+  resources: EmbedOptions["resources"],
+  key: string,
+  resource: Resource,
+): void {
+  let map = embedResourceCaches.get(resources);
+  if (!map) {
+    map = new Map<string, Resource>();
+    embedResourceCaches.set(resources, map);
+  }
+  if (map.has(key)) {
+    map.delete(key);
+  } else if (map.size >= EMBED_CACHE_LIMIT) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) {
+      map.delete(oldest);
+    }
+  }
+  map.set(key, resource);
 }
