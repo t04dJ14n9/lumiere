@@ -152,6 +152,19 @@ test("IME Process digits with Shift map to US shifted glyphs; line keys still wi
   );
 });
 
+test("all Shift+Digit0..Digit9 map to their US shifted symbols under IME Process", () => {
+  const expected = [")", "!", "@", "#", "$", "%", "^", "&", "*", "("];
+  for (let d = 0; d <= 9; d++) {
+    assert.equal(
+      translatedVimKey(
+        event("Process", `Digit${d}`, { shiftKey: true }),
+        mode(),
+      ),
+      expected[d],
+    );
+  }
+});
+
 test("IME Process Shift+Digit4 still yields $ in visual mode where line-key mapping skips", () => {
   const vim = mode();
   vim.visualMode = true;
