@@ -13,8 +13,10 @@ clickable internal links that open the vault note matching the node's label text
 ## How it works
 
 The block renderer recognizes Mermaid fences and delegates display to the shared
-render service. A fence listener queues lazy Mermaid conversions, using strict
-security and disabling HTML labels. Sanitized SVG replaces the original fence,
+render service. A fence listener schedules Mermaid only after the fence stays near the
+viewport briefly (IntersectionObserver + settle), using strict security and
+disabling HTML labels. Flash-by diagrams from a superfast wheel never start
+the engine; work stays serial because Mermaid mutates shared renderer state. Sanitized SVG replaces the original fence,
 and any `.internal-link` SVG nodes are wired to the `links` protocol.
 Pass and plugin disposal restore the source and prevent late results from writing.
 
@@ -22,8 +24,9 @@ Pass and plugin disposal restore the source and prevent late results from writin
 
 - `manifest.ts`: feature metadata and default enablement.
 - `webview.ts`: language recognition, block and fence registrations, and link opening.
-- `renderer.ts`: serial rendering queue, `.internal-link` node wiring, per-render cancellation and cleanup.
-- `diagrams.test.ts`: language recognition and editing unit coverage.
+- `renderer.ts`: Mermaid engine calls, `.internal-link` node wiring, per-render cancellation and cleanup.
+- `viewport-schedule.ts`: serial queue gated on near-viewport settle so fast scroll does not thrash Mermaid.
+- `diagrams.test.ts` / `viewport-schedule.test.ts`: language recognition, editing, and scroll-settle coverage.
 - `diagrams.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
