@@ -35,7 +35,7 @@ export const blockIndex = StateField.define<IndexedBlock[]>({
     if (
       tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers)
     ) {
-      return index(tr.state);
+      return reuseIndexedBlocks(value, index(tr.state));
     }
     if (tr.effects.some((effect) => effect.is(replaceDocumentTree))) {
       return reuseIndexedBlocks(value, index(tr.state));

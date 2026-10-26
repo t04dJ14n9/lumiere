@@ -89,13 +89,26 @@ export class TableGrid {
     });
   }
 
-  refresh(active?: CellPosition): void {
+  refresh(active?: CellPosition, previous?: Table, force = false): void {
     this.cells.forEach((row, rowIndex) =>
       row.forEach((_cell, column) => {
         const position = { row: rowIndex, column };
         this.align(position);
         if (!sameCell(active, position)) {
-          this.display(position);
+          const prevCell = previous?.rows[rowIndex]?.[column];
+          const nextCell = this.model.rows[rowIndex]?.[column];
+          const offsetSensitive =
+            nextCell !== undefined &&
+            (nextCell.text.includes("[^") || nextCell.text.includes("^["));
+          if (
+            force ||
+            !prevCell ||
+            !nextCell ||
+            prevCell.text !== nextCell.text ||
+            offsetSensitive
+          ) {
+            this.display(position);
+          }
         }
       }),
     );

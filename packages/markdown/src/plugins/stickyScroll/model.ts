@@ -1,13 +1,15 @@
 import { StateField, type Text } from "@codemirror/state";
+import type { Tree } from "@lezer/common";
 import { parseMarkdown } from "../../markdown/dialect";
 import {
   extractHeadings,
   type Heading,
 } from "../../markdown/metadata/heading-extract";
+import { documentTree } from "../livePreview/api";
 
 /** Container-local headings in quotes and lists do not define note sections. */
-export function sectionHeadings(doc: Text): readonly Heading[] {
-  const tree = parseMarkdown(doc);
+export function sectionHeadings(doc: Text, syntax?: Tree): readonly Heading[] {
+  const tree = syntax ?? parseMarkdown(doc);
   const sections = new Set<number>();
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
     if (/^(?:ATX|Setext)Heading[1-6]$/.test(node.name)) {
@@ -39,7 +41,19 @@ export function stickyHeadings(
 }
 
 export const headingIndex = StateField.define<readonly Heading[]>({
-  create: (state) => sectionHeadings(state.doc),
-  update: (headings, transaction) =>
-    transaction.docChanged ? sectionHeadings(transaction.newDoc) : headings,
+  create: (state) =>
+    sectionHeadings(state.doc, state.field(documentTree, false)),
+  update(headings, transaction) {
+    if (
+      transaction.docChanged ||
+      transaction.startState.field(documentTree, false) !==
+        transaction.state.field(documentTree, false)
+    ) {
+      return sectionHeadings(
+        transaction.newDoc,
+        transaction.state.field(documentTree, false),
+      );
+    }
+    return headings;
+  },
 });

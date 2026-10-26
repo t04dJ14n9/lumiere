@@ -103,6 +103,23 @@ function registerDisclosures(
   cleanups: Set<() => void>,
 ): void {
   ctx.on("render/postProcess", (pass) => {
+    applyCustomCalloutStyles(pass.container);
+    if (!pass.container.isConnected) {
+      let stopped = false;
+      pass.onDispose(() => {
+        stopped = true;
+      });
+      queueMicrotask(() => {
+        if (!stopped && pass.container.isConnected) {
+          applyCustomCalloutStyles(pass.container);
+        }
+      });
+    }
+    const disclosures =
+      pass.container.querySelectorAll<HTMLDetailsElement>("details.callout");
+    if (disclosures.length === 0) {
+      return;
+    }
     const events = new AbortController();
     const bindings: { dispose(): void }[] = [];
     const cleanup = () => {
@@ -114,23 +131,20 @@ function registerDisclosures(
     };
     cleanups.add(cleanup);
     pass.onDispose(cleanup);
-    applyCustomCalloutStyles(pass.container);
-    pass.container
-      .querySelectorAll<HTMLDetailsElement>("details.callout")
-      .forEach((details, index) => {
-        const key = `${pass.ancestry.join("/")}|${pass.renderKey}|${index}`;
-        const binding = folds.bind(key, details, pass.measure);
-        bindings.push(binding);
-        bindDisclosure({
-          details,
-          signal: events.signal,
-          remember: () => {
-            binding.remember();
-            ctx.editor.view.dispatch({ effects: disclosureChanged.of(null) });
-            pass.measure();
-          },
-        });
+    disclosures.forEach((details, index) => {
+      const key = `${pass.ancestry.join("/")}|${pass.renderKey}|${index}`;
+      const binding = folds.bind(key, details, pass.measure);
+      bindings.push(binding);
+      bindDisclosure({
+        details,
+        signal: events.signal,
+        remember: () => {
+          binding.remember();
+          ctx.editor.view.dispatch({ effects: disclosureChanged.of(null) });
+          pass.measure();
+        },
       });
+    });
   });
 }
 

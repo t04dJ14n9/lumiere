@@ -17,7 +17,7 @@ interface SelectionActions {
 
 /** Grid selection and pointer gestures; cell-text selection stays in CodeMirror. */
 export class TableSelection {
-  range?: CellRange;
+  range?: CellRange | undefined;
   gridCursor?: number;
   readonly drag: TableSelectionDrag;
 

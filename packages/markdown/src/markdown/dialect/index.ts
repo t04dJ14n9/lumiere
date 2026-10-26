@@ -1,2 +1,6 @@
-export { markdownParser, parseMarkdown } from "./parser";
+export {
+  markdownParser,
+  parseMarkdown,
+  rememberParsedMarkdown,
+} from "./parser";
 export { markdownLanguageSupport } from "./language";

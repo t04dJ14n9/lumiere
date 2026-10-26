@@ -1,3 +1,5 @@
+import type {} from "../plugins/editor/api";
+import type {} from "../plugins/render/api";
 import type { BaseContext, Infer, Plugin } from "@workshop/core";
 import type { featureSettings } from "../shared/features";
 import { PluginSwitch, type WantedPlugin } from "../shared/plugin-switch";
@@ -109,16 +111,27 @@ const CHROME_FEATURE_IDS = new Set(["properties", "sourcesProperty"]);
  * light chrome (tags, lineNumbers) plus tables/callouts/… Editing helpers and
  * heavier features load in the deferred "all" phase after first paint.
  */
-const PAINT_FEATURE_IDS = new Set([
-  ...CHROME_FEATURE_IDS,
-  "lineNumbers",
-  "tags",
+const RENDER_AFFECTING_FEATURE_IDS = new Set([
   "callouts",
   "codeBlocks",
+  "diagrams",
+  "embeds",
+  "footnotes",
   "links",
-  "smartLists",
+  "math",
+  "onlineVideos",
   "tables",
+  "tags",
   "tasks",
+]);
+
+const PAINT_FEATURE_IDS = new Set([
+  ...CHROME_FEATURE_IDS,
+  ...RENDER_AFFECTING_FEATURE_IDS,
+  "formatting",
+  "lineNumbers",
+  "smartLists",
+  "vim",
 ]);
 
 const loaded = new Map<string, Plugin<unknown>>();
@@ -165,13 +178,19 @@ export function preloadChromeFeatures(): Promise<void> {
  * tables, callouts, …). Does not include sheet ids so a pending tables
  * download cannot gate Properties.
  */
-export function preloadPaintFeatures(): Promise<void> {
-  const structure = [...PAINT_FEATURE_IDS].filter(
-    (id) => !CHROME_FEATURE_IDS.has(id),
+export function preloadPaintFeatures(
+  settings: FeatureSettings = {},
+  defaults = true,
+): Promise<void> {
+  const structure = ALL_WEBVIEW_MANIFESTS.filter(
+    (manifest) =>
+      PAINT_FEATURE_IDS.has(manifest.id) &&
+      !CHROME_FEATURE_IDS.has(manifest.id) &&
+      (settings[manifest.id]?.enabled ?? (defaults && manifest.defaultEnabled)),
   );
-  return Promise.all(structure.map((id) => loadWebviewPlugin(id))).then(
-    () => undefined,
-  );
+  return Promise.all(
+    structure.map((manifest) => loadWebviewPlugin(manifest.id)),
+  ).then(() => undefined);
 }
 
 /**
@@ -191,45 +210,78 @@ export function featureController(root: BaseContext) {
   // older wanted set after a newer one finished loading. Do not root.track
   // this queue: it awaits settled(), which would deadlock on itself.
   let updates = Promise.resolve();
+  let hasMountedRenderFeatures = false;
   return (
     settings: FeatureSettings,
     defaults = false,
     phase: FeaturePhase = "all",
   ): Promise<void> => {
     const run = async () => {
-      const wantedManifests = ALL_WEBVIEW_MANIFESTS.filter((manifest) => {
-        if (!manifest.surfaces.includes("webview")) {
-          return false;
-        }
-        if (phase === "chrome" && !CHROME_FEATURE_IDS.has(manifest.id)) {
-          return false;
-        }
-        if (phase === "paint" && !PAINT_FEATURE_IDS.has(manifest.id)) {
-          return false;
-        }
-        const setting = settings[manifest.id];
-        return setting?.enabled ?? (defaults && manifest.defaultEnabled);
-      });
+      const wantedManifests = selectPhaseManifests(settings, defaults, phase);
       await Promise.all(
         wantedManifests.map((manifest) => loadWebviewPlugin(manifest.id)),
       );
-      let managed = WEBVIEW_FEATURE_IDS;
-      if (phase === "chrome") {
-        managed = CHROME_MANAGED_IDS;
-      } else if (phase === "paint") {
-        managed = PAINT_MANAGED_IDS;
+      const managed = managedIdsForPhase(phase);
+      const hadRenderedBlocks = hasMountedRenderFeatures || phase === "all";
+      const applySwitch = () =>
+        switches.update(managed, () =>
+          wantedPlugins(wantedManifests, settings),
+        );
+      const affected = await ((root.bail(
+        "editor/batchExtensions",
+        applySwitch,
+      ) as Promise<ReadonlySet<string>> | undefined) ?? applySwitch());
+      await root.settled();
+      if (touchesRenderFeatures(affected)) {
+        hasMountedRenderFeatures = true;
+        if (hadRenderedBlocks) {
+          root.emit("render/changed");
+        }
       }
-      await switches.update(managed, () =>
-        wantedPlugins(wantedManifests, settings),
-      );
     };
     const next = updates.catch(() => {}).then(run);
     updates = next;
-    return next.then(async () => {
-      await root.settled();
-      root.emit("render/changed");
-    });
+    return next;
   };
+}
+
+function selectPhaseManifests(
+  settings: FeatureSettings,
+  defaults: boolean,
+  phase: FeaturePhase,
+): Manifest[] {
+  return ALL_WEBVIEW_MANIFESTS.filter((manifest) => {
+    if (!manifest.surfaces.includes("webview")) {
+      return false;
+    }
+    if (phase === "chrome" && !CHROME_FEATURE_IDS.has(manifest.id)) {
+      return false;
+    }
+    if (phase === "paint" && !PAINT_FEATURE_IDS.has(manifest.id)) {
+      return false;
+    }
+    const setting = settings[manifest.id];
+    return setting?.enabled ?? (defaults && manifest.defaultEnabled);
+  });
+}
+
+function managedIdsForPhase(phase: FeaturePhase): readonly string[] {
+  if (phase === "chrome") {
+    return CHROME_MANAGED_IDS;
+  }
+  if (phase === "paint") {
+    return PAINT_MANAGED_IDS;
+  }
+  return WEBVIEW_FEATURE_IDS;
+}
+
+function touchesRenderFeatures(affected: ReadonlySet<string>): boolean {
+  for (const id of affected) {
+    if (RENDER_AFFECTING_FEATURE_IDS.has(id)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function wantedPlugins(
