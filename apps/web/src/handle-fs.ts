@@ -18,6 +18,11 @@ export class HandleFileSystem implements VaultFileSystem {
     return new Uint8Array(await (await file.getFile()).arrayBuffer());
   }
 
+  /** The file's own File, which the browser reads from disk as it is used. */
+  async readBlob(path: string): Promise<Blob> {
+    return (await this.file(path)).getFile();
+  }
+
   async write(
     path: string,
     data: Uint8Array,
