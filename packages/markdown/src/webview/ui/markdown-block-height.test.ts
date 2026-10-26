@@ -174,7 +174,7 @@ test("remembered MarkdownBlock height beats the formula on remount", () => {
 test("a drawn Mermaid diagram's height is its estimate, even when the formula guesses taller", () => {
   clearMarkdownBlockHeights();
   const lines = Array.from({ length: 12 }, (_, n) => `  N${n} --> N${n + 1}`);
-  const source = ["```mermaid", "flowchart LR", ...lines, "```"].join("\n");
+  const source = ["```mermaid", "flowchart TB", ...lines, "```"].join("\n");
   const formula = markdownBlockEstimatedHeight(source);
   rememberMarkdownBlockHeight(source, 220);
   assert.ok(formula > 600, `formula ${formula}`);

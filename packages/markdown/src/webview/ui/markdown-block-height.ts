@@ -1,5 +1,6 @@
 import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
 import { RENDER_PENDING_ATTRIBUTE } from "../../plugins/render/api";
+import { mermaidBlockHeight } from "./mermaid-height";
 /**
  * CodeMirror sizes a block widget from `estimatedHeight` until it measures
  * the widget, and again when a rebuilt decoration sits outside the viewport.
@@ -13,10 +14,10 @@ import { RENDER_PENDING_ATTRIBUTE } from "../../plugins/render/api";
  * painted box, not bare quote lines.
  *
  * Mermaid fences are special: a short source can render a tall SVG (hundreds
- * of px). Plain line×24 under-reserves; use a taller per-line factor and a
- * floor so remounts keep scroll/PageDown valid until measure. MarkdownBlock
- * also applies this reserve as minHeight so a remount that still sits in the
- * draw margin cannot measure the pre-SVG shell (~182) before Mermaid finishes.
+ * of px), and how tall depends on the kind of diagram, so mermaid-height.ts
+ * guesses from its structure. MarkdownBlock also applies this reserve as
+ * minHeight so a remount that still sits in the draw margin cannot measure
+ * the pre-SVG shell (~182) before Mermaid finishes.
  *
  * Display math (`$$…$$`) is the same shape: a one-line matrix or stacked
  * fraction typesets far taller than its source. Count `\\` rows inside the
@@ -37,10 +38,6 @@ import { RENDER_PENDING_ATTRIBUTE } from "../../plugins/render/api";
  */
 const LINE = 24;
 const CHROME = 12;
-/** Mermaid node/edge layouts are much taller than source text lines. */
-const MERMAID_LINE = 72;
-const MERMAID_MIN = 320;
-const MERMAID_CHROME = 48;
 /** MathJax SVG row height for matrices / align / stacked fractions. */
 const MATH_LINE = 48;
 const MATH_MIN = 160;
@@ -288,7 +285,7 @@ function formulaHeight(source: string): number {
   }
   const lines = Math.max(1, source.split("\n").length);
   if (isMermaidFence(source)) {
-    return Math.max(MERMAID_MIN, MERMAID_CHROME + lines * MERMAID_LINE);
+    return mermaidBlockHeight(source, estimateContentWidthPx);
   }
   if (isDisplayMath(source)) {
     return Math.max(MATH_MIN, CHROME + mathRows(source) * MATH_LINE);
