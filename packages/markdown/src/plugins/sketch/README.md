@@ -54,4 +54,5 @@ link form follow the Links plugin's `attachmentFolder`, `useWikilinks` and
 - The canvas opens over the whole note, not in place (docs/IPAD_PLAN.md 5.5).
 - A sketch embedded in the middle of a line opens on a tap, but keeps showing
   its old drawing until the line is redrawn.
-- Sketches are not resized from the note; a page grows downwards on the canvas.
+- Sketches are not resized from the note. On the iPad a sketch is as large
+  as its strokes: its canvas has no edge, and Done keeps what was drawn.

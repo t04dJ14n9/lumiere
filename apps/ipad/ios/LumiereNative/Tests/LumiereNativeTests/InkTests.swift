@@ -190,34 +190,58 @@ final class InkRequestTests: XCTestCase {
 }
 
 final class PaperTests: XCTestCase {
-    /// As paper.ts draws it: every multiple of the spacing strictly inside.
-    func testMarksEveryMultipleOfTheSpacingInsideThePage() {
-        XCTAssertEqual(PaperMarks.offsets(spacing: 32, length: 128), [32, 64, 96])
-        XCTAssertEqual(PaperMarks.offsets(spacing: 32, length: 129), [32, 64, 96, 128])
-        XCTAssertEqual(PaperMarks.offsets(spacing: 32, length: 20), [])
-        XCTAssertEqual(PaperMarks.offsets(spacing: 0, length: 100), [], "a damaged spacing draws none")
+    /// As paper.ts draws it: every multiple of the spacing from the sketch's
+    /// origin, here only those that show.
+    func testMarksEveryMultipleOfTheSpacingThatShows() {
+        XCTAssertEqual(PaperMarks.offsets(spacing: 32, from: 0, in: 10..<100), [32, 64, 96])
+        XCTAssertEqual(PaperMarks.offsets(spacing: 32, from: 0, in: -70..<0), [-64, -32])
+        XCTAssertEqual(PaperMarks.offsets(spacing: 32, from: 16, in: 0..<64), [16, 48])
+        XCTAssertEqual(PaperMarks.offsets(spacing: 32, from: 0, in: 20..<30), [])
+        XCTAssertEqual(PaperMarks.offsets(spacing: 0, from: 0, in: 0..<100), [], "a damaged spacing draws none")
     }
 
     func testDrawsEachPaperWithoutFailing() {
         let size = CGSize(width: 96, height: 64)
         for style in ["plain", "ruled", "grid", "dotted", "unknown"] {
             let image = UIGraphicsImageRenderer(size: size).image { context in
-                PaperMarks(paper: StoredPaper(style: style, spacing: 16, color: "#ffffff"), size: size)
-                    .draw(in: context.cgContext)
+                PaperMarks(paper: StoredPaper(style: style, spacing: 16, color: "#ffffff"), origin: CGPoint(x: 8, y: 8))
+                    .draw(in: context.cgContext, visible: CGRect(origin: .zero, size: size))
             }
             XCTAssertEqual(image.size, size, style)
         }
+        XCTAssertFalse(PaperView.hasMarks(StoredPaper(style: "plain", spacing: 32, color: "#ffffff")))
+        XCTAssertTrue(PaperView.hasMarks(StoredPaper(style: "dotted", spacing: 32, color: "#ffffff")))
     }
 }
 
-final class CanvasTests: XCTestCase {
-    /// The page grows to hold strokes drawn below it, and never shrinks.
-    func testThePageGrowsToHoldTheDrawing() {
-        XCTAssertEqual(SketchCanvasController.pageHeight(holding: .null, current: 480), 480)
-        XCTAssertEqual(SketchCanvasController.pageHeight(holding: CGRect(x: 0, y: 0, width: 10, height: 300), current: 480), 480)
-        XCTAssertEqual(
-            SketchCanvasController.pageHeight(holding: CGRect(x: 0, y: 400, width: 10, height: 120.5), current: 480),
-            553)
+final class BoardTests: XCTestCase {
+    /// The sketch sits in the middle of a board far larger than itself, its
+    /// origin on the paper's lines.
+    func testPutsTheSketchInTheMiddleOnThePapersLines() {
+        let board = Board(sketch: CGSize(width: 720, height: 480), spacing: 32)
+        XCTAssertEqual(board.side, Board.minimumSide)
+        XCTAssertEqual(board.origin.x.truncatingRemainder(dividingBy: 32), 0)
+        XCTAssertEqual(board.origin.y.truncatingRemainder(dividingBy: 32), 0)
+        XCTAssertEqual(board.origin.x + 360, board.side / 2, accuracy: 32)
+        XCTAssertEqual(board.origin.y + 240, board.side / 2, accuracy: 32)
+        XCTAssertEqual(CGPoint.zero.applying(board.placing), board.origin)
+        let huge = Board(sketch: CGSize(width: 20000, height: 300), spacing: 32)
+        XCTAssertGreaterThanOrEqual(huge.side, 40000)
+    }
+
+    /// Saved, the sketch keeps what was drawn and a margin, cut on the
+    /// paper's lines: no more page than the strokes need, in any direction.
+    func testKeepsWhatWasDrawnWithAMarginOnThePapersLines() throws {
+        let board = Board(sketch: CGSize(width: 720, height: 480), spacing: 32)
+        let o = board.origin
+        XCTAssertNil(board.frame(holding: .null))
+        let frame = try XCTUnwrap(board.frame(holding: CGRect(x: o.x + 10, y: o.y + 20, width: 100, height: 50)))
+        XCTAssertEqual(frame, CGRect(x: o.x - 32, y: o.y, width: 160, height: 96))
+        // Strokes far to the left and above the sketch as opened are kept too.
+        let away = try XCTUnwrap(board.frame(holding: CGRect(x: o.x - 1000, y: o.y - 500, width: 40, height: 40)))
+        XCTAssertEqual(away.minX, o.x - 1024)
+        XCTAssertEqual(away.minY, o.y - 544)
+        XCTAssertEqual(away.width, 96)
     }
 }
 

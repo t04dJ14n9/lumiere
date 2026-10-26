@@ -395,9 +395,12 @@ a browser):
 - **A tap on a sketch** in Live Preview opens it again, exactly as drawn
   (from PencilKit's own data); Done writes the new drawing over the file,
   and the note shows it at once (`resources/changed`).
-- **The canvas:** the sketch's page (720 × 480 to start) fills the width
-  with its paper, scrolls with a finger, and grows downwards to hold what is
-  drawn below it. It is light, as sketches are stored drawn on light paper.
+- **The canvas has no edge,** as Freeform's: the paper goes on in every
+  direction, a finger pans (two, while a finger draws) and two pinch to
+  zoom (a quarter to four times). The sketch opens in the middle at its own
+  size; Done keeps what was drawn with a margin, cut on the paper's lines,
+  so a sketch is as large as its strokes. A new sketch left blank is not
+  saved. The canvas is light, as sketches are stored drawn on light paper.
   It has its own undo history (buttons, ⌘Z, three-finger swipes), and the
   tool picker keeps the tools chosen last.
 - **The file:** each stored point is a `PKStrokePoint` placed by its
