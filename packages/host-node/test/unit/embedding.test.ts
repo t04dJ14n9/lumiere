@@ -110,3 +110,31 @@ test("the menu message asks for the page's menu and nothing else", async () => {
     assert.equal(isMenuMessage(other), false, JSON.stringify(other));
   }
 });
+
+test("an inset message names how far the embedder's controls reach, within reason", async () => {
+  const { parseInsetMessage } = await import("../../src/embedding");
+  assert.deepEqual(parseInsetMessage({ lumiere: "inset", top: 84.4 }), {
+    lumiere: "inset",
+    top: 84,
+  });
+  assert.deepEqual(parseInsetMessage({ lumiere: "inset", top: 0 }), {
+    lumiere: "inset",
+    top: 0,
+  });
+  for (const other of [
+    { lumiere: "inset", top: -1 },
+    { lumiere: "inset", top: 5000 },
+    { lumiere: "inset", top: Number.NaN },
+    { lumiere: "inset", top: "84px" },
+    { lumiere: "theme" },
+  ]) {
+    assert.equal(parseInsetMessage(other), undefined, JSON.stringify(other));
+  }
+});
+
+test("the page's inset variable is the one the editor reads", async () => {
+  const { INSET_VARIABLE } = await import("../../src/embedding");
+  const { CHROME_INSET_VARIABLE } =
+    await import("../../../markdown/src/webview/ui/chrome-inset");
+  assert.equal(INSET_VARIABLE, CHROME_INSET_VARIABLE);
+});

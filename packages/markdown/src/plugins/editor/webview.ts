@@ -41,6 +41,7 @@ import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
 import { selectionDragScroll } from "./drag-scroll";
 import { focusOpensKeyboard } from "../../webview/ui/soft-keyboard";
+import { chromeInsetMargins } from "../../webview/ui/chrome-inset";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -235,6 +236,7 @@ function createEditorView(
           }),
         }),
         menuSelectionContext,
+        chromeInsetMargins,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
         // BH-040/047: Tab/Shift+Tab and Mod-[/] via DOM so Vim cannot swallow indent.
         indentationDom(),
