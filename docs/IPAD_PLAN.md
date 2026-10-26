@@ -218,8 +218,10 @@ any screen.
   the iPad, and pencil strokes keep their shading as varying opacity.
 - **Drawing elsewhere.** The web canvas reads pressure and tilt from the
   browser (Pointer Events), so a pen tablet on the desktop draws with
-  pressure. With a mouse or trackpad it thins the line with speed
-  (`perfect-freehand`), like a pen dragged quickly.
+  pressure. With a mouse or trackpad it thins the line with speed, like a
+  pen dragged quickly: perfect-freehand's simulated pressure is the model,
+  not a dependency, since the canvas draws with the format's own outlines,
+  so what is drawn is what the SVG shows.
 - **Paper.** A sketch can have a page behind it, drawn in the SVG: plain,
   ruled, grid or dotted, as in Notes.
 - **If PencilKit's response isn't enough.** PencilKit's pressure curves are
@@ -236,7 +238,7 @@ any screen.
 
 | Piece | What it does | Provided by |
 | --- | --- | --- |
-| `ink` host service | Opens a canvas on an existing drawing (or a blank one) and returns the drawing when done; says what the device has (pressure, Pencil, tool picker). | iPad: `LumiereInk`, a Swift Capacitor plugin on PencilKit. Desktop and web: `webInk`, a Pointer Events canvas (pressure from pen tablets, `perfect-freehand`, MIT). VS Code: none at first. |
+| `ink` host service | Opens a canvas on an existing drawing (or a blank one) and returns the drawing when done; says what the device has (pressure, Pencil, tool picker). | iPad: `LumiereInk`, a Swift Capacitor plugin on PencilKit. Desktop and web: `webInk` (`@workshop/ink/canvas`), a Pointer Events canvas (pressure and tilt from pen tablets; with a mouse, speed thins the line, on perfect-freehand's model). The desktop app's plugins run in its server, so the server's `ink` asks the window to draw (`GET` and `POST /api/ink`). VS Code: none at first. |
 | `sketch` plugin (Markdown) | Insert Sketch, also from a Pencil tap in the margin; shows sketches in notes; tap one to edit it. | `packages/markdown` (`plugins/sketch`), on `packages/ink`'s format: the Markdown plugin catalog, its settings and the editor page's bundle are built from `packages/markdown` |
 | `pdfSurface` host service | Shows a PDF with a PencilKit canvas on each page (PDFKit's page overlays, iPadOS 16+: the same markup as Files and Notes) and saves the ink. | iPad: `LumierePdf`, a Swift Capacitor plugin. Elsewhere: none (Lumière PDF's own viewer). |
 | `pdfInk` plugin (PDF) | Opens a PDF for markup on the iPad. Saves ink as standard PDF ink annotations. On the desktop, Lumière PDF shows them; editing them there comes with EmbedPDF's annotation plugin (MIT, the same 2.15 line Lumière PDF uses). | `packages/ink` and `packages/pdf` |
@@ -368,14 +370,19 @@ More… opens Lumière's menu; full screen, 375 pt and ⅔-width windows read
 well; notes with images, a video, embedded PDFs, tables, callouts and
 properties render, and a PDF opens in a tab.
 
-P1 runs on the iPad, in the simulator; the web canvas for the desktop and
-web apps is still to come:
+P1 runs on the iPad (in the simulator) and in the desktop and web apps (in
+a browser):
 
 - **`ink` is a host service only some hosts have.** The iPad hands
-  `startLocalHost` its `LumiereInk` plugin (PencilKit, Swift); host-web and
-  host-node pass it to the plugins' bootstrap. Elsewhere the sketch plugin
-  waits: Insert Sketch stays out of the menus, and sketches show and select
-  as images.
+  `startLocalHost` its `LumiereInk` plugin (PencilKit, Swift); the web app
+  hands it the web canvas (`webInk`); host-web and host-node pass it to the
+  plugins' bootstrap. The desktop app's plugins run in its server, whose
+  `ink` (`packages/app/src/server/ink.ts`) keeps a drawing waiting for the
+  window, as a vault's trust question waits: the window hears
+  `{"type":"ink"}`, reads it with `GET /api/ink`, draws on its own web
+  canvas and posts it back to `POST /api/ink`. VS Code has none: there the
+  sketch plugin waits, Insert Sketch stays out of the menus, and sketches
+  show and select as images.
 - **Insert Sketch** is a pencil button beside the window's layout buttons
   while a note is shown (as Notes' markup button), and is in the iPad's
   edit menu beside More… (only when a note's page has the focus) and in
@@ -397,6 +404,19 @@ web apps is still to come:
   stroke's transform (the lasso), with force on a 0 to 1 scale and the
   width and opacity the ink drew there; what the pixel eraser cut away is
   left out. A sketch edited elsewhere is rebuilt from its strokes.
+- **The web canvas** (`@workshop/ink/canvas`, desktop and web) is laid out
+  as the iPad's: Cancel, the name, undo, redo and Done above; the page
+  filling the width (at most 1.5×) and growing downwards; pen, pencil,
+  marker and eraser floating below, each ink in three widths and six
+  colours, kept while the window lives. A pen tablet draws with its
+  pressure and tilt (a pen's eraser end erases); a mouse, trackpad or
+  finger with the line thinning as it speeds up, its force stored as read
+  (0.5). Once a pen has drawn, a finger scrolls; a finger drawing when a
+  pen lands was a palm. It has its own undo (⌘Z, ⇧⌘Z), Escape is Cancel
+  and ⌘↩ Done, and the window's shortcuts wait while it is open. It fills
+  the format's own outlines and paper: in a check of pen, pencil, marker
+  and mouse strokes, the canvas and the saved SVG differ by 0.0004 levels
+  on average.
 - Fixed on the way: a rewritten image shows its new version; a Markdown
   image whose path has spaces shows; a plugin can write a new file in
   host-web's vaults; a shaded stroke's pieces meet without a notch.
@@ -406,12 +426,24 @@ Insert Sketch from both menus, pen, marker and colours, the page growing,
 Done and Cancel, the file and its embed, a tap reopening the sketch as
 drawn, and the note showing the edit.
 
+Checked in a browser (Chromium, the desktop app's server and the built web
+app, disposable vaults), with a mouse and with pen events sent by script:
+the pencil and the canvas, pressure and tilt in the file, speed thinning,
+the pencil's shading, the marker multiplying, the eraser, undo and redo,
+Cancel asking first, the page growing, Done writing the file and its
+embed, a click reopening the sketch as drawn, and the note showing the
+edit.
+
 Not checked with a real Pencil yet (Grok Bot, against Notes, section 5.1):
 the feel (latency, palm rejection), how pressure and tilt change width and
 shading and what force the file keeps (the simulator's finger gives 0),
 double-tap and squeeze, hover, a finger scrolling while the Pencil draws.
 Once in the simulator a dot appeared where a sketch was tapped to open it;
 it did not happen again, and is worth watching for on the iPad.
+
+Not checked on the web canvas yet: a real pen tablet (in the desktop app's
+WebKit view, and in Chrome and Safari), and how a trackpad and a mouse feel
+against Notes on the Mac.
 
 Not done yet:
 
@@ -430,6 +462,16 @@ Not done yet:
   its old drawing until the line is drawn again, and an embed whose file
   arrives later (from another device) says it is missing until the note
   is reopened.
+- images and PDFs embedded in notes in the web app (their `lumiere/file`
+  URLs need an answer there: its service worker);
+- the rest of P1: a Pencil tap in the margin to start a sketch; resizing a
+  sketch in the note. A sketch embedded in the middle of a line opens on a
+  tap but keeps its old drawing until the line is drawn again, and an
+  embed whose file arrives later (from another device) says it is missing
+  until the note is reopened. In the desktop app a new sketch says so too,
+  until the note is reopened (host-node learns of new files from a file
+  watcher; not looked into yet). In the web app it is saved and embedded,
+  and shows once its images do.
 
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript
