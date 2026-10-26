@@ -303,6 +303,9 @@ The pass, in the Tauri window:
     git add One.md && git commit -qm "First"
     ```
 
+    - In the desktop app, Git is off at first: no authorship text or change
+      bars. Turn on Git Blame and Git Gutter in Settings (⌘,), then go on.
+      DSH starts with them on.
     - Open `One.md` in the desktop app and in DSH. With the caret on "first
       line", quiet text after the line names Test, the time and "First";
       hovering it shows the commit.
