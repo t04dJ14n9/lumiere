@@ -158,7 +158,8 @@ export class PanelHub implements CustomEditors {
         panel.dispose();
       }
     }, this.connectTimeout);
-    timer.unref?.();
+    // Node keeps a process alive for a timer; a browser has no unref.
+    (timer as { unref?: () => void }).unref?.();
   }
 }
 

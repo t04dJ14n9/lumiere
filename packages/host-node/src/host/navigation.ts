@@ -191,7 +191,8 @@ function nextPanelFor(
       }
     });
     const timer = setTimeout(() => finish(undefined), OPEN_TIMEOUT_MS);
-    timer.unref?.();
+    // Node keeps a process alive for a timer; a browser has no unref.
+    (timer as { unref?: () => void }).unref?.();
     function finish(panel: LivePanel | undefined): void {
       clearTimeout(timer);
       stop();
