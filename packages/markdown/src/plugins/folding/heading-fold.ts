@@ -15,16 +15,34 @@ const folds = new WeakMap<Text, Map<number, CachedFold>>();
 const headingLevel = (name: string) =>
   Number(/^(?:ATX|Setext)Heading([1-6])$/.exec(name)?.[1] ?? 0);
 
+/** Lines to search below for a Setext underline before asking the tree. */
+const SETEXT_LOOKAHEAD_LINES = 64;
+
+/**
+ * Whether a heading may start on the line at `start`, without the syntax
+ * tree: an ATX mark, or text whose paragraph ends in a Setext underline.
+ * That paragraph may run over several lines; past the lookahead the tree
+ * decides.
+ */
 function canStartHeading(doc: Text, start: number): boolean {
   const line = doc.lineAt(start);
   if (/^ {0,3}#/.test(line.text)) {
     return true;
   }
-  return (
-    line.number < doc.lines &&
-    line.text.trim().length > 0 &&
-    /^ {0,3}(?:=+|-+)\s*$/.test(doc.line(line.number + 1).text)
-  );
+  if (!line.text.trim()) {
+    return false;
+  }
+  const last = Math.min(doc.lines, line.number + SETEXT_LOOKAHEAD_LINES);
+  for (let number = line.number + 1; number <= last; number++) {
+    const text = doc.line(number).text;
+    if (/^ {0,3}(?:=+|-+)\s*$/.test(text)) {
+      return true;
+    }
+    if (!text.trim()) {
+      return false;
+    }
+  }
+  return last < doc.lines;
 }
 
 /**

@@ -11,10 +11,12 @@ import {
 import { foldingChanged, foldRange } from "./webview";
 import { headingFold } from "./heading-fold";
 
-test("heading folds keep the metadata ranges for nested scopes and setext headings", () => {
+test("heading folds keep the metadata ranges for nested scopes and setext headings, multi-line ones too", () => {
   for (const doc of [
     "# One\n\nbody\n\n## Two\n\nbody\n\n# Three\n",
     "One\n===\n\nbody\n\nTwo\n---\n\nbody",
+    "One line\nand another\n===\n\nbody\n\nTwo\nlines\nhere\n---\n\nbody",
+    `${"A long heading line\n".repeat(100)}===\n\nbody\n\n# Next`,
     "> # One\n>\n> ## Two\n> body\n>\n> # Three\n> end\n\noutside",
     "- # One\n\n  body\n\n  ## Two\n\n  end\n- # Other\n  body",
     "# Outer\n\n> # Inner\n> body\n\n## Child\n\nbody\n\n# Next",
