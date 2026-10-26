@@ -660,10 +660,25 @@ test("a block keeps its reserved height while a diagram inside still waits for i
       kind: "diagram",
       source,
     };
+    // CodeMirror's measure cycle: reads, then writes, at the next frame.
+    let requests: {
+      read?: () => unknown;
+      write?: (value: unknown) => void;
+    }[] = [];
+    const nextFrame = () => {
+      const due = requests;
+      requests = [];
+      const values = due.map((request) => request.read?.());
+      due.forEach((request, index) => request.write?.(values[index]));
+    };
     const view = {
       contentDOM: { clientWidth: 640 },
       state: { doc: { lineAt: () => ({ number: 1 }) } },
-      requestMeasure() {},
+      requestMeasure(request?: (typeof requests)[number]) {
+        if (request) {
+          requests.push(request);
+        }
+      },
     } as unknown as EditorView;
     let measure = () => {};
     const render: RenderService = {
@@ -691,12 +706,18 @@ test("a block keeps its reserved height while a diagram inside still waits for i
     const reserve = shell.style.minHeight;
     assert.match(reserve ?? "", /^\d+px$/, "the diagram's height is reserved");
 
+    nextFrame();
+    assert.equal(shell.style.minHeight, reserve, "kept once mounted");
+
     // The source's highlighting finishes first and asks for a measure.
     measure();
+    nextFrame();
     assert.equal(shell.style.minHeight, reserve, "kept while pending");
 
     body.hasPending = false;
     measure();
+    assert.equal(shell.style.minHeight, reserve, "no layout read at once");
+    nextFrame();
     assert.equal(shell.style.minHeight, "", "released once the SVG is in");
     widget.destroy(shell as unknown as HTMLElement);
   } finally {

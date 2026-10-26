@@ -6,7 +6,6 @@ import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
   announceRemount,
-  releasePaintReserve,
   releaseReserveOnceMounted,
 } from "./markdown-block-reserve";
 import {
@@ -205,6 +204,7 @@ export class MarkdownBlock extends WidgetType {
         }
       },
     });
+    releaseReserveOnceMounted(view, created.shell, created.body);
     return created.shell;
   }
 
@@ -360,7 +360,7 @@ function beginMarkdownBlockRender(options: {
       measure: () => {
         if (entry.alive) {
           rememberHtml();
-          releasePaintReserve(shell, body);
+          releaseReserveOnceMounted(entry.currentView, shell, body);
           if (shell.isConnected) {
             entry.currentView.requestMeasure();
           }
@@ -381,6 +381,7 @@ function beginMarkdownBlockRender(options: {
       if (entry.alive) {
         body.textContent = block.source;
         shell.classList.add("render-error");
+        releaseReserveOnceMounted(entry.currentView, shell, body);
         entry.currentView.requestMeasure();
       }
     });

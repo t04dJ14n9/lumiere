@@ -11,32 +11,17 @@ import {
 import { hasPendingRender } from "./markdown-block-height";
 
 /**
- * Drop the reserved height once the content is in. A diagram still waiting
- * for its SVG keeps it: the source shown meanwhile (or its highlighting
- * finishing) is far shorter than the diagram, and releasing the reserve
- * then made the block shrink and grow back under the reader.
- */
-export function releasePaintReserve(
-  shell: HTMLElement,
-  body: HTMLElement,
-): void {
-  if (hasPendingRender(body)) {
-    return;
-  }
-  if (
-    shell.style.minHeight &&
-    shell.isConnected &&
-    body.getBoundingClientRect().height > 0
-  ) {
-    shell.style.minHeight = "";
-  }
-}
-
-/**
- * A block whose content arrived while it was out of the page (a diagram
- * drawn as it was scrolled past) still holds its reserve, which can leave a
- * gap below the diagram once it is back; drop it at CodeMirror's next
- * measure.
+ * Drop a block's reserved height once its content is in and it is in the
+ * page, at CodeMirror's next measure: reading the block's height there
+ * forces no layout of its own.
+ *
+ * A block renders as it is built, before CodeMirror puts it in the page, and
+ * one whose content arrived meanwhile (a formula, a cached diagram, or a
+ * diagram drawn while it was scrolled out) gets no later chance, so every
+ * mount asks, as does every part that finishes rendering. A diagram still
+ * waiting for its SVG keeps the reserve: the source shown meanwhile is far
+ * shorter than the diagram, and the block would shrink and grow back under
+ * the reader.
  */
 export function releaseReserveOnceMounted(
   view: EditorView,
@@ -47,6 +32,7 @@ export function releaseReserveOnceMounted(
     return;
   }
   view.requestMeasure({
+    key: shell,
     read: () =>
       shell.isConnected &&
       !hasPendingRender(body) &&
