@@ -40,6 +40,7 @@ import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
 import { selectionDragScroll } from "./drag-scroll";
+import { focusOpensKeyboard } from "../../webview/ui/soft-keyboard";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -129,7 +130,9 @@ export const editorWebview: Plugin<EditorConfig> = {
         ),
       ),
     );
-    view.focus();
+    if (!focusOpensKeyboard()) {
+      view.focus();
+    }
   },
 };
 
@@ -367,7 +370,7 @@ function registerReveal(ctx: Context, view: EditorView): void {
           throw new Error("Invalid selection");
         }
         runNavigation(view, () => {
-          if (focus) {
+          if (focus && !focusOpensKeyboard()) {
             view.focus();
           }
           view.dispatch({
