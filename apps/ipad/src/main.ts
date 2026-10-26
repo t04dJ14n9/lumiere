@@ -44,6 +44,10 @@ async function main(): Promise<void> {
       origin: location.origin,
       editor: new URL("markdown/", base).href,
       shim: new URL("page/shim.js", base).href,
+      pdf: {
+        viewer: new URL("pdf/", base).href,
+        shim: new URL("page/pdf-shim.js", base).href,
+      },
       resource: (panel, uri) =>
         `${new URL("lumiere/file", base).href}?panel=${encodeURIComponent(panel)}&uri=${encodeURIComponent(uri)}`,
     },

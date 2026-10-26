@@ -39,6 +39,10 @@ const URLS = {
   origin: "https://lumiere.example",
   editor: "https://lumiere.example/app/markdown/",
   shim: "https://lumiere.example/app/page/shim.js",
+  pdf: {
+    viewer: "https://lumiere.example/app/pdf/",
+    shim: "https://lumiere.example/app/page/pdf-shim.js",
+  },
   resource: (panel: string, uri: string) =>
     `https://lumiere.example/app/lumiere/file?panel=${panel}&uri=${encodeURIComponent(uri)}`,
 };
@@ -97,4 +101,35 @@ test("the channel carries frames both ways, and closing the tab closes the panel
   page.dispose();
   assert.equal(closed, true);
   port.close();
+});
+
+test("a PDF's page is Lumière's viewer, with its host's stand-in first and the PDF named", async () => {
+  const { openPdfPage } = await import("../../src/pages");
+  const page = openPdfPage(new Uint8Array([37, 80, 68, 70]), URLS);
+  assert.match(page.url, /^blob:/);
+  const html = await (await fetch(page.url)).text();
+  const shim = html.indexOf(
+    'src="https://lumiere.example/app/page/pdf-shim.js"',
+  );
+  const viewer = html.indexOf(
+    'src="https://lumiere.example/app/pdf/viewer.js"',
+  );
+  assert.ok(shim > 0 && viewer > shim, "the stand-in runs before the viewer");
+  assert.match(
+    html,
+    /data-pdfium-wasm="https:\/\/lumiere\.example\/app\/pdf\/pdfium\.wasm"/,
+  );
+  assert.match(html, /data-toolbar="slim"/);
+  const pdf = /<meta name="lumiere-pdf" content="(blob:[^"]+)">/.exec(
+    html,
+  )?.[1];
+  assert.ok(pdf, "the page names its PDF");
+  const response = await fetch(pdf);
+  assert.equal(response.headers.get("content-type"), "application/pdf");
+  assert.deepEqual(
+    new Uint8Array(await response.arrayBuffer()),
+    new Uint8Array([37, 80, 68, 70]),
+  );
+  page.dispose();
+  await assert.rejects(fetch(pdf), "closing the tab frees the PDF");
 });

@@ -68,6 +68,10 @@ test(
           origin: "https://lumiere.example",
           editor: "https://lumiere.example/markdown/",
           shim: "https://lumiere.example/page/shim.js",
+          pdf: {
+            viewer: "https://lumiere.example/pdf/",
+            shim: "https://lumiere.example/page/pdf-shim.js",
+          },
           resource: () => "",
         },
       );

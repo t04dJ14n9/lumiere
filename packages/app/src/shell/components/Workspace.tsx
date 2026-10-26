@@ -5,6 +5,7 @@
  * the note instead (panels.ts).
  */
 import type { Dispatch, ReactNode } from "react";
+import { backend } from "../backend";
 import type { VaultState } from "../hooks";
 import type { Opening } from "../opening";
 import type { Panels } from "../panels";
@@ -151,6 +152,7 @@ function FilesSidebar({
                 ? shown.path
                 : undefined
             }
+            opens={backend().editors.kinds ?? ["note"]}
             onOpen={(path) => {
               dispatch({ type: "open", vault, path });
               panels.dismiss();

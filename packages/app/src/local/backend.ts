@@ -8,6 +8,7 @@ import {
 } from "@workshop/host-node/core";
 import {
   openEditorPage,
+  openPdfPage,
   type EditorPageUrls,
   type Mounts,
 } from "@workshop/host-web";
@@ -16,7 +17,8 @@ import {
   settingsUnavailableIn,
 } from "@workshop/markdown/portable";
 import type { ServerEvent } from "../shell/api";
-import type { WindowBackend } from "../shell/backend";
+import type { OpenedEditor, WindowBackend } from "../shell/backend";
+import { fileKind } from "../shared/file-kind";
 import { parseUiChange, readUiState, type UiState } from "../shared/ui-state";
 import type { TextFile, VaultTrust } from "../shared/vault-trust";
 import type { LocalVaults } from "./vaults";
@@ -62,18 +64,25 @@ export function createLocalBackend(parts: LocalBackendParts): WindowBackend {
       events: (listener) => host.trees.onEvent(listener),
     },
     editors: {
-      open: (vault, path) =>
-        openEditorPage(
-          host,
-          {
-            uri: files.uriOf(`${vault}/${path}`),
-            root: files.uriOf(vault),
-          },
-          pages,
-        ),
+      kinds: ["note", "pdf"],
+      open: (vault, path) => {
+        const uri = files.uriOf(`${vault}/${path}`);
+        return fileKind(path) === "pdf"
+          ? openPdf(files, uri, pages)
+          : openEditorPage(host, { uri, root: files.uriOf(vault) }, pages);
+      },
     },
     ...(parts.pickFolder ? { pickFolder: parts.pickFolder } : {}),
   };
+}
+
+/** A PDF in a tab: Lumière's PDF viewer, in a page of its own. */
+async function openPdf(
+  files: Mounts,
+  uri: string,
+  pages: EditorPageUrls,
+): Promise<OpenedEditor> {
+  return openPdfPage(await files.readBytes(uri), pages);
 }
 
 /** The window's layout and theme, kept in `file`. */

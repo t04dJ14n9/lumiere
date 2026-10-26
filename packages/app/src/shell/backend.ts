@@ -7,6 +7,7 @@
  */
 import type { SettingChange, SettingItem } from "@workshop/host-node/settings";
 import type { TreeEvent, TreeSnapshot } from "@workshop/host-node/views";
+import type { FileKind } from "../shared/file-kind";
 import type { UiState } from "../shared/ui-state";
 import type { FileEntry, ServerEvent, TrustQuestion, VaultList } from "./api";
 import { MENU_COMMANDS, type MenuCommand } from "./tauri";
@@ -56,6 +57,8 @@ export interface WindowBackend {
     events(listener: (event: TreeEvent) => void): () => void;
   };
   readonly editors: {
+    /** The kinds of file it opens in a tab; notes when not given. */
+    readonly kinds?: readonly FileKind[];
     open(vault: string, path: string): Promise<OpenedEditor>;
   };
   /**

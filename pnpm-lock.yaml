@@ -191,6 +191,9 @@ importers:
       '@workshop/markdown':
         specifier: workspace:*
         version: link:../markdown
+      '@workshop/pdf':
+        specifier: workspace:*
+        version: link:../pdf
 
   packages/ink:
     dependencies:

@@ -10,7 +10,8 @@ import {
   type LumiereHost,
   type PageSocket,
 } from "@workshop/host-node/core";
-import { TRANSPORT_META } from "@workshop/host-node/embedding";
+import { PDF_META, TRANSPORT_META } from "@workshop/host-node/embedding";
+import { PAGE_TOOLBAR, viewerPageHtml } from "@workshop/pdf/viewer-page";
 
 export interface EditorPageUrls {
   /** The window's origin, for the page's content security policy. */
@@ -21,6 +22,13 @@ export interface EditorPageUrls {
   readonly shim: string;
   /** A file the note shows (an image): a URL the window can answer. */
   resource(panelId: string, uri: string): string;
+  /** A PDF's page (`openPdfPage`), as absolute URLs. */
+  readonly pdf: {
+    /** The folder of the built viewer: viewer.js, viewer.css, pdfium.wasm. */
+    readonly viewer: string;
+    /** The built stand-in for its host (host-node's src/page/pdf-shim.ts). */
+    readonly shim: string;
+  };
 }
 
 export interface EditorPage {
@@ -116,4 +124,40 @@ function escape(text: string): string {
     .replaceAll("&", "&amp;")
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;");
+}
+
+/**
+ * Show a PDF in a new page: Lumière's PDF viewer, as in VS Code, with a
+ * stand-in for its extension host that hands it these bytes (host-node's
+ * src/page/pdf-shim.ts). Closing the tab frees both blobs.
+ */
+export function openPdfPage(
+  bytes: Uint8Array,
+  urls: EditorPageUrls,
+): { readonly url: string; dispose(): void } {
+  // A copy in a plain ArrayBuffer, as a Blob takes.
+  const pdf = URL.createObjectURL(
+    new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+  );
+  const html = viewerPageHtml({
+    asset: (name) => new URL(name, urls.pdf.viewer).href,
+    cspSource: urls.origin,
+    nonce: randomNonce(),
+    toolbar: PAGE_TOOLBAR,
+    before: [urls.pdf.shim],
+    meta: { [PDF_META]: pdf },
+  });
+  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  return {
+    url,
+    dispose() {
+      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(pdf);
+    },
+  };
+}
+
+function randomNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes));
 }

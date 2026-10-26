@@ -36,6 +36,12 @@ export interface ShownMessage {
 export const SHOWN: ShownMessage = { lumiere: "shown" };
 
 /**
+ * In a PDF page of the web and iPad apps (host-web, `openPdfPage`): the blob
+ * URL of the PDF it shows, which page/pdf-shim.ts hands the viewer.
+ */
+export const PDF_META = "lumiere-pdf";
+
+/**
  * The embedder asks for the page's right-click menu at the selection, for a
  * device without a right click: the iPad's edit menu offers More… for it.
  */
