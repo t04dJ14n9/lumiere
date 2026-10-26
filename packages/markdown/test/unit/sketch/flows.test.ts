@@ -6,6 +6,7 @@ import { insertSketch } from "../../../src/plugins/sketch/insert";
 import type { TextEdit } from "../../../src/shared/host";
 import { fakeDocument } from "../../support/vscode-fake";
 import {
+  ROOT,
   drawing,
   fakeInk,
   memoryFiles,
@@ -33,8 +34,12 @@ function note(text: string, caret?: number) {
 }
 
 function insertHost(ink: ReturnType<typeof fakeInk>["ink"], paths: string[]) {
-  const disk = memoryFiles();
   const { index, vaults } = vaultOf(paths);
+  // The host reports its own writes to the index a moment later.
+  const disk = memoryFiles({}, (uri) => {
+    const path = decodeURIComponent(uri.slice(ROOT.length + 1));
+    setTimeout(() => index.upsertFile({ path, uri, mtime: 1, size: 1 }), 5);
+  });
   const applied: TextEdit[][] = [];
   const host = {
     ...sketchHost({ ink, files: disk.api, vaults }),
@@ -73,6 +78,41 @@ test("Insert Sketch saves the drawing, with its pressure, and embeds it at the c
     ],
   ]);
   assert.deepEqual(host.errors, []);
+});
+
+test("the embed goes in once the vault's index lists the sketch, so it shows at once", async () => {
+  const { ink } = fakeInk(drawing());
+  const { host, index, applied } = insertHost(ink, ["Projects/Plan.md"]);
+  const order: string[] = [];
+  index.onDidChange((change) => order.push(`indexed ${change.path}`));
+  const apply = host.apply;
+  host.apply = async (document, edits) => {
+    order.push("embedded");
+    return apply(document, edits);
+  };
+
+  await insertSketch(host, note("Plan"));
+
+  assert.deepEqual(order, [
+    "indexed Attachments/2026-10-22 14.03.sketch.svg",
+    "embedded",
+  ]);
+  assert.equal(applied.length, 1);
+});
+
+test("a host that never reports the write still gets the embed, after a wait", async () => {
+  const { ink } = fakeInk(drawing());
+  const { host, applied } = insertHost(ink, ["Projects/Plan.md"]);
+  const silent = memoryFiles();
+  const started = Date.now();
+
+  await insertSketch(
+    { ...host, files: silent.api, indexWait: 50 },
+    note("Plan"),
+  );
+
+  assert.equal(applied.length, 1);
+  assert.ok(Date.now() - started >= 45);
 });
 
 test("a second sketch in the same minute gets a name of its own", async () => {

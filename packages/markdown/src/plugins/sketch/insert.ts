@@ -8,6 +8,7 @@ import { sketchToSvg } from "@workshop/ink/format";
 import type { HostDocument, TextEdit } from "../../shared/host";
 import { lookupKey } from "../../shared/vault-path";
 import { joinContained } from "../../shared/workspace-path";
+import type { VaultIndex } from "../vault/api";
 import { draw, type SketchHost } from "./edit";
 import {
   attachmentFolder,
@@ -36,7 +37,12 @@ export interface InsertHost extends SketchHost {
     edits: readonly TextEdit[],
   ) => Promise<boolean>;
   readonly now: () => Date;
+  /** How long to wait for the vault's index to list the new file (ms). */
+  readonly indexWait?: number;
 }
+
+/** Long enough for a host to report its own write; the embed goes in anyway after. */
+const INDEX_WAIT_MS = 2000;
 
 /** The new sketch's vault path once saved and embedded, else undefined. */
 export async function insertSketch(
@@ -65,6 +71,9 @@ export async function insertSketch(
     host.error(`The sketch could not be saved in ${folder || "the vault"}.`);
     return undefined;
   }
+  // The embed resolves through the index on its first render; a host
+  // reports its own writes a moment later (host-web after a native stat).
+  await whenIndexed(index, saved, host.indexWait ?? INDEX_WAIT_MS);
   const key = lookupKey(saved);
   const embed = sketchEmbed({
     path: saved,
@@ -82,6 +91,30 @@ export async function insertSketch(
     );
   }
   return saved;
+}
+
+/** Resolves once the index lists `path`, or after `ms` if it never does. */
+function whenIndexed(
+  index: VaultIndex,
+  path: string,
+  ms: number,
+): Promise<void> {
+  if (index.file(path)) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      void stop();
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    const stop = index.onDidChange((change) => {
+      if (change.path === path) {
+        done();
+      }
+    });
+  });
 }
 
 interface NewFile {

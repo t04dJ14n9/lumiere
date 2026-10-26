@@ -51,7 +51,10 @@ export function fakeInk(...answers: (Sketch | undefined | Error)[]) {
 }
 
 /** Files by URI, text only, as a vault's folder would hold them. */
-export function memoryFiles(initial: Record<string, string> = {}) {
+export function memoryFiles(
+  initial: Record<string, string> = {},
+  onWrite: (uri: string) => void = () => {},
+) {
   const files = new Map(Object.entries(initial));
   const folders = new Set<string>([ROOT]);
   const api: Pick<WorkspaceFiles, "readText" | "writeText" | "list" | "mkdir"> =
@@ -59,6 +62,7 @@ export function memoryFiles(initial: Record<string, string> = {}) {
       readText: async (uri) => files.get(uri),
       writeText: async (uri, text) => {
         files.set(uri, text);
+        onWrite(uri);
       },
       list: async (uri) => {
         const prefix = `${uri}/`;
