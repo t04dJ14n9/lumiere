@@ -107,6 +107,13 @@ const scenarios: Record<string, Scenario> = {
   async pageDown(driver) {
     await pressAt(driver, "PageDown", 120, 33);
   },
+  /** Reading by pages: PageDown, then a pause to read, 25 times. */
+  async pageRead(driver) {
+    for (let page = 0; page < 25; page++) {
+      await pressAt(driver, "PageDown", 1, 0);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+  },
   /** The scrollbar thumb dragged: 900 px a frame to the end. */
   async drag(driver) {
     await driver.page.evaluate(
@@ -172,6 +179,9 @@ function summary(record: FrameRecord, latency: number[], settleMs: number) {
     inputP95: quantile(latency, 0.95),
     inputMax: Math.max(0, ...latency),
     layoutShift: round(record.shifts.reduce((sum, value) => sum + value, 0)),
+    layoutShiftWithResize: round(
+      record.resizeShifts.reduce((sum, value) => sum + value, 0),
+    ),
     shiftSources: Object.fromEntries(
       Object.entries(record.shiftSources)
         .sort((a, b) => b[1] - a[1])

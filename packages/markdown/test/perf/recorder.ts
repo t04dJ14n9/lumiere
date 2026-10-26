@@ -23,6 +23,12 @@ export interface FrameRecord {
   shifts: number[];
   /** Layout shift score by the moved element's class. */
   shiftSources: Record<string, number>;
+  /**
+   * The part of the score from shifts where some block also changed size (a
+   * diagram drawing at another height). The rest moved content without any
+   * resize, as CodeMirror's own scroll corrections during keyboard paging do.
+   */
+  resizeShifts: number[];
   /** Programmatic scrollTop writes (CodeMirror's anchor corrections) and their size. */
   corrections: number[];
   /** Height map total at each frame. */
@@ -60,6 +66,7 @@ export function installRecorder(): void {
     loafs: [],
     shifts: [],
     shiftSources: {},
+    resizeShifts: [],
     corrections: [],
     heights: [],
     diagramLatency: [],
@@ -162,9 +169,23 @@ export function installRecorder(): void {
     if (running) {
       for (const entry of list.getEntries() as unknown as {
         value: number;
-        sources: { node?: Node | null }[];
+        sources: {
+          node?: Node | null;
+          previousRect: DOMRectReadOnly;
+          currentRect: DOMRectReadOnly;
+        }[];
       }[]) {
         record.shifts.push(entry.value);
+        const resized = entry.sources.some(
+          (source) =>
+            source.previousRect.height > 0 &&
+            source.currentRect.height > 0 &&
+            Math.abs(source.currentRect.height - source.previousRect.height) >
+              1,
+        );
+        if (resized) {
+          record.resizeShifts.push(entry.value);
+        }
         for (const source of entry.sources) {
           const node = source.node;
           const name =
