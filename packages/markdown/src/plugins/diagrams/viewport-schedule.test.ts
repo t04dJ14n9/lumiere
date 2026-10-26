@@ -266,3 +266,68 @@ test("observeNearViewport marks connected near-viewport elements visible immedia
     (globalThis as { window?: unknown }).window = prevWin;
   }
 });
+
+test("queued paint job that leaves the near-viewport band before its turn does not call Mermaid", async () => {
+  const calls: string[] = [];
+  let releaseFirst!: () => void;
+  const visibility = fakeVisibility();
+  const scheduler = new MermaidViewportScheduler({
+    settleMs: 15,
+    watch: visibility.watch,
+    cache: new MermaidSvgCache(8),
+    ...noPrefetch,
+    render: (source) => {
+      calls.push(source);
+      if (source === "first") {
+        return new Promise<string>((resolve) => {
+          releaseFirst = () => resolve(`<svg data-src="first"></svg>`);
+        });
+      }
+      return Promise.resolve(`<svg data-src="${source}"></svg>`);
+    },
+  });
+
+  const firstEl = { id: "first" } as unknown as Element;
+  const secondEl = { id: "second" } as unknown as Element;
+  scheduler.schedule(firstEl, "first", { onSvg() {}, onError() {} });
+  scheduler.schedule(secondEl, "second", { onSvg() {}, onError() {} });
+
+  visibility.setVisible(firstEl, true);
+  visibility.setVisible(secondEl, true);
+  await delay(30);
+  assert.deepEqual(calls, ["first"]);
+
+  // Second leaves the near-viewport band while first is still rendering:
+  visibility.setVisible(secondEl, false);
+  releaseFirst();
+  await delay(25);
+  assert.deepEqual(calls, ["first"]);
+});
+
+test("MermaidViewportScheduler yields between consecutive serial renders", async () => {
+  const events: string[] = [];
+  const visibility = fakeVisibility();
+  const scheduler = new MermaidViewportScheduler({
+    settleMs: 10,
+    watch: visibility.watch,
+    cache: new MermaidSvgCache(8),
+    ...noPrefetch,
+    yieldBetweenJobs: async () => {
+      events.push("yield");
+    },
+    render: async (source) => {
+      events.push(`render:${source}`);
+      await delay(5);
+      return `<svg data-src="${source}"></svg>`;
+    },
+  });
+
+  const el1 = { id: "1" } as unknown as Element;
+  const el2 = { id: "2" } as unknown as Element;
+  scheduler.schedule(el1, "one", { onSvg() {}, onError() {} });
+  scheduler.schedule(el2, "two", { onSvg() {}, onError() {} });
+  visibility.setVisible(el1, true);
+  visibility.setVisible(el2, true);
+  await delay(40);
+  assert.deepEqual(events, ["render:one", "yield", "render:two"]);
+});

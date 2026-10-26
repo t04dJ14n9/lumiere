@@ -1,17 +1,6 @@
 /**
- * Serial Mermaid work with near-viewport settle, ahead-of-time idle prefetch,
- * and an SVG cache.
- *
- * Live Preview mounts diagram shells across a wide document hot band. Mermaid
- * mutates shared engine state, so renders stay serial. A superfast wheel would
- * otherwise enqueue dozens of renders and starve on-screen diagrams.
- *
- * Strategy:
- * 1. Cache hit → paint immediately (no Mermaid).
- * 2. Idle prefetch on mount → fill the cache without painting.
- * 3. Near-viewport settle → paint from cache, or run Mermaid at paint priority.
- * 4. Dispose cancels unpainted work. Finished prefetches (while still mounted)
- *    land in the cache so a remount / revisit paints instantly.
+ * Serial Mermaid work with near-viewport scroll settle, frame yielding between
+ * consecutive renders, and an SVG cache (matching Obsidian's `Fj` / `Oj`).
  */
 
 export type VisibilityWatch = (
@@ -30,13 +19,12 @@ export interface MermaidViewportSchedulerOptions {
   settleMs?: number;
   /** Shared SVG cache; defaults to a module-local LRU. */
   cache?: MermaidSvgCache;
-  /**
-   * Ahead-of-time prefetch trigger. Defaults to `requestIdleCallback` (2s
-   * timeout) or a short `setTimeout` fallback.
-   */
+  /** Optional ahead-of-time prefetch trigger (no-op by default in browser). */
   scheduleIdle?: IdleScheduler;
   /** Cache key for a diagram source (theme / trust / source). Defaults to source. */
   cacheKey?: (source: string) => string;
+  /** Optional frame yield between consecutive serial renders. */
+  yieldBetweenJobs?: () => Promise<void>;
 }
 
 export interface MermaidScheduleHandlers {
@@ -47,6 +35,7 @@ export interface MermaidScheduleHandlers {
 type JobKind = "prefetch" | "paint";
 
 interface Job {
+  element: Element;
   source: string;
   handlers: MermaidScheduleHandlers;
   kind: JobKind;
@@ -67,7 +56,6 @@ export class MermaidSvgCache {
     if (value === undefined) {
       return undefined;
     }
-    // Refresh LRU order.
     this.entries.delete(key);
     this.entries.set(key, value);
     return value;
@@ -90,17 +78,48 @@ export class MermaidSvgCache {
 
 const defaultCache = new MermaidSvgCache();
 
-/**
- * Default near-viewport observer. `rootMargin` keeps a short warm band so
- * Mermaid can finish just before the diagram enters the screen. An initial
- * `getBoundingClientRect` check starts settle immediately for connected
- * near-viewport fences without waiting on IntersectionObserver.
- */
+let lastBrowserScrollAt = -Infinity;
+let scrollListenerAttached = false;
+
+function ensureBrowserScrollListener(): void {
+  if (
+    scrollListenerAttached ||
+    typeof window === "undefined" ||
+    typeof window.addEventListener !== "function"
+  ) {
+    return;
+  }
+  scrollListenerAttached = true;
+  const markScroll = () => {
+    lastBrowserScrollAt =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+  };
+  window.addEventListener("scroll", markScroll, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener("wheel", markScroll, {
+    capture: true,
+    passive: true,
+  });
+}
+
+function remainingScrollSettleMs(settleMs: number): number {
+  if (!scrollListenerAttached || settleMs <= 0) {
+    return 0;
+  }
+  const now =
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+  const elapsed = now - lastBrowserScrollAt;
+  return elapsed < settleMs ? Math.ceil(settleMs - elapsed) : 0;
+}
+
 export function observeNearViewport(
   element: Element,
   onVisible: (visible: boolean) => void,
   rootMargin = "200px",
 ): () => void {
+  ensureBrowserScrollListener();
   const marginPx = Number.parseFloat(rootMargin) || 0;
   if (typeof IntersectionObserver !== "function") {
     onVisible(true);
@@ -144,27 +163,32 @@ function isNearViewport(element: Element, marginPx: number): boolean {
   );
 }
 
-function defaultScheduleIdle(run: () => void): () => void {
-  const idle = (
-    globalThis as typeof globalThis & {
-      requestIdleCallback?: (
-        callback: () => void,
-        opts?: { timeout: number },
-      ) => number;
-      cancelIdleCallback?: (id: number) => void;
+/**
+ * Do not run background idle prefetch by default: `mermaid.render()` runs
+ * synchronous D3/dagre layout on the main UI thread.
+ */
+function defaultScheduleIdle(): () => void {
+  return () => {};
+}
+
+function defaultYieldBetweenJobs(settleMs: number): () => Promise<void> {
+  return async () => {
+    const raf = (
+      globalThis as typeof globalThis & {
+        requestAnimationFrame?: (cb: () => void) => number;
+      }
+    ).requestAnimationFrame;
+    if (typeof raf === "function") {
+      await new Promise<void>((resolve) => raf(() => resolve()));
     }
-  ).requestIdleCallback;
-  const cancelIdle = (
-    globalThis as typeof globalThis & {
-      cancelIdleCallback?: (id: number) => void;
+    for (;;) {
+      const waitMs = remainingScrollSettleMs(settleMs);
+      if (waitMs <= 0) {
+        return;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
     }
-  ).cancelIdleCallback;
-  if (typeof idle === "function") {
-    const id = idle(run, { timeout: 2000 });
-    return () => cancelIdle?.(id);
-  }
-  const timer = setTimeout(run, 120);
-  return () => clearTimeout(timer);
+  };
 }
 
 export class MermaidViewportScheduler {
@@ -174,6 +198,7 @@ export class MermaidViewportScheduler {
   private readonly cache: MermaidSvgCache;
   private readonly scheduleIdle: IdleScheduler;
   private readonly cacheKey: (source: string) => string;
+  private readonly yieldBetweenJobs: () => Promise<void>;
   private queue: Promise<void> = Promise.resolve();
   private readonly paintWaiters: Job[] = [];
   private readonly prefetchWaiters: Job[] = [];
@@ -186,6 +211,8 @@ export class MermaidViewportScheduler {
     this.cache = options.cache ?? defaultCache;
     this.scheduleIdle = options.scheduleIdle ?? defaultScheduleIdle;
     this.cacheKey = options.cacheKey ?? ((source) => source);
+    this.yieldBetweenJobs =
+      options.yieldBetweenJobs ?? defaultYieldBetweenJobs(this.settleMs);
   }
 
   /** Wait until the serial queue drains (tests). */
@@ -193,10 +220,6 @@ export class MermaidViewportScheduler {
     return this.queue.then(() => undefined);
   }
 
-  /**
-   * Prefetch on idle; paint on near-viewport settle (or immediately from cache).
-   * Returns a disposer that cancels unpainted work.
-   */
   schedule(
     element: Element,
     source: string,
@@ -208,6 +231,7 @@ export class MermaidViewportScheduler {
       return () => {};
     }
     const job: Job = {
+      element,
       source,
       handlers,
       kind: "prefetch",
@@ -229,7 +253,6 @@ export class MermaidViewportScheduler {
     };
   }
 
-  /** Near-viewport settle → paint from cache or enqueue at paint priority. */
   private watchSettle(element: Element, job: Job): () => void {
     let settleTimer: ReturnType<typeof setTimeout> | undefined;
     const clearSettle = () => {
@@ -238,27 +261,49 @@ export class MermaidViewportScheduler {
         settleTimer = undefined;
       }
     };
+    const armSettle = (delayMs: number) => {
+      settleTimer = setTimeout(() => {
+        settleTimer = undefined;
+        if (element.isConnected === false) {
+          job.settled = false;
+          return;
+        }
+        const scrollWait = remainingScrollSettleMs(this.settleMs);
+        if (scrollWait > 0) {
+          armSettle(scrollWait);
+          return;
+        }
+        this.onSettled(job);
+      }, delayMs);
+    };
     const unwatch = this.watch(element, (visible) => {
       if (job.painted) {
         return;
       }
-      if (!visible) {
+      if (!visible || element.isConnected === false) {
         clearSettle();
         job.settled = false;
+        this.dequeuePaint(job);
         return;
       }
-      if (job.settled || settleTimer !== undefined) {
-        return;
+      if (!job.settled && settleTimer === undefined) {
+        armSettle(this.settleMs);
       }
-      settleTimer = setTimeout(() => {
-        settleTimer = undefined;
-        this.onSettled(job);
-      }, this.settleMs);
     });
     return () => {
       clearSettle();
       unwatch();
     };
+  }
+
+  private dequeuePaint(job: Job): void {
+    if (job.kind === "paint") {
+      const idx = this.paintWaiters.indexOf(job);
+      if (idx >= 0) {
+        this.paintWaiters.splice(idx, 1);
+        job.queued = false;
+      }
+    }
   }
 
   private onSettled(job: Job): void {
@@ -300,11 +345,17 @@ export class MermaidViewportScheduler {
     this.queue = this.queue
       .then(async () => {
         for (;;) {
+          if (remainingScrollSettleMs(this.settleMs) > 0) {
+            await this.yieldBetweenJobs();
+          }
           const job = this.paintWaiters.shift() ?? this.prefetchWaiters.shift();
           if (!job) {
             return;
           }
           await this.runJob(job);
+          if (this.paintWaiters.length > 0 || this.prefetchWaiters.length > 0) {
+            await this.yieldBetweenJobs();
+          }
         }
       })
       .finally(() => {
@@ -316,37 +367,53 @@ export class MermaidViewportScheduler {
   }
 
   private async runJob(job: Job): Promise<void> {
-    // Dispose / flash-away: skip. Prefetch only warms the cache while mounted.
-    if (job.cancelled) {
+    if (!isJobRunnable(job)) {
       job.queued = false;
+      job.settled = false;
       return;
     }
     const key = this.cacheKey(job.source);
     const existing = this.cache.get(key);
     if (existing !== undefined) {
       job.queued = false;
-      if (job.settled && !job.painted) {
-        job.painted = true;
-        job.handlers.onSvg(existing);
-      }
+      paintIfSettled(job, existing);
       return;
     }
     try {
       const svg = await this.render(job.source);
       this.cache.set(key, svg);
       job.queued = false;
-      if (job.cancelled || job.painted) {
-        return;
-      }
-      if (job.kind === "paint" || job.settled) {
-        job.painted = true;
-        job.handlers.onSvg(svg);
-      }
+      paintIfReady(job, svg);
     } catch (error) {
       job.queued = false;
-      if (!job.cancelled && (job.kind === "paint" || job.settled)) {
-        job.handlers.onError?.(error);
-      }
+      reportIfReady(job, error);
     }
+  }
+}
+
+function isJobRunnable(job: Job): boolean {
+  if (job.cancelled) {
+    return false;
+  }
+  return !(job.kind === "paint" && job.element.isConnected === false);
+}
+
+function paintIfSettled(job: Job, svg: string): void {
+  if (job.settled && !job.painted) {
+    job.painted = true;
+    job.handlers.onSvg(svg);
+  }
+}
+
+function paintIfReady(job: Job, svg: string): void {
+  if (!job.cancelled && !job.painted && (job.kind === "paint" || job.settled)) {
+    job.painted = true;
+    job.handlers.onSvg(svg);
+  }
+}
+
+function reportIfReady(job: Job, error: unknown): void {
+  if (!job.cancelled && (job.kind === "paint" || job.settled)) {
+    job.handlers.onError?.(error);
   }
 }
