@@ -1,7 +1,7 @@
 /**
- * The user left the table for the note. A widget CodeMirror detached because
- * it scrolled out of the viewport is not that departure: its root is gone,
- * and focus falling back onto the note must not close the retained cell.
+ * A focusout that left the table. CodeMirror detaching the widget because it
+ * scrolled out of the viewport also blurs it, but is not that departure: the
+ * root is gone and focus fell to the body, so the retained cell stays.
  */
 export function noteTookTableFocus(
   root: { isConnected: boolean; contains(node: Node | null): boolean },
@@ -33,11 +33,20 @@ export function resumeRetainedCell(
 }
 
 /**
+ * Menu invocation removes its DOM before queuing the command. Give that
+ * command a turn to restore cell focus before deciding the table was left.
+ */
+function afterFocusSettles(check: () => void): void {
+  queueMicrotask(() => queueMicrotask(check));
+}
+
+/**
  * Table focus while the widget is mounted, retained, or left for the note.
  *
- * Scrolling a focused table out of CodeMirror's viewport detaches its root
- * before the focusout microtask. That unmount must not drop the active cell
- * editor. Focus that actually lands in the note still clears the table.
+ * Scrolling a focused table out of CodeMirror's viewport detaches its root,
+ * which blurs it. That unmount must not drop the active table. Focus that
+ * lands in the note's content clears the table, mounted or not: an unmounted
+ * table hears no focusout, so its own focusout cannot report the departure.
  */
 export function bindTableFocus(options: {
   root: HTMLElement;
@@ -46,38 +55,34 @@ export function bindTableFocus(options: {
   clear: () => void;
 }): void {
   const { root, contentDOM, signal, clear } = options;
+  const leave = (): void => {
+    root.classList.remove("has-focus");
+    clear();
+  };
   root.addEventListener("focusin", () => root.classList.add("has-focus"), {
     signal,
   });
   root.addEventListener(
     "focusout",
-    () => {
-      // Menu invocation removes its DOM before queuing the command. Give
-      // that command a turn to restore cell focus before closing the editor.
-      queueMicrotask(() =>
-        queueMicrotask(() => {
-          const active = root.ownerDocument.activeElement;
-          if (!noteTookTableFocus(root, active)) {
-            return;
-          }
-          root.classList.remove("has-focus");
-          clear();
-        }),
-      );
-    },
+    () =>
+      afterFocusSettles(() => {
+        if (noteTookTableFocus(root, root.ownerDocument.activeElement)) {
+          leave();
+        }
+      }),
     { signal },
   );
   contentDOM.addEventListener(
     "focusin",
-    () => {
-      // Reveal focuses the note in the same turn that detaches the widget.
-      // Wait until that unmount settles before treating focus as leaving.
-      queueMicrotask(() => {
-        const active = root.ownerDocument.activeElement;
-        if (!noteTookTableFocus(root, active)) {
-          return;
+    (event) => {
+      // The table's own cells and grips sit inside the note's content.
+      if (root.contains(event.target as Node | null)) {
+        return;
+      }
+      afterFocusSettles(() => {
+        if (!root.contains(root.ownerDocument.activeElement)) {
+          leave();
         }
-        clear();
       });
     },
     { signal },

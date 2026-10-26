@@ -1,6 +1,52 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { noteTookTableFocus, resumeRetainedCell } from "./focus-lifetime";
+import {
+  bindTableFocus,
+  noteTookTableFocus,
+  resumeRetainedCell,
+} from "./focus-lifetime";
+
+async function settle(): Promise<void> {
+  for (let turn = 0; turn < 3; turn++) {
+    await Promise.resolve();
+  }
+}
+
+test("focus in the note leaves the table, even one unmounted off screen", async () => {
+  const cell = {} as Node;
+  const ownerDocument = { activeElement: null as unknown };
+  const root = Object.assign(new EventTarget(), {
+    isConnected: false,
+    ownerDocument,
+    classList: { add() {}, remove() {} },
+    contains: (node: unknown) => node === cell,
+  });
+  const contentDOM = new EventTarget();
+  let cleared = 0;
+  bindTableFocus({
+    root: root as unknown as HTMLElement,
+    contentDOM: contentDOM as unknown as HTMLElement,
+    signal: new AbortController().signal,
+    clear: () => cleared++,
+  });
+
+  // The unmount itself blurs the table and leaves focus on the body.
+  root.dispatchEvent(new Event("focusout"));
+  await settle();
+  assert.equal(cleared, 0, "scrolling a table away is not leaving it");
+
+  // A command that hands focus back to the cell within the turn keeps it.
+  ownerDocument.activeElement = contentDOM;
+  contentDOM.dispatchEvent(new Event("focusin"));
+  ownerDocument.activeElement = cell;
+  await settle();
+  assert.equal(cleared, 0);
+
+  ownerDocument.activeElement = contentDOM;
+  contentDOM.dispatchEvent(new Event("focusin"));
+  await settle();
+  assert.equal(cleared, 1, "a click into the note leaves the unmounted table");
+});
 
 test("detaching a table for scroll is not the user leaving it", () => {
   const outside = {} as Node;

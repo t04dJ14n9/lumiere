@@ -13,8 +13,11 @@ incoming snapshots, preserving the active cell editor across structural edits.
 The table never cancels wheel input: whether it is hovered, a cell is open
 or cells are selected, the browser scrolls the note natively. `.table-scroll`
 and the nested cell scroller hide vertical overflow, so neither can take a
-vertical wheel. An open cell stays mounted when the table scrolls out of the
-viewport and is restored when it returns. The widget ignores events, so
+vertical wheel. An open cell keeps the note's caret in its source, so
+CodeMirror keeps its table mounted however far the note scrolls. A table
+unmounted while active (with a grid selection, say) keeps its selection or
+cell for when it returns. Focus landing in the note's content leaves the
+table all the same, mounted or not. The widget ignores events, so
 CodeMirror never hears a wheel over it; a passive listener reports vertical
 table wheel input through the editor's public scroll-input event, which
 cancels saved-view scroll restoration. Horizontal and Shift-wheel gestures
@@ -62,9 +65,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
 - `diagonal-wheel.ts`: the note's share of a mostly vertical diagonal wheel latched to the table.
 - `diagonal-wheel.test.ts`: diagonal detection, room to pan, and adding the vertical part only after a pan.
-- `focus-lifetime.ts`: focus retention when a table unmounts off-viewport, and clearing when focus moves into the note.
-- `focus-lifetime.test.ts`: unmount does not count as leaving; retained cell focus waits until the root is connected.
-- `tables-native-scroll.spec.ts` (browser): native wheel while hovering, editing or selecting, and the open cell surviving a viewport exit.
+- `focus-lifetime.ts`: focus retention when a table unmounts off-viewport, and clearing when focus moves into the note, mounted or not.
+- `focus-lifetime.test.ts`: unmount does not count as leaving, focus in the note does even off screen; retained cell focus waits until the root is connected.
+- `tables-native-scroll.spec.ts` (browser): native wheel while hovering, editing or selecting; the open cell surviving a viewport exit; a click into the note leaving an off-screen table.
 - `scroll-input.ts`: passive report of vertical wheel over a table, which CodeMirror's own observers never see.
 - `sticky-hscroll.ts`: sticky custom horizontal scrollbar for tall wide tables (BH-016), shown by observers and positioned by CSS.
 - `sticky-hscroll.test.ts`: visibility and thumb-metric unit cases.
