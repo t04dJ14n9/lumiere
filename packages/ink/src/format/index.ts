@@ -28,7 +28,9 @@ export {
   PAPER_DOT,
   PAPER_LINE,
   paperMarks,
+  paperMarksWithin,
   paperSvg,
+  type PaperArea,
   type PaperMarks,
 } from "./paper";
 export {

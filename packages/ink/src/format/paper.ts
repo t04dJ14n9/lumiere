@@ -1,8 +1,9 @@
 /**
  * The page behind a sketch: a colour, then ruled lines, a grid or dots.
- * `paperMarks` says where they go; the SVG (`paperSvg`) and the web canvas
- * both draw from it, so the page looks the same while drawing and in a
- * note. In the SVG each kind is one path, without `<pattern>` ids, so two
+ * `paperMarks` says where they go on a page, and `paperMarksWithin` on any
+ * part of the paper, which goes on past the page while drawing; the SVG
+ * (`paperSvg`) and the web canvas both draw from them, so the page looks
+ * the same while drawing and in a note. In the SVG each kind is one path, without `<pattern>` ids, so two
  * sketches inlined in one page cannot clash.
  */
 import { round } from "./encoding";
@@ -21,12 +22,34 @@ export interface PaperMarks {
   readonly dots: readonly (readonly [number, number])[];
 }
 
+/** A part of the paper, in the sketch's coordinates. */
+export interface PaperArea {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+/** The marks on a page of `size`, from its top left. */
 export function paperMarks(
   paper: Paper,
   size: { readonly width: number; readonly height: number },
 ): PaperMarks {
-  const rows = offsets(paper.spacing, size.height);
-  const columns = offsets(paper.spacing, size.width);
+  return paperMarksWithin(paper, {
+    left: 0,
+    top: 0,
+    right: size.width,
+    bottom: size.height,
+  });
+}
+
+/**
+ * The marks strictly inside `area`: lines and dots fall on every multiple
+ * of the paper's spacing from the sketch's origin, wherever the area is.
+ */
+export function paperMarksWithin(paper: Paper, area: PaperArea): PaperMarks {
+  const rows = offsets(paper.spacing, area.top, area.bottom);
+  const columns = offsets(paper.spacing, area.left, area.right);
   const lines = (at: readonly number[]) => at.map((offset) => offset + 0.5);
   switch (paper.style) {
     case "plain":
@@ -65,11 +88,11 @@ export function paperSvg(
   );
 }
 
-/** Every multiple of `spacing` strictly inside the page. */
-function offsets(spacing: number, length: number): number[] {
+/** Every multiple of `spacing` strictly between `from` and `to`. */
+function offsets(spacing: number, from: number, to: number): number[] {
   const marks: number[] = [];
-  for (let at = spacing; at < length; at += spacing) {
-    marks.push(at);
+  for (let step = Math.floor(from / spacing) + 1; step * spacing < to; step++) {
+    marks.push(step * spacing);
   }
   return marks;
 }
