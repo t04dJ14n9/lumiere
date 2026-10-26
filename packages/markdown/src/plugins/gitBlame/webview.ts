@@ -55,7 +55,16 @@ function registerBlameController(ctx: Context): void {
       blameIdentityField,
       sourceVisibleAt ? sourceVisibility.of(sourceVisibleAt) : [],
       blameOverlay,
-      EditorView.updateListener.of(() => controller.update()),
+      EditorView.updateListener.of((update) => {
+        const docChanged =
+          update.docChanged ?? update.startState.doc !== update.state.doc;
+        const selectionSet =
+          update.selectionSet ??
+          !update.startState.selection.eq(update.state.selection);
+        if (docChanged || selectionSet) {
+          controller.update();
+        }
+      }),
     ]),
   );
   ctx.effect(() => () => controller.dispose());

@@ -8,7 +8,12 @@ import {
   highlightActiveLineGutter,
 } from "@codemirror/view";
 import type { BlockInfo, EditorView, ViewUpdate } from "@codemirror/view";
+import { documentTree } from "../livePreview/api";
+import { headingGutterClasses } from "./headings";
 import { lineSelection, startLineSelection } from "./line-selection";
+
+const activeTree = (state: EditorState) =>
+  state.field(documentTree, false) ?? syntaxTree(state);
 
 /** VS Code's `editor.lineNumbers` values. */
 export type LineNumberStyle = "on" | "off" | "relative" | "interval";
@@ -79,7 +84,7 @@ export function blockLabel(
   if (block.type !== BlockType.WidgetRange && block.type !== BlockType.Text) {
     return null;
   }
-  const header = syntaxTree(state).topNode.firstChild;
+  const header = activeTree(state).topNode.firstChild;
   if (header?.name === "Frontmatter" && block.from < header.to) {
     return null;
   }
@@ -93,7 +98,7 @@ function isTable(state: EditorState, block: Pick<BlockInfo, "from" | "type">) {
   }
   // The innermost node at the start is the header row; the table is its parent.
   for (
-    let node: SyntaxNode | null = syntaxTree(state).resolveInner(block.from, 1);
+    let node: SyntaxNode | null = activeTree(state).resolveInner(block.from, 1);
     node;
     node = node.parent
   ) {
@@ -137,6 +142,7 @@ export function lineNumberGutter(style: LineNumberStyle): Extension {
       initialSpacer: spacer,
       updateSpacer: (_current, update) => spacer(update.view),
     }),
+    headingGutterClasses,
     highlightActiveLineGutter(),
     lineSelection,
   ];
