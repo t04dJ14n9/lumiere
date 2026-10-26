@@ -15,11 +15,26 @@ iCloud Drive) and folders picked in Files, kept between launches. The native
 plugin reads and writes them with `NSFileCoordinator`, so Files, other apps
 and iCloud see each change whole. The host's own data is kept in IndexedDB.
 
+## A sample vault
+
+`scripts/sample-vault.mjs` writes a disposable vault for trying the app:
+linked projects, research, people and daily notes, the editor's feature
+notes (under Features/) and PDFs. Put it in the app's folder in the
+simulator, or on an iPad over USB:
+
+```bash
+node apps/ipad/scripts/sample-vault.mjs /tmp/sample-vault
+cp -R /tmp/sample-vault/. "$(xcrun simctl get_app_container booted io.github.t04dj14n9.lumiere data)/Documents/"
+xcrun devicectl device copy to --device <udid> --domain-type appDataContainer \
+  --domain-identifier io.github.t04dj14n9.lumiere --source /tmp/sample-vault --destination Documents
+```
+
 ## Files
 
 - `src/main.ts`: mounts the vaults and starts host-web and the window.
 - `src/native-fs.ts`: a vault as host-web's `VaultFileSystem`, over the plugin.
 - `src/native/vault-files.ts`: the `LumiereVaultFiles` plugin, as JavaScript calls it.
+- `src/native/window-commands.ts`: the menu bar's, keys' and edit menu's commands, for the window.
 - `src/welcome.ts`: the note the app's folder starts with.
 - `index.html`: the page and its content security policy.
 - `scripts/build.mjs`: the build (host-web's `buildBrowserApp`).
@@ -30,6 +45,5 @@ and iCloud see each change whole. The host's own data is kept in IndexedDB.
 
 ## Limits
 
-See `docs/IPAD_PLAN.md`, section 6: the touch work, images and PDFs, and the
-native menu's commands are next; iCloud vaults (C1) and TestFlight (R1) wait
-on the Apple Developer Program.
+See `docs/IPAD_PLAN.md`, section 6: images in notes and the Pencil are next;
+iCloud vaults (C1) and TestFlight (R1) wait on the Apple Developer Program.
