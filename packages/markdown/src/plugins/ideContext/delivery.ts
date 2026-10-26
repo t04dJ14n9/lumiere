@@ -152,7 +152,7 @@ async function publishCodexTemp(
   const published = await publish(fs, {
     dir,
     basename: `ide-context-${sessionId}.json`,
-    bytes: Buffer.from(serializeJson(packet)),
+    bytes: new TextEncoder().encode(serializeJson(packet)),
     owner,
     sessionId,
     now,
