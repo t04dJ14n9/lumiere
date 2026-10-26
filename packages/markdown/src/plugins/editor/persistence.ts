@@ -1,24 +1,28 @@
 import { syntaxTree } from "@codemirror/language";
+import type { Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import type { Context, Infer, Logger } from "@workshop/core";
 import type { ViewContributions } from "./contributions";
-import type { EditorService } from "./api";
-import { replaceDocumentTree } from "../livePreview/api";
+import { backgroundUpdate, type EditorService } from "./api";
 import { protocol, viewState } from "./protocol";
 import type { createViewState } from "./view-state";
 
 type SavedView = Infer<typeof viewState>;
 type Presentation = ReturnType<typeof createViewState>;
-const hasPersistedEffects = (update: {
+
+/**
+ * Whether an update carries effects the view state may hold (folds, say).
+ * Background work does not: CodeMirror's own parse changes the syntax
+ * tree, and other plugins mark theirs with `backgroundUpdate`.
+ */
+export const hasPersistedEffects = (update: {
   startState: EditorView["state"];
   state: EditorView["state"];
-  transactions: readonly {
-    effects: readonly { is(type: unknown): boolean }[];
-  }[];
+  transactions: readonly Pick<Transaction, "effects" | "annotation">[];
 }): boolean =>
   syntaxTree(update.startState) === syntaxTree(update.state) &&
-  update.transactions.some((tx) =>
-    tx.effects.some((e) => !e.is(replaceDocumentTree)),
+  update.transactions.some(
+    (tx) => tx.effects.length > 0 && !tx.annotation(backgroundUpdate),
   );
 
 interface PersistenceConfig {

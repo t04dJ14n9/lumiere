@@ -5,11 +5,22 @@ import type { ViewStateContributions } from "./contributions";
 import type { Infer, Disposer } from "@workshop/core";
 import type { viewState } from "./protocol";
 import type { DocumentSession } from "../document/api";
-import type { Extension, StateEffect } from "@codemirror/state";
+import {
+  Annotation,
+  type Extension,
+  type StateEffect,
+} from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { PanelPort } from "../../shared/host";
 import type { CaretMode, VimCaretProfile } from "./caret";
 export type { CaretMode, VimCaretProfile } from "./caret";
+
+/**
+ * Marks a transaction that only publishes background work on the document,
+ * such as a parse that finished. Nothing in it is view state, so the editor
+ * saves no view state for it.
+ */
+export const backgroundUpdate = Annotation.define<boolean>();
 export interface CaretModeSource {
   mode(view: EditorView): CaretMode;
   /** Vim caret look; omit for VSCodeVim-shaped modes (legacy). */

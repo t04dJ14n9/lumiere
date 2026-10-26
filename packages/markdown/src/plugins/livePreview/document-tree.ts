@@ -5,6 +5,7 @@ import {
   parseForFirstPaint,
   replaceDocumentTree,
 } from "./api";
+import { backgroundUpdate } from "../editor/api";
 import { DocumentParse } from "./document-parse";
 
 export {
@@ -132,7 +133,10 @@ export class DocumentTreeParser {
   }
 
   private publish(): void {
-    this.view.dispatch({ effects: replaceDocumentTree.of(this.parse.tree) });
+    this.view.dispatch({
+      effects: replaceDocumentTree.of(this.parse.tree),
+      annotations: backgroundUpdate.of(true),
+    });
   }
 }
 

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EditorState, type TransactionSpec } from "@codemirror/state";
+import {
+  EditorState,
+  type Transaction,
+  type TransactionSpec,
+} from "@codemirror/state";
 import type { ViewUpdate } from "@codemirror/view";
 import type { Tree } from "@lezer/common";
 import {
@@ -14,6 +18,7 @@ import {
   type ParsedView,
 } from "./document-tree";
 import { syntaxTree } from "@codemirror/language";
+import { backgroundUpdate } from "../editor/api";
 import { DocumentParse } from "./document-parse";
 import { markdownTree } from "./api";
 import {
@@ -113,19 +118,18 @@ function parsedView(doc: string) {
       return () => slices.delete(slice);
     },
   };
+  const dispatched: Transaction[] = [];
   const view = {
     state: EditorState.create({ doc, extensions: [documentTree] }),
     viewport: { from: 0, to: 2000 },
     dispatch(spec: TransactionSpec) {
       const transaction = view.state.update(spec);
+      dispatched.push(transaction);
       view.state = transaction.state;
       parser.update(viewUpdate(transaction, false));
     },
   };
-  const viewUpdate = (
-    transaction: ReturnType<EditorState["update"]>,
-    viewportChanged: boolean,
-  ) =>
+  const viewUpdate = (transaction: Transaction, viewportChanged: boolean) =>
     ({
       state: transaction.state,
       startState: transaction.startState,
@@ -141,6 +145,7 @@ function parsedView(doc: string) {
   return {
     view,
     slices,
+    dispatched,
     tree: () => view.state.field(documentTree),
     async scroll(from: number, to: number) {
       view.viewport = { from, to };
@@ -171,6 +176,8 @@ test("a scroll past the parsed prefix parses up to the viewport, not the whole n
   assert.ok(tree.length >= to + PARSE_AHEAD_CHARS, `${tree.length} >= ${to}`);
   assert.ok(tree.length < to + PARSE_AHEAD_CHARS + 1000);
   assert.equal(cachedMarkdown(editor.view.state.doc), undefined);
+  // The editor saves no view state for it.
+  assert.equal(editor.dispatched.at(-1)!.annotation(backgroundUpdate), true);
 });
 
 test("idle slices finish the tree a little at a time, and it matches a fresh parse", async () => {

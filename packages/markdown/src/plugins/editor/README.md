@@ -89,7 +89,9 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `caret.css`: theme colours, cursor shapes, blinking and movement transitions.
 - `caret.test.ts`: native and modal cursor mapping units.
 - Browser and real-editor specs: `test/browser/vim-caret.spec.ts` (settings), `test/browser/vim-caret-geometry.spec.ts` (graphemes, ligatures, lifecycle), `test/browser/vim-caret-vscodevim.spec.ts` (VSCodeVim's pixel rules and timings), `test/vscode/vim-caret.spec.ts` and `test/vscode/vim-caret-vscodevim.spec.ts` (against the built-in caret).
-- `api.ts`: editor, panel, menu, view-state and event contracts.
+- `api.ts`: editor, panel, menu, view-state and event contracts; the
+  `backgroundUpdate` annotation, which marks a transaction that only publishes
+  background work (Live Preview's finished parse) so persistence skips it.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
@@ -119,6 +121,7 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `clipboard.ts`: validated clipboard RPC client.
 - `contributions.ts`: feature-owned view-state validation and restoration.
 - `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.
+- `persistence.test.ts`: which updates save view state.
 - `view-state.ts`: geometric scroll anchoring and presentation restoration; a restored line stays pinned until the reader scrolls anywhere in the scroller.
 - `view-state.test.ts`: the reader's scroll and input end the pin, the pin's own corrections do not, and every listener is passive.
 - `keep-below-still.ts`: when a rendered block across the top edge resizes, holds its bottom, so the text below stays still.
