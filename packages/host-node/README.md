@@ -44,7 +44,11 @@ does (`context-menu.ts`): the page reports the clicked element's
 `data-vscode-context`, the host keeps the context keys the plugins set
 (`setContext`) and evaluates each item's when-clause (`when.ts`), the page
 draws the items it is sent with Cut, Copy and Paste, and the host runs the
-chosen command. `menus.json`, written at build time, lists the items.
+chosen command. A submenu (`contributes.submenus`) is a row that opens its
+own items beside it, on a tap, a click or Right, showing each command's
+short title (Format, then Bold); it shows only with an item to show, as in
+VS Code. `menus.json`, written at build time (`scripts/menus.mjs`), lists
+the items.
 
 Paths are checked as VS Code's host checks them (`paths.ts`): inside the
 workspace after `..` is resolved, and still inside through symbolic links.
@@ -89,7 +93,8 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/routes.ts`, `src/host/page.ts`, `src/host/static.ts`: the routes above.
 - `src/host/trees.ts`, `src/host/view-routes.ts`: the plugins' tree views and their routes.
 - `src/host/settings-routes.ts`: the settings for a settings page, and changes to them.
-- `src/host/context-menu.ts`, `src/host/when.ts`, `src/page/context-menu.ts`: the right-click menu, its when-clauses, and drawing it.
+- `src/host/context-menu.ts`, `src/host/when.ts`: the right-click menu's items and their when-clauses.
+- `src/page/context-menu.ts`, `src/page/page-menu.ts`, `src/page/menu-model.ts`: reporting a right-click, drawing the menu and its submenus, and what keys do in it.
 - `src/host/vault.ts`: the vault index's file system: listing and watching.
 - `src/host/navigation.ts`: following links, creating notes, revealing in an open page.
 - `src/host/settings.ts`: settings from the contributed defaults and a JSON file.
@@ -98,7 +103,7 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/paths.ts`: containment and safe writes.
 - `src/host/inert.ts`: Git, diffs, status entries and panels, which have no counterpart yet; `noVaultCode`, for an embedder that cannot ask.
 - `src/page/shim.ts`, `src/page/ui.ts`, `src/page/theme.ts`: the page's stand-in for VS Code.
-- `scripts/assets.mjs`: what every embedder ships beside its code (the editor, the shim, the settings).
+- `scripts/assets.mjs`, `scripts/menus.mjs`: what every embedder ships beside its code (the editor, the shim, the settings, the menu).
 
 ## Limits
 

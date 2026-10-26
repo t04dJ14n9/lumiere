@@ -14,14 +14,19 @@ export type UiRequest =
   | { type: "pick"; id: number; placeholder: string; items: PickRow[] }
   | { type: "pickItems"; id: number; items: PickRow[] }
   | { type: "input"; id: number; prompt: string; value: string; error?: string }
-  /** The right-click menu at (x, y): Lumière's items in groups; answered with a row's index. */
+  /**
+   * The right-click menu at (x, y): Lumière's items in groups. Answered with
+   * the index of the chosen command row, counting down the groups and into
+   * each submenu where it stands.
+   */
   | { type: "menu"; id: number; x: number; y: number; groups: MenuRow[][] }
   | { type: "open"; path: string; fragment: string }
   | { type: "external"; href: string };
 
-/** One item of the right-click menu, without its command. */
+/** One item of the right-click menu, without its command; a submenu's row holds its own rows. */
 export interface MenuRow {
   label: string;
+  submenu?: MenuRow[][];
 }
 
 /** One row of a pick list, without the host's value. */

@@ -2,12 +2,13 @@
 //   markdown/          the built editor and its workers (packages/markdown/dist)
 //   page/shim.js       the page's stand-in for VS Code's webview API (src/page)
 //   contributed.json   Lumière's settings and defaults, from package.json
-//   menus.json         Lumière's right-click menu items, with their titles
+//   menus.json         Lumière's right-click menu items, with their titles (menus.mjs)
 // Used by packages/dsh/scripts/build.mjs and packages/app/scripts/build.mjs.
 import { execFileSync } from "node:child_process";
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
+import { lumiereMenus } from "./menus.mjs";
 
 const here = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const root = path.resolve(here, "../..");
@@ -55,19 +56,10 @@ export async function buildHostAssets({ out, production }) {
     path.join(out, "contributed.json"),
     JSON.stringify(contributed),
   );
-  const titles = new Map(
-    manifest.contributes.commands.map((command) => [
-      command.command,
-      command.title,
-    ]),
+  await writeFile(
+    path.join(out, "menus.json"),
+    JSON.stringify(lumiereMenus(manifest.contributes)),
   );
-  const menus = (manifest.contributes.menus?.["webview/context"] ?? [])
-    .filter((item) => item.command.startsWith("lumiere.markdown."))
-    .map((item) => ({
-      ...item,
-      title: titles.get(item.command) ?? item.command,
-    }));
-  await writeFile(path.join(out, "menus.json"), JSON.stringify(menus));
   return { version: manifest.version, repository: manifest.repository };
 }
 
