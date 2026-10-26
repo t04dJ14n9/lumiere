@@ -45,12 +45,25 @@ export function TabStrip({
                 onClose(tab.id);
               }}
             >
-              ×
+              <CloseIcon />
             </button>
           </div>
         ))}
       </div>
       {trailing}
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+      <path
+        d="M2 2l6 6M8 2l-6 6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
