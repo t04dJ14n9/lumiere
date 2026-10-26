@@ -10,10 +10,13 @@ clipboard and toolbar collaborator. The projection reserializes the entire table
 with column-aligned padding on each cell edit, in the existing native input group;
 it never owns undo history. The controller reconciles
 incoming snapshots, preserving the active cell editor across structural edits.
-Vertical wheel input over the widget is forwarded to the note scroller with
-instant `scrollTo` (same feel as OS/mouse wheel and prose). `.table-scroll`
-sets `overflow-y: hidden` so `overflow-x: auto` does not create a nested
-vertical scrollport that steals the wheel. All tables in one panel
+Hovering a table or editing a cell uses the note's native wheel scrolling.
+A non-passive listener forwards vertical wheel to the note with instant
+`scrollTo` only while a grid selection or the table root itself is focused,
+which is when Chromium would otherwise keep that wheel inside `.table-scroll`.
+`.table-scroll` and the nested cell scroller set overflow on both axes so
+neither is a vertical scrollport. An open cell stays mounted when the table
+scrolls out of the viewport and is restored when it returns. All tables in one panel
 share a pending destination so rapid ticks retain their full distance. Other
 input or navigation cancels that motion, and reduced-motion preferences use
 immediate scrolling. A destination already at the note's edge lets further
@@ -57,6 +60,11 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `selection.ts`: grid selection, active-cell chrome and projected source selection.
 - `selection-chrome.test.ts`: selected-cell matrix and inset selection-box CSS unit tests.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
+- `wheel-gate.ts`: non-passive wheel listener, attached only for grid selection or direct table focus.
+- `wheel-gate.test.ts`: forwarding predicate and listener attach/detach.
+- `focus-lifetime.ts`: focus retention when a table unmounts off-viewport, and clearing when focus moves into the note.
+- `focus-lifetime.test.ts`: unmount does not count as leaving; retained cell focus waits until the root is connected.
+- `tables-native-scroll.spec.ts` (browser): native wheel while hovering or editing, and the open cell surviving a viewport exit.
 - `wheel-scroll.ts`: vertical wheel routing, gesture guards and delta units.
 - `wheel-scroll.test.ts`: wheel directions, units, horizontal gestures and note limits.
 - `wheel-motion.ts`: per-panel instant wheel destinations, reversal and cancellation.

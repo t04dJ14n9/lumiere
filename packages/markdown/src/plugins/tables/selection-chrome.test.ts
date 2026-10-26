@@ -87,10 +87,19 @@ test("row and column grips ignore pointer hits until the table is hovered or foc
 
 test("add-row and add-column strips do not fade in while already hittable", () => {
   assert.match(css, /\.table-row-btn,\s*\.table-col-btn \{[^}]*opacity: 0;/);
+  assert.match(
+    css,
+    /\.table-row-btn,\s*\.table-col-btn \{[^}]*transition:\s*none;/,
+  );
   assert.doesNotMatch(
     css,
-    /\.table-row-btn,\s*\.table-col-btn \{[^}]*transition:/,
+    /\.table-row-btn,\s*\.table-col-btn \{[^}]*transition:\s*opacity/,
   );
+});
+
+test("row and column grips do not fade in", () => {
+  assert.match(css, /\.table-handle \{[^}]*transition:\s*none;/);
+  assert.doesNotMatch(css, /\.table-handle \{[^}]*transition:\s*opacity/);
 });
 
 test("the cell editor keeps the table's 1.3 line-height so open and closed cells match", () => {
@@ -108,6 +117,10 @@ test("the cell editor's scroller is content-sized instead of CodeMirror's 100% h
   assert.match(
     css,
     /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*height: auto;/,
+  );
+  assert.match(
+    css,
+    /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*overflow:\s*hidden;/,
   );
 });
 
