@@ -40,6 +40,7 @@ import {
   obsidianCompatHost,
   graphHost,
   diffResourcesHost,
+  sketchHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workshop-features";
 import { createOkfFacade } from "../plugins/okfCore/facade";
@@ -137,6 +138,7 @@ function startWindowFeatures(
     gitDiffEditorHost,
     marpHost,
     tagsViewHost,
+    sketchHost,
     okfCoreHost,
     obsidianCompatHost,
     graphHost,
@@ -167,6 +169,7 @@ function startWindowFeatures(
         "gitDiffEditor",
         "marp",
         "tags",
+        "sketch",
         "okfCore",
         "graph",
         "linkUpdates",

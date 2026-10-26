@@ -22,6 +22,7 @@ import tables from "./tables/manifest";
 import properties from "./properties/manifest";
 import pagePreview from "./pagePreview/manifest";
 import embeds from "./embeds/manifest";
+import sketch from "./sketch/manifest";
 import onlineVideos from "./onlineVideos/manifest";
 import tasks from "./tasks/manifest";
 import footnotes from "./footnotes/manifest";
@@ -77,6 +78,7 @@ export const features: readonly Manifest[] = inPluginOrder(
     cursorBridge,
     diagrams,
     embeds,
+    sketch,
     folding,
     footnotes,
     formatting,

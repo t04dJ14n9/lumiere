@@ -50,6 +50,7 @@ import { tagsViewHost } from "../../../src/plugins/tags/view";
 import { quickSwitcherHost } from "../../../src/plugins/quickSwitcher/host";
 import { scratchHost } from "../../../src/plugins/scratch/host";
 import { settingsHost } from "../../../src/plugins/settings/host";
+import { sketchHost } from "../../../src/plugins/sketch/host";
 import { wikiHost } from "../../../src/plugins/wiki/host";
 import { registerPluginManagement } from "../../../src/host/api/management";
 import { registerOpenReference } from "../../../src/host/api/open-reference";
@@ -283,6 +284,7 @@ function installHosts(
   root.plugin(gitDiffEditorHost);
   root.plugin(quickSwitcherHost);
   root.plugin(linkUpdatesHost);
+  root.plugin(sketchHost);
   root.plugin(directRegistrations(selections));
 }
 
@@ -312,6 +314,15 @@ async function captureRegisteredCommands(): Promise<{
   root.provide("selections", selections);
   root.provide("vaults", {} as Vaults);
   root.provide("okf", {} as Okf);
+  // A host with a canvas (the iPad's), where Insert Sketch registers.
+  root.provide("ink", {
+    capabilities: async () => ({
+      engine: "test",
+      pressure: false,
+      toolPicker: false,
+    }),
+    draw: async () => undefined,
+  });
   installHosts(root, manifests, selections);
   await root.settled();
   await tick();
