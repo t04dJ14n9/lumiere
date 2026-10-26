@@ -198,3 +198,17 @@ test("a description's `code` is told apart from its text", () => {
     { code: false, text: " for notes." },
   ]);
 });
+
+test("the window keeps clear of the iPad's status bar, home indicator and keyboard", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const root = /#root\s*\{([^}]*)\}/g;
+  const rules = [...css.matchAll(root)].map((match) => match[1]).join("\n");
+  for (const side of ["top", "right", "bottom", "left"]) {
+    assert.match(rules, new RegExp(`env\\(safe-area-inset-${side}\\)`));
+  }
+  assert.match(rules, /box-sizing:\s*border-box/);
+});

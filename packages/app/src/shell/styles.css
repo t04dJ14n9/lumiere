@@ -5,6 +5,16 @@ body,
   height: 100%;
   margin: 0;
 }
+/*
+ * On the iPad the window keeps clear of the status bar, the home indicator
+ * and the on-screen keyboard (the app counts it in the bottom safe area:
+ * KeyboardInset.swift). Elsewhere the insets are 0.
+ */
+#root {
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 body {
   background: var(--vscode-editor-background);
   color: var(--vscode-foreground);
