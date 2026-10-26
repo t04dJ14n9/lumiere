@@ -4,21 +4,30 @@ import tseslint from "typescript-eslint";
 import path from "node:path";
 // The hosts outside VS Code (docs/HOSTS_PLAN.md, section 3): host-node knows
 // no embedder; each embedder knows host-node only by its public entries.
-const HOST_PACKAGES = ["host-node", "dsh", "app"];
+// host-web runs the shared host in a browser and knows no embedder either.
+const HOST_PACKAGES = ["host-node", "host-web", "dsh", "app"];
 const FORBIDDEN_BY_HOST = {
   "host-node": ["vscode", "@workshop/dsh", "@workshop/app", "@tauri-apps/"],
+  "host-web": [
+    "vscode",
+    "@workshop/dsh",
+    "@workshop/app",
+    "@tauri-apps/",
+    "ws",
+  ],
   dsh: ["vscode", "@workshop/app", "@tauri-apps/"],
   app: ["vscode", "@workshop/dsh"],
 };
 const HOST_NODE_ENTRIES = [
   "@workshop/host-node",
+  "@workshop/host-node/core",
   "@workshop/host-node/embedding",
   "@workshop/host-node/palette",
   "@workshop/host-node/views",
   "@workshop/host-node/settings",
 ];
 function crossesHostLayer(file, source, target) {
-  const owner = file.match(/\/packages\/(host-node|dsh|app)\//)?.[1];
+  const owner = file.match(/\/packages\/(host-node|host-web|dsh|app)\//)?.[1];
   if (!owner) {
     return false;
   }
@@ -31,7 +40,7 @@ function crossesHostLayer(file, source, target) {
   ) {
     return true;
   }
-  const into = target.match(/\/packages\/(host-node|dsh|app)\//)?.[1];
+  const into = target.match(/\/packages\/(host-node|host-web|dsh|app)\//)?.[1];
   if (into && into !== owner && HOST_PACKAGES.includes(into)) {
     return true;
   }
@@ -210,16 +219,22 @@ export default tseslint.config(
           "./packages/markdown/src/plugins/tsconfig.host.json",
           "./packages/markdown/src/plugins/tsconfig.webview.json",
           "./packages/markdown/src/workers/tsconfig.json",
+          "./packages/markdown/src/workers/tsconfig.web.json",
           "./packages/pdf/tsconfig.json",
           "./packages/pdf/src/extension/tsconfig.json",
           "./packages/pdf/src/webview/tsconfig.json",
           "./packages/pdf/src/bridge-stdio/tsconfig.json",
           "./packages/host-node/src/host/tsconfig.json",
+          "./packages/host-web/tsconfig.json",
+          "./packages/host-web/test/tsconfig.json",
           "./packages/host-node/src/page/tsconfig.json",
           "./packages/dsh/src/host/tsconfig.json",
           "./packages/dsh/src/client/tsconfig.json",
           "./packages/app/src/server/tsconfig.json",
           "./packages/app/src/shell/tsconfig.json",
+          "./packages/app/src/local/tsconfig.json",
+          "./apps/web/tsconfig.json",
+          "./apps/ipad/src/tsconfig.json",
           "./packages/ink/src/format/tsconfig.json",
           "./packages/ink/src/service/tsconfig.json",
         ],

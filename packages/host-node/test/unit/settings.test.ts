@@ -3,7 +3,25 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import { createNodeSettings } from "../../src/host/settings";
+import type {
+  ContributedSetting,
+  HostSettings,
+} from "@workshop/markdown/portable";
+import { createNodePlatform } from "../../src/host/node-platform";
+import { createHostSettings, SETTINGS_FILE } from "../../src/host/settings";
+
+/** Settings kept in `dir`, as the Node host keeps them. */
+async function nodeSettings(
+  contributed: readonly ContributedSetting[],
+  dir: string,
+): Promise<HostSettings> {
+  const { store } = createNodePlatform({ data: dir, workers: "" });
+  return createHostSettings({
+    contributed,
+    store,
+    saved: await store.read(SETTINGS_FILE),
+  });
+}
 
 const contributed = [
   { key: "lumiere.markdown.preset", schema: { default: "obsidian" } },
@@ -17,7 +35,7 @@ test("contributed defaults apply, and a reader's change is kept and announced", 
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-settings-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const file = path.join(dir, "settings.json");
-  const settings = createNodeSettings({ contributed, file });
+  const settings = await nodeSettings(contributed, dir);
   assert.equal(settings.get("preset", "minimal"), "obsidian");
   assert.equal(settings.get("unknown.key", 3), 3);
 
@@ -33,7 +51,7 @@ test("contributed defaults apply, and a reader's change is kept and announced", 
     "lumiere.markdown.editor.readableLineLength": false,
   });
 
-  const reopened = createNodeSettings({ contributed, file });
+  const reopened = await nodeSettings(contributed, dir);
   assert.equal(reopened.get("editor.readableLineLength", true), false);
   assert.equal(
     reopened.forNote({
@@ -55,6 +73,6 @@ test("a damaged settings file reads as no changes", async (t) => {
   t.after(() => rm(dir, { recursive: true, force: true }));
   const file = path.join(dir, "settings.json");
   await import("node:fs/promises").then((fs) => fs.writeFile(file, "{oops"));
-  const settings = createNodeSettings({ contributed, file });
+  const settings = await nodeSettings(contributed, dir);
   assert.equal(settings.get("preset", "minimal"), "obsidian");
 });

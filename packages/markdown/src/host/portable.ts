@@ -31,6 +31,13 @@ export type {
   VaultSystem,
 } from "../plugins/vault/api";
 export type { Transport } from "../shared/rpc/endpoint";
+export type {
+  WorkerChannel,
+  WorkerLauncher,
+  WorkerName,
+  WorkerOptions,
+  WorkerPort,
+} from "../shared/workers";
 export type { DiffViews, GitAccess, GitBaselineResult } from "../shared/git";
 export type { GitBlameLineResult } from "../shared/git-blame";
 export type { DiagnosticSink, WorkspaceFiles } from "../shared/workspace-files";

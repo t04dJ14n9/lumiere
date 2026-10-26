@@ -3,11 +3,6 @@
  * saving and undo; here this module does. A note's text lives in memory while
  * a panel shows it and is written back once typing pauses, as Obsidian does.
  */
-import { createHash } from "node:crypto";
-import { watch } from "node:fs";
-import { readFile } from "node:fs/promises";
-import * as path from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Disposer } from "@workshop/core";
 import {
   SourceCoordinates,
@@ -16,7 +11,7 @@ import {
   type SourceEdit,
   type TextEdit,
 } from "@workshop/markdown/portable";
-import { writeThroughFile } from "./paths";
+import type { HostFiles, HostPlatform } from "./platform";
 
 /** How long typing must pause before a note is written to disk. */
 export const AUTOSAVE_DELAY_MS = 800;
@@ -70,9 +65,23 @@ export class NoteDocument implements HostDocument {
   }
 }
 
-/** How a test substitutes the disk. Production uses Node's filesystem. */
-export interface NoteDisk {
-  readFile(file: string): Promise<string>;
+/** What notes need from the platform: their files, and a hash of their text. */
+export interface NoteFiles extends Pick<
+  HostFiles,
+  "readText" | "save" | "watch"
+> {
+  sha256(text: string): string;
+}
+
+export function noteFiles(platform: HostPlatform): NoteFiles {
+  const { files } = platform;
+  // Called through `files`: a platform's files may be a class instance.
+  return {
+    readText: (uri) => files.readText(uri),
+    save: (uri, text) => files.save(uri, text),
+    watch: (uri, listener) => files.watch(uri, listener),
+    sha256: (text) => platform.sha256(text),
+  };
 }
 
 /**
@@ -106,16 +115,19 @@ export class NoteDocuments implements HostDocuments {
   private readonly saveListeners = new Set<(note: HostDocument) => void>();
   private readonly willSave = new Set<(note: HostDocument) => Promise<void>>();
   private readonly closeListeners = new Set<(uri: string) => void>();
+  private readonly saveFailedListeners = new Set<
+    (uri: string, error: unknown) => void
+  >();
   /** Saves that have reached disk. A reload captures this before it reads. */
   private readonly settledWrites = new Map<string, number>();
 
   constructor(
+    private readonly files: NoteFiles,
     private readonly delay = AUTOSAVE_DELAY_MS,
-    private readonly disk?: NoteDisk,
   ) {}
 
   fingerprint(text: string): string {
-    return createHash("sha256").update(text).digest("hex");
+    return this.files.sha256(text);
   }
 
   async apply(
@@ -208,6 +220,14 @@ export class NoteDocuments implements HostDocuments {
   }
 
   /**
+   * A save no one waited for (one made after typing paused) failed: the
+   * note's text is still here, unsaved, and the reader must be told.
+   */
+  onSaveFailed(listener: (uri: string, error: unknown) => void): Disposer {
+    return subscribe(this.saveFailedListeners, listener);
+  }
+
+  /**
    * Write every note with unsaved text, then stop watching files. Watches
    * close even when a write fails: an open watch keeps the host process alive.
    */
@@ -238,7 +258,7 @@ export class NoteDocuments implements HostDocuments {
     this.cancelSave(note.uri);
     await Promise.all([...this.willSave].map((listener) => listener(note)));
     const text = note.getText();
-    await writeThroughFile(fileURLToPath(note.uri), text);
+    await this.files.save(note.uri, text);
     // Count the save before publishing diskText, so a reload that resumes
     // in between still sees that its read is older than this write.
     this.settledWrites.set(
@@ -259,7 +279,11 @@ export class NoteDocuments implements HostDocuments {
       note.uri,
       setTimeout(() => {
         this.timers.delete(note.uri);
-        void this.save(note);
+        this.save(note).catch((error: unknown) => {
+          for (const listener of this.saveFailedListeners) {
+            listener(note.uri, error);
+          }
+        });
       }, this.delay),
     );
   }
@@ -277,18 +301,11 @@ export class NoteDocuments implements HostDocuments {
 
   /**
    * Another program changed the file: take its text unless ours is unsaved.
-   * The folder is watched, not the file: editors that save by renaming a new
-   * file over the old one would end a watch on the file itself.
+   * (Platforms watch a file's folder: editors that save by renaming a new
+   * file over the old one would end a watch on the file itself.)
    */
   private watchFile(note: NoteDocument): () => void {
-    const file = fileURLToPath(note.uri);
-    const watcher = watch(path.dirname(file), (_event, name) => {
-      if (name === null || name.toString() === path.basename(file)) {
-        void this.reload(note);
-      }
-    });
-    watcher.on("error", () => watcher.close());
-    return () => watcher.close();
+    return this.files.watch(note.uri, () => void this.reload(note));
   }
 
   private async reload(note: NoteDocument): Promise<void> {
@@ -332,8 +349,7 @@ export class NoteDocuments implements HostDocuments {
   }
 
   private readNote(uri: string): Promise<string> {
-    const file = fileURLToPath(uri);
-    return this.disk ? this.disk.readFile(file) : readFile(file, "utf8");
+    return this.files.readText(uri);
   }
 }
 

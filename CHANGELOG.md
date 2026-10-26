@@ -8,6 +8,11 @@
 
 ## Unreleased
 
+- **Lumière for the web (preview)**: the desktop app's window in a browser,
+  with no server and offline (`apps/web`). Open a folder of your own
+  (Chromium) or keep notes in the browser; it comes back where you left it.
+  The same host runs in the iPad app next (`packages/host-web`).
+
 - **Lumière desktop (preview)**: Lumière's editor in a window of its own, in
   the spirit of Typora (`apps/desktop`, Tauri), laid out as VS Code: the
   vault's files on the left, the note's outline on the right, notes in tabs.

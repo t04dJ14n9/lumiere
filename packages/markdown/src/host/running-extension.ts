@@ -6,13 +6,8 @@ export type RunningExtension = Pick<
   "id" | "packageJSON" | "extensionUri"
 >;
 
-/** A built worker script (dist/markdown/workers) of the running extension. */
-export function workerPath(extensionUri: vscode.Uri, name: string): string {
-  return vscode.Uri.joinPath(
-    extensionUri,
-    "dist",
-    "markdown",
-    "workers",
-    `${name}.cjs`,
-  ).fsPath;
+/** The running extension's built worker scripts (dist/markdown/workers). */
+export function workersFolder(extensionUri: vscode.Uri): string {
+  return vscode.Uri.joinPath(extensionUri, "dist", "markdown", "workers")
+    .fsPath;
 }

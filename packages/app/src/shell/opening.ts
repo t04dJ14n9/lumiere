@@ -4,10 +4,10 @@
  * opened from Finder or the command line reaches the window this way).
  */
 import { useCallback, useMemo, type Dispatch } from "react";
-import { api, relativeTo, type ServerEvent } from "./api";
+import { relativeTo, type ServerEvent } from "./api";
+import { backend } from "./backend";
 import type { VaultState } from "./hooks";
 import type { TabsAction } from "./tabs";
-import { pickFolder } from "./tauri";
 
 export interface Opening {
   /** Open a folder as a vault; with no folder, ask with the native picker. */
@@ -26,9 +26,9 @@ export function useOpening(
     (folder?: string) =>
       report(
         (async () => {
-          const chosen = folder ?? (await pickFolder());
+          const chosen = folder ?? (await backend().pickFolder?.());
           if (chosen) {
-            await api.addVault(chosen);
+            await backend().vaults.add(chosen);
           }
         })(),
       ),
@@ -43,7 +43,7 @@ export function useOpening(
           return;
         }
       }
-      report(api.open(path));
+      report(backend().vaults.open(path));
     },
     [vaults.open, dispatch, report],
   );

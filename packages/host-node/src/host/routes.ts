@@ -14,7 +14,8 @@ import {
   settingsUnavailableIn,
 } from "@workshop/markdown/portable";
 import { NODE_HOST_OFFERS } from "./inert";
-import { injectShim, pageQuery, socketSource } from "./page";
+import { injectShim, socketSource } from "./page";
+import { pageQuery } from "./page-query";
 import type { PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
 import type { LumiereHost } from "./start";

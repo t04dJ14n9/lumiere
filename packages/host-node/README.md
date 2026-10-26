@@ -60,6 +60,11 @@ vault and asks no one; DSH runs this way. The app asks in its window
 folders, so remote images and media load. A vault's code is the separate,
 per-vault question.
 
+The host itself is shared with host-web: `@workshop/host-node/core`
+(`src/core.ts`) starts the plugins on a `HostPlatform` (`src/host/platform.ts`)
+and reaches no Node built-in, which `test/unit/core-layers.test.ts` checks.
+`startLumiere` gives it Node's platform (`src/host/node-platform.ts`).
+
 ## The contracts it defines
 
 | Module | Between | What |

@@ -20,5 +20,15 @@ export function imageDataUrl(bytes: Uint8Array): string {
   if (!type) {
     throw new Error("Unrecognised image");
   }
-  return `data:${type};base64,${Buffer.from(bytes).toString("base64")}`;
+  return `data:${type};base64,${base64(bytes)}`;
+}
+
+/** Standard base64, as `Buffer.toString("base64")` writes it, without Node. */
+function base64(bytes: Uint8Array): string {
+  let binary = "";
+  // In chunks: spreading a whole cover image into one call can overflow the stack.
+  for (let at = 0; at < bytes.length; at += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
+  }
+  return btoa(binary);
 }

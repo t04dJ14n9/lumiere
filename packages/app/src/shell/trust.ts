@@ -3,7 +3,8 @@
  * the shell asks the owner about one at a time and posts the answer.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, type ServerEvent, type TrustQuestion } from "./api";
+import type { ServerEvent, TrustQuestion } from "./api";
+import { backend } from "./backend";
 
 export interface TrustQuestions {
   /** The vault to ask about now, if any is waiting. */
@@ -17,7 +18,7 @@ export function useTrustQuestions(
 ): TrustQuestions {
   const [questions, setQuestions] = useState<readonly TrustQuestion[]>([]);
   const reload = useCallback(
-    () => report(api.trustQuestions().then(setQuestions)),
+    () => report(backend().trust.questions().then(setQuestions)),
     [report],
   );
   // Questions asked before the window listened wait on the server.
@@ -26,7 +27,7 @@ export function useTrustQuestions(
   const answer = useCallback(
     (allowed: boolean) => {
       if (question) {
-        report(api.decideTrust(question.vault, allowed).finally(reload));
+        report(backend().trust.decide(question.vault, allowed).finally(reload));
       }
     },
     [question, report, reload],

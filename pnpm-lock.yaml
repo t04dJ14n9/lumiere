@@ -75,13 +75,46 @@ importers:
       '@capacitor/ios':
         specifier: 8.5.3
         version: 8.5.3(@capacitor/core@8.5.3)
+      '@workshop/app':
+        specifier: workspace:*
+        version: link:../../packages/app
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../../packages/host-node
+      '@workshop/host-web':
+        specifier: workspace:*
+        version: link:../../packages/host-web
       '@workshop/ink':
         specifier: workspace:*
         version: link:../../packages/ink
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../../packages/markdown
     devDependencies:
       '@capacitor/cli':
         specifier: 8.5.3
         version: 8.5.3
+
+  apps/web:
+    dependencies:
+      '@workshop/app':
+        specifier: workspace:*
+        version: link:../../packages/app
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../../packages/host-node
+      '@workshop/host-web':
+        specifier: workspace:*
+        version: link:../../packages/host-web
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../../packages/markdown
 
   packages/agents: {}
 
@@ -93,6 +126,12 @@ importers:
       '@workshop/host-node':
         specifier: workspace:*
         version: link:../host-node
+      '@workshop/host-web':
+        specifier: workspace:*
+        version: link:../host-web
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../markdown
       react:
         specifier: 19.3.1
         version: 19.3.1
@@ -140,6 +179,18 @@ importers:
       '@types/ws':
         specifier: 8.18.2
         version: 8.18.2
+
+  packages/host-web:
+    dependencies:
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../host-node
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../markdown
 
   packages/ink:
     dependencies:

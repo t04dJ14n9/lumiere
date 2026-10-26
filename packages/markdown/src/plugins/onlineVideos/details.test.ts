@@ -806,3 +806,16 @@ test("custom /c/ and /user/ channel ids skip the network", async () => {
   );
   assert.equal(hits, 0);
 });
+
+test("a cover's data URL holds its bytes in base64, as Buffer wrote them", () => {
+  // Larger than one encoding chunk, with every byte value.
+  const bytes = new Uint8Array(70_000);
+  bytes.set(JPEG);
+  for (let index = JPEG.length; index < bytes.length; index++) {
+    bytes[index] = index % 256;
+  }
+  assert.equal(
+    imageDataUrl(bytes),
+    `data:image/jpeg;base64,${Buffer.from(bytes).toString("base64")}`,
+  );
+});

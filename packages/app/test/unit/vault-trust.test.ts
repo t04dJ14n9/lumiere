@@ -4,13 +4,13 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import { readAnswers, VaultTrust } from "../../src/server/vault-trust";
+import { fileVaultTrust, readAnswers } from "../../src/server/vault-trust";
 
 async function store(t: test.TestContext) {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-trust-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const file = path.join(dir, "trust.json");
-  const trust = new VaultTrust(file);
+  const trust = fileVaultTrust(file);
   await trust.load();
   return { trust, file };
 }
@@ -47,7 +47,7 @@ test("answers are kept, and a vault that was refused can be asked again", async 
   await trust.decide(VAULT, false);
   assert.equal(await refused, false);
 
-  const reloaded = new VaultTrust(file);
+  const reloaded = fileVaultTrust(file);
   await reloaded.load();
   assert.equal(reloaded.answer(ROOT), false);
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")), {

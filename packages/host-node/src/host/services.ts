@@ -1,10 +1,8 @@
 /**
- * Every host service the Markdown plugins inject, for a Node host. The
- * VS Code adapter is packages/markdown/src/host/services; this is its twin.
+ * Every host service the Markdown plugins inject, for a host outside VS Code,
+ * over its platform (platform.ts). The VS Code adapter is
+ * packages/markdown/src/host/services; this is its twin.
  */
-import { mkdir, writeFile } from "node:fs/promises";
-import * as path from "node:path";
-import { pathToFileURL } from "node:url";
 import type {
   AgentHost,
   ContributedSetting,
@@ -14,10 +12,11 @@ import type {
 } from "@workshop/markdown/portable";
 import type { NoteDocuments } from "./documents";
 import { noDiffViews, noGit, noViews } from "./inert";
-import { createNodeNavigation } from "./navigation";
+import { createHostNavigation } from "./navigation";
 import type { PanelHub } from "./panels";
 import type { ContextKeys } from "./context-menu";
-import { createNodeSettings } from "./settings";
+import type { HostPlatform } from "./platform";
+import { createHostSettings } from "./settings";
 import { nodeViews, type TreeHub } from "./trees";
 import {
   createActiveEditor,
@@ -38,16 +37,18 @@ export interface HostIdentity {
   readonly uriScheme: string;
 }
 
-export interface NodeServicesOptions {
+export interface HostServicesOptions {
+  readonly platform: HostPlatform;
   readonly identity: HostIdentity;
   readonly documents: NoteDocuments;
   readonly panels: PanelHub;
   readonly roots: () => readonly string[];
   readonly contributed: readonly ContributedSetting[];
-  /** The built editor (`packages/markdown/dist`). */
-  readonly markdownDist: string;
-  /** Where settings, state and vault snapshots are kept. */
-  readonly data: string;
+  /** What the store held at start: the reader's settings and the workspace state. */
+  readonly saved: {
+    readonly settings: string | undefined;
+    readonly state: string | undefined;
+  };
   readonly log: (message: string) => void;
   /** The plugins' commands (createHostCommands); tree nodes run them too. */
   readonly commands: HostCommands;
@@ -57,13 +58,13 @@ export interface NodeServicesOptions {
   readonly vaultCode: VaultCodeTrust;
 }
 
-export function createNodeHostServices(
-  options: NodeServicesOptions,
-): HostServices {
-  const { documents, panels, roots, data, log } = options;
-  const settings = createNodeSettings({
+export function createHostServices(options: HostServicesOptions): HostServices {
+  const { platform, documents, panels, roots, log } = options;
+  const { files, store } = platform;
+  const settings = createHostSettings({
     contributed: options.contributed,
-    file: path.join(data, "settings.json"),
+    store,
+    saved: options.saved.settings,
   });
   return {
     hostDocuments: documents,
@@ -73,12 +74,16 @@ export function createNodeHostServices(
     views: nodeViews(options.trees, noViews),
     activeEditor: createActiveEditor(panels),
     settings,
-    workspace: createHostWorkspace(roots, options.vaultCode),
-    storage: createWorkspaceStorage(path.join(data, "state.json")),
-    extensions: createExtensions(options.markdownDist),
-    navigation: createNodeNavigation(panels, settings, options.identity),
+    workspace: createHostWorkspace({
+      files,
+      roots,
+      vaultCode: options.vaultCode,
+    }),
+    storage: createWorkspaceStorage(store, options.saved.state),
+    extensions: createExtensions(platform.workers),
+    navigation: createHostNavigation(files, panels, settings, options.identity),
     customEditors: panels,
-    agentHost: createAgentHost(options.identity, data),
+    agentHost: createAgentHost(options.identity, platform),
     git: noGit,
     diffViews: noDiffViews,
   };
@@ -137,7 +142,10 @@ function isVsCodeOnly(id: string): boolean {
  * Copy Link for Agent copies to the clipboard: no agent extension runs here.
  * In DSH the agent's chat is beside the note, so pasting is one step.
  */
-function createAgentHost(identity: HostIdentity, data: string): AgentHost {
+function createAgentHost(
+  identity: HostIdentity,
+  platform: Pick<HostPlatform, "writeScratchFile">,
+): AgentHost {
   return {
     appName: identity.appName,
     async environment() {
@@ -149,12 +157,6 @@ function createAgentHost(identity: HostIdentity, data: string): AgentHost {
         chatDisabled: true,
       };
     },
-    async writeScratchFile(name, text) {
-      const folder = path.join(data, "agent");
-      await mkdir(folder, { recursive: true, mode: 0o700 });
-      const file = path.join(folder, path.basename(name));
-      await writeFile(file, text, { mode: 0o600 });
-      return pathToFileURL(file).toString();
-    },
+    writeScratchFile: (name, text) => platform.writeScratchFile(name, text),
   };
 }

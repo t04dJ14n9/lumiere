@@ -45,6 +45,11 @@ export interface GitAccess {
   stage(uri: string): Promise<boolean>;
   /** The `git:` URI of `uri` at `ref`, for VS Code's own diff editor. */
   toGitUri(uri: string, ref: string): string | undefined;
+  /**
+   * The note a `git:` URI shows and its revision, the inverse of `toGitUri`;
+   * any other URI is its own source, with no revision.
+   */
+  sourceOf(uri: string): { source: string; ref?: string };
 }
 
 /** A text diff tab VS Code opened for a Markdown file (Source Control, Timeline). */
