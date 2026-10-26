@@ -18,6 +18,7 @@ import {
   useVaults,
 } from "./hooks";
 import { useOpening, type Opening } from "./opening";
+import { usePanels, type Panels } from "./panels";
 import {
   noTabs,
   tabToClose,
@@ -35,6 +36,7 @@ export function App() {
   const errors = useErrors();
   const vaults = useVaults(errors.report);
   const ui = useUiState(errors.report);
+  const panels = usePanels(ui);
   const [tabs, dispatch] = useReducer(tabsReducer, noTabs);
   const opening = useOpening(vaults, dispatch, errors.report);
   const trust = useTrustQuestions(errors.report);
@@ -43,7 +45,7 @@ export function App() {
     trust.onServerEvent(event);
   });
   useEffect(() => setColorTheme(ui.state.theme), [ui.state.theme]);
-  const commands = windowCommands({ tabs, dispatch, ui, opening });
+  const commands = windowCommands({ tabs, dispatch, ui, panels, opening });
   useMenuCommands(commands);
   useShortcuts(commands);
 
@@ -60,6 +62,7 @@ export function App() {
           dispatch={dispatch}
           opening={opening}
           ui={ui}
+          panels={panels}
           report={errors.report}
         />
       ) : (
@@ -76,11 +79,13 @@ function windowCommands({
   tabs,
   dispatch,
   ui,
+  panels,
   opening,
 }: {
   readonly tabs: TabsState;
   readonly dispatch: (action: TabsAction) => void;
   readonly ui: UiStateHandle;
+  readonly panels: Panels;
   readonly opening: Opening;
 }): CommandHandlers {
   return {
@@ -97,8 +102,8 @@ function windowCommands({
     "next-tab": () => dispatch({ type: "step", by: 1 }),
     "previous-tab": () => dispatch({ type: "step", by: -1 }),
     "last-tab": () => dispatch({ type: "last" }),
-    "toggle-sidebar": () => ui.update({ sidebar: !ui.state.sidebar }),
-    "toggle-outline": () => ui.update({ outline: !ui.state.outline }),
+    "toggle-sidebar": () => panels.toggle("sidebar"),
+    "toggle-outline": () => panels.toggle("outline"),
     "theme-system": () => ui.update({ theme: "system" }),
     "theme-light": () => ui.update({ theme: "light" }),
     "theme-dark": () => ui.update({ theme: "dark" }),

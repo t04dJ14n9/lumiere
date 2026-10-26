@@ -212,3 +212,35 @@ test("the window keeps clear of the iPad's status bar, home indicator and keyboa
   }
   assert.match(rules, /box-sizing:\s*border-box/);
 });
+
+test("a wide window shows the panels it saved, as columns", async () => {
+  const { shownPanels, togglePanel } = await import("../../src/shell/panels");
+  const saved = { sidebar: true, outline: false };
+  assert.deepEqual(shownPanels(false, "outline", saved), saved);
+  assert.deepEqual(togglePanel("outline", false, undefined, saved), {
+    save: { outline: true },
+  });
+  assert.deepEqual(togglePanel("sidebar", false, undefined, saved), {
+    save: { sidebar: false },
+  });
+});
+
+test("a narrow window floats one panel at a time and saves nothing", async () => {
+  const { shownPanels, togglePanel } = await import("../../src/shell/panels");
+  const saved = { sidebar: true, outline: true };
+  assert.deepEqual(shownPanels(true, undefined, saved), {
+    sidebar: false,
+    outline: false,
+  });
+  assert.deepEqual(shownPanels(true, "outline", saved), {
+    sidebar: false,
+    outline: true,
+  });
+  // Showing one puts the other away; toggling the shown one hides it.
+  assert.deepEqual(togglePanel("outline", true, "sidebar", saved), {
+    floating: "outline",
+  });
+  assert.deepEqual(togglePanel("outline", true, "outline", saved), {
+    floating: undefined,
+  });
+});

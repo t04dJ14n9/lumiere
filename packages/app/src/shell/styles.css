@@ -205,6 +205,31 @@ button.primary:hover {
   margin: 0;
   color: var(--vscode-descriptionForeground);
 }
+/*
+ * A narrow window (panels.ts): the note takes the whole width, and the files
+ * or the outline float over it as a card only as tall as its content. The
+ * clear layer under the card puts it away when the note is tapped.
+ */
+.tab-bodies > .floating-panel {
+  inset: 8px auto auto 8px;
+  z-index: 2;
+  width: min(300px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  overflow: hidden;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+.tab-bodies > .floating-panel.outline-panel {
+  inset: 8px 8px auto auto;
+}
+.floating-panel .file-tree,
+.floating-panel .tree-panel {
+  flex: 0 1 auto;
+}
+.tab-bodies > .panel-scrim {
+  z-index: 1;
+}
 .vault-picker {
   max-width: 460px;
   margin: 18vh auto 0;
@@ -539,4 +564,29 @@ button.secondary:hover {
 .settings-none {
   margin-top: 24px;
   color: var(--vscode-descriptionForeground);
+}
+/* A finger needs more room than a pointer: the iPad, a touchscreen. */
+@media (pointer: coarse) {
+  .layout-buttons button {
+    width: 36px;
+    height: 36px;
+  }
+  .tab {
+    padding-block: 10px;
+  }
+  .tab-close,
+  .panel-header button {
+    width: 30px;
+    height: 30px;
+  }
+  .vault-bar button {
+    width: 36px;
+  }
+  .tree-folder,
+  .tree-file {
+    padding: 8px 10px;
+  }
+  .tree-label {
+    padding-block: 7px;
+  }
 }

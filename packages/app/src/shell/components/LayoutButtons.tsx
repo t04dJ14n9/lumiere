@@ -2,15 +2,15 @@
  * The buttons at the end of the tab strip, as VS Code puts them in its title
  * bar: show or hide the files sidebar and the outline, and open Settings.
  */
-import type { UiStateHandle } from "../ui-state";
+import type { Panels } from "../panels";
 
 export interface LayoutButtonsProps {
-  readonly ui: UiStateHandle;
+  readonly panels: Panels;
   readonly onSettings: () => void;
 }
 
-export function LayoutButtons({ ui, onSettings }: LayoutButtonsProps) {
-  const { sidebar, outline } = ui.state;
+export function LayoutButtons({ panels, onSettings }: LayoutButtonsProps) {
+  const { sidebar, outline } = panels;
   return (
     <div className="layout-buttons">
       <button
@@ -18,7 +18,7 @@ export function LayoutButtons({ ui, onSettings }: LayoutButtonsProps) {
         title="Toggle Sidebar (⌘B)"
         aria-label="Toggle Sidebar"
         aria-pressed={sidebar}
-        onClick={() => ui.update({ sidebar: !sidebar })}
+        onClick={() => panels.toggle("sidebar")}
       >
         <PanelIcon side="left" filled={sidebar} />
       </button>
@@ -27,7 +27,7 @@ export function LayoutButtons({ ui, onSettings }: LayoutButtonsProps) {
         title="Toggle Outline (⌥⌘B)"
         aria-label="Toggle Outline"
         aria-pressed={outline}
-        onClick={() => ui.update({ outline: !outline })}
+        onClick={() => panels.toggle("outline")}
       >
         <PanelIcon side="right" filled={outline} />
       </button>

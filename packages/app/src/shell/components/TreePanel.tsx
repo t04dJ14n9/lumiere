@@ -18,6 +18,8 @@ export interface TreePanelProps {
   readonly visible: boolean;
   /** Shown while the plugin has not registered the tree (or is turned off). */
   readonly unavailable: string;
+  /** A node's command was run. */
+  readonly onRun?: () => void;
   readonly report: (work: Promise<unknown>) => void;
 }
 
@@ -25,6 +27,7 @@ export function TreePanel({
   viewId,
   visible,
   unavailable,
+  onRun,
   report,
 }: TreePanelProps) {
   const snapshot = useSnapshot(viewId, report);
@@ -74,7 +77,10 @@ export function TreePanel({
           toggled,
           current,
           toggle,
-          run: (item) => report(backend().views.run(viewId, item.id)),
+          run: (item) => {
+            report(backend().views.run(viewId, item.id));
+            onRun?.();
+          },
         }}
       />
     </div>
