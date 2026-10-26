@@ -44,17 +44,11 @@ export function bindTableFocus(options: {
   contentDOM: HTMLElement;
   signal: AbortSignal;
   clear: () => void;
-  syncWheel: () => void;
 }): void {
-  const { root, contentDOM, signal, clear, syncWheel } = options;
-  root.addEventListener(
-    "focusin",
-    () => {
-      root.classList.add("has-focus");
-      syncWheel();
-    },
-    { signal },
-  );
+  const { root, contentDOM, signal, clear } = options;
+  root.addEventListener("focusin", () => root.classList.add("has-focus"), {
+    signal,
+  });
   root.addEventListener(
     "focusout",
     () => {
@@ -64,14 +58,10 @@ export function bindTableFocus(options: {
         queueMicrotask(() => {
           const active = root.ownerDocument.activeElement;
           if (!noteTookTableFocus(root, active)) {
-            if (root.isConnected) {
-              syncWheel();
-            }
             return;
           }
           root.classList.remove("has-focus");
           clear();
-          syncWheel();
         }),
       );
     },
@@ -88,7 +78,6 @@ export function bindTableFocus(options: {
           return;
         }
         clear();
-        syncWheel();
       });
     },
     { signal },

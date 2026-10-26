@@ -1,6 +1,6 @@
 /**
- * Hovering a table or editing a cell must not install a non-passive wheel
- * listener. Grid selection still forwards vertical wheel to the note.
+ * No table state cancels wheel input: hovering, editing a cell and a grid
+ * selection all leave vertical wheel to the browser, which scrolls the note.
  * An open cell survives scrolling the table out of the viewport and back.
  */
 import { expect, test, type Page } from "@playwright/test";
@@ -124,7 +124,7 @@ test("scrolling an open cell offscreen keeps it when the table returns", async (
   );
 });
 
-test("a selected table row still captures vertical wheel for the note", async ({
+test("a selected table row leaves vertical wheel to the browser", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 900, height: 600 });
@@ -153,5 +153,14 @@ test("a selected table row still captures vertical wheel for the note", async ({
   await table.hover();
   await table.locator('.table-row-handle[data-index="1"]').click();
   await expect(table).toBeFocused();
-  expect(await wheelPrevented(page)).toBe(true);
+  expect(await wheelPrevented(page)).toBe(false);
+
+  const noteScroller = page.locator(".cm-scroller").first();
+  const scrollTop = () => noteScroller.evaluate((element) => element.scrollTop);
+  const selectedTop = await scrollTop();
+  expect(selectedTop).toBeGreaterThan(120);
+  await page.mouse.wheel(0, -120);
+  await expect.poll(scrollTop).toBe(selectedTop - 120);
+  await expect(table).toBeFocused();
+  await expect(table.locator(".table-cell-selected")).toHaveCount(12);
 });

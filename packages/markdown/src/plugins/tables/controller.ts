@@ -23,7 +23,6 @@ import { TableHandles } from "./handles";
 import { activeTables, tableSelectionChanges } from "./state";
 import { TableStickyHScroll } from "./sticky-hscroll";
 import { bindTableFocus } from "./focus-lifetime";
-import { TableWheelGate, tableForwardsWheel } from "./wheel-gate";
 
 /** Wires table interactions and reconciles snapshots from the outer document. */
 export class TableController {
@@ -35,7 +34,6 @@ export class TableController {
   private toolbar!: TableToolbar;
   private readonly handles: TableHandles;
   private sticky: TableStickyHScroll;
-  private readonly wheel: TableWheelGate;
   private readonly events = new AbortController();
   private requested?: CellPosition | undefined;
 
@@ -53,18 +51,11 @@ export class TableController {
     this.toolbar = wired.toolbar;
     this.keyboard = wired.keyboard;
     this.registerEvents();
-    this.wheel = new TableWheelGate(root, this.events.signal, {
-      viewport: () => this.grid.outer.scrollDOM,
-      lineHeight: () => this.grid.outer.defaultLineHeight,
-      scrollNote: environment.scrollNote,
-      shouldForward: () => this.shouldForwardWheel(),
-    });
     bindTableFocus({
       root,
       contentDOM: outer.contentDOM,
       signal: this.events.signal,
       clear: () => this.clearActiveTable(),
-      syncWheel: () => this.wheel.sync(),
     });
     this.grid.wrapper.append(this.toolbar.controls());
     this.grid.render();
@@ -79,10 +70,7 @@ export class TableController {
       this.grid,
       this.projection,
       {
-        activate: () => {
-          activeTables.set(this.grid.outer, this);
-          this.wheel.sync();
-        },
+        activate: () => activeTables.set(this.grid.outer, this),
         setHandle: (position) => this.handles.setActive(position),
       },
       environment.position,
@@ -110,10 +98,7 @@ export class TableController {
     );
     const keyboard = new TableKeyboard(this.grid, this.projection, selected, {
       request,
-      deactivate: () => {
-        activeTables.delete(this.grid.outer);
-        this.wheel.sync();
-      },
+      deactivate: () => activeTables.delete(this.grid.outer),
       menu: (position, point) => this.toolbar.showMenu(position, point),
     });
     return { selected, clipboard, toolbar, keyboard };
@@ -125,7 +110,6 @@ export class TableController {
         delete this.selected.range;
         this.handles.setActive(position);
         activeTables.set(this.grid.outer, this);
-        this.wheel.sync();
       },
       highlight: () => this.selected.highlight(),
       move: (row, column) => this.keyboard.move(row, column),
@@ -144,7 +128,6 @@ export class TableController {
   }
   set range(range: CellRange | undefined) {
     this.selected.range = range;
-    this.wheel.sync();
   }
   close(): void {
     this.projection.close();
@@ -211,15 +194,6 @@ export class TableController {
       },
       { signal: this.events.signal },
     );
-  }
-
-  private shouldForwardWheel(): boolean {
-    const root = this.grid.root;
-    return tableForwardsWheel({
-      cellOpen: this.projection.cellEditor !== undefined,
-      gridRange: this.selected.range !== undefined,
-      rootFocused: root.ownerDocument.activeElement === root,
-    });
   }
 
   private createHandles(): TableHandles {
@@ -360,7 +334,6 @@ export class TableController {
       this.close();
       delete this.selected.range;
       this.highlight();
-      this.wheel.sync();
       if (notify) {
         this.grid.outer.state.facet(tableSelectionChanges)(false);
       }

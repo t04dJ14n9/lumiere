@@ -116,7 +116,7 @@
   overflow-x: auto;
   /* overflow-x: auto would otherwise compute overflow-y: auto and let
      Chromium keep vertical wheel in this nested scrollport. Hide Y so the
-     note scroller (or our instant forwarder) owns vertical motion. */
+     note scroller owns vertical motion. */
   overflow-y: hidden;
 }
 .table-wrapper {
