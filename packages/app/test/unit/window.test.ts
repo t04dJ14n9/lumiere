@@ -253,3 +253,16 @@ test("a native menu's command is one the window knows, or nothing", async () => 
     assert.equal(parseAppCommand(other), undefined, String(other));
   }
 });
+
+test("a floating card's long list scrolls inside the card", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = /\.floating-panel \.tree-panel\s*\{([^}]*)\}/.exec(css)?.[1];
+  assert.ok(rule, "the floating lists' rule");
+  // A flex item keeps its content's height unless it may shrink below it.
+  assert.match(rule, /min-height:\s*0/);
+  assert.match(rule, /flex:\s*0 1 auto/);
+});

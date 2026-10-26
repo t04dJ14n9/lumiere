@@ -223,9 +223,11 @@ button.primary:hover {
 .tab-bodies > .floating-panel.outline-panel {
   inset: 8px 8px auto auto;
 }
+/* A list longer than the card scrolls inside it. */
 .floating-panel .file-tree,
 .floating-panel .tree-panel {
   flex: 0 1 auto;
+  min-height: 0;
 }
 .tab-bodies > .panel-scrim {
   z-index: 1;
