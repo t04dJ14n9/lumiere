@@ -293,6 +293,15 @@ test("a narrow window floats one panel at a time and saves nothing", async () =>
   });
 });
 
+test("with no note open, Choose a Note… shows only while the files are put away", async () => {
+  const { emptyNotePrompt } = await import("../../src/shell/panels");
+  // A narrow window starts with its files floating: a button beside them
+  // would only put them away, as the layer under the card takes the tap.
+  assert.equal(emptyNotePrompt(true, true), "none");
+  assert.equal(emptyNotePrompt(true, false), "button");
+  assert.equal(emptyNotePrompt(false, true), "hint");
+});
+
 test("a native menu's command is one the window knows, or nothing", async () => {
   const { parseAppCommand } = await import("../../src/shell/backend");
   assert.equal(parseAppCommand("toggle-outline"), "toggle-outline");
