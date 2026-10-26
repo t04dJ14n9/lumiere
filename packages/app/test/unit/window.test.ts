@@ -213,6 +213,28 @@ test("the window keeps clear of the iPad's status bar, home indicator and keyboa
   assert.match(rules, /box-sizing:\s*border-box/);
 });
 
+test("a long-press on a file, a heading or a tab selects no text", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const unselectable = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter(([, , body]) => /(^|[\s;])user-select:\s*none/.test(body!))
+    .flatMap(([, selectors]) =>
+      selectors!
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .split(",")
+        .map((selector) => selector.trim()),
+    );
+  for (const chrome of [".sidebar", ".side-panel", ".tab-strip"]) {
+    assert.ok(unselectable.includes(chrome), chrome);
+  }
+  assert.ok(
+    !unselectable.some((selector) => /settings|editor-frame/.test(selector)),
+  );
+});
+
 test("a wide window shows the panels it saved, as columns", async () => {
   const { shownPanels, togglePanel } = await import("../../src/shell/panels");
   const saved = { sidebar: true, outline: false };
