@@ -23,6 +23,7 @@ import { TableHandles } from "./handles";
 import { activeTables, tableSelectionChanges } from "./state";
 import { TableStickyHScroll } from "./sticky-hscroll";
 import { bindTableFocus } from "./focus-lifetime";
+import { followDiagonalWheel } from "./diagonal-wheel";
 
 /** Wires table interactions and reconciles snapshots from the outer document. */
 export class TableController {
@@ -51,6 +52,11 @@ export class TableController {
     this.toolbar = wired.toolbar;
     this.keyboard = wired.keyboard;
     this.registerEvents();
+    followDiagonalWheel(
+      this.grid.scroll,
+      () => this.grid.outer.scrollDOM,
+      this.events.signal,
+    );
     bindTableFocus({
       root,
       contentDOM: outer.contentDOM,

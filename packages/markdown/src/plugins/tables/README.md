@@ -18,7 +18,10 @@ viewport and is restored when it returns. The widget ignores events, so
 CodeMirror never hears a wheel over it; a passive listener reports vertical
 table wheel input through the editor's public scroll-input event, which
 cancels saved-view scroll restoration. Horizontal and Shift-wheel gestures
-stay with the table's overflow box. Tall wide tables also mount a sticky mirror of that
+stay with the table's overflow box. Chromium latches a mostly vertical
+diagonal wheel to `.table-scroll` when the table can take its sideways part,
+dropping the vertical part; once the table has panned for it, a passive
+listener scrolls the note by that vertical part. Tall wide tables also mount a sticky mirror of that
 horizontal scrollbar (BH-016) while the native bar is below the note
 viewport, so columns stay reachable without scrolling to the foot; the
 mirror hides once the native bar is on screen. The selection and focus stay in place during scrolling.
@@ -53,6 +56,8 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `selection.ts`: grid selection, active-cell chrome and projected source selection.
 - `selection-chrome.test.ts`: selected-cell matrix and inset selection-box CSS unit tests.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
+- `diagonal-wheel.ts`: the note's share of a mostly vertical diagonal wheel latched to the table.
+- `diagonal-wheel.test.ts`: diagonal detection, room to pan, and adding the vertical part only after a pan.
 - `focus-lifetime.ts`: focus retention when a table unmounts off-viewport, and clearing when focus moves into the note.
 - `focus-lifetime.test.ts`: unmount does not count as leaving; retained cell focus waits until the root is connected.
 - `tables-native-scroll.spec.ts` (browser): native wheel while hovering, editing or selecting, and the open cell surviving a viewport exit.
@@ -84,7 +89,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `webview.test.ts`: persistent widget, entry and insertion unit tests.
 - `test/unit/features/table-wheel.test.ts`: vertical table wheel cancels saved-view restore through plugin wiring; pans and zooms do not.
 - `tables-copy.spec.ts` (browser): handle, row, rectangle and single-cell TSV shortcuts.
-- `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim.
+- `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim; a mostly vertical diagonal wheel over a wide table, hovered or selected.
 - `tables-add-buttons.spec.ts` (browser): Obsidian-like 16px add strips; BH-019 horizontal pan on the add-row strip does not serialize/pad.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
