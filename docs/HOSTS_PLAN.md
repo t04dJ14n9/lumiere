@@ -133,7 +133,8 @@ packages/core, agents, markdown, pdf   the plugins: the same in every host
                   │                    server over HTTP (src/server), or host-web in the
                   │                    same page (src/local)
                   ├─ apps/desktop      Tauri: native window, menu, picker, Finder; nothing else
-                  └─ apps/web          a static site: the window on host-web, offline
+                  └─ apps/web          a static site: the window on host-web, offline; its
+                                       service worker serves notes' pages and their files
 ```
 
 Arrows point one way only. The `architecture/boundaries` lint rule enforces
@@ -182,6 +183,7 @@ Each contract is written once, in code. Change both sides in the same PR.
 | Embedder ↔ page | `packages/host-node/src/embedding.ts` | DSH client, app window ↔ page shim (also `connect`/`port` for a channel) |
 | Window ↔ its host | `packages/app/src/shell/backend.ts` (`WindowBackend`) | window ↔ `http-backend.ts`, `src/local` |
 | A vault's folder in a browser | `packages/host-web/src/vault-fs.ts` (`VaultFileSystem`) | host-web ↔ apps/web, the iPad's native files |
+| Web app's worker ↔ window | `apps/web/src/shared/routes.ts`, `messages.ts` | `apps/web/src/worker` ↔ `src/answers.ts`: notes' pages and the files they show |
 | Theme | `packages/host-node/src/palette.ts` | DSH client, app window → page |
 | Tree views | `packages/host-node/src/views.ts` | host-node ↔ app window (DSH later) |
 | Server process | `packages/app/src/server/contract.ts` | server ↔ `apps/desktop/src-tauri/src/server.rs` |
@@ -396,7 +398,9 @@ Do not:
    surface in `packages/dsh/src/host/dsh.ts` and the address helpers.
 4. **The editor page is same-origin with its embedder.** Its nonce-only
    script policy keeps a note's content from running. Any change to the
-   page's CSP needs review.
+   page's CSP needs review. In the web app the service worker serves the
+   page, with the window's policy as its first tag, as a blob: page
+   inherits it; a vault's SVG is served with a sandbox policy.
 5. **Two Cordis versions in DSH's process** (DSH's 4.0.0-rc.7 fork and
    Lumière's rc.11). They coexist because they never share objects. Check
    again whenever either changes.

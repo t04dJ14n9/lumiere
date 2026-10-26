@@ -58,6 +58,7 @@ the worker cannot have, over `postMessage` with a port for the answer:
 - A note opened before the service worker first takes over the window (in
   the first seconds of a first visit) shows its images once it is opened
   again.
-- PDFs do not open in tabs yet.
+- Offline in Chromium, a PDF tab stays blank: its page is still a blob:
+  document, which Chromium keeps from the service worker.
 - No Git. A vault's Obsidian community plugins run only after the reader
   says yes, once per vault, as in the desktop app.
