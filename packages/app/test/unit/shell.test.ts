@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { editorUrl, relativeTo } from "../../src/shell/api";
-import { buildTree } from "../../src/shell/tree";
+import { buildTree, foldersAbove } from "../../src/shell/tree";
+import {
+  foldersOf,
+  revealFile,
+  toggleFolder,
+  withFolders,
+} from "../../src/shell/tree-state";
 
 test("the file tree nests folders and keeps the server's order", () => {
   const root = buildTree([
@@ -24,6 +30,54 @@ test("the file tree nests folders and keeps the server's order", () => {
   assert.deepEqual(
     a?.folders.get("b")?.files.map((file) => file.path),
     ["a/b/deep.md"],
+  );
+});
+
+test("the folders that hold a file, from the vault down", () => {
+  assert.deepEqual(foldersAbove("a/b/c.md"), ["a", "a/b"]);
+  assert.deepEqual(foldersAbove("top.md"), []);
+});
+
+test("a folder opens and closes on a click, the others as they were", () => {
+  const open = new Set(["a"]);
+  const opened = toggleFolder(open, "b");
+  assert.deepEqual([...opened], ["a", "b"]);
+  assert.deepEqual([...toggleFolder(opened, "a")], ["b"]);
+  assert.deepEqual([...open], ["a"], "the set it was given is not changed");
+});
+
+test("the shown note opens the folders that hold it and keeps the others", () => {
+  const open = new Set(["other"]);
+  const revealed = revealFile(open, "a/b/note.md");
+  assert.deepEqual([...revealed].sort(), ["a", "a/b", "other"]);
+  assert.equal(
+    revealFile(revealed, "a/b/next.md"),
+    revealed,
+    "nothing to open: the same set, so nothing is saved",
+  );
+  assert.equal(revealFile(open, "top.md"), open, "a note at the top: nothing");
+  const closedAbove = toggleFolder(revealed, "a");
+  assert.deepEqual(
+    [...revealFile(closedAbove, "a/b/note.md")].sort(),
+    ["a", "a/b", "other"],
+    "a folder closed above it opens again",
+  );
+});
+
+test("the saved layout keeps each vault's open folders apart", () => {
+  const saved = withFolders({ "/v1": ["x"] }, "/v2", new Set(["b", "a"]));
+  assert.deepEqual(saved, { "/v1": ["x"], "/v2": ["a", "b"] });
+  assert.deepEqual([...foldersOf(saved, "/v2")], ["a", "b"]);
+  assert.deepEqual([...foldersOf(saved, "/v3")], [], "a new vault: all closed");
+  assert.deepEqual(
+    withFolders(saved, "/v2", new Set()),
+    { "/v1": ["x"] },
+    "a vault with nothing open is left out",
+  );
+  assert.deepEqual(
+    [...foldersOf({}, "constructor")],
+    [],
+    "only the vaults it keeps",
   );
 });
 

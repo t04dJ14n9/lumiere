@@ -31,3 +31,9 @@ export function buildTree(files: readonly FileEntry[]): Folder {
   }
   return root;
 }
+
+/** The folders that hold a file, from the vault down: `a/b/c.md` → `a`, `a/b`. */
+export function foldersAbove(path: string): readonly string[] {
+  const names = path.split("/").slice(0, -1);
+  return names.map((_, index) => names.slice(0, index + 1).join("/"));
+}
