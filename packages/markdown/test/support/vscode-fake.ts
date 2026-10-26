@@ -2,6 +2,7 @@ import type { Configuration } from "../../src/shared/configuration";
 import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
 import type { WorkspaceFiles } from "../../src/shared/workspace-files";
+import { gitSource } from "../../src/host/git-source";
 
 /** Members to replace, per host service. */
 export type HostOverrides = {
@@ -177,6 +178,8 @@ function noGit(): GitAccess {
     onDidChange: none,
     stage: async () => false,
     toGitUri: () => undefined,
+    // The VS Code adapter's own parser: the diff tests hand it git: URIs.
+    sourceOf: gitSource,
   };
 }
 

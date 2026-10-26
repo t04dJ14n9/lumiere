@@ -12,6 +12,7 @@ import {
   discoverGitRoot,
 } from "./git-blame";
 import type { GitBlameRunner } from "./git-blame";
+import { gitSource } from "./git-source";
 import { RepositoryWatch } from "./git-watch";
 import { bindDiscoveredRoot, canonicalPath } from "./git-discovered-watch";
 import { exceedsDiffLimits } from "../shared/diff";
@@ -434,5 +435,9 @@ export class NativeGitAccess implements GitAccess {
         query: JSON.stringify({ path, ref }),
       })
       .toString();
+  }
+
+  sourceOf(uri: string): { source: string; ref?: string } {
+    return gitSource(uri);
   }
 }

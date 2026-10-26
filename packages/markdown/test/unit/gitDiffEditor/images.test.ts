@@ -9,9 +9,9 @@ import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import {
   sideResources,
-  diffSource,
   diffResourcesHost,
 } from "../../../src/plugins/resources/diff-resources";
+import { gitSource as diffSource } from "../../../src/host/git-source";
 import {
   diffImageUrl,
   diffResourceRoots,

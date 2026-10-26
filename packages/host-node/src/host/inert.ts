@@ -30,6 +30,7 @@ export const noGit: GitAccess = {
   onDidChange: () => () => {},
   stage: async () => false,
   toGitUri: () => undefined,
+  sourceOf: (uri) => ({ source: uri }),
 };
 
 export const noDiffViews: DiffViews = {

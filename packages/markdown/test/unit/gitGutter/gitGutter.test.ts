@@ -153,6 +153,7 @@ function fakeGit(
       return true;
     },
     toGitUri: () => undefined,
+    sourceOf: (uri) => ({ source: uri }),
     async blameLine() {
       return { status: "unavailable", repoGeneration: 0 };
     },
