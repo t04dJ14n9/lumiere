@@ -28,7 +28,7 @@ import {
   createHostServices,
   type HostIdentity,
 } from "./services";
-import { SETTINGS_FILE } from "./settings";
+import { servedDefaults, SETTINGS_FILE } from "./settings";
 import { TreeHub } from "./trees";
 import { uriName } from "./uris";
 import { createHostVaultSystem } from "./vault";
@@ -78,7 +78,7 @@ export async function startHost(
     documents,
     panels,
     roots: () => [...roots],
-    contributed: options.contributed,
+    contributed: servedDefaults(options.contributed),
     saved: await readSaved(platform),
     log,
     vaultCode: options.vaultCode ?? noVaultCode,

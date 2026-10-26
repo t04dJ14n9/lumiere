@@ -61,6 +61,27 @@ export function unavailableSettings(
   return unavailable;
 }
 
+/**
+ * The switches of the feature plugins a host that offers `offered` cannot
+ * serve, by full key. Such a plugin stays off there: its settings are hidden
+ * (`unavailableSettings`), so nothing could turn it off, and against the
+ * host's stand-ins it would only cost time.
+ */
+export function unavailableSwitches(
+  manifests: readonly Manifest[],
+  offered: readonly HostNeed[],
+): ReadonlySet<string> {
+  return new Set(
+    manifests
+      .filter(
+        (manifest) =>
+          manifest.kind === "feature" &&
+          !(manifest.needs ?? []).every((need) => offered.includes(need)),
+      )
+      .map((manifest) => contributionId(`plugins.${manifest.id}.enabled`)),
+  );
+}
+
 /** A plugin's own setting keys: its switch and its config fields (scripts/contributions.ts). */
 function settingKeys(manifest: Manifest): string[] {
   const fields = Object.keys(
