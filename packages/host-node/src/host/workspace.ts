@@ -13,7 +13,7 @@ import {
   rm,
 } from "node:fs/promises";
 import * as path from "node:path";
-import { realContains } from "@workshop/markdown/node";
+import { nodeWorkerLauncher, realContains } from "@workshop/markdown/node";
 import type {
   DiagnosticSink,
   Extensions,
@@ -191,6 +191,6 @@ function readValues(file: string): Record<string, unknown> {
 export function createExtensions(markdownDist: string): Extensions {
   return {
     isInstalled: () => false,
-    workerPath: (name) => path.join(markdownDist, "workers", `${name}.cjs`),
+    workers: nodeWorkerLauncher(path.join(markdownDist, "workers")),
   };
 }

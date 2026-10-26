@@ -8,15 +8,17 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { CancelToken } from "../../../src/shared/rpc/lifecycle";
 import { SearchWorker } from "../../../src/plugins/search/runner";
+import { nodeWorkerLauncher } from "../../../src/host/node-workers";
+import type { WorkerLauncher } from "../../../src/shared/workers";
 
 let directory: string;
-let path: string;
+let workers: WorkerLauncher;
 before(async () => {
   directory = await mkdtemp(join(tmpdir(), "workbench-search-unit-"));
-  path = join(directory, "search.cjs");
+  workers = nodeWorkerLauncher(directory);
   await build({
     entryPoints: ["src/workers/search.ts"],
-    outfile: path,
+    outfile: join(directory, "search.cjs"),
     bundle: true,
     platform: "node",
     format: "cjs",
@@ -25,7 +27,7 @@ before(async () => {
 });
 
 test("search worker evaluates multiple documents and survives a document parse error", async () => {
-  const worker = new SearchWorker(path, "content:meeting");
+  const worker = new SearchWorker(workers, "content:meeting");
   try {
     assert.equal(
       await worker.matches({ path: "One.md", text: "Meeting notes" }),
@@ -48,7 +50,7 @@ test("search worker evaluates multiple documents and survives a document parse e
   }
 });
 test("invalid search queries reject worker readiness", async () => {
-  const worker = new SearchWorker(path, "meeting OR");
+  const worker = new SearchWorker(workers, "meeting OR");
   try {
     // The message crosses the worker boundary once, without "Error: " prefixes.
     await assert.rejects(worker.ready, (error: Error) => {
@@ -61,7 +63,7 @@ test("invalid search queries reject worker readiness", async () => {
 });
 test("search cancellation rejects pending work and prevents later submissions", async () => {
   const controller = new CancelToken();
-  const worker = new SearchWorker(path, "/(a+)+$/", { token: controller });
+  const worker = new SearchWorker(workers, "/(a+)+$/", { token: controller });
   await worker.ready;
   const pending = worker.matches({
     path: "Slow.md",
@@ -78,7 +80,7 @@ test("search cancellation rejects pending work and prevents later submissions", 
   await worker.dispose();
 });
 test("a pathological regex times out in its worker and a fresh worker remains usable", async () => {
-  const worker = new SearchWorker(path, "/(a+)+$/", { timeoutMs: 100 });
+  const worker = new SearchWorker(workers, "/(a+)+$/", { timeoutMs: 100 });
   try {
     await assert.rejects(
       worker.matches({ path: "Slow.md", text: "a".repeat(40) + "!" }),
@@ -87,7 +89,7 @@ test("a pathological regex times out in its worker and a fresh worker remains us
   } finally {
     await worker.dispose();
   }
-  const next = new SearchWorker(path, "working");
+  const next = new SearchWorker(workers, "working");
   try {
     assert.equal(
       await next.matches({ path: "Next.md", text: "working" }),
@@ -139,10 +141,7 @@ test("search host cancels work on disable and registers again on enable", async 
     registerLinkPolicy: () => () => {},
     invalidateLinkResolution() {},
   });
-  provideHostServices(
-    root,
-    fakeHost({ extensions: { workerPath: () => path } }),
-  );
+  provideHostServices(root, fakeHost({ extensions: { workers } }));
   const start = () =>
     root.plugin(searchHost, {
       panel: {} as PanelShell,
@@ -189,7 +188,7 @@ test("search host cancels work on disable and registers again on enable", async 
 });
 
 test("search worker advertises indexed requirements and evaluates transported metadata", async () => {
-  const worker = new SearchWorker(path, "tag:project [priority:>2]");
+  const worker = new SearchWorker(workers, "tag:project [priority:>2]");
   try {
     await worker.ready;
     assert.equal(worker.requiresText, false);

@@ -24,6 +24,7 @@ import {
   type SnapshotStore,
   type VaultSystem,
 } from "@workshop/markdown/portable";
+import { nodeWorkerLauncher } from "@workshop/markdown/node";
 import type { NoteDocuments } from "./documents";
 import { isInside, pathInsideRoots } from "./paths";
 
@@ -39,8 +40,8 @@ export interface NodeVaultOptions {
   readonly roots: () => readonly string[];
   /** Where vault snapshots are kept between sessions. */
   readonly storage: string;
-  /** The built parser worker (`markdown/workers/vault.cjs`). */
-  readonly parserWorker: string;
+  /** The built workers (`markdown/workers`); the parser is `vault.cjs`. */
+  readonly workers: string;
   readonly warn: (message: string) => void;
 }
 
@@ -75,7 +76,7 @@ export function createNodeVaultSystem(options: NodeVaultOptions): VaultSystem {
         }
       }),
     onDocumentClosed: (listener) => documents.onClosed(listener),
-    createParser: () => createVaultParser(options.parserWorker),
+    createParser: () => createVaultParser(nodeWorkerLauncher(options.workers)),
     hash: (text) => createHash("sha256").update(text).digest("hex"),
     warn: options.warn,
   };

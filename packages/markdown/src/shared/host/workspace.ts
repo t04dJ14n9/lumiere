@@ -1,4 +1,5 @@
 import type { Disposer } from "@workshop/core";
+import type { WorkerLauncher } from "../workers";
 import type { DiagnosticSink, WorkspaceFiles } from "../workspace-files";
 
 /** The workspace: its folders, trust and files. Plugins pass URIs; the host checks them. */
@@ -57,5 +58,6 @@ export interface WorkspaceStorage {
 export interface Extensions {
   /** Whether another extension, such as Marp, is installed. */
   isInstalled(id: string): boolean;
-  workerPath(name: "search"): string;
+  /** Starts the built workers (search; the vault parser has its own). */
+  readonly workers: WorkerLauncher;
 }

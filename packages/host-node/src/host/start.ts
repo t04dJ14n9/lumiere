@@ -88,7 +88,7 @@ export async function startLumiere(
     settings: host.settings,
     roots: () => [...roots],
     storage: options.data,
-    parserWorker: path.join(markdownDist, "workers", "vault.cjs"),
+    workers: path.join(markdownDist, "workers"),
     warn: log,
   });
   const root: RootContext = createRoot({

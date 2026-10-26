@@ -3,6 +3,7 @@ import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
 import type { WorkspaceFiles } from "../../src/shared/workspace-files";
 import { gitSource } from "../../src/host/git-source";
+import type { WorkerLauncher } from "../../src/shared/workers";
 import { realContains } from "../../src/host/real-contains";
 
 /** Members to replace, per host service. */
@@ -116,7 +117,7 @@ function defaultHost(): HostServices {
       revealTextEditor: async () => {},
     },
     storage: { get: (_key, fallback) => fallback, update: async () => {} },
-    extensions: { isInstalled: () => false, workerPath: () => "" },
+    extensions: { isInstalled: () => false, workers: noWorkers() },
     navigation: {
       registerReveal: none,
       registerNativeLinks: none,
@@ -169,6 +170,15 @@ function unavailableFiles(): WorkspaceFiles {
     remove: unavailable,
     isSymbolicLink: async () => false,
     pickFile: async () => undefined,
+  };
+}
+
+/** Starting a worker fails, as when its build is missing. */
+function noWorkers(): WorkerLauncher {
+  return {
+    start: () => {
+      throw new Error("No workers in this fake host");
+    },
   };
 }
 

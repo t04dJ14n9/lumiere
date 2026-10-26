@@ -209,6 +209,7 @@ export default tseslint.config(
           "./packages/markdown/src/plugins/tsconfig.host.json",
           "./packages/markdown/src/plugins/tsconfig.webview.json",
           "./packages/markdown/src/workers/tsconfig.json",
+          "./packages/markdown/src/workers/tsconfig.web.json",
           "./packages/pdf/tsconfig.json",
           "./packages/pdf/src/extension/tsconfig.json",
           "./packages/pdf/src/webview/tsconfig.json",
