@@ -7,7 +7,7 @@ import {
 import type { PdfSettings } from "../../settings";
 import type { PdfPanel } from "../pdf/panel";
 import type { PdfPanels } from "../pdf/panels";
-import { OUTLINE_COMMAND_IDS } from "../pdf/registered-commands";
+import { OUTLINE_COMMAND_IDS } from "../../../shared/command-ids";
 import { createOutlineFocus } from "./focus";
 
 const FOLLOW_SETTING = "lumiere.pdf.outline.followCursor";

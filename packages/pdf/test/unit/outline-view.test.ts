@@ -8,7 +8,7 @@ import {
   findActiveOutlineItem,
   flattenOutlineForPicker,
 } from "../../src/shared/outline";
-import { OUTLINE_COMMAND_IDS } from "../../src/extension/plugins/pdf/registered-commands";
+import { OUTLINE_COMMAND_IDS } from "../../src/shared/command-ids";
 import {
   Disposable,
   EventEmitter,
@@ -205,7 +205,7 @@ function harness(enabled = false, visible = true) {
       findActiveOutlineItem,
       flattenOutlineForPicker,
     },
-    "../pdf/registered-commands": { OUTLINE_COMMAND_IDS },
+    "../../../shared/command-ids": { OUTLINE_COMMAND_IDS },
     "./focus": {
       createOutlineFocus: () => ({
         sync() {},

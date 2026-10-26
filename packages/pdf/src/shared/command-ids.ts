@@ -1,4 +1,4 @@
-import { PDF_BRIDGE_ENVELOPE_COMMAND } from "../../../shared/bridge-envelope";
+import { PDF_BRIDGE_ENVELOPE_COMMAND } from "./bridge-envelope";
 
 /**
  * Command ids passed to `vscode.commands.registerCommand`.

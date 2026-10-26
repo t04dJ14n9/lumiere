@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { HISTORY_COMMAND_IDS } from "../pdf/registered-commands";
+import { HISTORY_COMMAND_IDS } from "../../../shared/command-ids";
 import { PdfHistories } from "./histories";
 import manifest from "./manifest";
 
