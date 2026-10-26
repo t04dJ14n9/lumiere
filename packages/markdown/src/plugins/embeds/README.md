@@ -30,6 +30,7 @@ it go (`image-selection.ts`, `image-size.ts`). While selected, the caret is hidd
 - `manifest.ts`: enablement and Insert Embed contribution.
 - `webview.ts`: renderer, post-processor and command registrations.
 - `post-process.ts`: resource resolution, per-kind display and pass lifetime.
+- `resource-cache.ts`: what embeds resolved, so a block rendered again shows its files at once.
 - `note.ts`: note/heading/block selection, ancestry and source-line mapping.
 - `image.ts`: zoom toolbar, fit/actual sizing, pan and resize controls.
 - `image-selection.ts`: selecting an image by a click, and its keys.

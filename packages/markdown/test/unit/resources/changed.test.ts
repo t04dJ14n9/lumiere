@@ -8,7 +8,7 @@ import {
   forgetEmbedResources,
   getCachedEmbedResource,
   setCachedEmbedResource,
-} from "../../../src/plugins/embeds/post-process";
+} from "../../../src/plugins/embeds/resource-cache";
 import { rpcPair } from "../../support/rpc-pair";
 
 test("a rewritten file resolves again, with its new version, after resources/changed", async () => {

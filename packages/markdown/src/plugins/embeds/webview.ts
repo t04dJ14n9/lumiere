@@ -15,7 +15,8 @@ import type { EditorView } from "@codemirror/view";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
-import { enhanceEmbeds, forgetEmbedResources } from "./post-process";
+import { enhanceEmbeds } from "./post-process";
+import { forgetEmbedResources } from "./resource-cache";
 import {
   embedEditing,
   embedsImage,

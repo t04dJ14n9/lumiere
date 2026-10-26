@@ -7,6 +7,10 @@ import { mountImageEmbedActions } from "./embed-actions";
 import { embeddedNote, MissingSection } from "./note";
 import { renderBaseEmbed } from "./base-embed";
 import { mountPdfEmbed } from "./pdf-embed";
+import {
+  getCachedEmbedResource,
+  setCachedEmbedResource,
+} from "./resource-cache";
 
 interface EmbedOptions {
   pass: RenderPass;
@@ -369,58 +373,8 @@ function noteName(uri: string | undefined): string | undefined {
   return name && decodeURIComponent(name).replace(/\.md$/iu, "");
 }
 
-const EMBED_CACHE_LIMIT = 256;
-const embedResourceCaches = new WeakMap<
-  EmbedOptions["resources"],
-  Map<string, Resource>
->();
-
 function isPromise(
   value: Resource | Promise<Resource>,
 ): value is Promise<Resource> {
   return typeof (value as { then?: unknown }).then === "function";
-}
-
-/** Drop what embeds resolved with `resources`: the files may have changed. */
-export function forgetEmbedResources(
-  resources: EmbedOptions["resources"],
-): void {
-  embedResourceCaches.delete(resources);
-}
-
-export function getCachedEmbedResource(
-  resources: EmbedOptions["resources"],
-  key: string,
-): Resource | undefined {
-  const map = embedResourceCaches.get(resources);
-  if (!map) {
-    return undefined;
-  }
-  const cached = map.get(key);
-  if (cached !== undefined) {
-    map.delete(key);
-    map.set(key, cached);
-  }
-  return cached;
-}
-
-export function setCachedEmbedResource(
-  resources: EmbedOptions["resources"],
-  key: string,
-  resource: Resource,
-): void {
-  let map = embedResourceCaches.get(resources);
-  if (!map) {
-    map = new Map<string, Resource>();
-    embedResourceCaches.set(resources, map);
-  }
-  if (map.has(key)) {
-    map.delete(key);
-  } else if (map.size >= EMBED_CACHE_LIMIT) {
-    const oldest = map.keys().next().value;
-    if (oldest !== undefined) {
-      map.delete(oldest);
-    }
-  }
-  map.set(key, resource);
 }
