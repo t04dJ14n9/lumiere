@@ -159,8 +159,6 @@ function rememberPooledShell(
 
 /** Own a render pass and retain finished DOM across viewport exit/re-entry (`RW`). */
 export class MarkdownBlock extends WidgetType {
-  private retained: RetainedShell | undefined;
-
   constructor(
     readonly block: RenderBlock,
     private readonly render: RenderService,
@@ -179,11 +177,10 @@ export class MarkdownBlock extends WidgetType {
   // forced a layout for every block CodeMirror mounted.
   override toDOM(view: EditorView): HTMLElement {
     const poolKey = `${this.block.kind}\0${this.editing.reveal}\0${this.editing.guardMargin ? 1 : 0}\0${this.editing.editSummary ? 1 : 0}\0${this.block.source}`;
-    const reusable = isShellReusable(this.retained, this.render)
-      ? this.retained!
-      : takePooledShell(this.render, poolKey);
+    // The pool alone keeps finished blocks, so its limit bounds what stays
+    // in memory; a widget holding its last block kept every diagram alive.
+    const reusable = takePooledShell(this.render, poolKey);
     if (reusable) {
-      this.retained = reusable;
       reusable.currentView = view;
       this.mountShell(view, reusable, poolKey);
       announceRemount(reusable.body);
@@ -198,7 +195,6 @@ export class MarkdownBlock extends WidgetType {
       render: this.render,
       onSettled: () => {
         if (isShellSettled(created, this.render)) {
-          this.retained = created;
           rememberPooledShell(this.render, poolKey, created);
         }
       },
@@ -258,13 +254,9 @@ export class MarkdownBlock extends WidgetType {
     untilDestroyed(entry.shell, () => {
       events.abort();
       if (isShellSettled(entry, this.render)) {
-        this.retained = entry;
         rememberPooledShell(this.render, poolKey, entry);
       } else {
         entry.alive = false;
-        if (this.retained === entry) {
-          this.retained = undefined;
-        }
         blockDomPool.get(this.render)?.delete(poolKey);
         void entry.pass?.dispose();
       }
