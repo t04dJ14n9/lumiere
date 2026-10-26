@@ -131,6 +131,40 @@ export function rememberMarkdownBlockHeight(
   }
 }
 
+const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
+
+/** Remember a mounted block's painted height as it changes. */
+export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
+  if (
+    !source ||
+    blockObservers.has(dom) ||
+    typeof ResizeObserver === "undefined"
+  ) {
+    return;
+  }
+  const observer = new ResizeObserver((entries) => {
+    const height = entries[0]?.contentRect.height ?? 0;
+    if (height > 0) {
+      rememberMarkdownBlockHeight(source, height);
+    }
+  });
+  observer.observe(dom);
+  blockObservers.set(dom, observer);
+}
+
+/** Stop watching an unmounted block, remembering its last height. */
+export function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
+  blockObservers.get(dom)?.disconnect();
+  blockObservers.delete(dom);
+  if (typeof dom.getBoundingClientRect !== "function") {
+    return;
+  }
+  const height = dom.getBoundingClientRect().height;
+  if (height > 0) {
+    rememberMarkdownBlockHeight(source, height);
+  }
+}
+
 /** Test helper: drop remembered MarkdownBlock heights. */
 export function clearMarkdownBlockHeights(): void {
   measuredBlockHeights.clear();

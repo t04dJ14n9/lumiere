@@ -7,7 +7,8 @@ import { bindFenceClickGuard } from "./fence-click-guard";
 import {
   markdownBlockEstimatedHeight,
   rememberMarkdownBlockContentWidth,
-  rememberMarkdownBlockHeight,
+  unwatchMarkdownBlock,
+  watchMarkdownBlock,
 } from "./markdown-block-height";
 import { selectRenderedSource } from "./source-selection";
 
@@ -48,38 +49,6 @@ export const FENCED_PREVIEW: BlockEditing = {
   guardMargin: true,
   select: fenceBody,
 };
-
-const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
-
-function watchMarkdownBlock(dom: HTMLElement, source: string): void {
-  if (
-    !source ||
-    blockObservers.has(dom) ||
-    typeof ResizeObserver === "undefined"
-  ) {
-    return;
-  }
-  const observer = new ResizeObserver((entries) => {
-    const height = entries[0]?.contentRect.height ?? 0;
-    if (height > 0) {
-      rememberMarkdownBlockHeight(source, height);
-    }
-  });
-  observer.observe(dom);
-  blockObservers.set(dom, observer);
-}
-
-function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
-  blockObservers.get(dom)?.disconnect();
-  blockObservers.delete(dom);
-  if (typeof dom.getBoundingClientRect !== "function") {
-    return;
-  }
-  const height = dom.getBoundingClientRect().height;
-  if (height > 0) {
-    rememberMarkdownBlockHeight(source, height);
-  }
-}
 
 interface RetainedShell {
   readonly shell: HTMLElement;
