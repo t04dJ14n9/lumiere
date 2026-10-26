@@ -1,4 +1,5 @@
 import { WidgetType } from "@codemirror/view";
+import { RecentlyUsed } from "../../shared/recently-used";
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
@@ -66,7 +67,10 @@ interface RetainedShell {
 }
 
 const BLOCK_DOM_CACHE_LIMIT = 128;
-let blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+let blockDomPool = new WeakMap<
+  RenderService,
+  RecentlyUsed<string, RetainedShell>
+>();
 let renderGenerations = new WeakMap<RenderService, number>();
 
 function currentRenderGeneration(render: RenderService): number {
@@ -82,10 +86,7 @@ export function evictMarkdownBlockDomPool(render: RenderService): void {
   }
   blockDomPool.delete(render);
   for (const entry of pool.values()) {
-    if (!entry.shell.isConnected) {
-      entry.alive = false;
-      void entry.pass?.dispose();
-    }
+    retire(entry);
   }
 }
 
@@ -117,14 +118,16 @@ function takePooledShell(
   render: RenderService,
   key: string,
 ): RetainedShell | undefined {
-  const pool = blockDomPool.get(render);
-  const entry = pool?.get(key);
-  if (!entry || !isShellReusable(entry, render)) {
-    return undefined;
+  const entry = blockDomPool.get(render)?.get(key);
+  return isShellReusable(entry, render) ? entry : undefined;
+}
+
+/** A pooled block that leaves the pool while out of the page is done for. */
+function retire(entry: RetainedShell): void {
+  if (!entry.shell.isConnected) {
+    entry.alive = false;
+    void entry.pass?.dispose();
   }
-  pool!.delete(key);
-  pool!.set(key, entry);
-  return entry;
 }
 
 function rememberPooledShell(
@@ -134,25 +137,15 @@ function rememberPooledShell(
 ): void {
   let pool = blockDomPool.get(render);
   if (!pool) {
-    pool = new Map<string, RetainedShell>();
+    pool = new RecentlyUsed<string, RetainedShell>(
+      BLOCK_DOM_CACHE_LIMIT,
+      (_key, oldest) => retire(oldest),
+    );
     blockDomPool.set(render, pool);
   }
   const prev = pool.get(key);
-  if (prev && prev !== entry && !prev.shell.isConnected) {
-    prev.alive = false;
-    void prev.pass?.dispose();
-  }
-  pool.delete(key);
-  if (pool.size >= BLOCK_DOM_CACHE_LIMIT) {
-    const oldestKey = pool.keys().next().value;
-    if (oldestKey !== undefined) {
-      const oldest = pool.get(oldestKey);
-      pool.delete(oldestKey);
-      if (oldest && !oldest.shell.isConnected) {
-        oldest.alive = false;
-        void oldest.pass?.dispose();
-      }
-    }
+  if (prev && prev !== entry) {
+    retire(prev);
   }
   pool.set(key, entry);
 }
@@ -298,7 +291,10 @@ export class MarkdownBlock extends WidgetType {
 
 /** Test helper: forget pooled block shells. */
 export function clearMarkdownBlockPool(): void {
-  blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+  blockDomPool = new WeakMap<
+    RenderService,
+    RecentlyUsed<string, RetainedShell>
+  >();
   renderGenerations = new WeakMap<RenderService, number>();
 }
 

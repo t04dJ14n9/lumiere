@@ -19,6 +19,7 @@
  * which fights a scroll in flight; the reader has left it behind anyway.
  */
 
+import { RecentlyUsed } from "../../shared/recently-used";
 import { RENDER_REMOUNT_EVENT } from "../render/api";
 
 /** Calls `onMount` each time `element` is put in the page; returns a stop. */
@@ -56,26 +57,9 @@ interface Job {
 }
 
 /** Least recently used SVG by cache key, shared by every editor in the webview. */
-export class MermaidSvgCache {
-  private readonly entries = new Map<string, string>();
-
-  constructor(private readonly maxEntries = 64) {}
-
-  get(key: string): string | undefined {
-    const value = this.entries.get(key);
-    if (value !== undefined) {
-      this.entries.delete(key);
-      this.entries.set(key, value);
-    }
-    return value;
-  }
-
-  set(key: string, svg: string): void {
-    this.entries.delete(key);
-    this.entries.set(key, svg);
-    while (this.entries.size > this.maxEntries) {
-      this.entries.delete(this.entries.keys().next().value!);
-    }
+export class MermaidSvgCache extends RecentlyUsed<string, string> {
+  constructor(maxEntries = 64) {
+    super(maxEntries);
   }
 }
 
