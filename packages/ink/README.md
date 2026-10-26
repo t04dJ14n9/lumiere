@@ -42,7 +42,8 @@ A sketch is one file, `*.sketch.svg`, that shows as drawn in any SVG viewer
     altitude and azimuth (radians, as UIKit defines them), and the width
     and opacity the ink drew there.
   - Tools are PencilKit's inks: `pen`, `fountainPen`, `pencil`, `marker`,
-    `monoline`, `watercolor`, `crayon`. An unknown tool reads as `pen`.
+    `monoline`, `watercolor`, `crayon`, `reed`. An unknown tool reads as
+    `pen`.
   - Colours are `#rrggbb` or `#rrggbbaa`, as drawn on light paper.
   - `pencilKit` is PencilKit's own drawing data, so the iPad reopens a
     sketch exactly as drawn. `strokes` is the fingerprint of the strokes it
