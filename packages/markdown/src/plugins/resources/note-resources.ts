@@ -1,6 +1,6 @@
 import type { HostServices } from "../../shared/host";
 import { mediaKind } from "../../shared/media-kinds";
-import type { LinkSyntax } from "../../shared/vault-path";
+import { decodeLinkPath, type LinkSyntax } from "../../shared/vault-path";
 import type { VaultFile, VaultIndex } from "../vault/api";
 import type { BaseNoteEntry, Resource, Resources } from "./api";
 import { containedResource, contains } from "./containment";
@@ -41,7 +41,13 @@ export class NoteResources implements Resources {
       decodeURIComponent(new URL(vault.root).pathname).replace(/\/$/, "")
         .length + 1,
     );
-    const file = vault.resolveLink(target, relativeSource, syntax);
+    // A Markdown destination is percent-encoded (`My%20image.png`), and the
+    // vault resolves paths as the note's metadata keeps them: decoded.
+    const file = vault.resolveLink(
+      syntax === "markdown" ? decodeLinkPath(target) : target,
+      relativeSource,
+      syntax,
+    );
     if (!file) {
       throw new Error("Resource not found");
     }
