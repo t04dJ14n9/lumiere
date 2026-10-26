@@ -8,6 +8,8 @@
 
 ## Unreleased
 
+- **Lumière for iPad (preview)**: the same window on the iPad, over the
+  app's own folder and folders picked in Files, with no server (`apps/ipad`).
 - **Lumière for the web (preview)**: the desktop app's window in a browser,
   with no server and offline (`apps/web`). Open a folder of your own
   (Chromium) or keep notes in the browser; it comes back where you left it.

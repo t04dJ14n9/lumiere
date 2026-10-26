@@ -307,11 +307,20 @@ Order: H1 → L1 → C1 and T1 (either first; C1 needs decision 1) → P1 → P2
   vaults in the browser (its private storage where a page can write it, else
   IndexedDB, as in Safari), and works offline.
 
-For L1 the iPad app gives host-web its files as a `VaultFileSystem` over the
-`VaultFileSystem` Capacitor plugin, and starts the window with
-`startLocalHost` as `apps/web/src/main.ts` does. Not done yet: images in
-notes (their `lumiere/file` URLs need an answer: the web app's service
-worker, or the iPad's scheme handler), and PDFs in tabs.
+L1 runs, for reading and writing notes: the iPad app gives host-web its
+vaults as `VaultFileSystem`s over the native `LumiereVaultFiles` plugin (the
+app's folder, and folders picked in Files) and starts the window with
+`startLocalHost`, as `apps/web/src/main.ts` does. Checked in the simulator:
+a note opens in Live Preview with its outline, and what is typed is written
+to its file. Not done yet:
+
+- the touch work in section 3 (safe areas: the status bar covers the top of
+  the window; long-press for the right-click menu; narrow layouts); the
+  first tap after launch only wakes the page;
+- images in notes (their `lumiere/file` URLs need an answer: the web app's
+  service worker, or the iPad's scheme handler), and PDFs in tabs;
+- the window's commands from the native menu reaching the window
+  (`capacitor.ts`, beside `tauri.ts`).
 
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript
