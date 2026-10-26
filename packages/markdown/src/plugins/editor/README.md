@@ -119,8 +119,10 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `clipboard.ts`: validated clipboard RPC client.
 - `contributions.ts`: feature-owned view-state validation and restoration.
 - `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.
-- `view-state.ts`: geometric scroll anchoring and presentation restoration.
-- `view-state.test.ts`: widget scroll input cancels queued restore corrections per panel.
+- `view-state.ts`: geometric scroll anchoring and presentation restoration; a restored line stays pinned until the reader scrolls anywhere in the scroller.
+- `view-state.test.ts`: the reader's scroll and input end the pin, the pin's own corrections do not, and every listener is passive.
+- `keep-below-still.ts`: when a rendered block across the top edge resizes, holds its bottom, so the text below stays still.
+- `keep-below-still.test.ts`: which block is held, and by how much the view scrolls.
 - `view-transfer.ts`: flushed, version-checked native view transfers.
 - `extensions.test.ts`: ordering, owner tie-breaks and retained state units.
 - `settings.test.ts`: indentation settings and compartment preservation units.
