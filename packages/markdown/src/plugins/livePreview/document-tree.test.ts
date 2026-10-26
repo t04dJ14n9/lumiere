@@ -13,9 +13,12 @@ import {
   type IdleScheduler,
   type ParsedView,
 } from "./document-tree";
+import { syntaxTree } from "@codemirror/language";
 import { DocumentParse } from "./document-parse";
+import { markdownTree } from "./api";
 import {
   cachedMarkdown,
+  markdownLanguageSupport,
   markdownParser,
   parseMarkdown,
 } from "../../markdown/dialect";
@@ -209,4 +212,18 @@ test("the background parse adopts a tree another reader already made", () => {
   const full = parseMarkdown(editor.view.state.doc);
   assert.equal(editor.runSlices(), 1);
   assert.equal(editor.tree(), full);
+});
+
+test("markdownTree reads Live Preview's tree, else CodeMirror's, else parses", () => {
+  const doc = "# Title\n\nbody";
+  const language = markdownLanguageSupport();
+  const live = EditorState.create({
+    doc,
+    extensions: [documentTree, language],
+  });
+  assert.equal(markdownTree(live), live.field(documentTree));
+  const source = EditorState.create({ doc, extensions: [language] });
+  assert.equal(markdownTree(source), syntaxTree(source));
+  const bare = EditorState.create({ doc });
+  assert.equal(markdownTree(bare), parseMarkdown(bare.doc));
 });

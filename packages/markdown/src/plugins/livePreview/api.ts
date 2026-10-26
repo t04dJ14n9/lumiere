@@ -7,6 +7,7 @@ import {
   type Transaction,
 } from "@codemirror/state";
 import type { SyntaxNodeRef, Tree } from "@lezer/common";
+import { language, syntaxTree } from "@codemirror/language";
 import type { EditorView, WidgetType } from "@codemirror/view";
 import type { Disposer } from "@workshop/core";
 import { parseMarkdown } from "../../markdown/dialect/parser";
@@ -152,3 +153,16 @@ export const documentTree = StateField.define<Tree>({
       : tree;
   },
 });
+
+/**
+ * The Markdown syntax tree of an editor state: Live Preview's while it is
+ * on, else CodeMirror's language tree. Either may cover only a prefix of a
+ * large note that is still parsing. A state with neither (a bare test
+ * state) gets a full parse.
+ */
+export function markdownTree(state: EditorState): Tree {
+  return (
+    state.field(documentTree, false) ??
+    (state.facet(language) ? syntaxTree(state) : parseMarkdown(state.doc))
+  );
+}

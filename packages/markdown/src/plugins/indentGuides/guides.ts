@@ -2,8 +2,7 @@ import { Decoration } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import type { EditorState, Line, Range } from "@codemirror/state";
 import type { Tree } from "@lezer/common";
-import { parseMarkdown } from "../../markdown/dialect";
-import { documentTree } from "../livePreview/api";
+import { markdownTree } from "../livePreview/api";
 
 export function indentation(text: string, tabSize: number): number {
   let width = 0;
@@ -17,10 +16,6 @@ export function indentation(text: string, tabSize: number): number {
     }
   }
   return width;
-}
-
-function syntaxForState(state: EditorState): Tree {
-  return state.field(documentTree, false) ?? parseMarkdown(state.doc);
 }
 
 /**
@@ -44,7 +39,7 @@ function listDepth(item: { name?: string; parent: unknown }): number {
 
 export function activeListGuideColumn(state: EditorState): number | undefined {
   const head = state.selection.main.head;
-  const tree = syntaxForState(state);
+  const tree = markdownTree(state);
   let item = null;
   for (
     let node: ReturnType<typeof tree.resolveInner> | null = tree.resolveInner(
@@ -118,7 +113,7 @@ export function guideDecorations(
   isLivePreview: boolean,
 ): DecorationSet {
   const ranges: Range<Decoration>[] = [];
-  const tree = isLivePreview ? syntaxForState(state) : undefined;
+  const tree = isLivePreview ? markdownTree(state) : undefined;
   for (const visible of visibleRanges) {
     for (let at = visible.from; at <= visible.to;) {
       const line = state.doc.lineAt(at);
