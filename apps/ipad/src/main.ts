@@ -68,12 +68,14 @@ async function main(): Promise<void> {
       return path;
     },
   });
+  const insertSketch = () => local.host.run(INSERT_SKETCH_COMMAND);
   startWindow(document.getElementById("root")!, {
     ...local.backend,
     appCommands,
+    insertSketch,
   });
   insertSketchRequests(() => {
-    local.host.run(INSERT_SKETCH_COMMAND).catch((error: unknown) => {
+    insertSketch().catch((error: unknown) => {
       console.warn("Insert Sketch failed", error);
     });
   });

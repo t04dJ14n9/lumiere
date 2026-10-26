@@ -70,6 +70,12 @@ export interface WindowBackend {
   readonly appCommands?: (
     listener: (command: AppCommand) => void,
   ) => () => void;
+  /**
+   * Start a new sketch in the shown note, where the host can draw (its
+   * `ink` service: PencilKit on the iPad). The window then shows a pencil
+   * button beside its layout buttons; without it there is none.
+   */
+  readonly insertSketch?: () => Promise<unknown>;
   /** A folder picker the window can show, when it has one; the vault's path. */
   readonly pickFolder?: () => Promise<string | undefined>;
   /**

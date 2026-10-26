@@ -376,8 +376,10 @@ web apps is still to come:
   host-node pass it to the plugins' bootstrap. Elsewhere the sketch plugin
   waits: Insert Sketch stays out of the menus, and sketches show and select
   as images.
-- **Insert Sketch** is in the iPad's edit menu beside More… (only when a
-  note's page has the focus) and in Lumière's right-click menu. It opens a
+- **Insert Sketch** is a pencil button beside the window's layout buttons
+  while a note is shown (as Notes' markup button), and is in the iPad's
+  edit menu beside More… (only when a note's page has the focus) and in
+  Lumière's right-click menu. It opens a
   full-screen PencilKit canvas with the system tool picker; Done saves
   `2026-10-26 17.34.sketch.svg` in Obsidian's attachment folder and embeds
   it below the caret's line, in a paragraph of its own, linked as the
