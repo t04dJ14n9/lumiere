@@ -1,8 +1,10 @@
-// Where the right-click menu opens when it is asked for at the selection
-// (the iPad's More…): the page's DOM is faked, since these tests run in Node.
+// The page's right-click menu: where it opens when it is asked for at the
+// selection (the iPad's More…), and how big its rows are. The page's DOM is
+// faked, since these tests run in Node.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { menuSpot } from "../../src/page/context-menu";
+import { PAGE_STYLE } from "../../src/page/ui";
 
 const rect = (left: number, top: number, width: number, height: number) =>
   ({ left, top, width, height, bottom: top + height }) as DOMRect;
@@ -48,4 +50,12 @@ test("with no selection it opens under the focused element", () => {
   );
   assert.equal(spot.target, body);
   assert.deepEqual([spot.x, spot.y], [0, 800]);
+});
+
+test("on a touch screen the menu's rows are tall enough for a finger", () => {
+  const coarse = PAGE_STYLE.split("@media (pointer:coarse)")[1] ?? "";
+  const row = /\.lumiere-page-menu \[role=menuitem\]\{([^}]*)\}/.exec(coarse);
+  assert.ok(row, "a coarse-pointer rule for the menu's rows");
+  assert.match(row[1] ?? "", /min-height:44px/);
+  assert.match(coarse, /\.lumiere-page-menu\{[^}]*font-size:17px/);
 });

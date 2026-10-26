@@ -15,7 +15,8 @@ import {
 type Send = (frame: PageFrame) => void;
 type Prompt = Extract<UiRequest, { type: "ask" | "input" | "pick" }>;
 
-const STYLE = `
+/** The page's styles for what it draws in VS Code's place. */
+export const PAGE_STYLE = `
 .lumiere-page-toast{position:fixed;bottom:12px;right:12px;max-width:min(420px,80vw);padding:8px 12px;border-radius:6px;z-index:1000;
   background:var(--vscode-editorWidget-background);color:var(--vscode-editorWidget-foreground);border:1px solid var(--vscode-widget-border);font:13px var(--vscode-font-family)}
 .lumiere-page-toast.error{border-color:var(--vscode-errorForeground)}
@@ -42,6 +43,11 @@ const STYLE = `
   color:var(--vscode-menu-selectionForeground,inherit)}
 .lumiere-page-menu [aria-disabled]{opacity:.45}
 .lumiere-page-menu hr{border:0;border-top:1px solid var(--vscode-menu-separatorBackground,var(--vscode-widget-border));margin:4px 2px}
+/* A finger needs a row about 44 points tall, as the window's buttons grow on a touchscreen. */
+@media (pointer:coarse){
+.lumiere-page-menu{min-width:240px;padding:6px;border-radius:10px;font-size:17px}
+.lumiere-page-menu [role=menuitem]{display:flex;align-items:center;box-sizing:border-box;min-height:44px;padding:0 32px 0 14px;border-radius:6px}
+.lumiere-page-menu hr{margin:6px 4px}}
 `;
 
 export function createUi(send: Send): (request: UiRequest) => void {
@@ -97,7 +103,7 @@ function openInEmbedder(message: OpenMessage): void {
 
 function installStyle(): void {
   const style = document.createElement("style");
-  style.textContent = STYLE;
+  style.textContent = PAGE_STYLE;
   document.head.append(style);
 }
 
