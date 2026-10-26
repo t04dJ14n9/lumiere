@@ -12,7 +12,11 @@
   app's own folder and folders picked in Files, with no server (`apps/ipad`).
   On a narrow screen the note takes the whole width and the files or the
   outline float over it. More… in the edit menu opens Lumière's right-click
-  menu, and the keyboard stays down until you tap the note.
+  menu, and the keyboard stays down until you tap the note. PDFs open in
+  tabs in Lumière's PDF viewer, in the web app too.
+- **Lumière desktop and the web app**: a lighter tab bar, with tabs as soft
+  pills. Plugins that need what the app cannot give them (Git, VS Code)
+  are off there.
 - **Lumière for the web (preview)**: the desktop app's window in a browser,
   with no server and offline (`apps/web`). Open a folder of your own
   (Chromium) or keep notes in the browser; it comes back where you left it.

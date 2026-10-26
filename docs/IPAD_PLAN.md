@@ -326,6 +326,15 @@ to its file. The touch work in section 3 is in:
   right-click menu at the selection, since a long-press belongs to the
   cursor; the menu bar's and keys' commands reach the window
   (`appCommands` on the window's backend).
+- PDFs open in a tab in Lumière's own viewer (EmbedPDF, as in VS Code),
+  with its toolbar, outline and search; a finger scrolls the pages. A
+  stand-in for the viewer's extension host hands it the PDF
+  (`openPdfPage`, host-node's `src/page/pdf-shim.ts`): WebKit's own PDF
+  view on the iPad shows only the first page.
+- plugins the host cannot serve (Git, the graph's panel, the VS Code and
+  Cursor bridges, Marp) are off, as their settings are hidden.
+- `apps/ipad/scripts/sample-vault.mjs` writes a sample vault with linked
+  notes and PDFs, for trying the app.
 
 Not done yet:
 
@@ -333,8 +342,9 @@ Not done yet:
   wake the page (in the simulator it opens the note, after a moment);
   whether the edit menu shows after a long-press (in the simulator it shows
   on a tap on the selection); Split View widths;
-- images in notes (their `lumiere/file` URLs need an answer: the web app's
-  service worker, or the iPad's scheme handler), and PDFs in tabs.
+- images and PDFs embedded in notes (their `lumiere/file` URLs need an
+  answer: the web app's service worker, or the iPad's scheme handler);
+- the Pencil (P1): only the sketch format exists (`packages/ink`).
 
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript
