@@ -17,7 +17,11 @@ let package = Package(
     targets: [
         .target(
             name: "LumiereNative",
-            dependencies: [.product(name: "Capacitor", package: "capacitor-swift-pm")]
+            dependencies: [
+                .product(name: "Capacitor", package: "capacitor-swift-pm"),
+                // Capacitor's binary imports it; without it the package's own tests do not build.
+                .product(name: "Cordova", package: "capacitor-swift-pm"),
+            ]
         ),
         .testTarget(name: "LumiereNativeTests", dependencies: ["LumiereNative"]),
     ]

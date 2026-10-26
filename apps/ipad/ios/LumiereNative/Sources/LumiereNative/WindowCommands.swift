@@ -46,8 +46,9 @@ let commandKeys: [CommandKey] = [
     CommandKey(command: .openSettings, input: ",", modifiers: .command),
     CommandKey(command: .openVault, input: "o", modifiers: .command),
     CommandKey(command: .closeTab, input: "w", modifiers: .command),
-    CommandKey(command: .toggleSidebar, input: "b", modifiers: .command),
-    CommandKey(command: .toggleOutline, input: "b", modifiers: [.command, .alternate]),
+    // No ⌘B or ⌥⌘B here: inside a note ⌘B is Bold, and a menu key would take
+    // it before the page; UIKit's own Format menu has ⌘B too. The window
+    // still toggles its panels with them when a note does not have the keys.
     CommandKey(command: .lastTab, input: "\t", modifiers: .control),
     CommandKey(command: .nextTab, input: "]", modifiers: [.command, .shift]),
     CommandKey(command: .previousTab, input: "[", modifiers: [.command, .shift]),
@@ -102,12 +103,12 @@ public enum WindowMenu {
     }
 
     /// The command's menu item, with its first key, and its other keys hidden.
-    private static func items(for command: WindowCommand) -> [UIMenuElement] {
+    static func items(for command: WindowCommand) -> [UIMenuElement] {
         let keys = commandKeys.filter { $0.command == command }
         guard let first = keys.first else { return [self.command(command)] }
-        let shown = keyCommand(first, title: command.title)
-        let hidden = keys.dropFirst().map { key -> UIKeyCommand in
-            let alternate = keyCommand(key, title: command.title)
+        let shown = keyCommand(first, title: command.title, variant: 0)
+        let hidden = keys.dropFirst().enumerated().map { index, key -> UIKeyCommand in
+            let alternate = keyCommand(key, title: command.title, variant: index + 1)
             alternate.attributes = .hidden
             return alternate
         }
@@ -122,13 +123,15 @@ public enum WindowMenu {
         )
     }
 
-    private static func keyCommand(_ key: CommandKey, title: String) -> UIKeyCommand {
+    /// UIKit refuses two menu items with the same action and property list,
+    /// so a command's other keys carry `<command>#<n>` (`init(sender:)`).
+    private static func keyCommand(_ key: CommandKey, title: String, variant: Int) -> UIKeyCommand {
         UIKeyCommand(
             title: title,
             action: #selector(WindowCommandPerforming.performWindowCommand(_:)),
             input: key.input,
             modifierFlags: key.modifiers,
-            propertyList: key.command.rawValue
+            propertyList: variant == 0 ? key.command.rawValue : "\(key.command.rawValue)#\(variant)"
         )
     }
 }
@@ -137,6 +140,6 @@ extension WindowCommand {
     /// The command a menu item or key carries, if it is one of the window's.
     init?(sender: UICommand) {
         guard let name = sender.propertyList as? String else { return nil }
-        self.init(rawValue: name)
+        self.init(rawValue: String(name.prefix { $0 != "#" }))
     }
 }
