@@ -4,7 +4,11 @@ import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
-import { announceRemount, releasePaintReserve } from "./markdown-block-reserve";
+import {
+  announceRemount,
+  releasePaintReserve,
+  releaseReserveOnceMounted,
+} from "./markdown-block-reserve";
 import {
   markdownBlockEstimatedHeight,
   unwatchMarkdownBlock,
@@ -185,6 +189,7 @@ export class MarkdownBlock extends WidgetType {
       reusable.currentView = view;
       this.mountShell(view, reusable, poolKey);
       announceRemount(reusable.body);
+      releaseReserveOnceMounted(view, reusable.shell, reusable.body);
       return reusable.shell;
     }
     const created = this.createShell(view);
