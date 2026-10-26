@@ -11,8 +11,12 @@
  * Mermaid keeps shared state, so renders run one at a time. Each starts just
  * after a frame, so a run of diagrams mounting together costs a frame each
  * instead of one long task. A diagram that left the page before its turn
- * waits until it is mounted again, and the one nearest the window goes
- * first.
+ * waits until it is mounted again, and the one nearest the view goes first.
+ *
+ * While the reader scrolls, diagrams behind them (above, scrolling down)
+ * wait until the scroll stops. Drawing one changes the height above the
+ * view, and CodeMirror keeps the text still by moving the scroll position,
+ * which fights a scroll in flight; the reader has left it behind anyway.
  */
 
 import { RENDER_REMOUNT_EVENT } from "../render/api";
@@ -28,8 +32,13 @@ export interface MermaidQueueOptions {
   watchMount?: MountWatch;
   /** Resolves just after the next frame. */
   afterFrame?: () => Promise<void>;
-  /** Pixels between an element and the window; 0 when on screen. */
-  distance?: (element: Element) => number;
+  /**
+   * Pixels between an element and the visible part of the note: positive
+   * below it, negative above it, 0 when on screen.
+   */
+  offset?: (element: Element) => number;
+  /** Which way the reader is scrolling: 1 down, -1 up, 0 when still. */
+  scrolling?: () => -1 | 0 | 1;
 }
 
 export interface MermaidHandlers {
@@ -94,16 +103,61 @@ function afterNextFrame(): Promise<void> {
   });
 }
 
-/** Read just after a frame, when layout is clean, so this forces no layout. */
-function distanceFromWindow(element: Element): number {
+/**
+ * Where an element is from the visible part of its scroller (the note's
+ * `.cm-scroller`, which can be shorter than the window). Read just after a
+ * frame, when layout is clean, so this forces no layout.
+ */
+function offsetFromView(element: Element): number {
   if (typeof element.getBoundingClientRect !== "function") {
     return 0;
   }
   const rect = element.getBoundingClientRect();
-  if (rect.bottom < 0) {
-    return -rect.bottom;
+  const view = element.closest?.(".cm-scroller")?.getBoundingClientRect() ?? {
+    top: 0,
+    bottom: window.innerHeight,
+  };
+  if (rect.bottom < view.top) {
+    return rect.bottom - view.top;
   }
-  return Math.max(0, rect.top - window.innerHeight);
+  return Math.max(0, rect.top - view.bottom);
+}
+
+/** How long after the last scroll event the reader counts as still. */
+const STILL_AFTER_MS = 150;
+
+/**
+ * Follows scrolling anywhere in `target` with one passive listener: which
+ * way the last scroll went, until it has been still for a moment.
+ */
+export function followScrolling(target: Document): {
+  direction: () => -1 | 0 | 1;
+  stop: () => void;
+} {
+  const tops = new WeakMap<EventTarget, number>();
+  let direction: -1 | 1 = 1;
+  let at = -Infinity;
+  const onScroll = (event: Event) => {
+    const scroller = event.target;
+    const top =
+      scroller instanceof Element
+        ? scroller.scrollTop
+        : (target.scrollingElement?.scrollTop ?? 0);
+    const previous = scroller ? tops.get(scroller) : undefined;
+    if (scroller) {
+      tops.set(scroller, top);
+    }
+    if (previous !== undefined && top !== previous) {
+      direction = top > previous ? 1 : -1;
+      at = performance.now();
+    }
+  };
+  const options = { capture: true, passive: true } as const;
+  target.addEventListener("scroll", onScroll, options);
+  return {
+    direction: () => (performance.now() - at < STILL_AFTER_MS ? direction : 0),
+    stop: () => target.removeEventListener("scroll", onScroll, options),
+  };
 }
 
 export class MermaidQueue {
@@ -112,7 +166,9 @@ export class MermaidQueue {
   private readonly cache: MermaidSvgCache;
   private readonly watchMount: MountWatch;
   private readonly afterFrame: () => Promise<void>;
-  private readonly distance: (element: Element) => number;
+  private readonly offset: (element: Element) => number;
+  private readonly scrolling: () => -1 | 0 | 1;
+  private readonly stopFollowing: () => void = () => {};
   /** Mounted diagrams waiting for their turn. */
   private readonly waiting = new Set<Job>();
   private running: Promise<void> | undefined;
@@ -123,7 +179,21 @@ export class MermaidQueue {
     this.cache = options.cache ?? sharedCache;
     this.watchMount = options.watchMount ?? watchMount;
     this.afterFrame = options.afterFrame ?? afterNextFrame;
-    this.distance = options.distance ?? distanceFromWindow;
+    this.offset = options.offset ?? offsetFromView;
+    if (options.scrolling) {
+      this.scrolling = options.scrolling;
+    } else if (typeof document !== "undefined") {
+      const following = followScrolling(document);
+      this.scrolling = following.direction;
+      this.stopFollowing = following.stop;
+    } else {
+      this.scrolling = () => 0;
+    }
+  }
+
+  /** Stop following the reader's scrolling. */
+  dispose(): void {
+    this.stopFollowing();
   }
 
   /** Paint `source` into `element` when its turn comes; returns a cancel. */
@@ -189,8 +259,12 @@ export class MermaidQueue {
     }
   }
 
-  /** The waiting diagram nearest the window; unmounted ones leave the queue. */
+  /**
+   * The waiting diagram nearest the view, leaving out those behind a reader
+   * who is scrolling; unmounted ones leave the queue.
+   */
   private nearest(): Job | undefined {
+    const direction = this.scrolling();
     let best: Job | undefined;
     let bestDistance = Infinity;
     for (const job of this.waiting) {
@@ -198,7 +272,11 @@ export class MermaidQueue {
         this.waiting.delete(job);
         continue;
       }
-      const distance = this.distance(job.element);
+      const offset = this.offset(job.element);
+      if (offset * direction < 0) {
+        continue;
+      }
+      const distance = Math.abs(offset);
       if (distance < bestDistance) {
         best = job;
         bestDistance = distance;

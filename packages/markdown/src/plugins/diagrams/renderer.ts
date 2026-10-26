@@ -106,6 +106,7 @@ export class DiagramRenderer {
   }
 
   dispose(): void {
+    this.queue.dispose();
     for (const cleanup of this.cleanups) {
       cleanup();
     }

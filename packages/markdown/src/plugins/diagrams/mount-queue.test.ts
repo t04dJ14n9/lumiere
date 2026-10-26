@@ -11,12 +11,12 @@ import { RENDER_REMOUNT_EVENT } from "../render/api";
 interface FakeElement {
   id: string;
   isConnected: boolean;
-  /** Pixels from the window. */
-  distance: number;
+  /** Pixels from the visible part of the note: below if positive, above if negative. */
+  offset: number;
 }
 
-function element(id: string, distance = 0): FakeElement {
-  return { id, isConnected: true, distance };
+function element(id: string, offset = 0): FakeElement {
+  return { id, isConnected: true, offset };
 }
 
 /** Mounts happen when the test says so. */
@@ -51,6 +51,7 @@ function frames(): { afterFrame(): Promise<void>; next(): Promise<void> } {
 
 function queue(options: {
   watch: MountWatch;
+  scrolling?: () => -1 | 0 | 1;
   afterFrame?: () => Promise<void>;
   render?: (source: string) => Promise<string>;
   cache?: MermaidSvgCache;
@@ -59,7 +60,8 @@ function queue(options: {
   const instance = new MermaidQueue({
     watchMount: options.watch,
     afterFrame: options.afterFrame ?? (() => Promise.resolve()),
-    distance: (el) => (el as unknown as FakeElement).distance,
+    offset: (el) => (el as unknown as FakeElement).offset,
+    scrolling: options.scrolling ?? (() => 0),
     cache: options.cache ?? new MermaidSvgCache(8),
     render:
       options.render ??
@@ -138,6 +140,63 @@ test("diagrams render one at a time, a frame apart, nearest the window first", a
   await instance.whenIdle();
   assert.deepEqual(started, ["near", "middle", "far"]);
   assert.equal(painted.length, 3);
+});
+
+test("while the reader scrolls, diagrams behind them wait until the scroll stops", async () => {
+  const mount = mounts();
+  const frame = frames();
+  let direction: -1 | 0 | 1 = 1;
+  const { instance, rendered } = queue({
+    watch: mount.watch,
+    afterFrame: frame.afterFrame,
+    scrolling: () => direction,
+  });
+  const painted: string[] = [];
+  const above = element("above", -300);
+  const below = element("below", 600);
+  for (const [el, source] of [
+    [above, "above"],
+    [below, "below"],
+  ] as const) {
+    schedule(instance, el, source, painted);
+    mount.mount(el);
+  }
+  await frame.next();
+  await frame.next();
+  // Nearer, but drawing it would change the height above the reader.
+  assert.deepEqual(rendered, ["below"]);
+  await frame.next();
+  await frame.next();
+  assert.deepEqual(rendered, ["below"], "still scrolling down");
+  direction = 0;
+  await frame.next();
+  await instance.whenIdle();
+  assert.deepEqual(rendered, ["below", "above"]);
+});
+
+test("scrolling up, the diagrams above come first", async () => {
+  const mount = mounts();
+  const frame = frames();
+  const { instance, rendered } = queue({
+    watch: mount.watch,
+    afterFrame: frame.afterFrame,
+    scrolling: () => -1,
+  });
+  const painted: string[] = [];
+  const above = element("above", -700);
+  const onScreen = element("on screen", 0);
+  for (const [el, source] of [
+    [above, "above"],
+    [onScreen, "on screen"],
+  ] as const) {
+    schedule(instance, el, source, painted);
+    mount.mount(el);
+  }
+  await frame.next();
+  await frame.next();
+  await frame.next();
+  await instance.whenIdle();
+  assert.deepEqual(rendered, ["on screen", "above"]);
 });
 
 test("a diagram that leaves the page before its turn waits until it mounts again", async () => {
