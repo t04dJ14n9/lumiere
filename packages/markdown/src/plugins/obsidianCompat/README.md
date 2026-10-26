@@ -2,7 +2,7 @@
 
 Provides vault configuration compatibility (`app.json` and `types.json`), a native
 `obsidian` CommonJS/ESM API surface in the webview, and a `.obsidian/plugins/`
-community plugin loader (trusted workspaces only) as a first-class Cordis plugin.
+community plugin loader (vaults the owner trusts only) as a first-class Cordis plugin.
 
 ## How it works
 
@@ -12,11 +12,15 @@ community plugin loader (trusted workspaces only) as a first-class Cordis plugin
    checks containment and symlinks before reading. Explicit VS Code values at any
    applicable layer win over Obsidian candidates, which win over package defaults.
 2. **Community Plugin Loader (`community-plugins.ts` & `panel-host.ts`)**:
-   In **trusted** workspaces (`host.workspace.isTrusted() === true`), `CommunityPluginLoader`
-   reads `<configDir>/community-plugins.json` (enabled plugin IDs) and loads each enabled
-   plugin's `manifest.json`, `main.js`, optional `styles.css`, and optional `data.json`
-   with strict path containment and symlink checks. Untrusted workspaces never read or
-   execute `.obsidian/plugins/*/main.js` and reject `loadData`/`saveData`.
+   Plugins are code that came with the vault, so the host decides per vault
+   (`host.workspace.vaultCode`): VS Code answers with workspace trust; the Node host
+   asks the owner once per vault, as Obsidian does, the first time the vault turns a
+   plugin on, and reloads the plugins when the answer arrives. In an allowed vault,
+   `CommunityPluginLoader` reads `<configDir>/community-plugins.json` (enabled plugin
+   IDs) and loads each enabled plugin's `manifest.json`, `main.js`, optional
+   `styles.css`, and optional `data.json` with strict path containment and symlink
+   checks. Other vaults never read or execute `.obsidian/plugins/*/main.js` and reject
+   `loadData`/`saveData` and vault writes; only the plugin list is read, to ask.
 3. **Native `obsidian` Module & Webview Runtime (`webview.ts`, `runtime.ts`, `obsidian-*.ts`)**:
    Exposes the `obsidian` API (`Component`, `Plugin`, `App`, `Vault`, `TFile`, `TFolder`,
    `MetadataCache`, `FileManager`, `Editor`, `Workspace`, `MarkdownView`, `MarkdownRenderer`,
@@ -33,7 +37,7 @@ community plugin loader (trusted workspaces only) as a first-class Cordis plugin
 - `protocol.ts`: typed host/webview RPC protocol (`bootstrap`, `loadPluginData`, `savePluginData`, vault operations).
 - `host.ts`: host service publication, settings provider registration, and lifecycle effects.
 - `panel-host.ts`: panel-scoped RPC bridge for community plugins and vault operations.
-- `community-plugins.ts`: trusted-workspace `.obsidian/plugins/*` discovery and `data.json` persistence.
+- `community-plugins.ts`: `.obsidian/plugins/*` discovery in allowed vaults, and `data.json` persistence.
 - `webview.ts`: webview Cordis plugin wiring `ObsidianRuntime` to `editor`, `render`, `livePreview`, `commands`, and `rpc`.
 - `runtime.ts`: `ObsidianRuntime` and CommonJS `main.js` evaluator.
 - `obsidian-module.ts`: `obsidian` module export table and `require("obsidian")` resolver.

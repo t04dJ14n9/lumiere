@@ -85,6 +85,11 @@ test("loadVaultCssSnippets honors appearance.json enabledCssSnippets or discover
   const workspace: HostWorkspace = {
     folders: () => ["file:///vault"],
     isTrusted: () => true,
+    vaultCode: {
+      answer: () => true,
+      request: async () => true,
+      onDidChange: () => () => {},
+    },
     read: async () => new Uint8Array(),
     stat: async () => ({ mtime: 1, symbolicLink: false }),
     watch: () => () => {},

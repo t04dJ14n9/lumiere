@@ -34,6 +34,7 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host"],
   capabilities: ["commands", "vaultIndex", "navigation"],
+  needs: ["panels"],
   config,
   contributes: {
     commands: [

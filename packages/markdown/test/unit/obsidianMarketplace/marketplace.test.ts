@@ -99,6 +99,11 @@ function createMemoryWorkspace(trusted = true) {
   const host = fakeHost({
     workspace: {
       isTrusted: () => isTrusted,
+      vaultCode: {
+        answer: () => isTrusted,
+        request: async () => isTrusted,
+        onDidChange: () => () => {},
+      },
       async read(uri) {
         const content = files.get(uri);
         if (content === undefined) {
@@ -434,16 +439,16 @@ test("security guards reject untrusted workspaces, path traversal IDs, mismatche
   );
   await assert.rejects(
     () => service.installPlugin(VAULT_ROOT, ".obsidian", "custom-callout"),
-    /untrusted workspace/i,
+    /untrusted vault/i,
   );
   await assert.rejects(
     () =>
       service.setPluginEnabled(VAULT_ROOT, ".obsidian", "custom-callout", true),
-    /untrusted workspace/i,
+    /untrusted vault/i,
   );
   await assert.rejects(
     () => service.uninstallPlugin(VAULT_ROOT, ".obsidian", "custom-callout"),
-    /untrusted workspace/i,
+    /untrusted vault/i,
   );
 
   // Switch workspace to trusted and test path traversal / repo / manifest guards
@@ -744,8 +749,28 @@ test("GitHub Releases API fallback, offline fallback, and host command lumiere.m
     (arg?: unknown) => Promise<void>
   >();
   const notifiedModal: unknown[] = [];
+  const errors: string[] = [];
+  // Opening the marketplace asks about the vault's code, even after a no.
+  let vaultAllowed = false;
+  const asked: string[] = [];
   const hostWithCmds = fakeHost({
-    workspace: mem.host.workspace,
+    workspace: {
+      ...mem.host.workspace,
+      vaultCode: {
+        answer: () => vaultAllowed,
+        request: async (vaultRoot) => {
+          asked.push(vaultRoot);
+          return vaultAllowed;
+        },
+        onDidChange: () => () => {},
+      },
+    },
+    dialogs: {
+      ...fakeHost().dialogs,
+      error: (message: string) => {
+        errors.push(message);
+      },
+    },
     hostCommands: {
       register(id, fn) {
         registeredCommands.set(id, fn as (arg?: unknown) => Promise<void>);
@@ -760,7 +785,7 @@ test("GitHub Releases API fallback, offline fallback, and host command lumiere.m
   provideHostServices(root, hostWithCmds);
   root.provide("vaults", {
     locate: async () => undefined,
-    forWorkspace: async () => undefined,
+    forWorkspace: async () => ({ index: { root: "file:///vault" } }),
   } as never);
   root.provide("editors", {
     active: () => ({
@@ -780,6 +805,11 @@ test("GitHub Releases API fallback, offline fallback, and host command lumiere.m
     "lumiere.markdown.obsidianMarketplace.open",
   );
   assert.ok(openCmd, "Host command should be registered");
+  await openCmd({ query: "dataview" });
+  assert.deepEqual(asked, ["file:///vault"]);
+  assert.deepEqual(notifiedModal, []);
+  assert.match(errors.join("\n"), /Trust this folder/);
+  vaultAllowed = true;
   await openCmd({ query: "dataview" });
   assert.deepEqual(notifiedModal, [{ query: "dataview" }]);
   await root.dispose();

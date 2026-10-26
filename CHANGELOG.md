@@ -8,9 +8,40 @@
 
 ## Unreleased
 
+- **Lumière desktop (preview)**: Lumière's editor in a window of its own, in
+  the spirit of Typora (`apps/desktop`, Tauri), laid out as VS Code: the
+  vault's files on the left, the note's outline on the right, notes in tabs.
+  Settings opens as a tab (⌘,), with search, as VS Code's Settings editor.
+  Color Theme follows the system or stays light or dark. ⌘W closes the
+  shown tab while others are open, ⌃⇥ goes back to the last tab, and
+  ⇧⌘] / ⇧⌘[ step through them. ⌘B and ⌥⌘B hide the files and the
+  outline. Open Folder… uses the native picker, and
+  Markdown files open from Finder or the command line. Unsaved notes are written when you quit. The same window
+  also runs in a browser (`packages/app`). PDFs do not open there yet.
+- **Lumière desktop**: a vault's Obsidian community plugins run only after
+  you say yes, once per vault, as in Obsidian (Keep Them Off or Trust and
+  Turn On). The answer is remembered; the community plugins marketplace asks
+  again. DeepSeek Harness runs no vault plugins, and VS Code and Cursor
+  follow workspace trust.
+- Outside VS Code (the desktop app, DeepSeek Harness), right-clicking in a
+  note shows Lumière's menu as in VS Code: Copy Link for Agent with text
+  selected, formatting and highlight colours, then Cut, Copy and Paste.
+- **DeepSeek Harness**: Obsidian settings in `.obsidian/app.json` now apply,
+  including when the folder is created after the vault opens.
+- Fixed outside VS Code: the host could not stop while a note's page was
+  open.
+
 - **Toggle Text Editor** (Ctrl/Cmd+E): after switching Lumière ↔ the host text
   editor, close the leave-behind sibling tab of the same file so only one tab
   remains (BH-011 / BH-003). Dirty tabs are left alone.
+- **DeepSeek Harness**: Lumière's Markdown editor runs in DeepSeek Harness
+  0.2.1 or later, as a DSH plugin (`packages/dsh`): notes open in Lumière in
+  DSH's preview sidebar and save as you type. Paths that leave the workspace,
+  including through `..` or a symbolic link, are refused. PDFs, Git features
+  and the side views stay VS Code and Cursor only for now.
+- Fixed: Current-line authorship (gitBlame) could throw "Disposed: gitBlame
+  is stopped" into the editor while the plugin restarted.
+
 - **Toggle Text Editor** (Ctrl/Cmd+E): switch the active Markdown note between
   Lumière and the host's built-in text editor. Deliberately not Obsidian's
   Live Preview ↔ Source binding; that remains the unbound Toggle Live

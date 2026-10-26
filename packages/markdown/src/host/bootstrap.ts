@@ -44,16 +44,24 @@ import {
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workshop-features";
 import { createOkfFacade } from "../plugins/okfCore/facade";
-import { createCursorHandoffSurface } from "./cursor-handoff";
-import * as vscode from "vscode";
+import type { CursorBridgeConfig } from "../plugins/cursorBridge/host";
+
+/** What only some editors offer the plugins. */
+export interface BootstrapOptions {
+  /** Cursor's Chat and Edit hand-off; without it the bridge stays off. */
+  readonly cursorBridge?: CursorBridgeConfig;
+}
+
 /**
  * Start Lumière's plugins in `root` (the extension's plugin tree;
- * tests get a fresh one).
+ * tests get a fresh one). Nothing here may import `vscode`: other editors
+ * start the same plugins over their own host services.
  */
 export async function bootstrap(
   host: HostServices,
   vaultSystem?: VaultSystem,
   root: RootContext = createRoot({ rank: pluginRank }),
+  options: BootstrapOptions = {},
 ): Promise<RootContext> {
   provideHostServices(root, host);
   providePluginStates(root);
@@ -89,10 +97,7 @@ export async function bootstrap(
   root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
   root.plugin(agentBridgeHost);
-  root.plugin(cursorBridgeHost, {
-    appName: vscode.env?.appName ?? "",
-    surface: createCursorHandoffSurface(),
-  });
+  root.plugin(cursorBridgeHost, options.cursorBridge);
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
   root.plugin(settingsHost);

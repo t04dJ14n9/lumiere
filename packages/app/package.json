@@ -1,0 +1,26 @@
+{
+  "name": "@workshop/app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lumière's own server and app shell: the editor in a window of its own, for the desktop app (apps/desktop) and for a browser.",
+  "type": "module",
+  "bin": {
+    "lumiere-server": "./dist/app/server.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node dist/app/server.js",
+    "typecheck": "tsc -p src/server && tsc -p src/shell && tsc -p test",
+    "test": "tsx --test \"test/unit/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@workshop/core": "workspace:*",
+    "@workshop/host-node": "workspace:*",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

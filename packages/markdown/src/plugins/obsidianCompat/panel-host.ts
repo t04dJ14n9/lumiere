@@ -22,6 +22,12 @@ export const obsidianCompatPanelHost: Plugin<{ panel: PanelShell }> = {
         void notifyPluginsChanged(ctx, panel, loader);
       }
     });
+    // The owner's answer about this vault's code loads or unloads its plugins.
+    ctx.effect(() =>
+      ctx.workspace.vaultCode.onDidChange(() => {
+        void notifyPluginsChanged(ctx, panel, loader);
+      }),
+    );
     registerVaultReadHandlers(ctx, panel);
     registerVaultWriteHandlers(ctx);
     ctx.effect(() =>
@@ -63,6 +69,9 @@ function registerBootstrapHandlers(
         rootUri,
         configuredFolder(ctx, panel),
       );
+      if (!loaded.trusted) {
+        void askToRunPlugins(ctx, panel, loader);
+      }
       return {
         trusted: loaded.trusted,
         vaultRoot: rootUri,
@@ -214,6 +223,9 @@ async function notifyPluginsChanged(
       String(ctx.vault.root),
       configuredFolder(ctx, panel),
     );
+    if (!loaded.trusted) {
+      void askToRunPlugins(ctx, panel, loader);
+    }
     ctx.rpc.notify(protocol, "pluginsChanged", {
       trusted: loaded.trusted,
       configDir: loaded.configDir,
@@ -221,6 +233,32 @@ async function notifyPluginsChanged(
     });
   } catch {
     // Ignore transient watcher errors during external edits.
+  }
+}
+
+/**
+ * Ask the owner whether this vault's plugins may run, once it turns any on
+ * and until they answer. Their answer arrives as a change (apply).
+ */
+async function askToRunPlugins(
+  ctx: Context,
+  panel: PanelShell,
+  loader: CommunityPluginLoader,
+): Promise<void> {
+  const rootUri = String(ctx.vault.root);
+  if (ctx.workspace.vaultCode.answer(rootUri) !== undefined) {
+    return;
+  }
+  try {
+    const ids = await loader.enabledPluginIds(
+      rootUri,
+      configuredFolder(ctx, panel),
+    );
+    if (ids.length > 0) {
+      await ctx.workspace.vaultCode.request(rootUri, ids);
+    }
+  } catch {
+    // An unreadable plugin list turns nothing on, so there is nothing to ask.
   }
 }
 
@@ -272,11 +310,11 @@ async function authorizeVaultFile(
   rawPath: string,
   requireTrust: boolean,
 ): Promise<string> {
-  if (requireTrust && !ctx.workspace.isTrusted()) {
-    throw new Error("Vault write operations require a trusted workspace.");
+  const rootUri = String(ctx.vault.root);
+  if (requireTrust && ctx.workspace.vaultCode.answer(rootUri) !== true) {
+    throw new Error("Vault write operations require a trusted vault.");
   }
   const normalized = normalizeVaultPath(rawPath);
-  const rootUri = String(ctx.vault.root);
   const targetUri = joinContained(rootUri, normalized);
   if (!targetUri) {
     throw new Error(`Path escapes vault root: ${rawPath}`);

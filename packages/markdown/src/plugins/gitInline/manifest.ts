@@ -9,4 +9,5 @@ export default defineManifest({
   defaultEnabled: false,
   surfaces: ["webview"],
   capabilities: ["rendering", "editing"],
+  needs: ["git"],
 } as const);
