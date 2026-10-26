@@ -15,10 +15,17 @@ public class VaultFileSystemPlugin: CAPPlugin, CAPBridgedPlugin {
         "watch", "unwatch",
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
-    private let store = VaultStore.standard()
+    private let store: VaultStore
     private var watchers: [String: VaultWatcher] = [:]
     /// File work waits on coordination, so it never runs on the main thread.
     private let work = DispatchQueue(label: "lumiere.vault-files", qos: .userInitiated, attributes: .concurrent)
+
+    /// `store` is shared with the web view's router (VaultRouter), so a
+    /// folder picked now is served at once.
+    public init(store: VaultStore = .standard()) {
+        self.store = store
+        super.init()
+    }
 
     @objc func vaults(_ call: CAPPluginCall) {
         call.resolve(["vaults": store.all().map(\.json)])

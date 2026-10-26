@@ -10,6 +10,7 @@ import { parseMenus } from "@workshop/host-node/core";
 import { indexedDbFolder, MemoryFileSystem, Mounts } from "@workshop/host-web";
 import type { ContributedSetting } from "@workshop/markdown/portable";
 import { NativeFileSystem } from "./native-fs";
+import { vaultFileUrl } from "./resources";
 import { vaultFiles, type NativeVault } from "./native/vault-files";
 import { appCommands } from "./native/window-commands";
 import { WELCOME } from "./welcome";
@@ -48,8 +49,10 @@ async function main(): Promise<void> {
         viewer: new URL("pdf/", base).href,
         shim: new URL("page/pdf-shim.js", base).href,
       },
-      resource: (panel, uri) =>
-        `${new URL("lumiere/file", base).href}?panel=${encodeURIComponent(panel)}&uri=${encodeURIComponent(uri)}`,
+      // Answered by the app's router (VaultRouter.swift); only vault files.
+      resource: (_panel, uri) =>
+        vaultFileUrl(uri, paths, base) ??
+        new URL("_lumiere/missing", base).href,
     },
     pickFolder: async () => {
       const { vault } = await vaultFiles.pickFolder();

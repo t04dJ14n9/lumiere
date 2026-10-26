@@ -7,10 +7,17 @@ import UIKit
 /// window shrinks above it and the note being edited stays in view.
 open class LumiereViewController: CAPBridgeViewController, WindowCommandPerforming {
     private let windowCommands = WindowCommandsPlugin()
+    private let vaults = VaultStore.standard()
     private var keyboard: KeyboardInset?
 
+    /// Vault files are served to the web view too, for a note's images
+    /// and embeds (VaultRouter).
+    override open func router() -> Router {
+        VaultRouter(vaults: vaults, fallback: super.router())
+    }
+
     override open func capacitorDidLoad() {
-        bridge?.registerPluginInstance(VaultFileSystemPlugin())
+        bridge?.registerPluginInstance(VaultFileSystemPlugin(store: vaults))
         bridge?.registerPluginInstance(windowCommands)
         keyboard = KeyboardInset(controller: self)
     }
