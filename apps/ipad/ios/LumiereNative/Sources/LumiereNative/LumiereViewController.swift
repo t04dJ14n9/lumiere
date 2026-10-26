@@ -9,6 +9,7 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
     private let windowCommands = WindowCommandsPlugin()
     private let vaults = VaultStore.standard()
     private var keyboard: KeyboardInset?
+    private var longPressMenu: LongPressEditMenu?
 
     /// Vault files are served to the web view too, for a note's images
     /// and embeds (VaultRouter).
@@ -20,6 +21,7 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
         bridge?.registerPluginInstance(VaultFileSystemPlugin(store: vaults))
         bridge?.registerPluginInstance(windowCommands)
         keyboard = KeyboardInset(controller: self)
+        longPressMenu = webView.map(LongPressEditMenu.init(webView:))
     }
 
     @objc public func performWindowCommand(_ sender: UICommand) {
@@ -31,6 +33,10 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
     /// asks along the responder chain, which runs from the page to here.
     override open func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
+        if builder.system == .context {
+            // WebKit is showing its menu: the long-press one stays down.
+            longPressMenu?.menuBuilt()
+        }
         EditMenu.build(with: builder) { [weak self] in
             self?.windowCommands.sendPageMenu()
         }
