@@ -1,4 +1,21 @@
 /* Mermaid diagrams, centred; failures use Obsidian is-guarded chrome. */
+
+/*
+ * A diagram waiting for its SVG. The browser starts this (invisible)
+ * animation every time the element is inserted, and mount-queue.ts listens
+ * for that to render as soon as CodeMirror mounts the diagram.
+ */
+pre[data-fence="mermaid"][data-render-pending] {
+  animation: mw-diagram-mounted 1ms;
+}
+@keyframes mw-diagram-mounted {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
 pre[data-fence="mermaid"]:has(> svg) {
   padding: 40px 0 8px;
   overflow-x: auto;
