@@ -1080,3 +1080,87 @@ test("a block's cleanup runs when CodeMirror destroys it through an equal widget
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
+
+test("a block rendered before it is in the page drops its reserve once mounted", () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      removeEventListener() {},
+      defaultView: { addEventListener() {}, removeEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = { add() {}, contains: () => false };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    getBoundingClientRect() {
+      return { height: this.isConnected ? 46 : 0 };
+    }
+  }
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "$$a + b$$";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "math",
+      source,
+    };
+    let requests: {
+      read: () => unknown;
+      write?: (value: unknown, view: EditorView) => void;
+    }[] = [];
+    const view = {
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure(request?: (typeof requests)[number]) {
+        if (request) {
+          requests.push(request);
+        }
+      },
+    } as unknown as EditorView;
+    const nextFrame = () => {
+      const due = requests;
+      requests = [];
+      const values = due.map((request) => request.read());
+      due.forEach((request, index) => request.write?.(values[index], view));
+    };
+    // The formula typesets at once, while CodeMirror builds the block.
+    const render: RenderService = {
+      trusted: true,
+      into(container, _source, context) {
+        container.innerHTML = "<mjx-container></mjx-container>";
+        context?.measure?.();
+        return new Promise<RenderPass>(() => {});
+      },
+    };
+    const shell = new MarkdownBlock(block, render).toDOM(
+      view,
+    ) as unknown as StubElement;
+    assert.match(shell.style.minHeight ?? "", /^\d+px$/, "reserved at first");
+
+    // CodeMirror puts it in the page, then measures.
+    shell.isConnected = true;
+    for (const child of shell.children) {
+      child.isConnected = true;
+    }
+    nextFrame();
+    assert.equal(shell.style.minHeight, "", "no gap left under the formula");
+  } finally {
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
