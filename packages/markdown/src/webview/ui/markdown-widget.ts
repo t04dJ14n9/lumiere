@@ -19,22 +19,9 @@ export interface SourceSpan {
 
 /** How a rendered block hands over to its source. */
 export interface BlockEditing {
-  /**
-   * What reveals the source besides the caret moving in: a click on the
-   * block or its Edit button ("click", as for math), or only the
-   * Edit button ("button"), so that clicks reach the content of embeds and
-   * diagrams, or nothing at all ("none": no Edit button, as on an image,
-   * which its own keys edit).
-   */
   reveal: "click" | "button" | "none";
-  /** Also keep clicks in the editor margin beside the block from revealing it. */
   guardMargin?: boolean;
-  /** Summary text edits source; buttons inside it still own their events. */
   editSummary?: boolean;
-  /**
-   * The part of the source revealing selects; the whole block unless given.
-   * Obsidian selects a formula or a diagram's code without its delimiters.
-   */
   select?: (source: string) => SourceSpan;
 }
 
@@ -49,7 +36,6 @@ export function fenceBody(source: string): SourceSpan {
   }
   const close = source.lastIndexOf("\n");
   if (!/^ {0,3}(`{3,}|~{3,})\s*$/u.test(source.slice(close + 1))) {
-    // Unclosed: the body runs to the end.
     return { from: open + 1, to: source.length };
   }
   return close === open
@@ -57,25 +43,20 @@ export function fenceBody(source: string): SourceSpan {
     : { from: open + 1, to: close };
 }
 
-/**
- * Rendered fenced code (diagrams, queries, processed code): as in Obsidian,
- * only the Edit button reveals it, selecting the code between the fences.
- */
 export const FENCED_PREVIEW: BlockEditing = {
   reveal: "button",
   guardMargin: true,
   select: fenceBody,
 };
 
-/** Observe block growth so remounts keep painted height (wrap/CSS/iframe). */
 const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
 
 function watchMarkdownBlock(dom: HTMLElement, source: string): void {
-  if (!source || blockObservers.has(dom)) {
-    return;
-  }
-  // Unit stubs and older jsdom have no ResizeObserver.
-  if (typeof ResizeObserver === "undefined") {
+  if (
+    !source ||
+    blockObservers.has(dom) ||
+    typeof ResizeObserver === "undefined"
+  ) {
     return;
   }
   const observer = new ResizeObserver((entries) => {
@@ -91,7 +72,6 @@ function watchMarkdownBlock(dom: HTMLElement, source: string): void {
 function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
   blockObservers.get(dom)?.disconnect();
   blockObservers.delete(dom);
-  // Unit stubs omit getBoundingClientRect; skip measure then.
   if (typeof dom.getBoundingClientRect !== "function") {
     return;
   }
@@ -101,9 +81,78 @@ function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
   }
 }
 
-/** Own a render pass even when an async post-processor finishes after removal. */
+interface RetainedShell {
+  readonly shell: HTMLElement;
+  readonly edit: HTMLButtonElement;
+  readonly body: HTMLElement;
+  currentView: EditorView;
+  pass?: RenderPass;
+  settled: boolean;
+  alive: boolean;
+}
+
+const BLOCK_DOM_CACHE_LIMIT = 128;
+let blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+
+function isShellSettled(entry: RetainedShell | undefined): boolean {
+  if (!entry || !entry.settled || !entry.alive) {
+    return false;
+  }
+  return !entry.shell.classList?.contains?.("render-error");
+}
+
+function isShellReusable(entry: RetainedShell | undefined): boolean {
+  return Boolean(entry && !entry.shell.isConnected && isShellSettled(entry));
+}
+
+function takePooledShell(
+  render: RenderService,
+  key: string,
+): RetainedShell | undefined {
+  const pool = blockDomPool.get(render);
+  const entry = pool?.get(key);
+  if (!entry || !isShellReusable(entry)) {
+    return undefined;
+  }
+  pool!.delete(key);
+  pool!.set(key, entry);
+  return entry;
+}
+
+function rememberPooledShell(
+  render: RenderService,
+  key: string,
+  entry: RetainedShell,
+): void {
+  let pool = blockDomPool.get(render);
+  if (!pool) {
+    pool = new Map<string, RetainedShell>();
+    blockDomPool.set(render, pool);
+  }
+  const prev = pool.get(key);
+  if (prev && prev !== entry && !prev.shell.isConnected) {
+    prev.alive = false;
+    void prev.pass?.dispose();
+  }
+  pool.delete(key);
+  if (pool.size >= BLOCK_DOM_CACHE_LIMIT) {
+    const oldestKey = pool.keys().next().value;
+    if (oldestKey !== undefined) {
+      const oldest = pool.get(oldestKey);
+      pool.delete(oldestKey);
+      if (oldest && !oldest.shell.isConnected) {
+        oldest.alive = false;
+        void oldest.pass?.dispose();
+      }
+    }
+  }
+  pool.set(key, entry);
+}
+
+/** Own a render pass and retain finished DOM across viewport exit/re-entry (`RW`). */
 export class MarkdownBlock extends WidgetType {
   private readonly lifetimes = new WeakMap<HTMLElement, () => void>();
+  private retained: RetainedShell | undefined;
 
   constructor(
     readonly block: RenderBlock,
@@ -121,13 +170,35 @@ export class MarkdownBlock extends WidgetType {
 
   override toDOM(view: EditorView): HTMLElement {
     rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
+    const poolKey = `${this.block.kind}\0${this.editing.reveal}\0${this.editing.guardMargin ? 1 : 0}\0${this.editing.editSummary ? 1 : 0}\0${this.block.source}`;
+    const reusable = isShellReusable(this.retained)
+      ? this.retained!
+      : takePooledShell(this.render, poolKey);
+    if (reusable) {
+      this.retained = reusable;
+      reusable.currentView = view;
+      this.mountShell(view, reusable, poolKey);
+      return reusable.shell;
+    }
+    const created = this.createShell(view);
+    this.mountShell(view, created, poolKey);
+    beginMarkdownBlockRender({
+      entry: created,
+      block: this.block,
+      render: this.render,
+      onSettled: () => {
+        if (isShellSettled(created)) {
+          this.retained = created;
+          rememberPooledShell(this.render, poolKey, created);
+        }
+      },
+    });
+    return created.shell;
+  }
+
+  private createShell(view: EditorView): RetainedShell {
     const shell = document.createElement("section");
     shell.className = `hybrid-block hybrid-${this.block.kind}`;
-    // Async renders (Mermaid SVG, MathJax) paint short until ready. Remounts
-    // inside CodeMirror's draw margin measure that short shell and collapse
-    // the height map (~182 vs ~638) even when estimatedHeight is honest.
-    // minHeight keeps the reserve until measure sees the finished paint.
-    // Unit tests may stub createElement without a CSSStyleDeclaration.
     const reserve = this.estimatedHeight;
     if (reserve > 0 && shell.style) {
       shell.style.minHeight = `${reserve}px`;
@@ -143,43 +214,52 @@ export class MarkdownBlock extends WidgetType {
     } else {
       shell.append(edit, body);
     }
-    let live = true;
-    let pass: RenderPass | undefined;
-    const events = new AbortController();
-    const reveal = () => this.revealSource(view, shell);
-    edit.addEventListener("click", reveal, { signal: events.signal });
-    if (this.editing.reveal === "click") {
-      bindClickToEdit(shell, reveal, events.signal, this.editing.editSummary);
-    }
-    if (this.editing.guardMargin) {
-      bindFenceClickGuard(view, shell, this.block, events.signal);
-    }
-    let cancelRender = () => {};
-    this.lifetimes.set(shell, () => {
-      live = false;
-      cancelRender();
-      events.abort();
-      void pass?.dispose();
-    });
-    cancelRender = scheduleMarkdownBlockRender({
-      view,
+    return {
       shell,
+      edit,
       body,
-      block: this.block,
-      render: this.render,
-      isLive: () => live,
-      setPass: (result) => {
-        pass = result;
-      },
-    });
-    watchMarkdownBlock(shell, this.block.source);
-    return shell;
+      currentView: view,
+      settled: false,
+      alive: true,
+    };
   }
 
-  /**
-   * Reveal the source, selecting what `editing.select` names, with the head
-   * at its start as in Obsidian. The block was on screen, so do not scroll.
-   */
+  private mountShell(
+    view: EditorView,
+    entry: RetainedShell,
+    poolKey: string,
+  ): void {
+    const events = new AbortController();
+    const reveal = () => this.revealSource(view, entry.shell);
+    entry.edit.addEventListener("click", reveal, { signal: events.signal });
+    if (this.editing.reveal === "click") {
+      bindClickToEdit(
+        entry.shell,
+        reveal,
+        events.signal,
+        this.editing.editSummary,
+      );
+    }
+    if (this.editing.guardMargin) {
+      bindFenceClickGuard(view, entry.shell, this.block, events.signal);
+    }
+    this.lifetimes.set(entry.shell, () => {
+      events.abort();
+      if (isShellSettled(entry)) {
+        this.retained = entry;
+        rememberPooledShell(this.render, poolKey, entry);
+      } else {
+        entry.alive = false;
+        if (this.retained === entry) {
+          this.retained = undefined;
+        }
+        blockDomPool.get(this.render)?.delete(poolKey);
+        void entry.pass?.dispose();
+      }
+    });
+    watchMarkdownBlock(entry.shell, this.block.source);
+  }
+
   private revealSource(view: EditorView, shell: HTMLElement): void {
     const { source } = this.block;
     const start = sourceStart(view, shell, source);
@@ -194,13 +274,6 @@ export class MarkdownBlock extends WidgetType {
     );
   }
 
-  /**
-   * Keep widget events (including blank diagram area) so CodeMirror does not
-   * park the caret inside the replaced fence on click — that would reveal
-   * Mermaid/math source without Edit / click-to-edit. Buttons and Mermaid SVG
-   * labels stay native; document-level MouseSelection still covers drags that
-   * start outside the widget.
-   */
   override ignoreEvent(event: Event): boolean {
     return markdownBlockIgnoresEvent(event);
   }
@@ -247,41 +320,20 @@ function setCachedBlockHtml(key: string, html: string): void {
   blockHtmlCache.set(key, html);
 }
 
-/** Test helper: clear cached MarkdownBlock HTML snapshots. */
+/** Test helper: clear cached MarkdownBlock HTML snapshots and retained shells. */
 export function clearMarkdownBlockHtmlCache(): void {
   blockHtmlCache.clear();
-}
-
-/**
- * Below-fold blocks are already gated by `DeferredBlockWidget`, and heavy
- * uncached Mermaid fences self-gate via `observeNearViewport`. Render
- * synchronously in `toDOM` so viewport blocks never flash blank for 120ms.
- */
-function scheduleMarkdownBlockRender(options: {
-  view: EditorView;
-  shell: HTMLElement;
-  body: HTMLElement;
-  block: RenderBlock;
-  render: RenderService;
-  isLive: () => boolean;
-  setPass: (pass: RenderPass) => void;
-}): () => void {
-  if (options.isLive()) {
-    beginMarkdownBlockRender(options);
-  }
-  return () => {};
+  blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
 }
 
 function beginMarkdownBlockRender(options: {
-  view: EditorView;
-  shell: HTMLElement;
-  body: HTMLElement;
+  entry: RetainedShell;
   block: RenderBlock;
   render: RenderService;
-  isLive: () => boolean;
-  setPass: (pass: RenderPass) => void;
+  onSettled: () => void;
 }): void {
-  const { view, shell, body, block, render, isLive, setPass } = options;
+  const { entry, block, render, onSettled } = options;
+  const { shell, body } = entry;
   const cacheKey = blockCacheKey(block);
   const rememberHtml = () => {
     if (!shell.classList.contains("render-error") && body.innerHTML) {
@@ -290,28 +342,30 @@ function beginMarkdownBlockRender(options: {
   };
   void render
     .into(body, block.source, {
-      sourceLine: view.state.doc.lineAt(block.from).number - 1,
+      sourceLine: entry.currentView.state.doc.lineAt(block.from).number - 1,
       measure: () => {
-        if (isLive()) {
+        if (entry.alive) {
           rememberHtml();
           releasePaintReserve(shell, body);
-          view.requestMeasure();
+          entry.currentView.requestMeasure();
         }
       },
     })
     .then((result) => {
-      setPass(result);
-      if (isLive()) {
+      entry.pass = result;
+      if (entry.alive) {
+        entry.settled = true;
         rememberHtml();
+        onSettled();
       } else {
         void result.dispose();
       }
     })
     .catch(() => {
-      if (isLive()) {
+      if (entry.alive) {
         body.textContent = block.source;
         shell.classList.add("render-error");
-        view.requestMeasure();
+        entry.currentView.requestMeasure();
       }
     });
   if (!body.innerHTML) {
@@ -325,19 +379,12 @@ function beginMarkdownBlockRender(options: {
   }
 }
 
-/** Drop estimatedHeight minHeight once the body has painted height (BH-007). */
 function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
   if (shell.style.minHeight && body.getBoundingClientRect().height > 0) {
     shell.style.minHeight = "";
   }
 }
 
-/**
- * Where a block's source starts. Its widget either replaces the source, or
- * follows it as the preview of a block being edited. The offsets captured
- * when the widget was made go stale when text above changes, so read them
- * from the document.
- */
 function sourceStart(
   view: EditorView,
   shell: HTMLElement,

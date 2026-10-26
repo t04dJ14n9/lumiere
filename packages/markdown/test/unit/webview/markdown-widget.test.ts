@@ -498,3 +498,114 @@ test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is
     (globalThis as Record<string, unknown>).requestIdleCallback = prevIdle;
   }
 });
+
+test("MarkdownBlock retains live shell DOM across destroy and toDOM when using the same RenderService", async () => {
+  clearMarkdownBlockHtmlCache();
+  const prevDoc = globalThis.document;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      removeEventListener() {},
+      defaultView: {
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    removeEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    contains() {
+      return false;
+    }
+    getBoundingClientRect() {
+      return { height: 240 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+
+  try {
+    const block: RenderBlock = {
+      from: 0,
+      to: 28,
+      kind: "code",
+      source: "```mermaid\ngraph TD; A-->B\n```",
+    };
+    const view = {
+      state: {
+        doc: {
+          lineAt: () => ({ number: 1 }),
+        },
+      },
+      dom: new StubElement(),
+      requestMeasure() {},
+      posAtDOM: () => 0,
+    } as unknown as EditorView;
+
+    let renderCalls = 0;
+    let disposeCalls = 0;
+    const render: RenderService = {
+      trusted: true,
+      async into(container) {
+        renderCalls++;
+        container.innerHTML =
+          '<pre data-fence="mermaid" aria-label="Mermaid diagram"><svg></svg></pre>';
+        return {
+          source: block.source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: block.source,
+          measure() {},
+          onDispose() {},
+          async dispose() {
+            disposeCalls++;
+          },
+        } as RenderPass;
+      },
+    };
+
+    const widget = new MarkdownBlock(block, render);
+    const firstShell = widget.toDOM(view);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(renderCalls, 1);
+
+    // Viewport exit: destroy() disconnects observers without disposing the rendered DOM.
+    widget.destroy(firstShell);
+    assert.equal(disposeCalls, 0);
+
+    // Viewport re-entry on same widget instance returns the exact same live shell:
+    const secondShell = widget.toDOM(view);
+    assert.equal(secondShell, firstShell);
+    assert.equal(renderCalls, 1);
+    widget.destroy(secondShell);
+
+    // Even a new MarkdownBlock instance with the same RenderService reclaims the retained shell:
+    const recreatedWidget = new MarkdownBlock(block, render);
+    const thirdShell = recreatedWidget.toDOM(view);
+    assert.equal(thirdShell, firstShell);
+    assert.equal(renderCalls, 1);
+    recreatedWidget.destroy(thirdShell);
+  } finally {
+    clearMarkdownBlockHtmlCache();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});

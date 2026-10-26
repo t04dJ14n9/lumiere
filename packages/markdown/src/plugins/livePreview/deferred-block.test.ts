@@ -3,7 +3,12 @@ import test from "node:test";
 import { EditorState } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
 import { blockIndex, renderRevision } from "./blocks";
-import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
+import {
+  blockDecorations,
+  blockHotRanges,
+  blockViewportSupport,
+  setBlockHotRanges,
+} from "./viewport-decorations";
 import {
   DeferredBlockWidget,
   expandVisibleRanges,
@@ -36,7 +41,7 @@ class LiveWidget extends WidgetType {
   }
 }
 
-test("below-fold blocks mount DeferredBlockWidget until the hot range covers them", () => {
+test("below-fold blocks mount DeferredBlockWidget when explicit blockHotRanges scopes the band", () => {
   const blockSource = "| a | b |\n| - | - |\n| 1 | 2 |";
   const doc =
     "intro\n\n" +
@@ -60,13 +65,12 @@ test("below-fold blocks mount DeferredBlockWidget until the hot range covers the
       }),
     ],
   });
-  // First-paint may only parse the opening band; complete the tree so this
-  // regression still pins live vs deferred across the whole note.
-  if (state.field(documentTree).length < state.doc.length) {
-    state = state.update({
-      effects: replaceDocumentTree.of(parseMarkdown(state.doc)),
-    }).state;
-  }
+  state = state.update({
+    effects: [
+      replaceDocumentTree.of(parseMarkdown(state.doc)),
+      setBlockHotRanges.of([{ from: 0, to: VIEWPORT_BLOCK_MARGIN * 2 }]),
+    ],
+  }).state;
   let live = 0;
   let deferred = 0;
   state.field(decorations).between(0, doc.length, (_from, _to, value) => {
@@ -83,4 +87,49 @@ test("below-fold blocks mount DeferredBlockWidget until the hot range covers the
     deferred + live === 400,
     `expected one widget per table (live ${live}, deferred ${deferred})`,
   );
+});
+
+test("by default blockHotRanges covers the full document and reuses GuardedWidget instances across tree completion", () => {
+  const blockSource = "| a | b |\n| - | - |\n| 1 | 2 |";
+  const doc =
+    "intro\n\n" +
+    Array.from({ length: 120 }, () => blockSource).join("\n\n") +
+    "\n\nend";
+  const decorations = blockDecorations(() => {});
+  let state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [
+      documentTree,
+      renderRevision,
+      blockIndex,
+      ...blockViewportSupport,
+      decorations,
+      blockRenderers.of({
+        kind: "Table",
+        editing: "widget",
+        match: (node) => node.name === "Table",
+        widget: (block) => new LiveWidget(block),
+      }),
+    ],
+  });
+  assert.deepEqual(state.field(blockHotRanges), [{ from: 0, to: doc.length }]);
+  const beforeWidgets: unknown[] = [];
+  state.field(decorations).between(0, VIEWPORT_BLOCK_MARGIN, (_f, _t, dec) => {
+    beforeWidgets.push(dec.spec.widget);
+  });
+  assert.ok(beforeWidgets.length > 0);
+
+  state = state.update({
+    effects: replaceDocumentTree.of(parseMarkdown(state.doc)),
+  }).state;
+
+  const afterWidgets: unknown[] = [];
+  state.field(decorations).between(0, VIEWPORT_BLOCK_MARGIN, (_f, _t, dec) => {
+    afterWidgets.push(dec.spec.widget);
+  });
+  assert.equal(afterWidgets.length, beforeWidgets.length);
+  for (let i = 0; i < beforeWidgets.length; i++) {
+    assert.equal(afterWidgets[i], beforeWidgets[i]);
+  }
 });
