@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { MARKDOWN_EDITOR, type PanelShell } from "@workshop/markdown/portable";
-import { NoteDocuments } from "../../src/host/documents";
+import { NoteDocuments, noteFiles } from "../../src/host/documents";
+import { createNodePlatform } from "../../src/host/node-platform";
 import { PanelHub } from "../../src/host/panels";
 import type { PageSocket } from "../../src/host/panel";
 
@@ -43,7 +44,10 @@ async function setup(t: test.TestContext, connectTimeout?: number) {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-panels-"));
   await writeFile(path.join(dir, "Note.md"), "hello");
   const uri = pathToFileURL(path.join(dir, "Note.md")).toString();
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(
+    noteFiles(createNodePlatform({ data: tmpdir(), workers: "" })),
+    60_000,
+  );
   const hub = new PanelHub(documents, connectTimeout);
   const shells: PanelShell[] = [];
   hub.register(MARKDOWN_EDITOR, (shell) => {

@@ -4,7 +4,9 @@ import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import { isInside, listVault, watchVault } from "../../src/host/vault";
+import { nodeFiles } from "../../src/host/node-platform";
+import { isInside } from "../../src/host/paths";
+import { listVault, watchVault } from "../../src/host/vault";
 import type { FileEvent } from "@workshop/markdown/portable";
 
 async function vault(t: test.TestContext) {
@@ -22,19 +24,19 @@ async function vault(t: test.TestContext) {
 
 test("listing walks the vault but not hidden folders or node_modules, and stops at the limit", async (t) => {
   const { root } = await vault(t);
-  const all = await listVault(root, 100);
+  const all = await listVault(nodeFiles, { root, limit: 100 });
   assert.deepEqual(all.files.map((file) => file.path).sort(), [
     "Home.md",
     "notes/A note.md",
   ]);
   assert.equal(all.partial, false);
   assert.ok(all.files.every((file) => file.uri.startsWith("file://")));
-  const shallow = await listVault(root, 100, true);
+  const shallow = await listVault(nodeFiles, { root, limit: 100, shallow: true });
   assert.deepEqual(
     shallow.files.map((file) => file.path),
     ["Home.md"],
   );
-  const limited = await listVault(root, 1);
+  const limited = await listVault(nodeFiles, { root, limit: 1 });
   assert.equal(limited.files.length, 1);
   assert.equal(limited.partial, true);
 });
@@ -42,7 +44,7 @@ test("listing walks the vault but not hidden folders or node_modules, and stops 
 test("watching reports a new file, a change to it and its deletion, never hidden files", async (t) => {
   const { dir, root } = await vault(t);
   const events: FileEvent[] = [];
-  const stop = watchVault(root, (event) => events.push(event));
+  const stop = watchVault(nodeFiles, root, (event) => events.push(event));
   t.after(stop);
   // macOS starts delivering events a moment after the watch begins.
   await new Promise((resolve) => setTimeout(resolve, 400));

@@ -1,19 +1,8 @@
 /**
- * The vault plugin's file system outside VS Code: Node's, in place of VS
- * Code's workspace API. Roots are the workspaces the reader opened notes from.
+ * The vault plugin's file system outside VS Code, over the host's platform
+ * (platform.ts), in place of VS Code's workspace API. Roots are the
+ * workspaces the reader opened notes from.
  */
-import { createHash } from "node:crypto";
-import { watch, type Dirent } from "node:fs";
-import {
-  mkdir,
-  readdir,
-  readFile,
-  rename,
-  stat,
-  writeFile,
-} from "node:fs/promises";
-import * as path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Disposer } from "@workshop/core";
 import {
   createVaultParser,
@@ -24,44 +13,43 @@ import {
   type SnapshotStore,
   type VaultSystem,
 } from "@workshop/markdown/portable";
-import { nodeWorkerLauncher } from "@workshop/markdown/node";
 import type { NoteDocuments } from "./documents";
-import { isInside, pathInsideRoots } from "./paths";
-
-export { isInside } from "./paths";
+import { containInRoots, type HostFiles, type HostPlatform } from "./platform";
+import { joinUri } from "./uris";
 
 /** Stats run this many at a time while listing a vault. */
 const STAT_CONCURRENCY = 32;
 
-export interface NodeVaultOptions {
+export interface HostVaultOptions {
+  readonly platform: HostPlatform;
   readonly documents: NoteDocuments;
   readonly settings: HostSettings;
   /** The workspace roots, as file URIs. */
   readonly roots: () => readonly string[];
-  /** Where vault snapshots are kept between sessions. */
-  readonly storage: string;
-  /** The built workers (`markdown/workers`); the parser is `vault.cjs`. */
-  readonly workers: string;
   readonly warn: (message: string) => void;
 }
 
-export function createNodeVaultSystem(options: NodeVaultOptions): VaultSystem {
-  const { documents, settings, roots } = options;
+export function createHostVaultSystem(options: HostVaultOptions): VaultSystem {
+  const { platform, documents, settings, roots } = options;
+  const { files } = platform;
   return {
-    workspaceFolder: (uri) => roots().find((root) => isInside(root, uri)),
+    workspaceFolder: (uri) => roots().find((root) => files.isInside(root, uri)),
     workspaceFolders: roots,
     exists: async (uri) => {
       try {
-        await stat(await pathInsideRoots(roots(), uri));
-        return true;
+        await containInRoots(files, roots(), uri);
       } catch {
         return false;
       }
+      return (await files.stat(uri)) !== undefined;
     },
-    list: listVault,
-    read: async (uri) => readFile(await pathInsideRoots(roots(), uri)),
-    watch: watchVault,
-    store: (root) => snapshotStore(options.storage, root),
+    list: (root, limit, shallow) => listVault(files, { root, limit, shallow }),
+    read: async (uri) => {
+      await containInRoots(files, roots(), uri);
+      return files.readBytes(uri);
+    },
+    watch: (root, listener) => watchVault(files, root, listener),
+    store: (root) => snapshotStore(platform, root),
     settings: (root) => ({
       folderNote: settings.get("links.folderNote", "", root),
       linkFormat: settings.get("links.newLinkFormat", "shortest", root),
@@ -76,63 +64,62 @@ export function createNodeVaultSystem(options: NodeVaultOptions): VaultSystem {
         }
       }),
     onDocumentClosed: (listener) => documents.onClosed(listener),
-    createParser: () => createVaultParser(nodeWorkerLauncher(options.workers)),
-    hash: (text) => createHash("sha256").update(text).digest("hex"),
+    createParser: () => createVaultParser(platform.workers),
+    hash: (text) => platform.sha256(text),
     warn: options.warn,
   };
 }
 
 /** Every file under a root, outside hidden folders and `node_modules`, up to `limit`. */
 export async function listVault(
-  root: string,
-  limit: number,
-  shallow = false,
+  files: HostFiles,
+  request: { root: string; limit: number; shallow?: boolean | undefined },
 ): Promise<{ files: ListedFile[]; partial: boolean }> {
-  const base = fileURLToPath(root);
-  const found = await collectFiles(base, limit + 1, shallow);
-  const files = await statAll(base, found.slice(0, limit));
-  return { files, partial: found.length > limit };
+  const { root, limit, shallow = false } = request;
+  const found = await collectFiles(files, root, limit + 1, shallow);
+  const listed = await statAll(files, found.slice(0, limit));
+  return { files: listed, partial: found.length > limit };
 }
 
+/** Vault-relative paths (with `/`) of the files under `root`. */
 async function collectFiles(
-  base: string,
+  files: HostFiles,
+  root: string,
   limit: number,
   shallow: boolean,
-): Promise<string[]> {
-  const files: string[] = [];
-  const folders = [base];
-  while (folders.length > 0 && files.length < limit) {
+): Promise<{ relative: string; uri: string }[]> {
+  const found: { relative: string; uri: string }[] = [];
+  const folders = [""];
+  while (folders.length > 0 && found.length < limit) {
     const folder = folders.shift()!;
-    for (const entry of await entries(folder)) {
+    const entries = await files.list(
+      folder ? joinUri(files, root, folder) : root,
+    );
+    for (const entry of entries ?? []) {
       if (entry.name.startsWith(".") || entry.name === "node_modules") {
         continue;
       }
-      const full = path.join(folder, entry.name);
-      // A symbolic link to a folder could loop, so it is not entered.
-      if (entry.isDirectory() && !shallow) {
-        folders.push(full);
-      } else if (entry.isFile()) {
-        files.push(full);
+      const relative = folder ? `${folder}/${entry.name}` : entry.name;
+      // A symbolic link ("other") could loop, so it is not entered.
+      if (entry.kind === "folder" && !shallow) {
+        folders.push(relative);
+      } else if (entry.kind === "file") {
+        found.push({ relative, uri: joinUri(files, root, relative) });
       }
     }
   }
-  return files;
+  return found;
 }
 
-async function entries(folder: string): Promise<Dirent[]> {
-  try {
-    return await readdir(folder, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-}
-
-async function statAll(base: string, files: string[]): Promise<ListedFile[]> {
+async function statAll(
+  files: HostFiles,
+  found: { relative: string; uri: string }[],
+): Promise<ListedFile[]> {
   const listed: ListedFile[] = [];
   let next = 0;
   const worker = async () => {
-    while (next < files.length) {
-      const file = await listedFile(base, files[next++]!);
+    while (next < found.length) {
+      const file = await listedFile(files, found[next++]!);
       if (file) {
         listed.push(file);
       }
@@ -143,92 +130,64 @@ async function statAll(base: string, files: string[]): Promise<ListedFile[]> {
 }
 
 async function listedFile(
-  base: string,
-  file: string,
+  files: HostFiles,
+  { relative, uri }: { relative: string; uri: string },
 ): Promise<ListedFile | undefined> {
-  const relative = path.relative(base, file).split(path.sep).join("/");
   if (relative.startsWith("..") || isIgnoredPath(relative)) {
     return undefined;
   }
-  try {
-    const info = await stat(file);
-    if (!info.isFile()) {
-      return undefined;
-    }
-    return {
-      uri: pathToFileURL(file).toString(),
-      path: relative,
-      mtime: info.mtimeMs,
-      size: info.size,
-    };
-  } catch {
+  const info = await files.stat(uri);
+  if (info?.kind !== "file") {
     return undefined;
   }
+  return { uri, path: relative, mtime: info.mtime, size: info.size };
 }
 
 /**
- * File events under a vault. Node reports a path that changed, not what
- * happened to it, so a path that still exists is created or changed and one
- * that is gone was deleted; a rename arrives as a delete and a create.
+ * File events under a vault. A platform reports a path that changed, not
+ * what happened to it, so a path that still exists is created or changed
+ * and one that is gone was deleted; a rename arrives as a delete and a create.
  */
 export function watchVault(
+  files: HostFiles,
   root: string,
   listener: (event: FileEvent) => void,
 ): Disposer {
-  const base = fileURLToPath(root);
   const known = new Set<string>();
-  const watcher = watch(base, { recursive: true }, (_event, name) => {
-    // macOS also reports the watched folder itself, by its own name.
-    if (name !== null && name.toString() !== path.basename(base)) {
-      void report(base, name.toString(), known, listener);
-    }
+  return files.watchTree(root, (relative) => {
+    void report({ files, root, relative, known, listener });
   });
-  watcher.on("error", () => watcher.close());
-  return () => watcher.close();
 }
 
-async function report(
-  base: string,
-  name: string,
-  known: Set<string>,
-  listener: (event: FileEvent) => void,
-): Promise<void> {
-  const relative = name.split(path.sep).join("/");
+async function report(change: {
+  files: HostFiles;
+  root: string;
+  relative: string;
+  known: Set<string>;
+  listener: (event: FileEvent) => void;
+}): Promise<void> {
+  const { files, root, relative, known, listener } = change;
   if (isIgnoredPath(relative)) {
     return;
   }
-  const file = await listedFile(base, path.join(base, name));
+  const uri = joinUri(files, root, relative);
+  const file = await listedFile(files, { relative, uri });
   if (file) {
     listener({ type: known.has(relative) ? "change" : "create", file });
     known.add(relative);
     return;
   }
   known.delete(relative);
-  try {
-    await stat(path.join(base, name));
-  } catch {
+  if ((await files.stat(uri)) === undefined) {
     listener({ type: "delete", path: relative });
   }
 }
 
-/** A folder of JSON files per vault, in the plugin's data folder. */
-function snapshotStore(storage: string, root: string): SnapshotStore {
-  const id = createHash("sha256").update(root).digest("hex").slice(0, 16);
-  const folder = path.join(storage, "vault-index", id);
+/** A folder of JSON files per vault, in the host's store. */
+function snapshotStore(platform: HostPlatform, root: string): SnapshotStore {
+  const folder = `vault-index/${platform.sha256(root).slice(0, 16)}`;
   return {
-    async read(name) {
-      try {
-        return await readFile(path.join(folder, `${name}.json`), "utf8");
-      } catch {
-        return undefined;
-      }
-    },
-    async write(name, text) {
-      // Write beside the file, then rename, so a crash never leaves half a file.
-      const file = path.join(folder, `${name}.json`);
-      await mkdir(folder, { recursive: true });
-      await writeFile(`${file}.tmp`, text);
-      await rename(`${file}.tmp`, file);
-    },
+    read: (name) => platform.store.read(`${folder}/${name}.json`),
+    write: (name, text) => platform.store.write(`${folder}/${name}.json`, text),
   };
 }

@@ -1,57 +1,63 @@
 /**
- * VS Code's workspace services, over Node's file system: the workspaces
- * notes were opened from, file operations, and small persistent state.
+ * VS Code's workspace services outside VS Code, over the host's platform
+ * (platform.ts): the workspaces notes were opened from, file operations, and
+ * small persistent state. Every path is checked against the roots first.
  */
-import { readFileSync } from "node:fs";
-import {
-  cp,
-  lstat,
-  mkdir,
-  readdir,
-  readFile,
-  rename,
-  rm,
-} from "node:fs/promises";
-import * as path from "node:path";
-import { nodeWorkerLauncher, realContains } from "@workshop/markdown/node";
 import type {
   DiagnosticSink,
   Extensions,
   HostWorkspace,
   VaultCodeTrust,
+  WorkerLauncher,
   WorkspaceFiles,
   WorkspaceStorage,
 } from "@workshop/markdown/portable";
-import {
-  assertContained,
-  pathInsideRoots,
-  writeAtomic,
-  writeThroughFile,
-} from "./paths";
-import { watchFile } from "./watch";
+import { containInRoots, type HostFiles, type HostStore } from "./platform";
+import { parentUri } from "./uris";
 
-/**
- * `vaultCode`: the embedder's answer to whether a vault's own code may run
- * (it asks its owner, as the app does); see inert.ts for one that cannot ask.
- */
-export function createHostWorkspace(
-  roots: () => readonly string[],
-  vaultCode: VaultCodeTrust,
-): HostWorkspace {
+/** VS Code's workspace state, in the host's store. */
+export const STATE_FILE = "state.json";
+
+export interface HostWorkspaceOptions {
+  readonly files: HostFiles;
+  /** The workspace roots, as file URIs. */
+  readonly roots: () => readonly string[];
+  /**
+   * The embedder's answer to whether a vault's own code may run (it asks
+   * its owner, as the app does); see inert.ts for one that cannot ask.
+   */
+  readonly vaultCode: VaultCodeTrust;
+}
+
+export function createHostWorkspace({
+  files,
+  roots,
+  vaultCode,
+}: HostWorkspaceOptions): HostWorkspace {
+  const inside = (uri: string) => containInRoots(files, roots(), uri);
   return {
     folders: roots,
     // The owner opened these folders in their own app: remote images and
     // media load. Code that came with a vault is a separate question.
     isTrusted: () => true,
     vaultCode,
-    read: async (uri) => readFile(await pathInsideRoots(roots(), uri)),
-    stat: async (uri) => {
-      const info = await lstat(await pathInsideRoots(roots(), uri));
-      return { mtime: info.mtimeMs, symbolicLink: info.isSymbolicLink() };
+    read: async (uri) => {
+      await inside(uri);
+      return files.readBytes(uri);
     },
-    realContains,
-    watch: (uri, listener) => watchContained(roots, uri, listener),
-    files: createWorkspaceFiles(roots),
+    stat: async (uri) => {
+      await inside(uri);
+      const info = await files.linkStat(uri);
+      if (!info) {
+        throw Object.assign(new Error(`No file at ${uri}`), {
+          code: "FileNotFound",
+        });
+      }
+      return info;
+    },
+    ...(files.realContains ? { realContains: files.realContains } : {}),
+    watch: (uri, listener) => watchContained(inside, files, uri, listener),
+    files: createWorkspaceFiles(files, roots),
     diagnostics: noDiagnostics,
     revealTextEditor: async () => {},
   };
@@ -64,42 +70,72 @@ const noDiagnostics: DiagnosticSink = {
 };
 
 export function createWorkspaceFiles(
+  files: HostFiles,
   roots: () => readonly string[],
 ): WorkspaceFiles {
-  const inside = (uri: string) => pathInsideRoots(roots(), uri);
+  const inside = (uri: string) => containInRoots(files, roots(), uri);
   return {
-    authorize: (root, target) => assertContained(root, target),
-    readText: (uri) => textInside(inside, uri),
-    writeText: async (uri, text) => {
-      const file = await inside(uri);
-      await mkdir(path.dirname(file), { recursive: true });
-      await writeThroughFile(file, text);
+    authorize: (root, target) => files.contain(root, target),
+    readText: async (uri) => {
+      try {
+        await inside(uri);
+        return await files.readText(uri);
+      } catch {
+        return undefined;
+      }
     },
-    list: (uri) => namesInside(inside, uri),
+    writeText: async (uri, text) => {
+      await inside(uri);
+      await files.mkdir(parentUri(files, uri));
+      await files.save(uri, text);
+    },
+    list: async (uri) => {
+      try {
+        await inside(uri);
+      } catch {
+        return undefined;
+      }
+      return (await files.list(uri))?.map((entry) => entry.name);
+    },
     mkdir: async (uri) => {
-      await mkdir(await inside(uri), { recursive: true });
+      await inside(uri);
+      await files.mkdir(uri);
     },
     copy: async (from, to) => {
-      await cp(await inside(from), await inside(to), { recursive: true });
+      await Promise.all([inside(from), inside(to)]);
+      await files.copy(from, to);
     },
     move: async (from, to) => {
-      const target = await inside(to);
-      await mkdir(path.dirname(target), { recursive: true });
-      await rename(await inside(from), target);
+      await Promise.all([inside(from), inside(to)]);
+      await files.mkdir(parentUri(files, to));
+      await files.move(from, to);
     },
     remove: async (uri) => {
-      // A file, not a tree: VS Code's workspace fs deletes one entry.
-      await rm(await inside(uri), { recursive: false, force: true });
+      await inside(uri);
+      await files.remove(uri);
     },
-    isSymbolicLink: (uri) => linkInside(inside, uri),
-    // There is no native file picker behind a browser page.
+    isSymbolicLink: async (uri) => {
+      try {
+        await inside(uri);
+      } catch {
+        return false;
+      }
+      return (await files.linkStat(uri))?.symbolicLink ?? false;
+    },
+    // There is no native file picker behind a page.
     pickFile: async () => undefined,
   };
 }
 
-/** Small state kept in one JSON file (VS Code's workspace state). */
-export function createWorkspaceStorage(file: string): WorkspaceStorage {
-  let values = readValues(file);
+/**
+ * Small state kept in one JSON file (VS Code's workspace state). `saved` is
+ * what the store held at start (`STATE_FILE`).
+ */
+export function createWorkspaceStorage(
+  store: HostStore,
+  saved: string | undefined,
+): WorkspaceStorage {
+  let values = readValues(saved);
   let writing: Promise<void> = Promise.resolve();
   return {
     get: <T>(key: string, fallback: T): T =>
@@ -107,7 +143,7 @@ export function createWorkspaceStorage(file: string): WorkspaceStorage {
     update: (key, value) => {
       const job = writing.then(async () => {
         values = { ...values, [key]: value };
-        await writeAtomic(file, JSON.stringify(values));
+        await store.write(STATE_FILE, JSON.stringify(values));
       });
       writing = job.then(
         () => undefined,
@@ -120,19 +156,20 @@ export function createWorkspaceStorage(file: string): WorkspaceStorage {
 
 /** Watch a file only after it is known to sit inside a workspace. */
 function watchContained(
-  roots: () => readonly string[],
+  inside: (uri: string) => Promise<void>,
+  files: HostFiles,
   uri: string,
   listener: () => void,
 ): () => void {
   let close = (): void => {};
   let stopped = false;
-  void pathInsideRoots(roots(), uri)
-    .then((file) => {
+  void inside(uri)
+    .then(() => {
       if (stopped) {
         return;
       }
-      // The file, or folders above it, may not exist yet (watch.ts).
-      close = watchFile(file, listener);
+      // The file, or folders above it, may not exist yet.
+      close = files.watch(uri, listener);
     })
     .catch(() => {
       // Outside the workspace, or gone: there is nothing to watch.
@@ -143,42 +180,12 @@ function watchContained(
   };
 }
 
-async function textInside(
-  inside: (uri: string) => Promise<string>,
-  uri: string,
-): Promise<string | undefined> {
-  try {
-    return await readFile(await inside(uri), "utf8");
-  } catch {
-    return undefined;
+function readValues(text: string | undefined): Record<string, unknown> {
+  if (text === undefined) {
+    return {};
   }
-}
-
-async function namesInside(
-  inside: (uri: string) => Promise<string>,
-  uri: string,
-): Promise<readonly string[] | undefined> {
   try {
-    return await readdir(await inside(uri));
-  } catch {
-    return undefined;
-  }
-}
-
-async function linkInside(
-  inside: (uri: string) => Promise<string>,
-  uri: string,
-): Promise<boolean> {
-  try {
-    return (await lstat(await inside(uri))).isSymbolicLink();
-  } catch {
-    return false;
-  }
-}
-
-function readValues(file: string): Record<string, unknown> {
-  try {
-    const value: unknown = JSON.parse(readFileSync(file, "utf8"));
+    const value: unknown = JSON.parse(text);
     return typeof value === "object" && value !== null
       ? (value as Record<string, unknown>)
       : {};
@@ -188,9 +195,6 @@ function readValues(file: string): Record<string, unknown> {
 }
 
 /** No other extensions run beside Lumière outside VS Code. */
-export function createExtensions(markdownDist: string): Extensions {
-  return {
-    isInstalled: () => false,
-    workers: nodeWorkerLauncher(path.join(markdownDist, "workers")),
-  };
+export function createExtensions(workers: WorkerLauncher): Extensions {
+  return { isInstalled: () => false, workers };
 }

@@ -23,4 +23,5 @@ export type { HostIdentity } from "./services";
 export type { VaultCodeTrust } from "@workshop/markdown/portable";
 export type { MenuContribution } from "./context-menu";
 export { serveFile, serveStatic } from "./static";
-export { listVault, isInside } from "./vault";
+export { listNodeVault as listVault } from "./node-platform";
+export { isInside } from "./paths";
