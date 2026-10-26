@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { nodeFiles } from "../../src/host/node-platform";
-import { fileUri, joinUri, parentUri, uriName } from "../../src/host/uris";
+import {
+  fileUri,
+  joinUri,
+  parentUri,
+  uriName,
+  uriPath,
+} from "../../src/host/uris";
 
 const NAMES = [
   "a.md",
@@ -52,4 +58,12 @@ test("without Node, a path's URI is the one Node 26's pathToFileURL gives", () =
     }
   }
   assert.equal(fileUri("/v/é ü.md"), pathToFileURL("/v/é ü.md").toString());
+});
+
+test("a URI's path resolves dot segments and refuses hidden separators", () => {
+  assert.equal(uriPath("file:///v/a/../b%20c.md"), "/v/b c.md");
+  assert.equal(uriPath("file:///v/a/%2e%2e/b.md"), "/v/b.md");
+  assert.throws(() => uriPath("file:///v/a%2F..%2F..%2Fx.md"), TypeError);
+  assert.throws(() => uriPath("file:///v/a%5c..%5cx.md"), TypeError);
+  assert.throws(() => uriPath("https://example.com/v/a.md"), TypeError);
 });

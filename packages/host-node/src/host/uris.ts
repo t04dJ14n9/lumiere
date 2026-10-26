@@ -21,9 +21,18 @@ export function fileUri(path: string): string {
   return url.href;
 }
 
-/** The decoded path of a `file:` URI, with `/` (`/C:/x` for a Windows drive). */
+/**
+ * The decoded path of a `file:` URI, with `/` (`/C:/x` for a Windows drive).
+ * Throws for another scheme, and for an encoded `/` or `\`, which would hide
+ * a separator from a containment check (as Node's `fileURLToPath` does).
+ */
 export function uriPath(uri: string): string {
-  return decodeURIComponent(new URL(uri).pathname);
+  const url = new URL(uri);
+  if (url.protocol !== "file:" || /%2f|%5c/i.test(url.pathname)) {
+    throw new TypeError(`Not a file path: ${uri}`);
+  }
+  // The URL parser has already resolved `.` and `..`, also encoded ones.
+  return decodeURIComponent(url.pathname);
 }
 
 /** `relative` (with `/`) under `folder`; `..` may leave it, as with `path.join`. */
