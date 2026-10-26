@@ -2,9 +2,7 @@ import type { Configuration } from "../../src/shared/configuration";
 import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
 import type { WorkspaceFiles } from "../../src/shared/workspace-files";
-import { gitSource } from "../../src/host/git-source";
 import type { WorkerLauncher } from "../../src/shared/workers";
-import { realContains } from "../../src/host/real-contains";
 
 /** Members to replace, per host service. */
 export type HostOverrides = {
@@ -109,8 +107,6 @@ function defaultHost(): HostServices {
       },
       read: async () => new Uint8Array(),
       stat: async () => ({ mtime: 0, symbolicLink: false }),
-      // VS Code resolves file: links on the local disk.
-      realContains,
       watch: none,
       files: unavailableFiles(),
       diagnostics: { replaceAll() {}, clear() {} },
@@ -191,8 +187,11 @@ function noGit(): GitAccess {
     onDidChange: none,
     stage: async () => false,
     toGitUri: () => undefined,
-    // The VS Code adapter's own parser: the diff tests hand it git: URIs.
-    sourceOf: gitSource,
+    // Where there is no Git extension: every URI is its own source. Tests
+    // that hand over git: URIs pass VS Code's parser (src/host/git-source.ts),
+    // and those that follow links on disk its realContains: this file is also
+    // bundled for the browser harness, which has no Node.
+    sourceOf: (uri) => ({ source: uri }),
   };
 }
 
