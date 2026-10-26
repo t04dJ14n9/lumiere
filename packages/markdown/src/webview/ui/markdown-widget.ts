@@ -75,7 +75,6 @@ function currentRenderGeneration(render: RenderService): number {
 
 /** Evict pooled off-viewport block shells when render/changed invalidates rendered output. */
 export function evictMarkdownBlockDomPool(render: RenderService): void {
-  blockHtmlCache.clear();
   renderGenerations.set(render, currentRenderGeneration(render) + 1);
   const pool = blockDomPool.get(render);
   if (!pool) {
@@ -301,40 +300,8 @@ export class MarkdownBlock extends WidgetType {
   }
 }
 
-const BLOCK_HTML_CACHE_LIMIT = 256;
-const blockHtmlCache = new Map<string, string>();
-
-function blockCacheKey(block: RenderBlock): string {
-  return `${block.kind}\0${block.source}`;
-}
-
-function getCachedBlockHtml(key: string): string | undefined {
-  const cached = blockHtmlCache.get(key);
-  if (cached !== undefined) {
-    blockHtmlCache.delete(key);
-    blockHtmlCache.set(key, cached);
-  }
-  return cached;
-}
-
-function setCachedBlockHtml(key: string, html: string): void {
-  if (!html) {
-    return;
-  }
-  if (blockHtmlCache.has(key)) {
-    blockHtmlCache.delete(key);
-  } else if (blockHtmlCache.size >= BLOCK_HTML_CACHE_LIMIT) {
-    const oldest = blockHtmlCache.keys().next().value;
-    if (oldest !== undefined) {
-      blockHtmlCache.delete(oldest);
-    }
-  }
-  blockHtmlCache.set(key, html);
-}
-
-/** Test helper: clear cached MarkdownBlock HTML snapshots and retained shells. */
-export function clearMarkdownBlockHtmlCache(): void {
-  blockHtmlCache.clear();
+/** Test helper: forget pooled block shells. */
+export function clearMarkdownBlockPool(): void {
   blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
   renderGenerations = new WeakMap<RenderService, number>();
 }
@@ -347,18 +314,11 @@ function beginMarkdownBlockRender(options: {
 }): void {
   const { entry, block, render, onSettled } = options;
   const { shell, body } = entry;
-  const cacheKey = blockCacheKey(block);
-  const rememberHtml = () => {
-    if (!shell.classList.contains("render-error") && body.innerHTML) {
-      setCachedBlockHtml(cacheKey, body.innerHTML);
-    }
-  };
   void render
     .into(body, block.source, {
       sourceLine: entry.currentView.state.doc.lineAt(block.from).number - 1,
       measure: () => {
         if (entry.alive) {
-          rememberHtml();
           releaseReserveOnceMounted(entry.currentView, shell, body);
           if (shell.isConnected) {
             entry.currentView.requestMeasure();
@@ -370,7 +330,6 @@ function beginMarkdownBlockRender(options: {
       entry.pass = result;
       if (entry.alive) {
         entry.settled = true;
-        rememberHtml();
         onSettled();
       } else {
         void result.dispose();
@@ -384,15 +343,6 @@ function beginMarkdownBlockRender(options: {
         entry.currentView.requestMeasure();
       }
     });
-  if (!body.innerHTML) {
-    const cachedHtml = getCachedBlockHtml(cacheKey);
-    if (cachedHtml !== undefined) {
-      body.classList.add("markdown-rendered");
-      body.innerHTML = cachedHtml;
-    }
-  } else {
-    rememberHtml();
-  }
 }
 
 function sourceStart(

@@ -363,12 +363,12 @@ import {
   type RenderService,
 } from "../../../src/plugins/render/api";
 import {
-  clearMarkdownBlockHtmlCache,
+  clearMarkdownBlockPool,
   MarkdownBlock,
 } from "../../../src/webview/ui/markdown-widget";
 
-test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is present and seeds cached HTML on async remount", async () => {
-  clearMarkdownBlockHtmlCache();
+test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is present", async () => {
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
   const prevIdle = (globalThis as Record<string, unknown>).requestIdleCallback;
 
@@ -459,7 +459,8 @@ test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is
     assert.equal(body.innerHTML, '<div class="callout">hi</div>');
     widget.destroy(shell as unknown as HTMLElement);
 
-    // Remount with an async RenderService: cached HTML seeds body immediately in 0ms.
+    // An asynchronous render leaves the body empty until it is done; the
+    // block's reserve holds its place meanwhile.
     let resolveAsync!: () => void;
     const asyncRender: RenderService = {
       trusted: true,
@@ -484,24 +485,20 @@ test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is
     const remountWidget = new MarkdownBlock(block, asyncRender);
     const remountShell = remountWidget.toDOM(view) as unknown as StubElement;
     const remountBody = remountShell.children[1]!;
-    assert.equal(
-      remountBody.innerHTML,
-      '<div class="callout">hi</div>',
-      "cached HTML snapshot should populate body synchronously on remount",
-    );
+    assert.equal(remountBody.innerHTML, "");
     resolveAsync();
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(remountBody.innerHTML, '<div class="callout">updated</div>');
     remountWidget.destroy(remountShell as unknown as HTMLElement);
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
     (globalThis as Record<string, unknown>).requestIdleCallback = prevIdle;
   }
 });
 
 test("MarkdownBlock retains live shell DOM across destroy and toDOM when using the same RenderService", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
 
   class StubElement {
@@ -606,13 +603,13 @@ test("MarkdownBlock retains live shell DOM across destroy and toDOM when using t
     assert.equal(renderCalls, 1);
     recreatedWidget.destroy(thirdShell);
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
 
 test("a block keeps its reserved height while a diagram inside still waits for its SVG", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
 
   class StubElement {
@@ -721,13 +718,13 @@ test("a block keeps its reserved height while a diagram inside still waits for i
     assert.equal(shell.style.minHeight, "", "released once the SVG is in");
     widget.destroy(shell as unknown as HTMLElement);
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
 
 test("mounting and unmounting a block reads no layout", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
   let layoutReads = 0;
 
@@ -807,13 +804,13 @@ test("mounting and unmounting a block reads no layout", async () => {
     widget.destroy(shell);
     assert.equal(layoutReads, 0, "each read forces a layout mid-update");
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
 
 test("a block mounted again tells its parts still rendering", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
   const pending = new EventTarget();
   let remounts = 0;
@@ -891,13 +888,13 @@ test("a block mounted again tells its parts still rendering", async () => {
     assert.equal(widget.toDOM(view), shell, "the retained shell comes back");
     assert.equal(remounts, 1);
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
 
 test("a block whose diagram drew while it was scrolled out drops its reserve when it comes back", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
 
   class StubElement {
@@ -995,13 +992,13 @@ test("a block whose diagram drew while it was scrolled out drops its reserve whe
     }
     assert.equal(shell.style.minHeight, "", "released once back");
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
 
 test("a block's cleanup runs when CodeMirror destroys it through an equal widget", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
   class StubElement {
     className = "";
@@ -1079,7 +1076,7 @@ test("a block's cleanup runs when CodeMirror destroys it through an equal widget
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(disposed, 1, "the unfinished render is disposed");
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
