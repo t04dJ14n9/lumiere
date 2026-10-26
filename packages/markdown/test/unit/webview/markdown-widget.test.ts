@@ -660,13 +660,13 @@ test("a block keeps its reserved height while a diagram inside still waits for i
     // CodeMirror's measure cycle: reads, then writes, at the next frame.
     let requests: {
       read?: () => unknown;
-      write?: (value: unknown) => void;
+      write?: (value: unknown, view: EditorView) => void;
     }[] = [];
     const nextFrame = () => {
       const due = requests;
       requests = [];
       const values = due.map((request) => request.read?.());
-      due.forEach((request, index) => request.write?.(values[index]));
+      due.forEach((request, index) => request.write?.(values[index], view));
     };
     const view = {
       contentDOM: { clientWidth: 640 },
@@ -946,7 +946,7 @@ test("a block whose diagram drew while it was scrolled out drops its reserve whe
     };
     const measures: {
       read: () => unknown;
-      write?: (value: unknown) => void;
+      write?: (value: unknown, view: EditorView) => void;
     }[] = [];
     const view = {
       state: { doc: { lineAt: () => ({ number: 1 }) } },
@@ -988,7 +988,7 @@ test("a block whose diagram drew while it was scrolled out drops its reserve whe
     assert.equal(widget.toDOM(view), shell as unknown as HTMLElement);
     shell.isConnected = true;
     for (const request of measures.splice(0)) {
-      request.write?.(request.read());
+      request.write?.(request.read(), view);
     }
     assert.equal(shell.style.minHeight, "", "released once back");
   } finally {

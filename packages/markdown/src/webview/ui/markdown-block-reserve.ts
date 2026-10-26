@@ -37,13 +37,18 @@ export function releaseReserveOnceMounted(
       shell.isConnected &&
       !hasPendingRender(body) &&
       body.getBoundingClientRect().height > 0,
-    write: (isComplete) => {
+    write: (isComplete, view) => {
       if (isComplete) {
         shell.style.minHeight = "";
+        // Measure again in this frame, so CodeMirror holds the text still
+        // before the new height is painted, not a frame after.
+        view.requestMeasure(MEASURE_AGAIN);
       }
     },
   });
 }
+
+const MEASURE_AGAIN = { key: "markdown-block-reserve", read: () => {} };
 
 /** Tell parts still rendering that their block is back (see RENDER_REMOUNT_EVENT). */
 export function announceRemount(body: HTMLElement): void {
