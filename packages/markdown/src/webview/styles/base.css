@@ -173,6 +173,9 @@ body.vscode-high-contrast-light {
   mix-blend-mode: screen;
   pointer-events: none;
 }
+#app .cm-editor :is(.cm-selectionLayer, .mw-selection-layer):empty {
+  display: none;
+}
 body.vscode-light #app .cm-editor :is(.cm-selectionLayer, .mw-selection-layer),
 body.vscode-high-contrast-light
   #app

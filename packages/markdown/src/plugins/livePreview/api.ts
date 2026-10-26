@@ -1,7 +1,19 @@
-import type { Extension, EditorState } from "@codemirror/state";
-import type { SyntaxNodeRef } from "@lezer/common";
+import {
+  StateEffect,
+  StateField,
+  type EditorState,
+  type Extension,
+  type Text,
+} from "@codemirror/state";
+import {
+  TreeFragment,
+  type ChangedRange,
+  type SyntaxNodeRef,
+  type Tree,
+} from "@lezer/common";
 import type { EditorView, WidgetType } from "@codemirror/view";
 import type { Disposer } from "@workshop/core";
+import { markdownParser, parseMarkdown } from "../../markdown/dialect/parser";
 export interface RenderBlock {
   from: number;
   to: number;
@@ -82,3 +94,91 @@ declare module "@workshop/core" {
     livePreview: LivePreview;
   }
 }
+
+/**
+ * How much of a large note we parse before the first paint. Matches the Live
+ * Preview hot band (opening viewport + margin) so block/inline decorations for
+ * the first screen do not wait on a full-document Lezer walk. A ViewPlugin
+ * replaces this with a complete tree on idle / the next frames.
+ */
+export const FIRST_PAINT_PARSE_CHARS = 10000;
+
+/** Swap in a completed (or otherwise rebuilt) document tree after first paint. */
+export const replaceDocumentTree = StateEffect.define<Tree>();
+
+/** Parse only the opening band for large notes; full parse otherwise. */
+export function parseForFirstPaint(
+  doc: Text,
+  budget = FIRST_PAINT_PARSE_CHARS,
+): Tree {
+  if (doc.length <= budget) {
+    return parseMarkdown(doc);
+  }
+  // End on a line boundary so we do not split a block mid-line.
+  const at = Math.min(budget, doc.length);
+  const line = doc.lineAt(at);
+  const end = Math.min(
+    doc.length,
+    line.number < doc.lines ? line.to + 1 : line.to,
+  );
+  // Do not use parseMarkdown's Text WeakMap — the prefix string is not the doc.
+  return markdownParser.parse(doc.sliceString(0, end));
+}
+
+function updateDocumentTree(
+  tree: Tree,
+  startDoc: Text,
+  newDoc: Text,
+  changes: ChangedRange[],
+): Tree {
+  if (tree.length < startDoc.length) {
+    return parseForFirstPaint(newDoc);
+  }
+  let fragments = TreeFragment.applyChanges(
+    TreeFragment.addTree(tree),
+    changes,
+  );
+  if (changes[0]!.fromA <= startDoc.line(1).to) {
+    const end = Math.min(newDoc.length, newDoc.line(1).to + 1);
+    fragments = fragments.flatMap((fragment) =>
+      fragment.to <= end
+        ? []
+        : [
+            new TreeFragment(
+              Math.max(fragment.from, end),
+              fragment.to,
+              fragment.tree,
+              fragment.offset,
+              true,
+              fragment.openEnd,
+            ),
+          ],
+    );
+  }
+  return parseMarkdown(newDoc, fragments);
+}
+
+/** Reuse unchanged syntax without making distant headings or footnotes viewport-dependent. */
+export const documentTree = StateField.define<Tree>({
+  create: (state) => parseForFirstPaint(state.doc),
+  update(tree, transaction) {
+    for (const effect of transaction.effects) {
+      if (effect.is(replaceDocumentTree)) {
+        return effect.value;
+      }
+    }
+    if (!transaction.docChanged) {
+      return tree;
+    }
+    const changes: ChangedRange[] = [];
+    transaction.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+      changes.push({ fromA, toA, fromB, toB });
+    });
+    return updateDocumentTree(
+      tree,
+      transaction.startState.doc,
+      transaction.newDoc,
+      changes,
+    );
+  },
+});

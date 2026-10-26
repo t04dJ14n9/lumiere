@@ -1,14 +1,15 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Plugin } from "@workshop/core";
 import type {} from "../editor/api";
-import type {} from "../livePreview/api";
+import { documentTree, type LivePreview } from "../livePreview/api";
 import { guideDecorations, syncListActiveGuide } from "./guides";
 
 export const indentGuidesWebview: Plugin = {
   name: "indentGuides",
   inject: { required: ["editor"], optional: ["livePreview"] },
   apply(ctx) {
-    const isLivePreview = () => ctx.livePreview?.mode === "livePreview";
+    const isLivePreview = () =>
+      (ctx.livePreview as LivePreview | undefined)?.mode === "livePreview";
     const guides = (view: EditorView) =>
       guideDecorations(view.state, view.visibleRanges, isLivePreview());
     ctx.effect(() =>
@@ -16,21 +17,32 @@ export const indentGuidesWebview: Plugin = {
         EditorView.editorAttributes.of({ class: "mw-indent-guides" }),
         ViewPlugin.define(
           (view) => {
-            syncListActiveGuide(view.dom, view.state, isLivePreview());
+            let lastMode = isLivePreview();
+            syncListActiveGuide(view.dom, view.state, lastMode);
             return {
               decorations: guides(view),
               update(update) {
-                this.decorations = guides(update.view);
+                const mode = isLivePreview();
+                const modeChanged = mode !== lastMode;
+                lastMode = mode;
+                const treeChanged =
+                  update.startState.field(documentTree, false) !==
+                  update.state.field(documentTree, false);
                 if (
+                  modeChanged ||
+                  update.docChanged ||
+                  update.viewportChanged ||
+                  treeChanged
+                ) {
+                  this.decorations = guides(update.view);
+                }
+                if (
+                  modeChanged ||
                   update.docChanged ||
                   update.selectionSet ||
-                  update.viewportChanged
+                  treeChanged
                 ) {
-                  syncListActiveGuide(
-                    update.view.dom,
-                    update.view.state,
-                    isLivePreview(),
-                  );
+                  syncListActiveGuide(update.view.dom, update.view.state, mode);
                 }
               },
               destroy() {

@@ -7,12 +7,12 @@ import {
   foldState,
 } from "@codemirror/language";
 import type { EditorView } from "@codemirror/view";
-import { Compartment } from "@codemirror/state";
+import { Compartment, type EditorState, type Text } from "@codemirror/state";
 import { foldedViewState } from "./view-state";
 import type { Context, Infer, Plugin } from "@workshop/core";
-import type { EditorState } from "@codemirror/state";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
+import { documentTree } from "../livePreview/api";
 import { headingFold } from "./heading-fold";
 import { config } from "./manifest";
 import {
@@ -32,48 +32,89 @@ const foldMore = (view: EditorView) =>
 const foldLess = (view: EditorView) =>
   applyFolds(view, foldLessEffect(view.state));
 
+interface CachedFoldRange {
+  end: number;
+  range: { from: number; to: number } | null;
+}
+const foldRanges = new WeakMap<
+  Text,
+  Map<string, Map<number, CachedFoldRange>>
+>();
+
+function indentWidth(text: string, tabSize: number): number {
+  let count = 0;
+  for (const char of text) {
+    if (char === " ") {
+      count++;
+    } else if (char === "\t") {
+      count += tabSize - (count % tabSize);
+    } else {
+      break;
+    }
+  }
+  return count;
+}
+
+function indentFold(
+  doc: Text,
+  start: number,
+  end: number,
+  tabSize: number,
+): { from: number; to: number } | null {
+  const line = doc.lineAt(start);
+  if (!line.text.trim()) {
+    return null;
+  }
+  const base = indentWidth(line.text, tabSize);
+  let to = end;
+  for (let number = line.number + 1; number <= doc.lines; number++) {
+    const next = doc.line(number);
+    if (!next.text.trim()) {
+      continue;
+    }
+    if (indentWidth(next.text, tabSize) <= base) {
+      break;
+    }
+    to = next.to;
+  }
+  return to > end ? { from: end, to } : null;
+}
+
 export function foldRange(
   state: EditorState,
   start: number,
   end: number,
   options: Infer<typeof config>,
 ) {
+  let byKey = foldRanges.get(state.doc);
+  if (!byKey) {
+    byKey = new Map();
+    foldRanges.set(state.doc, byKey);
+  }
+  const key = `${options.heading ? 1 : 0}:${options.indent ? 1 : 0}:${state.tabSize}`;
+  let cache = byKey.get(key);
+  if (!cache) {
+    cache = new Map();
+    byKey.set(key, cache);
+  }
+  const cached = cache.get(start);
+  if (cached?.end === end) {
+    return cached.range;
+  }
+  let range: { from: number; to: number } | null = null;
   if (options.heading) {
-    const range = headingFold(state.doc, start, end);
-    if (range) {
-      return range;
-    }
+    range = headingFold(
+      state.doc,
+      start,
+      end,
+      state.field(documentTree, false),
+    );
   }
-  if (!options.indent) {
-    return null;
+  if (!range && options.indent) {
+    range = indentFold(state.doc, start, end, state.tabSize);
   }
-  const line = state.doc.lineAt(start);
-  const width = (text: string) => {
-    let count = 0;
-    for (const char of text) {
-      if (char === " ") {
-        count++;
-      } else if (char === "\t") {
-        count += state.tabSize - (count % state.tabSize);
-      } else {
-        break;
-      }
-    }
-    return count;
-  };
-  const base = width(line.text);
-  let to = end;
-  for (let number = line.number + 1; number <= state.doc.lines; number++) {
-    const next = state.doc.line(number);
-    if (!next.text.trim()) {
-      continue;
-    }
-    if (width(next.text) <= base) {
-      break;
-    }
-    to = next.to;
-  }
-  return to > end ? { from: end, to } : null;
+  cache.set(start, { end, range });
+  return range;
 }
 /** CodeMirror's gutter otherwise ignores fold-service and tab-width changes. */
 export function foldingChanged(update: {
