@@ -115,7 +115,12 @@ export const markdownBlockWidthTracker = ViewPlugin.fromClass(
 /** Painted heights for MarkdownBlock widgets, keyed by source. */
 const measuredBlockHeights = new Map<string, number>();
 
-/** Remember a block's painted height for the next off-viewport remount. */
+/**
+ * Remember a block's painted height for the next off-viewport remount. The
+ * latest height wins, smaller as well as larger: a block wraps differently
+ * as the pane is resized, and a height that only grew left the note's
+ * height map too tall for good.
+ */
 export function rememberMarkdownBlockHeight(
   source: string,
   height: number,
@@ -123,10 +128,7 @@ export function rememberMarkdownBlockHeight(
   if (!source || !(height > 0)) {
     return;
   }
-  const previous = measuredBlockHeights.get(source) ?? 0;
-  if (height > previous) {
-    measuredBlockHeights.set(source, height);
-  }
+  measuredBlockHeights.set(source, height);
 }
 
 const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
@@ -147,8 +149,9 @@ export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
   }
   const observer = new ResizeObserver((entries) => {
     const height = entries[0]?.contentRect.height ?? 0;
-    // A pending diagram's box is the reserve, not its height.
-    if (height > 0 && !hasPendingRender(dom)) {
+    // While the block holds its reserve, its box is the reserve, not its
+    // height; once the reserve goes, the box changes and is measured again.
+    if (height > 0 && !dom.style.minHeight && !hasPendingRender(dom)) {
       rememberMarkdownBlockHeight(source, height);
     }
   });
@@ -297,16 +300,12 @@ function formulaHeight(source: string): number {
 }
 
 /**
- * Reserve rendered-block height from Markdown source before DOM measure. A
- * drawn diagram's height is its own: the Mermaid formula knows nothing of
- * the layout, so it must not lift a measured height (a 504 px diagram
- * reserved 696 px on every remount, then shrank on screen).
+ * A rendered block's height before it is measured: the height it was last
+ * painted at, or else a guess from its source. A painted height is the
+ * block's own, so the guess never lifts it: a 504 px diagram reserved
+ * 696 px on every remount, and a one-line formula 160 px, then shrank on
+ * screen.
  */
 export function markdownBlockEstimatedHeight(source: string): number {
-  const cached = measuredBlockHeights.get(source);
-  if (cached !== undefined && isMermaidFence(source)) {
-    return cached;
-  }
-  const floor = formulaHeight(source);
-  return cached === undefined ? floor : Math.max(floor, cached);
+  return measuredBlockHeights.get(source) ?? formulaHeight(source);
 }
