@@ -2,12 +2,12 @@
  * BH-016: tall wide tables keep a sticky horizontal scrollbar while the
  * native bar is below the note viewport; dragging its thumb pans `.table-scroll`.
  */
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function tallWideTable(): string {
+function tallWideTable(width = 20): string {
   const columns = Array.from(
-    { length: 20 },
+    { length: width },
     (_, i) => `Column ${i} long header`,
   );
   const header = `| ${columns.join(" | ")} |`;
@@ -22,6 +22,16 @@ function tallWideTable(): string {
   );
   const after = Array.from({ length: 8 }, (_, i) => `After ${i}`).join("\n\n");
   return `${before}\n\n${header}\n${rule}\n${rows}\n\n${after}`;
+}
+
+/** Distance from the bar's bottom edge to the bottom of the note scrollport. */
+function gapBelowBar(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const note = document.querySelector(".cm-scroller")!;
+    const bar = document.querySelector(".table-hscroll-sticky")!;
+    const noteBottom = note.getBoundingClientRect().top + note.clientHeight;
+    return Math.abs(noteBottom - bar.getBoundingClientRect().bottom);
+  });
 }
 
 test("sticky hscroll appears at the top of a tall wide table and pans columns", async ({
@@ -51,6 +61,17 @@ test("sticky hscroll appears at the top of a tall wide table and pans columns", 
     .poll(async () => sticky.evaluate((el) => !(el as HTMLElement).hidden))
     .toBe(true);
   await expect(thumb).toBeVisible();
+  expect(await gapBelowBar(page)).toBeLessThan(1);
+  // The bar rides the note's bottom edge while the note scrolls.
+  const note = page.locator(".cm-scroller").first();
+  await note.evaluate((el) => {
+    el.scrollTop += 300;
+  });
+  await expect.poll(() => gapBelowBar(page)).toBeLessThan(1);
+  await note.evaluate((el) => {
+    el.scrollTop -= 300;
+  });
+  await expect.poll(() => gapBelowBar(page)).toBeLessThan(1);
 
   const before = await scroll.evaluate((el) => el.scrollLeft);
   const box = (await thumb.boundingBox())!;
@@ -79,4 +100,46 @@ test("sticky hscroll appears at the top of a tall wide table and pans columns", 
     .poll(async () => sticky.evaluate((el) => !(el as HTMLElement).hidden))
     .toBe(true);
   expect(await scroll.evaluate((el) => el.scrollLeft)).toBe(kept);
+});
+
+test("the sticky bar follows whether the table overflows its column", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1600, height: 600 });
+  const source = tallWideTable(4);
+  await open(page, source, "obsidian", {});
+  await page.addStyleTag({
+    content:
+      ".panel { height: 100%; min-height: 0; display: flex; flex-direction: column; }",
+  });
+  await page.evaluate(
+    (from) => window.harness.reveal(from),
+    source.indexOf("| Column 0"),
+  );
+  const table = page.locator(".hybrid-table");
+  const scroll = table.locator(".table-scroll");
+  const sticky = table.locator(".table-hscroll-sticky");
+  await table
+    .locator('th[data-row="0"][data-column="0"]')
+    .scrollIntoViewIfNeeded();
+  const height = await table.evaluate((el) => (el as HTMLElement).offsetHeight);
+  expect(await scroll.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+    true,
+  );
+  await expect(sticky).toBeHidden();
+
+  // A narrower note makes the same table overflow without any note scroll.
+  await page.setViewportSize({ width: 500, height: 600 });
+  await expect
+    .poll(() => scroll.evaluate((el) => el.scrollWidth > el.clientWidth))
+    .toBe(true);
+  await expect(sticky).toBeVisible();
+  await expect.poll(() => gapBelowBar(page)).toBeLessThan(1);
+  // The bar and its foot take no room in the table.
+  expect(await table.evaluate((el) => (el as HTMLElement).offsetHeight)).toBe(
+    height,
+  );
+
+  await page.setViewportSize({ width: 1600, height: 600 });
+  await expect(sticky).toBeHidden();
 });

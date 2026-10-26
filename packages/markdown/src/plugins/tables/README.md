@@ -21,10 +21,14 @@ cancels saved-view scroll restoration. Horizontal and Shift-wheel gestures
 stay with the table's overflow box. Chromium latches a mostly vertical
 diagonal wheel to `.table-scroll` when the table can take its sideways part,
 dropping the vertical part; once the table has panned for it, a passive
-listener scrolls the note by that vertical part. Tall wide tables also mount a sticky mirror of that
-horizontal scrollbar (BH-016) while the native bar is below the note
-viewport, so columns stay reachable without scrolling to the foot; the
-mirror hides once the native bar is on screen. The selection and focus stay in place during scrolling.
+listener scrolls the note by that vertical part. Tall wide tables also show a
+sticky mirror of that horizontal scrollbar (BH-016) while the native bar is
+below the note viewport, so columns stay reachable without scrolling to the
+foot; the mirror hides once the native bar is on screen. CSS
+`position: sticky; bottom: 0` keeps it on the note's bottom edge; a
+ResizeObserver (does the table overflow?) and an IntersectionObserver (is the
+native bar on screen?) only decide whether it shows, so scrolling the note
+runs no table script. The selection and focus stay in place during scrolling.
 Grid Ctrl+C/Cmd+C snapshots the selected rectangle as TSV and writes through
 Editor's validated host clipboard service, preserving grid focus and selection.
 Native copy events and menu commands use the same TSV serialization; ordinary
@@ -62,9 +66,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `focus-lifetime.test.ts`: unmount does not count as leaving; retained cell focus waits until the root is connected.
 - `tables-native-scroll.spec.ts` (browser): native wheel while hovering, editing or selecting, and the open cell surviving a viewport exit.
 - `scroll-input.ts`: passive report of vertical wheel over a table, which CodeMirror's own observers never see.
-- `sticky-hscroll.ts`: sticky custom horizontal scrollbar for tall wide tables (BH-016).
-- `sticky-hscroll.test.ts`: visibility, sticky-top, and thumb-metric unit cases.
-- `tables-sticky-hscroll.spec.ts` (browser): sticky bar at header, pan sync, hide at foot.
+- `sticky-hscroll.ts`: sticky custom horizontal scrollbar for tall wide tables (BH-016), shown by observers and positioned by CSS.
+- `sticky-hscroll.test.ts`: visibility and thumb-metric unit cases.
+- `tables-sticky-hscroll.spec.ts` (browser): sticky bar on the note's bottom edge at the header and while scrolling, pan sync, hide at foot, and showing only while the table overflows.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
 - `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.

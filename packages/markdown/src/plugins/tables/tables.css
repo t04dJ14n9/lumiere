@@ -67,18 +67,28 @@
   background: var(--accent);
   pointer-events: none;
 }
-/* BH-016: sticky custom horizontal scrollbar for tall wide tables. First child
- * of `.hybrid-table`; sticky `top` is set in JS to the note scrollport bottom.
- * Negative margin collapses layout so the table does not shift. Hidden when the
- * native bar is already on screen (or the table is off-screen / narrow). */
+/* BH-016: sticky custom horizontal scrollbar for tall wide tables, right after
+ * `.table-scroll`. Its own place is over the native bar; `bottom: 0` keeps it
+ * on the note scrollport's bottom edge while that place is below it, and the
+ * table (its containing block) takes it away once the table leaves the
+ * viewport. The foot covers the same strip, and while the foot is on screen
+ * the mirror is hidden. Negative margins keep both out of the table's height. */
+.table-hscroll-foot,
+.table-hscroll-sticky {
+  box-sizing: border-box;
+  height: 14px;
+  margin-top: -14px;
+}
+.table-hscroll-foot {
+  visibility: hidden;
+  pointer-events: none;
+}
 .table-hscroll-sticky {
   contain: inline-size;
   position: sticky;
+  bottom: 0;
   z-index: 5;
-  box-sizing: border-box;
   width: 100%;
-  height: 14px;
-  margin: 0 0 -14px;
   pointer-events: auto;
   background: color-mix(
     in srgb,

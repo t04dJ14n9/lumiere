@@ -34,7 +34,7 @@ export class TableController {
   private clipboard!: TableClipboard;
   private toolbar!: TableToolbar;
   private readonly handles: TableHandles;
-  private sticky: TableStickyHScroll;
+  private readonly sticky: TableStickyHScroll;
   private readonly events = new AbortController();
   private requested?: CellPosition | undefined;
 
@@ -68,7 +68,6 @@ export class TableController {
     this.handles = this.createHandles();
     this.handles.refresh();
     this.sticky = new TableStickyHScroll(this.grid.scroll, outer.scrollDOM);
-    root.prepend(this.sticky.root);
   }
 
   private wireCollaborators(environment: TableEnvironment) {
@@ -235,7 +234,6 @@ export class TableController {
   update(block: RenderBlock, outer: EditorView, force = false): void {
     if (this.canSkipUpdate(block, outer, force)) {
       this.grid.block = block;
-      this.sticky?.measure();
       return;
     }
     const activeEl = this.grid.root.ownerDocument.activeElement;
@@ -272,7 +270,6 @@ export class TableController {
     }
     this.highlight();
     this.handles.refresh();
-    this.sticky?.measure();
   }
 
   private canSkipUpdate(
