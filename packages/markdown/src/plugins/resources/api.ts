@@ -36,6 +36,13 @@ declare module "@workshop/core" {
      * @mode emit
      */
     "resources/changed": () => void;
+    /**
+     * Files a note could not show before are in the vault now (synced, or
+     * written by another app or a plugin). Embeds that said they could not
+     * be found load again.
+     * @mode emit
+     */
+    "resources/found": () => void;
   }
 }
 

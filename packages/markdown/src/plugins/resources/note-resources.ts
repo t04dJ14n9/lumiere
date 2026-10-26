@@ -12,8 +12,20 @@ interface ResourceOptions {
   resourceUrl(uri: string): string;
 }
 
+/** A link a note shows, as `load` receives it. */
+interface ResourceLink {
+  target: string;
+  source: string;
+  syntax: LinkSyntax;
+}
+
+/** Links remembered as missing at most; the oldest are forgotten first. */
+const MISSING_LIMIT = 256;
+
 export class NoteResources implements Resources {
   private readonly known: Set<string>;
+  /** Links whose file the vault did not have when asked, by `linkKey`. */
+  private readonly missing = new Map<string, ResourceLink>();
   constructor(private readonly options: ResourceOptions) {
     this.known = new Set([options.source]);
   }
@@ -37,20 +49,13 @@ export class NoteResources implements Resources {
       throw new Error("Resource must be a vault link");
     }
     const { vault, resourceUrl } = this.options;
-    const relativeSource = decodeURIComponent(new URL(source).pathname).slice(
-      decodeURIComponent(new URL(vault.root).pathname).replace(/\/$/, "")
-        .length + 1,
-    );
-    // A Markdown destination is percent-encoded (`My%20image.png`), and the
-    // vault resolves paths as the note's metadata keeps them: decoded.
-    const file = vault.resolveLink(
-      syntax === "markdown" ? decodeLinkPath(target) : target,
-      relativeSource,
-      syntax,
-    );
+    const link = { target, source, syntax };
+    const file = this.locate(link);
     if (!file) {
+      this.rememberMissing(link);
       throw new Error("Resource not found");
     }
+    this.missing.delete(linkKey(link));
     const stat = await this.containedStat(file.uri);
     const kind = resourceKind(file.path);
     const text =
@@ -62,7 +67,7 @@ export class NoteResources implements Resources {
     }
     const baseSnapshot =
       kind === "base"
-        ? buildBaseVaultSnapshot(vault, relativeSource)
+        ? buildBaseVaultSnapshot(vault, vaultPath(vault.root, source))
         : undefined;
     return {
       kind,
@@ -74,6 +79,47 @@ export class NoteResources implements Resources {
       ...(text === undefined ? {} : { text }),
       ...(baseSnapshot ?? {}),
     };
+  }
+
+  /**
+   * Forget the missing links that resolve now, as when their file arrives
+   * after the note asked (synced, or written by another app or a plugin).
+   * True when there were any.
+   */
+  takeFound(): boolean {
+    let isFound = false;
+    for (const [key, link] of this.missing) {
+      if (this.locate(link)) {
+        this.missing.delete(key);
+        isFound = true;
+      }
+    }
+    return isFound;
+  }
+
+  /** The vault file a link names, if the vault has it. */
+  private locate({
+    target,
+    source,
+    syntax,
+  }: ResourceLink): VaultFile | undefined {
+    const { vault } = this.options;
+    // A Markdown destination is percent-encoded (`My%20image.png`), and the
+    // vault resolves paths as the note's metadata keeps them: decoded.
+    return vault.resolveLink(
+      syntax === "markdown" ? decodeLinkPath(target) : target,
+      vaultPath(vault.root, source),
+      syntax,
+    );
+  }
+
+  private rememberMissing(link: ResourceLink): void {
+    const key = linkKey(link);
+    this.missing.delete(key);
+    this.missing.set(key, link);
+    if (this.missing.size > MISSING_LIMIT) {
+      this.missing.delete(this.missing.keys().next().value!);
+    }
   }
 
   private assertKnown(source: string): void {
@@ -98,6 +144,17 @@ export class NoteResources implements Resources {
     const text = (await this.options.host.hostDocuments.open(uri)).getText();
     return text.replace(/\r\n/g, "\n");
   }
+}
+
+function linkKey({ target, source, syntax }: ResourceLink): string {
+  return `${syntax}\0${source}\0${target}`;
+}
+
+/** A note's path inside the vault, from its URI. */
+function vaultPath(root: string, uri: string): string {
+  return decodeURIComponent(new URL(uri).pathname).slice(
+    decodeURIComponent(new URL(root).pathname).replace(/\/$/, "").length + 1,
+  );
 }
 
 export function resourceKind(path: string): Resource["kind"] {

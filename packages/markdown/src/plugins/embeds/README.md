@@ -50,9 +50,10 @@ it go (`image-selection.ts`, `image-size.ts`). While selected, the caret is hidd
 ## Services, events and settings
 
 Injects `editor`, `commands`, `livePreview`, `render`, `resources` and `rpc`;
-provides no services. Listens to `render/postProcess`, and to
-`resources/changed`, which drops the resources it resolved; no kernel events
-emitted.
+provides no services. Listens to `render/postProcess`; to
+`resources/changed`, which drops the resources it resolved; and to
+`resources/found`, which loads again, in place, every embed that said its file
+could not be found; no kernel events emitted.
 Uses Links RPC to open an embedded target. `lumiere.markdown.plugins.embeds.enabled`
 defaults to true. Insert Embed has no default keybinding. Remote media follows
 workspace trust from Render. YouTube/Bilibili image links share the EmbedBlock height reserve via Online Videos `api` (`parseVideoUrl`) so off-viewport remounts keep card height. Note embeds reserve a multi-paragraph floor and remember painted height across off-viewport remounts (`estimated-height.ts`).

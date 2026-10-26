@@ -40,5 +40,11 @@ export const protocol = defineProtocol("resources", {
       }),
     },
   },
-  notifications: {},
+  notifications: {
+    /**
+     * Files the page could not load before are in the vault now: embeds
+     * that said they could not be found load again.
+     */
+    found: Schema.object({}),
+  },
 });
