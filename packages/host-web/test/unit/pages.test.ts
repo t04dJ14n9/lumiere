@@ -9,9 +9,12 @@ function fakeHost() {
   const sockets: PageSocket[] = [];
   let urls: PanelUrls | undefined;
   const roots: string[] = [];
+  /** The roots when the panel opened, which its plugins look the vault up in. */
+  const rootsAtOpen: string[] = [];
   return {
     sockets,
     roots,
+    rootsAtOpen,
     urls: () => urls!,
     host: {
       panels: {
@@ -19,6 +22,7 @@ function fakeHost() {
           uri: string;
           urls: (id: string) => PanelUrls;
         }) => {
+          rootsAtOpen.push(...roots);
           urls = request.urls("panel-1");
           return {
             id: "panel-1",
@@ -73,6 +77,17 @@ test("a note's page is a blob document that asks for a channel, with the shim fi
     /lumiere\/file\?panel=panel-1/,
   );
   assert.deepEqual(fake.roots, ["file:///vaults/Notes"]);
+  page.dispose();
+});
+
+test("the note's vault is a root before its panel opens, so the editor finds the vault", async () => {
+  const fake = fakeHost();
+  const page = await openEditorPage(
+    fake.host as never,
+    { uri: "file:///vaults/Notes/Welcome.md", root: "file:///vaults/Notes" },
+    URLS,
+  );
+  assert.deepEqual(fake.rootsAtOpen, ["file:///vaults/Notes"]);
   page.dispose();
 });
 

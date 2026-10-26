@@ -59,6 +59,11 @@ export async function openEditorPage(
   note: { readonly uri: string; readonly root: string },
   urls: EditorPageUrls,
 ): Promise<EditorPage> {
+  // The vault is a root before the panel opens: the editor finds the note's
+  // vault as it starts, and a note outside every root gets only the files
+  // beside it. From a folder that reads fast (IndexedDB, memory), the first
+  // note opened in a vault found no image or note in its subfolders.
+  host.addRoot(note.root);
   const { id, html } = await host.panels.open({
     uri: note.uri,
     urls: (panelId) => ({
@@ -67,7 +72,6 @@ export async function openEditorPage(
       resource: (uri) => urls.resource(panelId, uri),
     }),
   });
-  host.addRoot(note.root);
   const page = injectShim(html, id, urls.shim).replace(
     "<head>",
     `<head><meta name="${TRANSPORT_META}" content="channel">` +
