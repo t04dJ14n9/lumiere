@@ -6031,3 +6031,79 @@ the DOM); the tables' and sticky headings' wheel listeners still cancel
 wheel events over them; a fresh screen of blocks after a jump still costs
 50–140 ms at 4x. `pnpm check` and `pnpm test:browser` pass; the real
 VS Code suite was not run (it opens VS Code windows on the owner's Mac).
+
+## Scroll stability in VS Code and Cursor — 2026-10-26
+
+The owner still found scrolling bad after #389–#408 and #405 and asked for
+the extension's scroll stability first, with Grok Bot's PRs reviewed and
+design problems fixed. Three reviews of #389/#396, #392/#401 and
+#398/#408, and one of #405, found the causes below; this branch takes in
+#405 and fixes them, each with a unit test.
+
+Measured in a real VS Code 1.142 and Cursor (`test/vscode/scroll-stability.spec.ts`):
+a 40-section note with a Mermaid diagram, a formula, a table, a callout,
+an image and code in each, flicked straight after opening, stepped down,
+flicked, jumped to 75% and read upward. It also lists the wheel and touch
+listeners between the editor's scroller and the window that are not
+passive (Chromium waits on the page for the first event of each gesture
+past one).
+
+| | main (401a299c) | this branch |
+| --- | --- | --- |
+| Blocking wheel/touch listeners | 2 (jump recorder, restore cancel) | 0 |
+| Flick right after opening, worst frame | 125 ms VS Code, 151 ms Cursor | 18 ms, 33 ms |
+| Frames over 50 ms in that flick | 1, 4 | 0, 0 |
+| Text moved after a far jump | 0 (213 px midway) | 0 |
+| Text moved stepping down or reading up | 0 | 0 |
+
+Fixed, in the order of the commits:
+
+1. A block rendered while CodeMirror built it, before it was in the page,
+   kept its reserved height for good (a one-line formula: a 110 px gap),
+   and the gap was then remembered as its height. Every mount now asks to
+   release the reserve at CodeMirror's next measure, which also ends a
+   forced layout per drawn diagram.
+2. Block heights were remembered as the largest ever seen and the guess
+   from the source lifted any smaller one; the latest painted height now
+   wins, and a block holding its reserve records none.
+3. Cleanup kept on the widget that built an element was lost when an edit
+   above made CodeMirror destroy it through an equal widget (blocks,
+   inline renders, footnotes, tasks); it is kept by element now.
+4. Each block copied its HTML into a string cache on every measure, read
+   almost never; removed. The block pool alone keeps finished blocks.
+5. Mermaid drew the diagram nearest the window first, above or below;
+   while the reader scrolls, diagrams behind them now wait until the
+   scroll stops, measured from the note's scroller.
+6. A rendered block across the top edge that resized moved all the text
+   below it (CodeMirror holds the block's top, off screen): 213 px after a
+   far jump in VS Code. The editor now holds its bottom instead
+   (`editor/keep-below-still.ts`), standing aside while a restored
+   position is pinned.
+7. Restoring a position: the pin ended only on input over the text, so a
+   wheel over the readable-width margin or the scrollbar snapped back; and
+   the pin and CodeMirror both undid growth above the line, which left a
+   reopened note a whole image past its saved line. Both fixed.
+8. Live Preview parsed the whole note inside a scroll update once the
+   viewport passed its first 10,000 characters (a 139–146 ms task on a
+   1 MB note, 55 ms at 300 KB); the parse now resumes to the viewport and
+   finishes in idle slices, and heading folds use a partial tree.
+9. Tables: the wheel forwarder and its dead motion state are gone; a
+   mostly vertical diagonal wheel over a wide table scrolls the note; the
+   sticky horizontal scrollbar is CSS, not a frame of layout per table;
+   focus in the note leaves an off-screen table; a retained cell no longer
+   takes focus from the find bar; the caret at a cell's end is not clipped.
+10. Comments citing Obsidian's minified names (`RW`) and internals were
+    reworded; four caches share one least-recently-used map.
+
+New browser and real-VS Code tests (`block-reserve`, `straddling-block`,
+`restore-scroll-wheel`, `tables-cell-caret`, the 1 MB parse test, the
+table additions, and `scroll-stability` in VS Code) await the owner's
+approval under the testing policy; each fix also has a unit test.
+
+Left for later: rendering still runs inside CodeMirror's update when a
+block mounts (#392), and a listener returning a promise silently makes it
+asynchronous again (the event bus's `sync` tag); embeds keep a second
+resource cache, and neither is invalidated when a file changes; publishing
+a new tree re-indexes the whole note; the note is parsed twice (Live
+Preview and CodeMirror's language); a far jump in a huge note before the
+background parse ends still parses to the viewport at once.
