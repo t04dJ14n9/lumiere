@@ -12,8 +12,9 @@ it never owns undo history. The controller reconciles
 incoming snapshots, preserving the active cell editor across structural edits.
 The table never cancels wheel input: whether it is hovered, a cell is open
 or cells are selected, the browser scrolls the note natively. `.table-scroll`
-and the nested cell scroller hide vertical overflow, so neither can take a
-vertical wheel. An open cell keeps the note's caret in its source, so
+hides vertical overflow, so it cannot take a vertical wheel, and an open
+cell's scroller is no scroll container at all: the cell grows with its text,
+so its caret is never clipped and its text never scrolls sideways. An open cell keeps the note's caret in its source, so
 CodeMirror keeps its table mounted however far the note scrolls. A table
 unmounted while active (with a grid selection, say) keeps its selection or
 cell for when it returns; the cell takes focus back only if the unmount left
@@ -104,6 +105,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
 - `tables-selection-colors.spec.ts` (browser): selected inline code, bold, links and math colors in dark and light themes.
 - `tables-selection-chrome.spec.ts` (browser): active-cell and row-handle selection box visibility.
+- `tables-cell-caret.spec.ts` (browser): the caret at the end of a long cell stays whole and the cell's text does not scroll sideways, with and without Vim.
 - `tables.css`: grid, handles, selection and cell editor appearance, bundled through
   `src/webview/styles/index.css`.
 

@@ -257,18 +257,17 @@
   height: auto;
   min-width: 40px;
 }
-.hybrid-table .cm-editor .cm-scroller {
-  overflow: hidden;
-}
 #app .hybrid-table .cm-editor .cm-scroller {
   /* CodeMirror's base theme is 100% high. In a table cell that participates
      in intrinsic row sizing instead of matching the rendered cell's content
-     box, so opening the projected editor can make only that row taller.
-     overflow stays hidden so this nested scroller is not a wheel target:
-     vertical wheel input must reach the note, matching Obsidian's
-     overflow-y hidden on `.cm-table-widget .cm-scroller`. */
+     box, so opening the projected editor can make only that row taller. */
   height: auto;
-  overflow: hidden;
+  /* The cell grows with its text, so this scroller never needs to scroll.
+     Visible makes it no scroll container at all: a wheel over the cell goes
+     to the table and the note. Hidden would still be one, just a few pixels
+     narrower than a caret at the end of the line, which it then clips while
+     the editor scrolls the cell's text sideways to reveal it. */
+  overflow: visible;
   /* Same 1.3 as .hybrid-table table. Without this the nested editor inherits
      the note's --line-height (1.5 by default) and the cell grows when the
      caret enters, then shrinks when it leaves. */

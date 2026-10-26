@@ -118,9 +118,10 @@ test("the cell editor's scroller is content-sized instead of CodeMirror's 100% h
     css,
     /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*height: auto;/,
   );
+  // No scroll container: see tables-cell-caret.spec.ts for what that keeps.
   assert.match(
     css,
-    /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*overflow:\s*hidden;/,
+    /#app \.hybrid-table \.cm-editor \.cm-scroller \{[^}]*overflow:\s*visible;/,
   );
 });
 
