@@ -1,5 +1,11 @@
 import { defaultKeymap } from "@codemirror/commands";
-import { Compartment, EditorState, Prec } from "@codemirror/state";
+import {
+  Compartment,
+  EditorState,
+  Prec,
+  findClusterBreak,
+} from "@codemirror/state";
+import type { CodeMirror } from "@replit/codemirror-vim";
 import type { Transaction } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import type { Cell, CellPosition, Table } from "../../markdown/tables/model";
@@ -67,13 +73,11 @@ export class CellEditor {
       },
       state: EditorState.create({
         doc: cell.text,
-        selection: {
-          anchor: selection === "all" ? 0 : (selection ?? cell.text.length),
-          head:
-            selection === "all"
-              ? cell.text.length
-              : (selection ?? cell.text.length),
-        },
+        selection: initialCellSelection(
+          cell.text,
+          selection,
+          isNormalVimMode(options.vim, options.environment, options.outer),
+        ),
         extensions: [
           options.environment.language,
           cellSyntax,
@@ -140,13 +144,8 @@ export class CellEditor {
     this.unbindMode = () => {
       cancelled = true;
     };
-    // Load the Vim adapter only when a cell actually enables Vim.
-    void import("@replit/codemirror-vim").then(({ getCM }) => {
-      if (cancelled) {
-        return;
-      }
-      const inner = getCM(view);
-      if (!inner?.state.vim) {
+    const attach = (inner: CodeMirror | null | undefined): void => {
+      if (cancelled || !inner?.state.vim) {
         return;
       }
       environment.vim?.sync(outer, view);
@@ -157,6 +156,15 @@ export class CellEditor {
         words.destroy();
         inner.off("vim-mode-change", sync);
       };
+    };
+    const immediate = environment.vim?.cm?.(view) as CodeMirror | undefined;
+    if (immediate) {
+      attach(immediate);
+      return;
+    }
+    // Fallback when a custom environment omits synchronous cm(view).
+    void import("@replit/codemirror-vim").then(({ getCM }) => {
+      attach(getCM(view));
     });
   }
 
@@ -273,4 +281,34 @@ export function cellKeymap(options: CellEditorOptions) {
       },
     ]),
   ]);
+}
+
+function isNormalVimMode(
+  vimEnabled: boolean,
+  environment: TableEnvironment,
+  outer: EditorView,
+): boolean {
+  if (!vimEnabled) {
+    return false;
+  }
+  const mode = environment.vim?.mode(outer);
+  return !mode || (!mode.insertMode && !mode.visualMode);
+}
+
+export function initialCellSelection(
+  text: string,
+  selection: number | "all" | undefined,
+  normalVim: boolean,
+): { anchor: number; head: number } {
+  if (normalVim) {
+    if (selection === "all" || text.length === 0) {
+      return { anchor: 0, head: 0 };
+    }
+    const fallback = findClusterBreak(text, text.length, false);
+    const head = Math.max(0, Math.min(selection ?? fallback, text.length));
+    return { anchor: head, head };
+  }
+  const anchor = selection === "all" ? 0 : (selection ?? text.length);
+  const head = selection === "all" ? text.length : (selection ?? text.length);
+  return { anchor, head };
 }

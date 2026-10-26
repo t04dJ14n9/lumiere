@@ -21,9 +21,14 @@ export function embedIsWiki(node: { dataset: { wiki?: string } }): boolean {
 }
 
 /** Resolve placeholders with pass-owned cancellation and native source identity. */
-export function enhanceEmbeds(options: EmbedOptions): () => void {
+export function enhanceEmbeds(options: EmbedOptions): (() => void) | undefined {
+  const nodes =
+    options.pass.container.querySelectorAll<HTMLElement>("[data-resource]");
+  if (nodes.length === 0) {
+    return undefined;
+  }
   const embeds = new EmbedPass(options);
-  embeds.start();
+  embeds.start(nodes);
   return () => embeds.dispose();
 }
 
@@ -34,11 +39,9 @@ class EmbedPass {
   private isActive = true;
   constructor(private readonly options: EmbedOptions) {}
 
-  start(): void {
+  start(nodes: Iterable<HTMLElement>): void {
     const { pass } = this.options;
-    for (const node of pass.container.querySelectorAll<HTMLElement>(
-      "[data-resource]",
-    )) {
+    for (const node of nodes) {
       const target = node.dataset.resource ?? "";
       this.rememberPlaceholder(node);
       const handleError = (error: unknown) => {

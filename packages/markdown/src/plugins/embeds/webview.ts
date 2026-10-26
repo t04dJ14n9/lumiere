@@ -205,6 +205,12 @@ class EmbedInline extends MarkdownInline {
 
 function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
   ctx.on("render/postProcess", (pass) => {
+    if (
+      pass.container.querySelectorAll<HTMLElement>("[data-resource]").length ===
+      0
+    ) {
+      return;
+    }
     const stop = enhanceEmbeds({
       pass,
       render: ctx.render,
@@ -222,6 +228,9 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
           .catch((error) => ctx.logger.warn("Open embed failed", error));
       },
     });
+    if (!stop) {
+      return;
+    }
     const cleanup = () => {
       stop();
       cleanups.delete(cleanup);

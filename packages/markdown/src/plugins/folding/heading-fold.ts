@@ -1,5 +1,5 @@
 import type { Text } from "@codemirror/state";
-import type { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode, Tree } from "@lezer/common";
 import { parseMarkdown } from "../../markdown/dialect";
 
 interface FoldRange {
@@ -14,12 +14,28 @@ const folds = new WeakMap<Text, Map<number, CachedFold>>();
 const headingLevel = (name: string) =>
   Number(/^(?:ATX|Setext)Heading([1-6])$/.exec(name)?.[1] ?? 0);
 
+function canStartHeading(doc: Text, start: number): boolean {
+  const line = doc.lineAt(start);
+  if (/^ {0,3}#/.test(line.text)) {
+    return true;
+  }
+  return (
+    line.number < doc.lines &&
+    line.text.trim().length > 0 &&
+    /^ {0,3}(?:=+|-+)\s*$/.test(doc.line(line.number + 1).text)
+  );
+}
+
 /** The gutter asks about visible lines; it needs no labels or other metadata. */
 export function headingFold(
   doc: Text,
   start: number,
   end: number,
+  tree?: Tree,
 ): FoldRange | null {
+  if (!canStartHeading(doc, start)) {
+    return null;
+  }
   let cache = folds.get(doc);
   if (!cache) {
     cache = new Map();
@@ -29,8 +45,10 @@ export function headingFold(
   if (cached?.end === end) {
     return cached.range;
   }
+  const activeTree =
+    tree && tree.length >= doc.length ? tree : parseMarkdown(doc);
   let heading: SyntaxNode | undefined;
-  parseMarkdown(doc).iterate({
+  activeTree.iterate({
     from: start,
     to: end,
     enter(node) {

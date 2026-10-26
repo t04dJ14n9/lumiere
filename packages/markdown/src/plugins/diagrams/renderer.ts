@@ -19,9 +19,25 @@ export type MermaidLinkOpen = (
   pass: RenderPass,
 ) => void;
 
+function createMermaidStagingElement(): HTMLElement | undefined {
+  if (typeof document === "undefined" || !document.body) {
+    return undefined;
+  }
+  const stage = document.createElement("div");
+  stage.className = "mermaid";
+  const width =
+    document.querySelector<HTMLElement>(".cm-content")?.clientWidth || 720;
+  stage.style.cssText =
+    `visibility:hidden;position:fixed;left:-9999px;top:0;` +
+    `width:${width}px;contain:layout style paint;pointer-events:none;`;
+  document.body.append(stage);
+  return stage;
+}
+
 export class DiagramRenderer {
   private readonly prefix = `mw-${Array.from(crypto.getRandomValues(new Uint32Array(2)), (value) => value.toString(16)).join("-")}`;
   private sequence = 0;
+  private lastInitKey = "";
   private readonly cleanups = new Set<() => void>();
   private readonly trust: MermaidTrust;
   private readonly openLink: MermaidLinkOpen | undefined;
@@ -35,7 +51,7 @@ export class DiagramRenderer {
     this.trust = trust;
     this.openLink = openLink;
     // Mermaid mutates shared engine state; the scheduler keeps renders serial,
-    // prefetches on idle into an SVG cache, and paints after near-viewport settle.
+    // yields between diagrams, and paints after near-viewport scroll settle.
     this.scheduler = new MermaidViewportScheduler({
       watch: observeNearViewport,
       settleMs: 80,
@@ -59,7 +75,7 @@ export class DiagramRenderer {
     this.cleanups.add(cleanup);
     cancelSchedule = this.scheduler.schedule(fence.element, fence.source, {
       onSvg: (svg) => {
-        fence.element.innerHTML = sanitizeGraphics(svg);
+        fence.element.innerHTML = svg;
         fence.element.setAttribute("aria-label", "Mermaid diagram");
         if (this.openLink) {
           wireMermaidInternalLinks(
@@ -108,23 +124,37 @@ export class DiagramRenderer {
   private async renderMermaidSvg(source: string): Promise<string> {
     const { default: mermaid } = await import("mermaid");
     // Obsidian Allow (`mermaid-vault-trust`) enables HTML labels; Lumière still
-    // sanitizes SVG output. Untrusted stays strict with htmlLabels off.
+    // sanitizes SVG output once before caching. Untrusted stays strict.
     const trusted = this.trust.isTrusted();
-    mermaid.initialize({
-      startOnLoad: false,
-      securityLevel: "strict",
-      htmlLabels: trusted,
-      flowchart: { htmlLabels: trusted },
-      suppressErrorRendering: true,
-      theme: document.body.classList.contains("vscode-light")
+    const theme =
+      typeof document !== "undefined" &&
+      document.body?.classList?.contains("vscode-light")
         ? "default"
-        : "dark",
-    });
-    const result = await mermaid.render(
-      `${this.prefix}-${++this.sequence}`,
-      source,
-    );
-    return result.svg;
+        : "dark";
+    const initKey = `${theme}|${trusted ? "t" : "u"}`;
+    if (this.lastInitKey !== initKey) {
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        htmlLabels: trusted,
+        flowchart: { htmlLabels: trusted },
+        suppressErrorRendering: true,
+        theme,
+      });
+      this.lastInitKey = initKey;
+    }
+    const stage = createMermaidStagingElement();
+    try {
+      const id = `${this.prefix}-${++this.sequence}`;
+      const result = stage
+        ? await mermaid.render(id, source, stage)
+        : await mermaid.render(id, source);
+      return typeof window !== "undefined"
+        ? sanitizeGraphics(result.svg)
+        : result.svg;
+    } finally {
+      stage?.remove();
+    }
   }
 }
 

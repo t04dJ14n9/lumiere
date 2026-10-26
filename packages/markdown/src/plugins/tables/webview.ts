@@ -10,7 +10,12 @@ import type {} from "../vim/api";
 import type {} from "../links/api";
 import { protocol as editorProtocol } from "../editor/protocol";
 import { EditorView, keymap } from "@codemirror/view";
-import { TableWidget, enterTable } from "./widget";
+import {
+  TableWidget,
+  enableTableRetention,
+  enterTable,
+  evictDisconnectedTables,
+} from "./widget";
 import {
   activeTables,
   tableActions,
@@ -212,6 +217,8 @@ function registerTableRenderer(
   ctx: Context,
   environment: TableEnvironment,
 ): void {
+  ctx.effect(() => enableTableRetention(environment));
+  ctx.on("render/changed", () => evictDisconnectedTables(environment));
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "Table",

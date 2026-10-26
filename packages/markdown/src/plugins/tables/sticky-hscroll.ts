@@ -65,6 +65,8 @@ export class TableStickyHScroll {
   private frame?: number;
   private resize?: ResizeObserver;
   private drag?: { startX: number; startLeft: number };
+  /** True until measured, so the first pass always checks overflow. */
+  private overflowsX = true;
 
   constructor(
     private readonly tableScroll: HTMLElement,
@@ -81,23 +83,7 @@ export class TableStickyHScroll {
     this.thumb.className = "table-hscroll-thumb";
     this.track.append(this.thumb);
     this.root.append(this.track);
-
-    const schedule = (): void => this.schedule();
-    this.noteScroll.addEventListener("scroll", schedule, {
-      passive: true,
-      signal: this.events.signal,
-    });
-    this.tableScroll.addEventListener("scroll", () => this.paintThumb(), {
-      passive: true,
-      signal: this.events.signal,
-    });
-    this.resize = new ResizeObserver(schedule);
-    this.resize.observe(this.tableScroll);
-    this.resize.observe(this.noteScroll);
-    if (this.tableScroll.firstElementChild) {
-      this.resize.observe(this.tableScroll.firstElementChild);
-    }
-    window.addEventListener("resize", schedule, { signal: this.events.signal });
+    this.observeOverflow();
 
     this.thumb.addEventListener(
       "pointerdown",
@@ -119,6 +105,37 @@ export class TableStickyHScroll {
       signal: this.events.signal,
     });
     this.schedule();
+  }
+
+  private observeOverflow(): void {
+    this.noteScroll.addEventListener(
+      "scroll",
+      () => {
+        // Most tables do not overflow horizontally. Note scrolling then does
+        // no frame and no layout read. A bar that is still showing keeps
+        // tracking until the next measure hides it.
+        if (this.overflowsX || !this.root.hidden) {
+          this.schedule();
+        }
+      },
+      { passive: true, signal: this.events.signal },
+    );
+    this.tableScroll.addEventListener("scroll", () => this.paintThumb(), {
+      passive: true,
+      signal: this.events.signal,
+    });
+    this.resize = new ResizeObserver(() => {
+      this.overflowsX = true;
+      this.schedule();
+    });
+    this.resize.observe(this.tableScroll);
+    this.resize.observe(this.noteScroll);
+    if (this.tableScroll.firstElementChild) {
+      this.resize.observe(this.tableScroll.firstElementChild);
+    }
+    window.addEventListener("resize", () => this.schedule(), {
+      signal: this.events.signal,
+    });
   }
 
   private onThumbDown(event: PointerEvent): void {
@@ -193,8 +210,13 @@ export class TableStickyHScroll {
     if (!this.tableScroll.isConnected || !this.noteScroll.isConnected) {
       return;
     }
-    const overflowsX =
-      this.tableScroll.scrollWidth > this.tableScroll.clientWidth + 1;
+    const scrollWidth = this.tableScroll.scrollWidth;
+    const clientWidth = this.tableScroll.clientWidth;
+    this.overflowsX = scrollWidth > clientWidth + 1;
+    if (!this.overflowsX) {
+      this.root.hidden = true;
+      return;
+    }
     const table = this.tableScroll.getBoundingClientRect();
     const note = this.noteScroll.getBoundingClientRect();
     const scrollbar = Math.max(
@@ -202,7 +224,7 @@ export class TableStickyHScroll {
       this.tableScroll.offsetHeight - this.tableScroll.clientHeight,
     );
     const visible = stickyHScrollVisible({
-      overflowsX,
+      overflowsX: this.overflowsX,
       tableTop: table.top,
       tableBottom: table.bottom,
       viewportTop: note.top,

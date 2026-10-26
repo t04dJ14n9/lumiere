@@ -319,6 +319,13 @@ export class ObsidianRuntime {
     return true;
   }
 
+  hasPostProcessors(): boolean {
+    return (
+      this.postProcessors.size > 0 ||
+      MarkdownPreviewRenderer.getPostProcessors().length > 0
+    );
+  }
+
   async runPostProcessors(
     el: HTMLElement,
     sourcePath = this.activeDocumentPath,
@@ -359,9 +366,7 @@ export class ObsidianRuntime {
       },
       registerPostProcessor: (pluginId, processor) => {
         this.postProcessors.add(processor);
-        const dispose = () => {
-          this.postProcessors.delete(processor);
-        };
+        const dispose = () => void this.postProcessors.delete(processor);
         this.activeDisposers.get(pluginId)?.push(dispose);
         return dispose;
       },
@@ -410,14 +415,11 @@ export class ObsidianRuntime {
     const dispose = () => {
       this.postProcessors.delete(postProc);
       const arr = this.codeBlockHandlers.get(lang);
-      if (arr) {
-        const idx = arr.indexOf(handler);
-        if (idx >= 0) {
-          arr.splice(idx, 1);
-        }
-        if (arr.length === 0) {
-          this.codeBlockHandlers.delete(lang);
-        }
+      const filtered = arr?.filter((item) => item !== handler) ?? [];
+      if (filtered.length > 0) {
+        this.codeBlockHandlers.set(lang, filtered);
+      } else {
+        this.codeBlockHandlers.delete(lang);
       }
       extDispose?.();
     };

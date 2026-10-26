@@ -90,3 +90,45 @@ test("editing a distant heading invalidates the cached section boundary", () => 
     to: next.doc.toString().indexOf("# Two") - 1,
   });
 });
+
+test("plain paragraph lines fast-reject in O(1) without touching the syntax tree and indent fold caches per Text", () => {
+  const doc =
+    "Plain paragraph line one.\n   indented child line\n\nAnother plain line.";
+  const state = EditorState.create({ doc });
+  const tree = parseMarkdown(state.doc);
+  const iterate = tree.iterate.bind(tree);
+  let visited = 0;
+  const spy = mock.method(
+    tree,
+    "iterate",
+    (options: Parameters<typeof tree.iterate>[0]) =>
+      iterate({
+        ...options,
+        enter(node) {
+          visited++;
+          return options.enter(node);
+        },
+      }),
+  );
+  try {
+    const line1 = state.doc.line(1);
+    assert.equal(headingFold(state.doc, line1.from, line1.to, tree), null);
+    assert.equal(visited, 0, "non-heading line does not iterate syntax tree");
+    const first = foldRange(state, line1.from, line1.to, {
+      heading: true,
+      indent: true,
+    });
+    assert.deepEqual(first, { from: line1.to, to: state.doc.line(2).to });
+    const second = foldRange(state, line1.from, line1.to, {
+      heading: true,
+      indent: true,
+    });
+    assert.equal(
+      second,
+      first,
+      "foldRange reuses cached range for unchanged Text",
+    );
+  } finally {
+    spy.mock.restore();
+  }
+});

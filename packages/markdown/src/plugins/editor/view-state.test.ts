@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EditorSelection, EditorState } from "@codemirror/state";
-import type { TransactionSpec } from "@codemirror/state";
+import { Compartment, EditorSelection, EditorState } from "@codemirror/state";
+import type { Extension, TransactionSpec } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { createRoot } from "@workshop/core";
 import { createViewState } from "./view-state";
+import { registerViewPersistence } from "./persistence";
+import { ViewContributions } from "./contributions";
 import { viewState } from "./protocol";
 
 type ScrollMeasurement = NonNullable<
@@ -177,4 +179,101 @@ test("keeping the place leaves a view at the top, and a restore on its way, alon
   // The restore still lands where it was going.
   assert.equal(restoring.scroll(70), true);
   await root.dispose();
+});
+
+test("scroll events coalesce through debounced checkpoint and flush on dispose", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const compartment = new Compartment();
+  let state = EditorState.create({
+    doc: "line 1\nline 2\nline 3",
+    extensions: [compartment.of([])],
+  });
+  const scrollListeners = new Map<
+    string,
+    { fn: () => void; options?: unknown }
+  >();
+  const windowListeners = new Map<string, () => void>();
+  const scrollDOM = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    getBoundingClientRect: () => ({ top: 0 }),
+    addEventListener(type: string, fn: () => void, options?: unknown) {
+      scrollListeners.set(type, { fn, options });
+    },
+    removeEventListener(type: string) {
+      scrollListeners.delete(type);
+    },
+  };
+  const view = {
+    get state() {
+      return state;
+    },
+    get documentTop() {
+      return -scrollDOM.scrollTop;
+    },
+    scaleY: 1,
+    scrollDOM,
+    dom: {
+      ownerDocument: {
+        defaultView: {
+          addEventListener(type: string, fn: () => void) {
+            windowListeners.set(type, fn);
+          },
+          removeEventListener(type: string) {
+            windowListeners.delete(type);
+          },
+        },
+      },
+    },
+    lineBlockAtHeight: () => ({ from: 7, top: 20 }),
+    lineBlockAt: () => ({ from: 7, top: 20 }),
+    requestMeasure() {},
+  } as unknown as EditorView;
+  const contributions = new ViewContributions(view);
+  const persisted: unknown[] = [];
+  const cleanups: Array<() => void> = [];
+  registerViewPersistence(
+    {
+      effect(fn: () => (() => void) | void) {
+        const cleanup = fn();
+        if (typeof cleanup === "function") {
+          cleanups.push(cleanup);
+        }
+      },
+      emit() {},
+      logger: { warn() {}, info() {}, error() {}, debug() {} },
+      document: { flush: async () => {} },
+      rpc: { handle: () => () => {} },
+    } as never,
+    {
+      view,
+      source: "line 1\nline 2\nline 3",
+      mode: "livePreview",
+      extend(ext: Extension) {
+        state = state.update({
+          effects: compartment.reconfigure(ext),
+        }).state;
+        return () => {};
+      },
+    } as never,
+    { presentation, contributions },
+    { persist: (saved) => persisted.push(saved) },
+  );
+  const scrollEntry = scrollListeners.get("scroll");
+  assert.ok(scrollEntry);
+  assert.deepEqual(scrollEntry.options, { passive: true });
+  for (let i = 1; i <= 10; i++) {
+    scrollDOM.scrollTop = i * 24;
+    scrollEntry.fn();
+  }
+  // Raw 60-120Hz scroll events must not synchronously call persist()
+  assert.equal(persisted.length, 0);
+  // Disposing while a scroll checkpoint is pending flushes the latest scrollTop
+  for (const cleanup of cleanups.splice(0)) {
+    cleanup();
+  }
+  await root.dispose();
+  assert.equal(persisted.length, 1);
+  assert.equal((persisted[0] as { scrollTop: number }).scrollTop, 240);
 });

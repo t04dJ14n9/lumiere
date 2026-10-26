@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { tableEstimatedHeight } from "./estimated-height";
+import {
+  clearTableHeightCache,
+  rememberTableHeight,
+  tableEstimatedHeight,
+} from "./estimated-height";
 
 test("empty or invalid source still reserves one row of chrome", () => {
   assert.ok(tableEstimatedHeight("") > 20);
@@ -59,4 +63,14 @@ test("40-row remount fixture estimate clears 0.7× tight-cell measured height", 
     height < 2000,
     `tight-cell estimate should not assume 85px rows, got ${height}`,
   );
+});
+
+test("rememberTableHeight overrides the formula estimate and clearTableHeightCache resets it", () => {
+  const source = "| A | B |\n| --- | --- |\n| 1 | 2 |\n";
+  clearTableHeightCache();
+  const formula = tableEstimatedHeight(source);
+  rememberTableHeight(source, 312.4);
+  assert.equal(tableEstimatedHeight(source), 312);
+  clearTableHeightCache();
+  assert.equal(tableEstimatedHeight(source), formula);
 });

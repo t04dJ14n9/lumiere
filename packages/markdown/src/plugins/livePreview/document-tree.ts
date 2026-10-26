@@ -1,146 +1,126 @@
-import { StateEffect, StateField, type Text } from "@codemirror/state";
 import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
-import { TreeFragment, type ChangedRange, type Tree } from "@lezer/common";
-import { markdownParser, parseMarkdown } from "../../markdown/dialect";
-import { VIEWPORT_BLOCK_MARGIN } from "./deferred-block";
+import { markdownParser, rememberParsedMarkdown } from "../../markdown/dialect";
+import {
+  documentTree,
+  FIRST_PAINT_PARSE_CHARS,
+  parseForFirstPaint,
+  replaceDocumentTree,
+} from "./api";
 
-/**
- * How much of a large note we parse before the first paint. Matches the Live
- * Preview hot band (opening viewport + margin) so block/inline decorations for
- * the first screen do not wait on a full-document Lezer walk. A ViewPlugin
- * replaces this with a complete tree on idle / the next frames.
- */
-export const FIRST_PAINT_PARSE_CHARS = VIEWPORT_BLOCK_MARGIN * 2;
+export {
+  documentTree,
+  FIRST_PAINT_PARSE_CHARS,
+  parseForFirstPaint,
+  replaceDocumentTree,
+};
 
-/** Swap in a completed (or otherwise rebuilt) document tree after first paint. */
-export const replaceDocumentTree = StateEffect.define<Tree>();
-
-/** Reuse unchanged syntax without making distant headings or footnotes viewport-dependent. */
-export const documentTree = StateField.define<Tree>({
-  create: (state) => parseForFirstPaint(state.doc),
-  update(tree, transaction) {
-    for (const effect of transaction.effects) {
-      if (effect.is(replaceDocumentTree)) {
-        return effect.value;
-      }
-    }
-    if (!transaction.docChanged) {
-      return tree;
-    }
-    // Prefix trees are not fragment-safe across arbitrary edits — reparse with
-    // the same first-paint budget (idle completer will expand again).
-    if (tree.length < transaction.startState.doc.length) {
-      return parseForFirstPaint(transaction.newDoc);
-    }
-    const changes: ChangedRange[] = [];
-    transaction.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
-      changes.push({ fromA, toA, fromB, toB });
-    });
-    let fragments = TreeFragment.applyChanges(
-      TreeFragment.addTree(tree),
-      changes,
-    );
-    if (changes[0]!.fromA <= transaction.startState.doc.line(1).to) {
-      // A moved horizontal rule may now open frontmatter. Its meaning depends
-      // on being at document start, which reusable Markdown nodes do not track.
-      const end = Math.min(
-        transaction.newDoc.length,
-        transaction.newDoc.line(1).to + 1,
-      );
-      fragments = fragments.flatMap((fragment) =>
-        fragment.to <= end
-          ? []
-          : [
-              new TreeFragment(
-                Math.max(fragment.from, end),
-                fragment.to,
-                fragment.tree,
-                fragment.offset,
-                true,
-                fragment.openEnd,
-              ),
-            ],
-      );
-    }
-    return parseMarkdown(transaction.newDoc, fragments);
-  },
-});
+const PARSE_SLICE_BUDGET_MS = 5;
+const SCROLL_SETTLE_DELAY_MS = 120;
 
 /**
  * After the first frame, finish the full-document tree when create() only
- * parsed the opening band. Public CM6 pattern: cheap first paint, then
- * `ensure`-style completion off the critical path.
+ * parsed the opening band. Uses time-sliced Lezer advancing so large documents
+ * never block a scroll frame.
  */
 export const documentTreeCompleter = ViewPlugin.fromClass(
   class {
     private done = false;
-    constructor(view: EditorView) {
-      // Defer past the first paint frame so full-doc Lezer work cannot contend
-      // with glyphs (#289: growing sync first-paint parse regressed TTI).
+    private destroyed = false;
+    private timer: ReturnType<typeof setTimeout> | undefined;
+    private lastScrollTime = 0;
+    private readonly onScroll = () => {
+      this.lastScrollTime = performance.now();
+    };
+    constructor(private readonly view: EditorView) {
+      view.scrollDOM.addEventListener("scroll", this.onScroll, {
+        passive: true,
+      });
       requestAnimationFrame(() => {
         requestAnimationFrame(() => this.schedule(view));
       });
     }
     update(update: ViewUpdate) {
-      if (this.done) {
+      if (this.done || this.destroyed) {
         return;
       }
       if (update.state.field(documentTree).length >= update.state.doc.length) {
         this.done = true;
+        this.clearTimer();
+        return;
+      }
+      if (
+        update.viewportChanged &&
+        update.view.viewport.to > update.state.field(documentTree).length
+      ) {
+        this.clearTimer();
+        this.done = true;
+        const tree = markdownParser.parse(update.state.doc.toString());
+        rememberParsedMarkdown(update.state.doc, tree);
+        queueMicrotask(() => {
+          if (!this.destroyed && update.view.dom.isConnected) {
+            update.view.dispatch({ effects: replaceDocumentTree.of(tree) });
+          }
+        });
         return;
       }
       if (update.docChanged) {
         this.schedule(update.view);
       }
     }
+    destroy() {
+      this.destroyed = true;
+      this.clearTimer();
+      this.view.scrollDOM.removeEventListener("scroll", this.onScroll);
+    }
+    private clearTimer() {
+      if (this.timer !== undefined) {
+        clearTimeout(this.timer);
+        this.timer = undefined;
+      }
+    }
     private schedule(view: EditorView) {
-      const run = () => {
-        if (!view.dom.isConnected || this.done) {
+      this.clearTimer();
+      const targetDoc = view.state.doc;
+      if (view.state.field(documentTree).length >= targetDoc.length) {
+        this.done = true;
+        return;
+      }
+      let partial: ReturnType<typeof markdownParser.startParse> | undefined;
+      const step = () => {
+        this.timer = undefined;
+        if (this.destroyed || this.done || !view.dom.isConnected) {
           return;
         }
-        const current = view.state.field(documentTree);
-        if (current.length >= view.state.doc.length) {
+        if (view.state.doc !== targetDoc) {
+          this.schedule(view);
+          return;
+        }
+        if (view.state.field(documentTree).length >= targetDoc.length) {
           this.done = true;
           return;
         }
-        const full = parseMarkdown(view.state.doc);
-        this.done = true;
-        view.dispatch({ effects: replaceDocumentTree.of(full) });
-      };
-      const idle = (
-        globalThis as unknown as {
-          requestIdleCallback?: (
-            cb: () => void,
-            opts?: { timeout: number },
-          ) => number;
+        const sinceScroll = performance.now() - this.lastScrollTime;
+        if (this.lastScrollTime > 0 && sinceScroll < SCROLL_SETTLE_DELAY_MS) {
+          this.timer = setTimeout(
+            step,
+            Math.max(16, SCROLL_SETTLE_DELAY_MS - sinceScroll),
+          );
+          return;
         }
-      ).requestIdleCallback;
-      if (typeof idle === "function") {
-        // After first paint, finish soon — heading reveal via the
-        // Frontmatter placeholder waits on a complete fence node.
-        idle(run, { timeout: 32 });
-      } else {
-        requestAnimationFrame(() => requestAnimationFrame(run));
-      }
+        partial ??= markdownParser.startParse(targetDoc.toString());
+        const deadline = performance.now() + PARSE_SLICE_BUDGET_MS;
+        while (performance.now() < deadline) {
+          const tree = partial.advance();
+          if (tree) {
+            rememberParsedMarkdown(targetDoc, tree);
+            this.done = true;
+            view.dispatch({ effects: replaceDocumentTree.of(tree) });
+            return;
+          }
+        }
+        this.timer = setTimeout(step, 0);
+      };
+      this.timer = setTimeout(step, 16);
     }
   },
 );
-
-/** Parse only the opening band for large notes; full parse otherwise. */
-export function parseForFirstPaint(
-  doc: Text,
-  budget = FIRST_PAINT_PARSE_CHARS,
-): Tree {
-  if (doc.length <= budget) {
-    return parseMarkdown(doc);
-  }
-  // End on a line boundary so we do not split a block mid-line.
-  const at = Math.min(budget, doc.length);
-  const line = doc.lineAt(at);
-  const end = Math.min(
-    doc.length,
-    line.number < doc.lines ? line.to + 1 : line.to,
-  );
-  // Do not use parseMarkdown's Text WeakMap — the prefix string is not the doc.
-  return markdownParser.parse(doc.sliceString(0, end));
-}

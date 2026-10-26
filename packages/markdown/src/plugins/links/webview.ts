@@ -36,9 +36,10 @@ export const linksWebview: Plugin = {
     const navigate = navigator(ctx);
     const open = linkOpener(ctx, navigate);
     registerNavigation(ctx, navigate);
-    registerUnresolvedLinks(ctx);
-    registerEmbedUnresolved(ctx);
-    registerKnownNotes(ctx);
+    const unresolvedBySource = new Map<string, Promise<readonly string[]>>();
+    registerUnresolvedLinks(ctx, unresolvedBySource);
+    registerEmbedUnresolved(ctx, unresolvedBySource);
+    registerKnownNotes(ctx, unresolvedBySource);
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
@@ -137,29 +138,40 @@ function registerNavigation(ctx: Context, navigate: Navigate): void {
 }
 
 /** Ask the host for the note's unresolved links, then follow its updates. */
-function registerUnresolvedLinks(ctx: Context): void {
+function registerUnresolvedLinks(
+  ctx: Context,
+  unresolvedBySource: Map<string, Promise<readonly string[]>>,
+): void {
   const view = ctx.editor.view;
   let live = true;
   ctx.effect(() => () => {
     live = false;
+    unresolvedBySource.clear();
   });
   const apply = (paths: readonly string[]) => {
     if (!live) {
       return;
     }
+    unresolvedBySource.clear();
+    unresolvedBySource.set("", Promise.resolve(paths));
     view.dispatch({ effects: setUnresolved.of(new Set(paths)) });
     void refreshRenderedUnresolved(ctx, view);
   };
   ctx.effect(() => ctx.editor.extend(unresolvedLinks));
   ctx.effect(() => ctx.rpc.on(protocol, "unresolvedChanged", apply));
-  void ctx.rpc
-    .call(protocol, "unresolved", {})
-    .then(apply)
-    .catch((error) => ctx.logger.warn("Unresolved links unavailable", error));
+  const initial = ctx.rpc.call(protocol, "unresolved", {});
+  unresolvedBySource.set("", initial);
+  void initial.then(apply).catch((error) => {
+    unresolvedBySource.delete("");
+    ctx.logger.warn("Unresolved links unavailable", error);
+  });
 }
 
 /** Ask the host for vault note keys, then follow index resolution. */
-function registerKnownNotes(ctx: Context): void {
+function registerKnownNotes(
+  ctx: Context,
+  unresolvedBySource: Map<string, Promise<readonly string[]>>,
+): void {
   const view = ctx.editor.view;
   let live = true;
   ctx.effect(() => () => {
@@ -167,6 +179,7 @@ function registerKnownNotes(ctx: Context): void {
   });
   const apply = (keys: readonly string[]) => {
     if (live) {
+      unresolvedBySource.clear();
       view.dispatch({ effects: setKnownNotes.of(new Set(keys)) });
     }
   };
@@ -182,20 +195,37 @@ function registerKnownNotes(ctx: Context): void {
  * Dim unresolved anchors inside rendered HTML (note embeds) using that note's
  * outbound unresolved set — not the host note's.
  */
-function registerEmbedUnresolved(ctx: Context): void {
+function registerEmbedUnresolved(
+  ctx: Context,
+  unresolvedBySource: Map<string, Promise<readonly string[]>>,
+): void {
   ctx.on("render/postProcess", (pass) => {
-    const source = pass.documentUri;
-    void ctx.rpc
-      .call(protocol, "unresolved", source ? { source } : {})
+    if (pass.container.querySelectorAll('a[data-wiki="true"]').length === 0) {
+      return;
+    }
+    const source = pass.documentUri ?? "";
+    if (!source) {
+      const current = ctx.editor.view.state.field(unresolvedLinks, false);
+      if (current && current.size > 0) {
+        tagUnresolvedAnchors(pass.container, current);
+      }
+    }
+    let pending = unresolvedBySource.get(source);
+    if (!pending) {
+      pending = ctx.rpc.call(protocol, "unresolved", source ? { source } : {});
+      unresolvedBySource.set(source, pending);
+    }
+    void pending
       .then((paths) => {
         if (!ctx.isLive || !pass.container.isConnected) {
           return;
         }
         tagUnresolvedAnchors(pass.container, new Set(paths));
       })
-      .catch((error) =>
-        ctx.logger.warn("Embed unresolved links unavailable", error),
-      );
+      .catch((error) => {
+        unresolvedBySource.delete(source);
+        ctx.logger.warn("Embed unresolved links unavailable", error);
+      });
   });
 }
 

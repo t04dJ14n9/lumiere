@@ -185,9 +185,12 @@ function registerCodeBlockIntegration(
     return true;
   });
 
-  ctx.on("render/postProcess", async (pass) => {
+  ctx.on("render/postProcess", (pass) => {
+    if (!runtime.hasPostProcessors()) {
+      return;
+    }
     const sourcePath = pass.documentUri ?? ctx.editor.source;
-    await runtime.runPostProcessors(pass.container, sourcePath);
+    return runtime.runPostProcessors(pass.container, sourcePath);
   });
 
   return () => {

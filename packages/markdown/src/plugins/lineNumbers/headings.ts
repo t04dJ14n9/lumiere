@@ -6,6 +6,10 @@ import {
   type Range,
 } from "@codemirror/state";
 import { GutterMarker, gutterLineClass } from "@codemirror/view";
+import { documentTree } from "../livePreview/api";
+
+const activeTree = (state: EditorState) =>
+  state.field(documentTree, false) ?? syntaxTree(state);
 
 /**
  * Marks the gutter cells of heading, code and list item lines, so line
@@ -59,7 +63,7 @@ const containers = new Set([
 
 export function headingLines(state: EditorState): RangeSet<GutterMarker> {
   const ranges: Range<GutterMarker>[] = [];
-  syntaxTree(state).iterate({
+  activeTree(state).iterate({
     enter(node) {
       const level = /^(?:ATXHeading|SetextHeading)(\d)$/.exec(node.name)?.[1];
       if (level) {
@@ -93,7 +97,7 @@ export function headingLines(state: EditorState): RangeSet<GutterMarker> {
 export const headingGutterClasses = StateField.define<RangeSet<GutterMarker>>({
   create: headingLines,
   update(value, transaction) {
-    return syntaxTree(transaction.state) === syntaxTree(transaction.startState)
+    return activeTree(transaction.state) === activeTree(transaction.startState)
       ? value
       : headingLines(transaction.state);
   },

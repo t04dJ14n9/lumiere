@@ -5,7 +5,7 @@ import type { ViewStateContributions } from "./contributions";
 import type { Infer, Disposer } from "@workshop/core";
 import type { viewState } from "./protocol";
 import type { DocumentSession } from "../document/api";
-import type { Extension } from "@codemirror/state";
+import type { Extension, StateEffect } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { PanelPort } from "../../shared/host";
 import type { CaretMode, VimCaretProfile } from "./caret";
@@ -53,6 +53,9 @@ export interface EditorService {
   /** Record a deliberate jump, excluding ordinary editing and cursor motion. */
   navigate<T>(jump: () => T): T;
   onNavigate(capture: () => () => void): Disposer;
+  batch?<T>(fn: () => T): T;
+  flush?(): void;
+  dispatchEffect?(effect: StateEffect<unknown>): boolean;
   settled(): Promise<boolean>;
   focus(): void;
 }
@@ -89,6 +92,7 @@ declare module "@workshop/core" {
       items: readonly MenuItem[],
     ) => readonly MenuItem[] | Promise<readonly MenuItem[]>;
     /** @mode emit */ "editor/clearProjection": () => void;
+    /** @mode bail */ "editor/batchExtensions": <T>(fn: () => T) => T;
     /** @mode bail */ "editor/activeView": () => EditorView | undefined;
     /** @mode bail */ "editor/projectSelection": () =>
       { from: number; to: number } | undefined;
