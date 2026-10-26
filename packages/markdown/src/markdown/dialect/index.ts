@@ -1,4 +1,5 @@
 export {
+  cachedMarkdown,
   markdownParser,
   parseMarkdown,
   rememberParsedMarkdown,
