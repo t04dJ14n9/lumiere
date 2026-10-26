@@ -30,9 +30,20 @@ test("image embeds get Obsidian embed-actions frosted chrome with VS Code tokens
 
   const selected = rule(
     embedsCss,
-    ".image-embed:has(img.md-image-selected) .embed-actions,\n.image-embed .embed-action:focus-visible,\n.markdown-rendered .image-embed:hover .embed-actions",
+    ".image-embed:has(img.md-image-selected) .embed-actions,\n.image-embed .embed-action:focus-visible",
   );
   assert.match(selected, /opacity:\s*1/);
+  // Hovering shows them only where there is hover (hover-reveals.test.ts).
+  const hovered = rule(
+    embedsCss,
+    "  .image-embed:hover .embed-actions,\n  .markdown-rendered .image-embed:hover .embed-actions",
+  );
+  assert.match(hovered, /opacity:\s*1/);
+  // Inside that block: no top-level rule closes between it and the rule.
+  const at = embedsCss.indexOf(hovered);
+  const media = embedsCss.lastIndexOf("@media (hover: hover) {", at);
+  assert.ok(media >= 0, "a hover-only block holds the rule");
+  assert.doesNotMatch(embedsCss.slice(media, at), /\n\}/);
 
   // Legacy floating inspect opacity rules are gone — chrome owns visibility.
   assert.doesNotMatch(embedsCss, /\.file-embed:hover \.inspect-image/);

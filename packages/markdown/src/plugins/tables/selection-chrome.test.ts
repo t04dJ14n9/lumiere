@@ -81,7 +81,12 @@ test("row and column grips ignore pointer hits until the table is hovered or foc
   assert.match(css, /\.table-handle \{[^}]*pointer-events: none;/);
   assert.match(
     css,
-    /\.hybrid-table:hover \.table-handle,\s*\.hybrid-table:focus-within \.table-handle \{[^}]*pointer-events: auto;/,
+    /\.hybrid-table:focus-within \.table-handle \{[^}]*pointer-events: auto;/,
+  );
+  // Hovering shows them only where there is hover (hover-reveals.test.ts).
+  assert.match(
+    css,
+    /@media \(hover: hover\) \{\s*\.hybrid-table:hover \.table-handle \{[^}]*pointer-events: auto;/,
   );
 });
 
