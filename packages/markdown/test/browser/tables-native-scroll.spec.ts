@@ -210,6 +210,39 @@ for (const state of ["a selected row", "an open cell"] as const) {
   });
 }
 
+test("an open cell returning on screen takes focus back only if nothing else has it", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1000, height: 760 });
+  const source = note(6);
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: false, config: {} } },
+  });
+  await constrain(page);
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("ControlOrMeta+f");
+  const find = page.getByRole("textbox", { name: "Find..." });
+  await expect(find).toBeFocused();
+  await openCell(page);
+  await moveNoteCaretOffTable(page);
+  const cellContent = page.locator(".hybrid-table .cm-content");
+
+  // Unmounting the table left focus on the body: the cell takes it back.
+  let scrollBack = await scrollTableAway(page);
+  await scrollBack();
+  await expect(cellContent).toBeFocused();
+
+  // The reader moved to the find bar meanwhile: it keeps focus.
+  scrollBack = await scrollTableAway(page);
+  await find.click();
+  await expect(find).toBeFocused();
+  await scrollBack();
+  await expect(find).toBeFocused();
+  await page.keyboard.type("cell");
+  await expect(find).toHaveValue("cell");
+  expect(await page.evaluate(() => window.harness.text)).toBe(source);
+});
+
 test("a selected table row leaves vertical wheel to the browser", async ({
   page,
 }) => {

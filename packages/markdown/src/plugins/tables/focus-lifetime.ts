@@ -10,21 +10,40 @@ export function noteTookTableFocus(
   return root.isConnected && !root.contains(active);
 }
 
+/**
+ * Nothing holds focus: unmounting the table left it on the body (or on the
+ * editor's root). Anywhere else (the note, the find bar, a menu) is where
+ * the reader went meanwhile, and a returning table must not take it away.
+ */
+export function focusIsUnclaimed(
+  document: Pick<Document, "activeElement" | "body" | "documentElement">,
+  editorRoot: Element,
+): boolean {
+  const active = document.activeElement;
+  return (
+    active === null ||
+    active === document.body ||
+    active === document.documentElement ||
+    active === editorRoot
+  );
+}
+
 /** Put a retained cell editor back when its table scrolls into view. */
 export function resumeRetainedCell(
   root: HTMLElement,
-  outer: { hasFocus: boolean },
+  outer: { dom: Element },
   inner: { contentDOM: HTMLElement } | undefined,
   isActive: boolean,
 ): void {
-  if (!isActive || !inner || outer.hasFocus) {
+  const unclaimed = () => focusIsUnclaimed(root.ownerDocument, outer.dom);
+  if (!isActive || !inner || !unclaimed()) {
     return;
   }
   const content = inner.contentDOM;
   // toDOM runs before CodeMirror inserts the widget. Focus after that insert
   // so preventScroll applies to a connected editor.
   queueMicrotask(() => {
-    if (!content.isConnected || outer.hasFocus) {
+    if (!content.isConnected || !unclaimed()) {
       return;
     }
     root.classList.add("has-focus");

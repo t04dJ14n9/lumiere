@@ -64,7 +64,7 @@ test("detaching a table for scroll is not the user leaving it", () => {
   assert.equal(noteTookTableFocus(root, null), true);
 });
 
-test("a retained cell is focused only after it is connected and the note is not", async () => {
+test("a retained cell is focused only once connected, and only if nothing has focus", async () => {
   let focused = 0;
   const content = {
     isConnected: false,
@@ -72,42 +72,48 @@ test("a retained cell is focused only after it is connected and the note is not"
       focused += 1;
     },
   };
+  const body = {} as Element;
+  const editorRoot = {} as Element;
+  const findInput = {} as Element;
+  const ownerDocument = {
+    activeElement: body as Element | null,
+    body,
+    documentElement: {} as Element,
+  };
   const root = {
+    ownerDocument,
     classList: { add() {} },
   } as unknown as HTMLElement;
-  const outer = { hasFocus: false };
-  resumeRetainedCell(
-    root,
-    outer,
-    { contentDOM: content as unknown as HTMLElement },
-    false,
-  );
-  resumeRetainedCell(
-    root,
-    { hasFocus: true },
-    {
-      contentDOM: content as unknown as HTMLElement,
-    },
-    true,
-  );
+  const outer = { dom: editorRoot };
+  const resume = (isActive = true) =>
+    resumeRetainedCell(
+      root,
+      outer,
+      { contentDOM: content as unknown as HTMLElement },
+      isActive,
+    );
+  resume(false);
   await Promise.resolve();
-  assert.equal(focused, 0);
-  resumeRetainedCell(
-    root,
-    outer,
-    { contentDOM: content as unknown as HTMLElement },
-    true,
-  );
+  assert.equal(focused, 0, "an inactive table never takes focus");
+  resume();
   await Promise.resolve();
   assert.equal(focused, 0, "focus waits until the widget is in the document");
   content.isConnected = true;
-  resumeRetainedCell(
-    root,
-    outer,
-    { contentDOM: content as unknown as HTMLElement },
-    true,
-  );
+  for (const elsewhere of [findInput, {} as Element]) {
+    ownerDocument.activeElement = elsewhere;
+    resume();
+    await Promise.resolve();
+    assert.equal(focused, 0, "the find bar or the note keeps its focus");
+  }
+  ownerDocument.activeElement = body;
+  resume();
+  ownerDocument.activeElement = findInput;
   await Promise.resolve();
-  assert.equal(focused, 1);
-  assert.equal(content.isConnected, true);
+  assert.equal(focused, 0, "focus taken before the insert is kept too");
+  for (const unclaimed of [body, editorRoot, null]) {
+    ownerDocument.activeElement = unclaimed;
+    resume();
+    await Promise.resolve();
+  }
+  assert.equal(focused, 3);
 });
