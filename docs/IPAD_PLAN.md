@@ -312,15 +312,29 @@ vaults as `VaultFileSystem`s over the native `LumiereVaultFiles` plugin (the
 app's folder, and folders picked in Files) and starts the window with
 `startLocalHost`, as `apps/web/src/main.ts` does. Checked in the simulator:
 a note opens in Live Preview with its outline, and what is typed is written
-to its file. Not done yet:
+to its file. The touch work in section 3 is in:
 
-- the touch work in section 3 (safe areas: the status bar covers the top of
-  the window; long-press for the right-click menu; narrow layouts); the
-  first tap after launch only wakes the page;
+- the window keeps clear of the status bar, the home indicator and the
+  on-screen keyboard (safe areas);
+- below 1200 px wide (an iPad in portrait, Split View, a small window) the
+  note takes the whole width, and the files or the outline float over it,
+  one at a time, only as tall as their content (`panels.ts`); buttons and
+  rows grow on a touchscreen;
+- opening a note, or a heading from the outline, leaves the on-screen
+  keyboard down until the note is tapped;
+- the edit menu (Cut, Copy, Paste) has More…, which opens Lumière's
+  right-click menu at the selection, since a long-press belongs to the
+  cursor; the menu bar's and keys' commands reach the window
+  (`appCommands` on the window's backend).
+
+Not done yet:
+
+- on the real iPad: whether the first tap after launch still seems only to
+  wake the page (in the simulator it opens the note, after a moment);
+  whether the edit menu shows after a long-press (in the simulator it shows
+  on a tap on the selection); Split View widths;
 - images in notes (their `lumiere/file` URLs need an answer: the web app's
-  service worker, or the iPad's scheme handler), and PDFs in tabs;
-- the window's commands from the native menu reaching the window
-  (`capacitor.ts`, beside `tauri.ts`).
+  service worker, or the iPad's scheme handler), and PDFs in tabs.
 
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript

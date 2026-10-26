@@ -10,6 +10,9 @@
 
 - **Lumière for iPad (preview)**: the same window on the iPad, over the
   app's own folder and folders picked in Files, with no server (`apps/ipad`).
+  On a narrow screen the note takes the whole width and the files or the
+  outline float over it. More… in the edit menu opens Lumière's right-click
+  menu, and the keyboard stays down until you tap the note.
 - **Lumière for the web (preview)**: the desktop app's window in a browser,
   with no server and offline (`apps/web`). Open a folder of your own
   (Chromium) or keep notes in the browser; it comes back where you left it.
