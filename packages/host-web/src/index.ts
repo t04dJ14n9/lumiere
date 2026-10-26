@@ -14,6 +14,7 @@ import { silentLogger, type Logger } from "@workshop/core";
 import type {
   ContributedSetting,
   VaultCodeTrust,
+  WorkerLauncher,
   WorkerName,
 } from "@workshop/markdown/portable";
 import type { Mounts } from "./mounts";
@@ -36,6 +37,8 @@ export interface HostWebOptions {
   readonly dataRoot: string;
   /** The URL of a built worker script (`vault.web.js`, `search.web.js`). */
   readonly workerUrl: (name: WorkerName) => string;
+  /** Workers started some other way (a test under Node); `workerUrl` is then unused. */
+  readonly workers?: WorkerLauncher;
   /** Lumière's settings and defaults (`contributed.json`, written at build time). */
   readonly contributed: readonly ContributedSetting[];
   /** Lumière's right-click menu items (`menus.json`). */
@@ -50,7 +53,7 @@ export function startHostWeb(options: HostWebOptions): Promise<LumiereHost> {
   const platform = createWebPlatform({
     files: options.files,
     dataRoot: options.dataRoot,
-    workers: webWorkerLauncher(options.workerUrl),
+    workers: options.workers ?? webWorkerLauncher(options.workerUrl),
   });
   return startHost(platform, {
     identity: options.identity ?? { appName: "Lumière", uriScheme: "lumiere" },

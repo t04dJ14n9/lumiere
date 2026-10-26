@@ -231,6 +231,7 @@ export default tseslint.config(
           "./packages/dsh/src/client/tsconfig.json",
           "./packages/app/src/server/tsconfig.json",
           "./packages/app/src/shell/tsconfig.json",
+          "./packages/app/src/local/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },
