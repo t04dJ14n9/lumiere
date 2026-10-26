@@ -266,3 +266,33 @@ test("a floating card's long list scrolls inside the card", async () => {
   assert.match(rule, /min-height:\s*0/);
   assert.match(rule, /flex:\s*0 1 auto/);
 });
+
+test("the glass reaches over the notes by the bar's overlap, with room below it", async () => {
+  const { insetFor } = await import("../../src/shell/chrome-inset");
+  // The bar floats over bodies that run to the top: line 1 sits below it.
+  assert.equal(insetFor(76.4, 0), 82);
+  // The bar sits above the bodies, as on the desktop: nothing over the note.
+  assert.equal(insetFor(40, 40), 0);
+  assert.equal(insetFor(40, 48), 0);
+});
+
+test("with Liquid Glass the note runs up behind the status bar, and the glass keeps clear of it", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = (selector: string) => {
+    const start = css.indexOf(`${selector} {`);
+    assert.ok(start >= 0, `${selector} is styled`);
+    return css.slice(start, css.indexOf("}", start));
+  };
+  assert.match(rule(".liquid-glass #root"), /padding-top:\s*0/);
+  assert.match(
+    rule(".liquid-glass .tab-strip"),
+    /top:\s*calc\(env\(safe-area-inset-top\)/,
+  );
+  assert.match(rule(".liquid-glass .tab-bodies"), /inset:\s*0/);
+  // Only the capsules take taps; the note between them stays reachable.
+  assert.match(rule(".liquid-glass .tab-strip"), /pointer-events:\s*none/);
+});

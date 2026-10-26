@@ -645,3 +645,124 @@ button.secondary:hover {
     padding-block: 7px;
   }
 }
+/*
+ * Liquid Glass, on the iPad (apps/ipad/index.html sets the class). The note
+ * runs edge to edge, up behind the status bar, and the controls float over
+ * it as glass that blurs and tints what scrolls beneath: the tabs and the
+ * panel buttons as two capsules, the files and the outline as panels. Each
+ * note's page keeps its first line below the glass (chrome-inset.ts).
+ */
+:root.liquid-glass {
+  --glass-fill: light-dark(rgb(255 255 255 / 0.48), rgb(44 44 48 / 0.46));
+  --glass-blur: blur(20px) saturate(190%);
+  --glass-edge: light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.16));
+  --glass-shadow:
+    0 8px 28px light-dark(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.45)),
+    0 1px 2px light-dark(rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.3));
+  /* Light catching the glass's top edge, and a softer one at the bottom. */
+  --glass-shine:
+    inset 0 1px 0.5px
+      light-dark(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.22)),
+    inset 0 -1px 0.5px
+      light-dark(rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.06));
+  --glass-pill: light-dark(rgb(0 0 0 / 0.07), rgb(255 255 255 / 0.13));
+}
+.liquid-glass #root {
+  padding-top: 0;
+}
+.liquid-glass .editors {
+  position: relative;
+}
+/* The tabs' bodies run under the bar, to the window's top. */
+.liquid-glass .tab-bodies {
+  position: absolute;
+  inset: 0;
+}
+/* Behind the status bar the note fades, so the time stays readable. */
+.liquid-glass .editors::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  height: calc(env(safe-area-inset-top) + 14px);
+  pointer-events: none;
+  background: linear-gradient(var(--vscode-editor-background) 45%, transparent);
+}
+.liquid-glass .tab-strip {
+  position: absolute;
+  z-index: 3;
+  top: calc(env(safe-area-inset-top) + 6px);
+  right: 10px;
+  left: 10px;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* Only the capsules take taps; the note shows, and scrolls, between them. */
+  pointer-events: none;
+}
+.liquid-glass .tabs,
+.liquid-glass .layout-buttons,
+.liquid-glass .app > .sidebar,
+.liquid-glass .app > .side-panel,
+.liquid-glass .tab-bodies > .floating-panel {
+  border: 0.5px solid var(--glass-edge);
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-shine);
+}
+.liquid-glass .tabs,
+.liquid-glass .layout-buttons {
+  flex: 0 1 auto;
+  padding: 5px;
+  border-radius: 999px;
+  pointer-events: auto;
+}
+.liquid-glass .tabs:empty {
+  display: none;
+}
+.liquid-glass .layout-buttons {
+  margin-left: auto;
+}
+.liquid-glass .tab {
+  height: 36px;
+  border-radius: 999px;
+}
+.liquid-glass .tab[aria-selected="true"] {
+  background: var(--glass-pill);
+}
+.liquid-glass .layout-buttons button {
+  width: 36px;
+  height: 36px;
+}
+/* The files and the outline: glass panels, beside the note or over it. */
+.liquid-glass .app > .sidebar,
+.liquid-glass .app > .side-panel,
+.liquid-glass .tab-bodies > .floating-panel {
+  overflow: hidden;
+  border-radius: 22px;
+}
+.liquid-glass .app > .sidebar {
+  margin: calc(env(safe-area-inset-top) + 6px) 0 10px 10px;
+}
+.liquid-glass .app > .side-panel {
+  margin: calc(env(safe-area-inset-top) + 6px) 10px 10px 0;
+}
+.liquid-glass .tab-bodies > .floating-panel {
+  top: calc(var(--chrome-inset, 0px) + 2px);
+  max-height: calc(100% - var(--chrome-inset, 0px) - 12px);
+}
+.liquid-glass .vault-bar,
+.liquid-glass .panel-header {
+  border-bottom-color: var(--glass-pill);
+}
+/* What has its own bar at the top starts below the glass. */
+.liquid-glass .tab-bodies > .editor-frame.is-pdf {
+  top: var(--chrome-inset, 0px);
+  height: auto;
+}
+.liquid-glass .settings-editor {
+  padding-top: var(--chrome-inset, 0px);
+}

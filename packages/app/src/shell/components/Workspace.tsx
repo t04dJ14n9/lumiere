@@ -4,7 +4,8 @@
  * the right. Either side can be hidden; in a narrow window they float over
  * the note instead (panels.ts).
  */
-import type { Dispatch, ReactNode } from "react";
+import { useRef, type Dispatch, type ReactNode, type Ref } from "react";
+import { useChromeInset } from "../chrome-inset";
 import { backend } from "../backend";
 import type { VaultState } from "../hooks";
 import type { Opening } from "../opening";
@@ -32,6 +33,9 @@ export interface WorkspaceProps {
 
 export function Workspace(props: WorkspaceProps) {
   const { tabs, dispatch, panels, report } = props;
+  const bar = useRef<HTMLDivElement>(null);
+  const bodies = useRef<HTMLDivElement>(null);
+  useChromeInset(bar, bodies);
   const { narrow } = panels;
   const columns = narrow
     ? "minmax(0, 1fr)"
@@ -52,6 +56,7 @@ export function Workspace(props: WorkspaceProps) {
       {!narrow && sidebar}
       <main className="editors">
         <TabStrip
+          ref={bar}
           tabs={tabs.tabs}
           active={tabs.active}
           onActivate={(id) => dispatch({ type: "activate", id })}
@@ -63,7 +68,7 @@ export function Workspace(props: WorkspaceProps) {
             />
           }
         />
-        <TabBodies {...props}>
+        <TabBodies {...props} bodies={bodies}>
           {narrow && (sidebar || outline) && (
             // A tap on the note puts a floating panel away, as a popover goes.
             <div className="panel-scrim" onClick={panels.dismiss} />
@@ -83,11 +88,15 @@ function TabBodies({
   ui,
   panels,
   report,
+  bodies,
   children,
-}: WorkspaceProps & { readonly children: ReactNode }) {
+}: WorkspaceProps & {
+  readonly bodies: Ref<HTMLDivElement>;
+  readonly children: ReactNode;
+}) {
   return (
     // Every tab stays laid out at full size, hidden or not (styles.css).
-    <div className="tab-bodies">
+    <div className="tab-bodies" ref={bodies}>
       {tabs.tabs.map((tab) =>
         tab.kind === "note" ? (
           <EditorFrame

@@ -11,8 +11,11 @@ import {
   parseConnectMessage,
   parseOpenMessage,
   SHOWN,
+  type InsetMessage,
   type PortMessage,
 } from "@workshop/host-node/embedding";
+import { fileKind } from "../../shared/file-kind";
+import { chromeInset, onChromeInset } from "../chrome-inset";
 import { backend, type OpenedEditor } from "../backend";
 import type { NoteTab } from "../tabs";
 import { currentThemeMessage, onThemeChange } from "../theme";
@@ -28,6 +31,7 @@ export function EditorFrame({ tab, visible, onOpen }: EditorFrameProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const opened = useOpenedEditor(tab);
   useEffect(() => onThemeChange(() => sendTheme(frame.current)), []);
+  useEffect(() => onChromeInset(() => sendInset(frame.current)), []);
   // The shown tab's note is the active one (Outline follows it), and it
   // takes the keyboard.
   useEffect(() => {
@@ -64,13 +68,17 @@ export function EditorFrame({ tab, visible, onOpen }: EditorFrameProps) {
   return opened.opened ? (
     <iframe
       ref={frame}
-      className="editor-frame"
+      // A PDF keeps its own toolbar below the window's glass (styles.css).
+      className={
+        fileKind(tab.path) === "pdf" ? "editor-frame is-pdf" : "editor-frame"
+      }
       hidden={!visible}
       src={opened.opened.url}
       title={tab.path}
       allow="clipboard-read; clipboard-write"
       onLoad={() => {
         sendTheme(frame.current);
+        sendInset(frame.current);
         if (visible) {
           show(frame.current);
         }
@@ -128,6 +136,12 @@ function useOpenedEditor(tab: NoteTab): {
 function show(frame: HTMLIFrameElement | null): void {
   frame?.contentWindow?.postMessage(SHOWN, location.origin);
   frame?.contentWindow?.focus();
+}
+
+/** How far the window's glass reaches over the page (chrome-inset.ts). */
+function sendInset(frame: HTMLIFrameElement | null): void {
+  const message: InsetMessage = { lumiere: "inset", top: chromeInset() };
+  frame?.contentWindow?.postMessage(message, location.origin);
 }
 
 function sendTheme(frame: HTMLIFrameElement | null): void {
