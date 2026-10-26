@@ -10,6 +10,7 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
     private let vaults = VaultStore.standard()
     private var keyboard: KeyboardInset?
     private var longPressMenu: LongPressEditMenu?
+    private var windowControls: WindowControlsInset?
 
     /// Vault files are served to the web view too, for a note's images
     /// and embeds (VaultRouter).
@@ -22,6 +23,14 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
         bridge?.registerPluginInstance(windowCommands)
         keyboard = KeyboardInset(controller: self)
         longPressMenu = webView.map(LongPressEditMenu.init(webView:))
+        windowControls = webView.map { WindowControlsInset(view: view, webView: $0) }
+    }
+
+    /// A window resized, or full screen entered or left, moves iPadOS's
+    /// window controls over the page (WindowControlsInset.swift).
+    override open func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        windowControls?.update()
     }
 
     @objc public func performWindowCommand(_ sender: UICommand) {

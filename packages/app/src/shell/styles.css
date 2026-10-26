@@ -155,6 +155,16 @@ button.primary:hover {
   border-bottom: 1px solid var(--vscode-panel-border);
   background: var(--vscode-editor-background);
 }
+/*
+ * In a window rather than full screen, iPadOS draws its window controls over
+ * the top-left corner (the app sets the width: WindowControlsInset.swift;
+ * elsewhere it is unset). The bar in that corner starts after them: the tab
+ * strip, or the vault bar when the files are a column.
+ */
+.app > .editors:first-child > .tab-strip,
+.app > .sidebar:first-child > .vault-bar {
+  padding-left: calc(8px + var(--window-controls-inset, 0px));
+}
 .tabs {
   display: flex;
   flex: 1;

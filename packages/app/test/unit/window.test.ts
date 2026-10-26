@@ -235,6 +235,32 @@ test("a long-press on a file, a heading or a tab selects no text", async () => {
   );
 });
 
+test("the bar in the top-left corner starts after iPadOS's window controls", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find(([, , body]) =>
+    body!.includes("var(--window-controls-inset"),
+  );
+  assert.ok(rule, "the window controls' rule");
+  const selectors = rule[1]!
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split(",")
+    .map((selector) => selector.trim());
+  // Whichever column comes first holds the corner: the notes' tab strip
+  // (a narrow window, or the files hidden) or the files' vault bar.
+  assert.deepEqual(selectors.sort(), [
+    ".app > .editors:first-child > .tab-strip",
+    ".app > .sidebar:first-child > .vault-bar",
+  ]);
+  assert.match(
+    rule[2]!,
+    /padding-left:\s*calc\(8px \+ var\(--window-controls-inset, 0px\)\)/,
+  );
+});
+
 test("a wide window shows the panels it saved, as columns", async () => {
   const { shownPanels, togglePanel } = await import("../../src/shell/panels");
   const saved = { sidebar: true, outline: false };
