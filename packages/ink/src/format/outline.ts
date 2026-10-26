@@ -23,6 +23,11 @@ export type Vec = readonly [number, number];
 export interface OutlinePiece {
   readonly key: number;
   readonly outline: Vec[];
+  /**
+   * The outline's indices that are a cut's ends, where the piece meets its
+   * neighbour: drawn sharp (`outlinePathData`), so the two meet exactly.
+   */
+  readonly corners: readonly number[];
 }
 
 /** Points closer than this are the same point; they have no direction. */
@@ -57,7 +62,7 @@ export function strokePieces<P extends OutlinePoint>(
       { center: first, radius: radiusOf(first), from: 0 },
       2 * Math.PI,
     );
-    return [{ key: key(first), outline: dot }];
+    return [{ key: key(first), outline: dot, corners: [] }];
   }
   const sides = path.map((point, index) =>
     offsetPoint(point, neighbourDirections(path, index)),
@@ -68,35 +73,54 @@ export function strokePieces<P extends OutlinePoint>(
     path[last] ?? first,
     direction(path[last - 1] ?? first, path[last] ?? first),
   );
-  return runs(path, key).map(({ from, to, key: runKey }) => ({
-    key: runKey,
-    outline: [
-      ...sides.slice(from, to + 1).flatMap((side) => side.plus),
-      ...(to === last ? endCap : []),
-      ...sides
-        .slice(from, to + 1)
-        .reverse()
-        .flatMap((side) => [...side.minus].reverse()),
+  return runs(path, key).map(({ from, to, key: runKey }) => {
+    const plus = sides.slice(from, to + 1).flatMap((side) => side.plus);
+    const minus = sides
+      .slice(from, to + 1)
+      .reverse()
+      .flatMap((side) => [...side.minus].reverse());
+    const end = to === last ? endCap : [];
+    const outline = [
+      ...plus,
+      ...end,
+      ...minus,
       ...(from === 0 ? startCap : []),
-    ],
-  }));
+    ];
+    // A cut runs straight from one side to the other: at the end, from the
+    // plus side's last offset to the minus side's first; at the start, from
+    // the minus side's last back to the plus side's first.
+    const corners = [
+      ...(to === last ? [] : [plus.length - 1, plus.length]),
+      ...(from === 0 ? [] : [plus.length + end.length + minus.length - 1, 0]),
+    ];
+    return { key: runKey, outline, corners };
+  });
 }
 
 /**
  * A smooth closed SVG path through the outline: each vertex is a quadratic
  * curve's control point between its neighbours' midpoints, so the handful
- * of points per input sample draw as a curve rather than facets.
+ * of points per input sample draw as a curve rather than facets. A corner
+ * (a piece's cut) is passed through with straight lines instead: as a
+ * control point it would pull the path in to the middle of the cut.
  */
-export function outlinePathData(outline: readonly Vec[]): string {
+export function outlinePathData(
+  outline: readonly Vec[],
+  corners: readonly number[] = [],
+): string {
   if (outline.length < 3) {
     return "";
   }
   const at = (index: number) => outline[index % outline.length] ?? EAST;
+  const isCorner = new Set(corners);
   const parts = [`M${format(midpoint(at(0), at(1)))}`];
   for (let index = 1; index <= outline.length; index++) {
-    const control = at(index);
+    const vertex = at(index);
+    const next = format(midpoint(vertex, at(index + 1)));
     parts.push(
-      `Q${format(control)} ${format(midpoint(control, at(index + 1)))}`,
+      isCorner.has(index % outline.length)
+        ? `L${format(vertex)}L${next}`
+        : `Q${format(vertex)} ${next}`,
     );
   }
   return `${parts.join("")}Z`;

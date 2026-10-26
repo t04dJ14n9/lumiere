@@ -81,7 +81,7 @@ export function strokeSvg(stroke: InkStroke): string {
     });
   }
   const pieces = strokePieces(stroke.points, opacityKey).map((piece) =>
-    path(outlinePathData(piece.outline), {
+    path(outlinePathData(piece.outline, piece.corners), {
       opacity: alpha * piece.key * OPACITY_STEP,
     }),
   );
