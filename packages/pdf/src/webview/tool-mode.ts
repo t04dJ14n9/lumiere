@@ -5,6 +5,7 @@ import {
 import { useSelectionCapability } from "@embedpdf/plugin-selection/react";
 import { useCallback, useEffect } from "react";
 import type { ToolMode } from "../shared/view-state";
+import { touchOnly } from "./touch";
 
 /**
  * EmbedPDF's interaction mode for the Select Region tool: drags draw a
@@ -25,6 +26,18 @@ export function useToolMode(documentId: string): {
   useEffect(() => {
     if (!interaction || !selection) {
       return;
+    }
+    if (touchOnly()) {
+      // EmbedPDF's default mode takes every touch (touch-action: none) for
+      // its drags; on a touch-only device it leaves them to the browser, so
+      // a finger scrolls. Registering the mode again replaces it.
+      interaction.registerMode({
+        id: interaction.getDefaultMode(),
+        scope: "page",
+        exclusive: false,
+        cursor: "auto",
+        wantsRawTouch: false,
+      });
     }
     interaction.registerMode({
       id: REGION_MODE,
