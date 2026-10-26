@@ -125,6 +125,18 @@ importers:
         specifier: 8.18.2
         version: 8.18.2
 
+  packages/host-web:
+    dependencies:
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../host-node
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../markdown
+
   packages/markdown:
     dependencies:
       '@codemirror/autocomplete':
