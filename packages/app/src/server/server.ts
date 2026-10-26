@@ -22,7 +22,7 @@ import {
 import { createApi, type Api } from "./api";
 import { admit } from "./auth";
 import { UiStore } from "./ui-state";
-import { VaultTrust } from "./vault-trust";
+import { fileVaultTrust } from "./vault-trust";
 import { Vaults } from "./vaults";
 
 export interface ServerSetup {
@@ -47,7 +47,7 @@ export interface RunningServer {
 
 export async function startServer(setup: ServerSetup): Promise<RunningServer> {
   const markdown = path.join(setup.assets, "markdown");
-  const trust = new VaultTrust(path.join(setup.data, "trust.json"));
+  const trust = fileVaultTrust(path.join(setup.data, "trust.json"));
   await trust.load();
   const lumiere = await startLumiere({
     identity: { appName: "Lumière", uriScheme: "lumiere" },
