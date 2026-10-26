@@ -1,4 +1,4 @@
-import type { ExtensionContext } from "vscode";
+import { env, type ExtensionContext } from "vscode";
 import type { RootContext } from "@workshop/core";
 import { createApi } from "./api/facade";
 import { nativePlatform } from "./api/native-platform";
@@ -8,6 +8,7 @@ import { createConfiguration } from "./configuration-access";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { registerDocumentWarm } from "./document-warm";
+import { createCursorHandoffSurface } from "./cursor-handoff";
 
 export { pluginRank } from "../plugins/catalog";
 export { outputLogger } from "./logging";
@@ -28,6 +29,11 @@ export async function startMarkdown(
     configuration,
   );
   context.subscriptions.push(registerDocumentWarm());
-  await bootstrap(host, createVaultSystem(context, configuration), root);
+  await bootstrap(host, createVaultSystem(context, configuration), root, {
+    cursorBridge: {
+      appName: env?.appName ?? "",
+      surface: createCursorHandoffSurface(),
+    },
+  });
   return createApi(root, nativePlatform(context.extension.id));
 }

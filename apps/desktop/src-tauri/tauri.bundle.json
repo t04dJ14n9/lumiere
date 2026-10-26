@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "externalBin": ["binaries/lumiere-node"],
+    "resources": {
+      "resources/app/": "app/"
+    }
+  }
+}

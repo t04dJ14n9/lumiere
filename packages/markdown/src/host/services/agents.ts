@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
+import { createVsCodeIdeContextHost } from "@workshop/agents/ide-context";
 import type { AgentHost, CopyLinkTarget } from "../../shared/host";
 
 /** Extensions that bring an agent chat of their own besides the editor's. */
@@ -33,6 +34,7 @@ export function createAgentHost(): AgentHost {
       await writeFile(file, text, { mode: 0o600 });
       return vscode.Uri.file(file).toString();
     },
+    ideContextHost: () => createVsCodeIdeContextHost(vscode),
   };
 }
 

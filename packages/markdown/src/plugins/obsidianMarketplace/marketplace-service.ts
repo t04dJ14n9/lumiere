@@ -93,7 +93,7 @@ export class CommunityMarketplaceService implements ObsidianMarketplace {
   ): Promise<MarketplaceCatalogSnapshot> {
     const configDirUri = resolveConfigDirectory(vaultRoot, configFolder);
     const configDir = relativeConfigName(vaultRoot, configDirUri);
-    if (!this.workspace.isTrusted()) {
+    if (this.workspace.vaultCode.answer(vaultRoot) !== true) {
       return { trusted: false, configDir, items: [] };
     }
     const [remoteCatalog, enabledIds, installedMap] = await Promise.all([
@@ -118,7 +118,7 @@ export class CommunityMarketplaceService implements ObsidianMarketplace {
     id: string,
     repo?: string,
   ): Promise<MarketplaceMutationResult> {
-    this.assertTrusted("install Obsidian community plugin");
+    this.assertVaultAllowed(vaultRoot, "install Obsidian community plugin");
     if (!isValidPluginId(id)) {
       throw new Error(`Invalid Obsidian plugin ID: ${String(id)}`);
     }
@@ -141,7 +141,10 @@ export class CommunityMarketplaceService implements ObsidianMarketplace {
     id: string,
     enabled: boolean,
   ): Promise<MarketplaceMutationResult> {
-    this.assertTrusted("change Obsidian community plugin state");
+    this.assertVaultAllowed(
+      vaultRoot,
+      "change Obsidian community plugin state",
+    );
     if (!isValidPluginId(id)) {
       throw new Error(`Invalid Obsidian plugin ID: ${String(id)}`);
     }
@@ -166,7 +169,7 @@ export class CommunityMarketplaceService implements ObsidianMarketplace {
     configFolder: string | undefined,
     id: string,
   ): Promise<MarketplaceMutationResult> {
-    this.assertTrusted("uninstall Obsidian community plugin");
+    this.assertVaultAllowed(vaultRoot, "uninstall Obsidian community plugin");
     if (!isValidPluginId(id)) {
       throw new Error(`Invalid Obsidian plugin ID: ${String(id)}`);
     }
@@ -402,9 +405,17 @@ export class CommunityMarketplaceService implements ObsidianMarketplace {
     await check(vaultRoot, uri);
   }
 
+  /** Fetching the public catalog needs the workspace's trust (network). */
   private assertTrusted(operation: string): void {
     if (!this.workspace.isTrusted()) {
       throw new Error(`Cannot ${operation} in an untrusted workspace.`);
+    }
+  }
+
+  /** Plugins installed or turned on will run, so the vault must allow its code. */
+  private assertVaultAllowed(vaultRoot: string, operation: string): void {
+    if (this.workspace.vaultCode.answer(vaultRoot) !== true) {
+      throw new Error(`Cannot ${operation} in an untrusted vault.`);
     }
   }
 }

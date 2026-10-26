@@ -11,6 +11,7 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   capabilities: ["commands", "agentHandoff", "views", "statusBar"],
+  needs: ["workbench"],
   contributes: {
     views: [
       {

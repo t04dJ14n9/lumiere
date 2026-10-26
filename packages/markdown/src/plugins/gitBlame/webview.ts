@@ -22,19 +22,23 @@ export const gitBlameWebview: Plugin = {
 };
 
 function registerBlameController(ctx: Context): void {
-  const view = ctx.editor.view;
+  // Captured while live: an update can reach the listener while the plugin
+  // stops, before its own cleanups run, and a stopped context throws.
+  const editor = ctx.editor;
+  const rpc = ctx.rpc;
+  const view = editor.view;
   const controller = new BlameController({
     read: () => {
       const head = view.state.selection.main.head;
       return {
-        uri: ctx.editor.source,
+        uri: editor.source,
         docVersion: view.state.field(docVersionField, false) ?? 0,
         caretLine: view.state.doc.lineAt(head).number,
         caretHead: head,
       };
     },
     contents: () => view.state.doc.toString(),
-    request: (params) => ctx.rpc.call(protocol, "blameLine", params),
+    request: (params) => rpc.call(protocol, "blameLine", params),
     paint: (blame) => {
       // Doc/caret invalidation has already cleared the field in its transaction.
       if (view.state.field(blameField, false) === blame) {
@@ -77,18 +81,20 @@ function registerBlameController(ctx: Context): void {
 }
 
 function registerIdentity(ctx: Context): void {
+  const editor = ctx.editor;
+  const rpc = ctx.rpc;
   let live = true;
   let serial = 0;
   const refresh = async (): Promise<void> => {
     const request = ++serial;
-    const uri = ctx.editor.source;
-    const identity = await ctx.rpc
+    const uri = editor.source;
+    const identity = await rpc
       .call(protocol, "identity", {})
       .catch(() => undefined);
-    if (!live || request !== serial || uri !== ctx.editor.source) {
+    if (!live || request !== serial || uri !== editor.source) {
       return;
     }
-    ctx.editor.view.dispatch({ effects: setBlameIdentity.of(identity) });
+    editor.view.dispatch({ effects: setBlameIdentity.of(identity) });
   };
   ctx.effect(() => () => {
     live = false;

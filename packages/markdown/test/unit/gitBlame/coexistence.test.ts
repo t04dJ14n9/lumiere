@@ -144,3 +144,15 @@ for (const withGutter of [false, true]) {
     assert.equal(f.extensions.size, 0);
   });
 }
+
+test("an editor update while the plugin stops does not read its stopped services", async (t) => {
+  const f = composition();
+  t.after(() => f.root.dispose());
+  const fiber = f.root.plugin(gitBlameWebview);
+  await f.root.settled();
+  const stopping = fiber.dispose();
+  // Another plugin's transaction can land before gitBlame's own cleanups run.
+  assert.doesNotThrow(() => f.view.dispatch({ selection: { anchor: 2 } }));
+  await stopping;
+  assert.doesNotThrow(() => f.view.dispatch({ selection: { anchor: 3 } }));
+});

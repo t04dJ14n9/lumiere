@@ -66,7 +66,20 @@ export function createActiveEditor(): ActiveEditor {
         vscode.window.onDidChangeTextEditorSelection(() => listener()),
       ),
     closeSiblingTabs: closeToggleSiblingTabs,
+    customEditorViewType: activeCustomEditorViewType,
   };
+}
+
+function activeCustomEditorViewType(): string | undefined {
+  // Unit stubs resolve `vscode` to a forbidden placeholder without window APIs.
+  const input = vscode.window?.tabGroups?.activeTabGroup?.activeTab?.input;
+  if (
+    typeof vscode.TabInputCustom === "function" &&
+    input instanceof vscode.TabInputCustom
+  ) {
+    return input.viewType;
+  }
+  return undefined;
 }
 
 /** The note in the active tab, whether this extension's editor or a text editor. */

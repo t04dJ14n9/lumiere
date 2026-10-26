@@ -16,6 +16,7 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   capabilities: ["editorChrome", "rendering", "editing", "commands"],
+  needs: ["git"],
   config,
   contributes: {
     commands: [

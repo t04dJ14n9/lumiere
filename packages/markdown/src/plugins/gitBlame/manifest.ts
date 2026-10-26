@@ -8,4 +8,5 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   capabilities: ["editorChrome"],
+  needs: ["git"],
 } as const);

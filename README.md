@@ -89,6 +89,18 @@ views and anything you open with **Open as Text** stay as they are. Cursor
 keeps most extension buttons in the editor's **…** menu, so the PDF reader's
 page and zoom controls live in the status bar.
 
+### In DeepSeek Harness
+
+Lumière's Markdown editor also runs in
+[DeepSeek Harness](https://www.deepseek.com/en/harness/) (0.2.1 or later), as
+a DSH plugin: a workspace's notes open in Lumière in DSH's preview sidebar,
+with the same Live Preview, links, properties and math, and save as you type.
+Build it with `pnpm --filter @workshop/dsh build`, then add
+`packages/dsh/dist/bundle` to a DSH profile:
+`dsh plugin --profile web add link:<path to dist/bundle>`. PDFs, Git
+features and the side views are VS Code and Cursor only for now; see
+[packages/dsh](packages/dsh/README.md).
+
 ## Develop
 
 ```sh
@@ -107,6 +119,7 @@ pnpm package        # the .vsix
 | `packages/agents` | What both parts hand to agents: handoff text, IDE context |
 | `packages/markdown` | The Markdown editor ([README](packages/markdown/README.md), [plugins](packages/markdown/CAPABILITIES.md)) |
 | `packages/pdf` | The PDF reader ([README](packages/pdf/README.md)) |
+| `packages/dsh` | The Markdown editor in DeepSeek Harness ([README](packages/dsh/README.md)) |
 | `scripts/` | Build, `package.json` contributions, third-party notices, tests |
 | `test/vscode` | End-to-end tests in a real, isolated VS Code (or Cursor) |
 

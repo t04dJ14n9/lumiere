@@ -1,3 +1,15 @@
+import { unavailableSettings } from "../shared/host-needs";
+import publicApi from "./publicApi/manifest";
+import document from "./document/manifest";
+import editor from "./editor/manifest";
+import dialect from "./dialect/manifest";
+import commands from "./commands/manifest";
+import livePreview from "./livePreview/manifest";
+import render from "./render/manifest";
+import resources from "./resources/manifest";
+import vault from "./vault/manifest";
+import markers from "./markers/manifest";
+import type { HostNeed } from "../shared/manifest";
 import agentBridge from "./agentBridge/manifest";
 import ideContext from "./ideContext/manifest";
 import cursorBridge from "./cursorBridge/manifest";
@@ -124,3 +136,36 @@ export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
 );
 
 export { pluginRank } from "./plugin-order";
+
+/** The core plugins: always on, in every host. */
+export const coreManifests: readonly Manifest[] = [
+  publicApi,
+  document,
+  editor,
+  dialect,
+  commands,
+  livePreview,
+  render,
+  resources,
+  vault,
+  markers,
+];
+
+/** Every plugin's manifest: the core, then the features. */
+export function allManifests(): readonly Manifest[] {
+  return [...coreManifests, ...features, ...workbenchFeatures];
+}
+
+/** The settings a host offering `offered` should not show (shared/host-needs.ts). */
+export function settingsUnavailableIn(
+  offered: readonly HostNeed[],
+): ReadonlySet<string> {
+  return unavailableSettings(allManifests(), offered);
+}
+
+/** Each plugin's title by its id ("lineNumbers" → "Line Numbers"), for settings pages. */
+export function pluginTitles(): ReadonlyMap<string, string> {
+  return new Map(
+    allManifests().map((manifest) => [manifest.id, manifest.title]),
+  );
+}
