@@ -74,8 +74,14 @@ export interface NoteFiles extends Pick<
 }
 
 export function noteFiles(platform: HostPlatform): NoteFiles {
-  const { readText, save, watch } = platform.files;
-  return { readText, save, watch, sha256: (text) => platform.sha256(text) };
+  const { files } = platform;
+  // Called through `files`: a platform's files may be a class instance.
+  return {
+    readText: (uri) => files.readText(uri),
+    save: (uri, text) => files.save(uri, text),
+    watch: (uri, listener) => files.watch(uri, listener),
+    sha256: (text) => platform.sha256(text),
+  };
 }
 
 /**

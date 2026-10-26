@@ -199,3 +199,21 @@ test("opening a note twice at once returns one document", async (t) => {
   const [a, b] = await Promise.all([documents.open(uri), documents.open(uri)]);
   assert.equal(a, b);
 });
+
+test("a note's files may be a class instance: its methods keep their object", async () => {
+  const platform = createNodePlatform({ data: tmpdir(), workers: "" });
+  class ClassFiles {
+    constructor(private readonly prefix: string) {}
+    async readText(uri: string): Promise<string> {
+      return `${this.prefix}${uri}`;
+    }
+  }
+  const notes = noteFiles({
+    ...platform,
+    files: Object.assign(new ClassFiles("read:"), {
+      save: platform.files.save,
+      watch: platform.files.watch,
+    }) as never,
+  });
+  assert.equal(await notes.readText("file:///n.md"), "read:file:///n.md");
+});

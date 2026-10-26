@@ -55,7 +55,12 @@ export function createHostWorkspace({
       }
       return info;
     },
-    ...(files.realContains ? { realContains: files.realContains } : {}),
+    ...(files.realContains
+      ? {
+          realContains: (root: string, uri: string) =>
+            files.realContains!(root, uri),
+        }
+      : {}),
     watch: (uri, listener) => watchContained(inside, files, uri, listener),
     files: createWorkspaceFiles(files, roots),
     diagnostics: noDiagnostics,
