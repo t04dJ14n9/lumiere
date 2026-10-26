@@ -24,12 +24,21 @@ export {
   type OutlinePoint,
   type Vec,
 } from "./outline";
-export { paperSvg } from "./paper";
+export {
+  PAPER_DOT,
+  PAPER_LINE,
+  paperMarks,
+  paperSvg,
+  type PaperMarks,
+} from "./paper";
 export {
   SKETCH_EXTENSION,
   SKETCH_NAMESPACE,
   isSketchPath,
   sketchFromSvg,
   sketchToSvg,
+  strokeFills,
   strokeSvg,
+  type FillPiece,
+  type StrokeFills,
 } from "./svg";

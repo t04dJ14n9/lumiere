@@ -1,13 +1,48 @@
 /**
- * The page behind a sketch, as SVG: a colour, then ruled lines, a grid or
- * dots. Each kind is one path, without `<pattern>` ids, so two sketches
- * inlined in one page cannot clash.
+ * The page behind a sketch: a colour, then ruled lines, a grid or dots.
+ * `paperMarks` says where they go; the SVG (`paperSvg`) and the web canvas
+ * both draw from it, so the page looks the same while drawing and in a
+ * note. In the SVG each kind is one path, without `<pattern>` ids, so two
+ * sketches inlined in one page cannot clash.
  */
 import { round } from "./encoding";
 import type { Paper } from "./types";
 
-const LINE_COLOR = "#d5dce6";
-const DOT_COLOR = "#bcc5d1";
+export const PAPER_LINE = { color: "#d5dce6", width: 1 } as const;
+export const PAPER_DOT = { color: "#bcc5d1", diameter: 2.5 } as const;
+
+/** Where a page's marks go, in the sketch's coordinates. */
+export interface PaperMarks {
+  /** The y of each line across the page; half a point off the grid, so a one-pixel line is crisp at 1x. */
+  readonly across: readonly number[];
+  /** The x of each line down the page, likewise. */
+  readonly down: readonly number[];
+  /** The centre of each dot. */
+  readonly dots: readonly (readonly [number, number])[];
+}
+
+export function paperMarks(
+  paper: Paper,
+  size: { readonly width: number; readonly height: number },
+): PaperMarks {
+  const rows = offsets(paper.spacing, size.height);
+  const columns = offsets(paper.spacing, size.width);
+  const lines = (at: readonly number[]) => at.map((offset) => offset + 0.5);
+  switch (paper.style) {
+    case "plain":
+      return { across: [], down: [], dots: [] };
+    case "ruled":
+      return { across: lines(rows), down: [], dots: [] };
+    case "grid":
+      return { across: lines(rows), down: lines(columns), dots: [] };
+    case "dotted":
+      return {
+        across: [],
+        down: [],
+        dots: rows.flatMap((y) => columns.map((x) => [x, y] as const)),
+      };
+  }
+}
 
 export function paperSvg(
   paper: Paper,
@@ -17,30 +52,17 @@ export function paperSvg(
     paper.color === "none"
       ? ""
       : `<rect width="${n(size.width)}" height="${n(size.height)}" fill="${paper.color}"/>`;
-  return page + paperMarks(paper, size);
-}
-
-function paperMarks(
-  paper: Paper,
-  size: { readonly width: number; readonly height: number },
-): string {
-  const rows = offsets(paper.spacing, size.height);
-  const columns = offsets(paper.spacing, size.width);
-  // Half a pixel off the grid, so a one-pixel line is crisp at 1x.
-  const across = rows.map((y) => `M0 ${n(y + 0.5)}H${n(size.width)}`);
-  const down = columns.map((x) => `M${n(x + 0.5)} 0V${n(size.height)}`);
-  switch (paper.style) {
-    case "plain":
-      return "";
-    case "ruled":
-      return line(across.join(""));
-    case "grid":
-      return line([...across, ...down].join(""));
-    case "dotted":
-      return dots(
-        rows.flatMap((y) => columns.map((x) => `M${n(x)} ${n(y)}h0`)).join(""),
-      );
-  }
+  const marks = paperMarks(paper, size);
+  const lines = [
+    ...marks.across.map((y) => `M0 ${n(y)}H${n(size.width)}`),
+    ...marks.down.map((x) => `M${n(x)} 0V${n(size.height)}`),
+  ];
+  const dots = marks.dots.map(([x, y]) => `M${n(x)} ${n(y)}h0`);
+  return (
+    page +
+    (lines.length > 0 ? line(lines.join("")) : "") +
+    (dots.length > 0 ? dotted(dots.join("")) : "")
+  );
 }
 
 /** Every multiple of `spacing` strictly inside the page. */
@@ -53,11 +75,11 @@ function offsets(spacing: number, length: number): number[] {
 }
 
 function line(data: string): string {
-  return `<path d="${data}" fill="none" stroke="${LINE_COLOR}" stroke-width="1"/>`;
+  return `<path d="${data}" fill="none" stroke="${PAPER_LINE.color}" stroke-width="${PAPER_LINE.width}"/>`;
 }
 
-function dots(data: string): string {
-  return `<path d="${data}" fill="none" stroke="${DOT_COLOR}" stroke-width="2.5" stroke-linecap="round"/>`;
+function dotted(data: string): string {
+  return `<path d="${data}" fill="none" stroke="${PAPER_DOT.color}" stroke-width="${PAPER_DOT.diameter}" stroke-linecap="round"/>`;
 }
 
 function n(value: number): string {
