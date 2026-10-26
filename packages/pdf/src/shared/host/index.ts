@@ -4,4 +4,5 @@
  * these; VS Code's adapters are in `src/extension`.
  */
 export type * from "./files";
+export type * from "./settings";
 export type * from "./viewers";
