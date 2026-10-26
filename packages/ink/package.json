@@ -6,10 +6,11 @@
   "type": "module",
   "exports": {
     "./format": "./src/format/index.ts",
-    "./service": "./src/service/ink.ts"
+    "./service": "./src/service/ink.ts",
+    "./canvas": "./src/canvas/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p src/format && tsc -p src/service && tsc -p test",
+    "typecheck": "tsc -p src/format && tsc -p src/service && tsc -p src/canvas && tsc -p test",
     "test": "tsx --test \"test/unit/**/*.test.ts\""
   },
   "dependencies": {

@@ -240,6 +240,7 @@ export default tseslint.config(
           "./apps/ipad/src/tsconfig.json",
           "./packages/ink/src/format/tsconfig.json",
           "./packages/ink/src/service/tsconfig.json",
+          "./packages/ink/src/canvas/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },
