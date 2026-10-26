@@ -28,7 +28,9 @@ export function releaseReserveOnceMounted(
   shell: HTMLElement,
   body: HTMLElement,
 ): void {
-  if (!shell.style.minHeight) {
+  // `style` is missing only on the stand-in elements of unit tests, as in
+  // MarkdownBlock's createShell.
+  if (!shell.style?.minHeight) {
     return;
   }
   view.requestMeasure({
