@@ -11,11 +11,14 @@ import { indexedDbFolder, MemoryFileSystem, Mounts } from "@workshop/host-web";
 import type { ContributedSetting } from "@workshop/markdown/portable";
 import { NativeFileSystem } from "./native-fs";
 import { vaultFileUrl } from "./resources";
+import { nativeInk } from "./native/ink";
 import { vaultFiles, type NativeVault } from "./native/vault-files";
-import { appCommands } from "./native/window-commands";
+import { appCommands, insertSketchRequests } from "./native/window-commands";
 import { WELCOME } from "./welcome";
 
 const DATA = "/lumiere-data";
+/** The sketch plugin's command (packages/markdown/src/plugins/sketch). */
+const INSERT_SKETCH_COMMAND = "lumiere.markdown.insertSketch";
 
 async function main(): Promise<void> {
   const base = new URL(".", location.href);
@@ -41,6 +44,7 @@ async function main(): Promise<void> {
     workerUrl: (name) => new URL(`workers/${name}.web.js`, base).href,
     contributed,
     menus: parseMenus(menus),
+    ink: nativeInk,
     pages: {
       origin: location.origin,
       editor: new URL("markdown/", base).href,
@@ -67,6 +71,11 @@ async function main(): Promise<void> {
   startWindow(document.getElementById("root")!, {
     ...local.backend,
     appCommands,
+  });
+  insertSketchRequests(() => {
+    local.host.run(INSERT_SKETCH_COMMAND).catch((error: unknown) => {
+      console.warn("Insert Sketch failed", error);
+    });
   });
   const [last] = (await local.backend.vaults.list()).recent;
   await local.backend.vaults

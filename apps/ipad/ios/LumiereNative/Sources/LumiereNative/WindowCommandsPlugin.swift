@@ -2,8 +2,8 @@ import Capacitor
 import Foundation
 
 /// Sends the window the commands chosen in the menu bar or with keys
-/// (WindowCommands.swift), and More… from the edit menu (EditMenu.swift),
-/// as `command` events. The window listens through its backend's
+/// (WindowCommands.swift), and More… and Insert Sketch from the edit menu
+/// (EditMenu.swift), as `command` events. The window listens through its backend's
 /// `appCommands` (apps/ipad/src/native/window-commands.ts).
 @objc(WindowCommandsPlugin)
 public class WindowCommandsPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -13,6 +13,8 @@ public class WindowCommandsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// The shown note's own menu at its selection: More… in the edit menu.
     static let pageMenu = "page-menu"
+    /// A new sketch in the note being edited: Insert Sketch in the edit menu.
+    static let insertSketch = "insert-sketch"
 
     func send(_ command: WindowCommand) {
         send(command.rawValue)
@@ -20,6 +22,10 @@ public class WindowCommandsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     func sendPageMenu() {
         send(Self.pageMenu)
+    }
+
+    func sendInsertSketch() {
+        send(Self.insertSketch)
     }
 
     private func send(_ command: String) {
