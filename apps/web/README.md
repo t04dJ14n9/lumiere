@@ -25,7 +25,8 @@ A first visit opens a short demo vault; later visits reopen the last vault.
 - `src/demo.ts`: the demo vault.
 - `index.html`: the page and its content security policy, which a note's
   blob: page keeps too.
-- `public/sw.js`, `public/manifest.webmanifest`: offline, and installing.
+- `src/worker/sw.ts`: the service worker, for offline (built into `sw.js`).
+- `public/manifest.webmanifest`, `public/icon.svg`: installing.
 - `scripts/build.mjs`: the build.
 
 ## Limits

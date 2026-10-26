@@ -1,51 +1,56 @@
 // Builds Lumière for the web into dist/: a static site any web server can
 // host, under any path. The page and its parts are host-web's
 // (packages/host-web/scripts/bundle.mjs); this adds installing and offline:
-//   manifest.webmanifest, icon.svg, sw.js
+//   manifest.webmanifest, icon.svg   from public/
+//   sw.js                            the service worker (src/worker/sw.ts)
 //
 // Usage: node scripts/build.mjs [--production]
-import { cp, readdir, readFile, writeFile } from "node:fs/promises";
+import { cp, readdir } from "node:fs/promises";
 import path from "node:path";
+import * as esbuild from "esbuild";
 import { buildBrowserApp } from "../../../packages/host-web/scripts/bundle.mjs";
 
 const here = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const out = path.join(here, "dist");
+const production = process.argv.includes("--production");
 const { version } = await buildBrowserApp({
   entry: path.join(here, "src/main.ts"),
   html: path.join(here, "index.html"),
   out,
-  production: process.argv.includes("--production"),
+  production,
 });
 await cp(path.join(here, "public"), out, { recursive: true });
-await writeServiceWorker(out, version);
+await buildServiceWorker({ out, version, production });
 console.log(`Built ${path.relative(path.resolve(here, "../.."), out)}`);
 
-/** The service worker, with this build's files to cache (not source maps). */
-async function writeServiceWorker(folder, version) {
-  const files = (
-    await readdir(folder, { recursive: true, withFileTypes: true })
-  )
+/**
+ * The service worker, built last: it caches every other file of this build
+ * (not source maps), and names its cache after the build.
+ */
+async function buildServiceWorker({ out, version, production }) {
+  const files = (await readdir(out, { recursive: true, withFileTypes: true }))
     .filter((entry) => entry.isFile() && !entry.name.endsWith(".map"))
     .map((entry) =>
       path
-        .relative(folder, path.join(entry.parentPath, entry.name))
+        .relative(out, path.join(entry.parentPath, entry.name))
         .split(path.sep)
         .join("/"),
     )
-    .filter((file) => file !== "sw.js")
     .sort();
-  const worker = path.join(folder, "sw.js");
-  const source = await readFile(worker, "utf8");
-  await writeFile(
-    worker,
-    source
-      .replace(
-        '"__BUILD__"',
-        JSON.stringify(`lumiere-${version}-${Date.now()}`),
-      )
-      .replace(
-        "const FILES = [];",
-        `const FILES = ${JSON.stringify(["./", ...files])};`,
-      ),
-  );
+  await esbuild.build({
+    entryPoints: [path.join(here, "src/worker/sw.ts")],
+    outfile: path.join(out, "sw.js"),
+    bundle: true,
+    platform: "browser",
+    target: "es2022",
+    format: "iife",
+    sourcemap: !production,
+    minify: production,
+    legalComments: "none",
+    logLevel: "info",
+    define: {
+      LUMIERE_BUILD: JSON.stringify(`lumiere-${version}-${Date.now()}`),
+      LUMIERE_FILES: JSON.stringify(["./", ...files]),
+    },
+  });
 }
