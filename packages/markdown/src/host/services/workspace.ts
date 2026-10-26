@@ -7,6 +7,7 @@ import type {
 } from "../../shared/host";
 import { createDiagnostics } from "../diagnostics";
 import { workerPath } from "../running-extension";
+import { realContains } from "../real-contains";
 import { createWorkspaceFiles } from "../workspace-files";
 
 export function createHostWorkspace(): HostWorkspace {
@@ -25,6 +26,7 @@ export function createHostWorkspace(): HostWorkspace {
         symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink),
       };
     },
+    realContains,
     watch: watchFile,
     files: createWorkspaceFiles(),
     diagnostics: createDiagnostics(),

@@ -75,10 +75,13 @@ export class NoteResources implements Resources {
 
   private async containedStat(source: string) {
     const { host, vault } = this.options;
-    const stat = await host.workspace.stat(source);
-    await containedResource(vault.root, source, stat.symbolicLink, (uri) =>
-      host.workspace.stat(uri),
-    );
+    const { workspace } = host;
+    const stat = await workspace.stat(source);
+    const realContains = workspace.realContains?.bind(workspace);
+    await containedResource(vault.root, source, stat.symbolicLink, {
+      inspect: (uri) => workspace.stat(uri),
+      ...(realContains ? { realContains } : {}),
+    });
     return stat;
   }
 

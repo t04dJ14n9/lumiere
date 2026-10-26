@@ -3,6 +3,7 @@ import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
 import type { WorkspaceFiles } from "../../src/shared/workspace-files";
 import { gitSource } from "../../src/host/git-source";
+import { realContains } from "../../src/host/real-contains";
 
 /** Members to replace, per host service. */
 export type HostOverrides = {
@@ -107,6 +108,8 @@ function defaultHost(): HostServices {
       },
       read: async () => new Uint8Array(),
       stat: async () => ({ mtime: 0, symbolicLink: false }),
+      // VS Code resolves file: links on the local disk.
+      realContains,
       watch: none,
       files: unavailableFiles(),
       diagnostics: { replaceAll() {}, clear() {} },

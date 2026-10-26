@@ -6,6 +6,7 @@
   "exports": {
     "./host": "./src/host/extension.ts",
     "./portable": "./src/host/portable.ts",
+    "./node": "./src/host/node.ts",
     "./contributions": "./scripts/contributions.ts"
   },
   "scripts": {

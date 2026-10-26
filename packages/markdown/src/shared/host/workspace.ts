@@ -10,6 +10,12 @@ export interface HostWorkspace {
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
   /**
+   * Whether `uri` is inside `root` once both are resolved through symbolic
+   * links on a local disk. Both are `file:` URIs; a missing path rejects.
+   * Absent where files have no real path (a browser): links are refused there.
+   */
+  realContains?(root: string, uri: string): Promise<boolean>;
+  /**
    * Hear a file change, appear or go away; it and the folders above it
    * need not exist yet (VS Code's file watchers work this way).
    */

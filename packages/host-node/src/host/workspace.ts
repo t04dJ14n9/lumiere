@@ -13,6 +13,7 @@ import {
   rm,
 } from "node:fs/promises";
 import * as path from "node:path";
+import { realContains } from "@workshop/markdown/node";
 import type {
   DiagnosticSink,
   Extensions,
@@ -48,6 +49,7 @@ export function createHostWorkspace(
       const info = await lstat(await pathInsideRoots(roots(), uri));
       return { mtime: info.mtimeMs, symbolicLink: info.isSymbolicLink() };
     },
+    realContains,
     watch: (uri, listener) => watchContained(roots, uri, listener),
     files: createWorkspaceFiles(roots),
     diagnostics: noDiagnostics,
