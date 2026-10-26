@@ -20,6 +20,17 @@ async function main() {
         : `On a disposable fixture, run ${command.title}; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes.`;
     return `| \`${command.command}\` — ${escape(command.title)} | ${escape(keys)} | ${escape(action)} |`;
   });
+  const submenus = generated.submenus.map((submenu) => {
+    const items = (generated.menus[submenu.id] ?? [])
+      .map(
+        ({ command }) =>
+          generated.commands.find((entry) => entry.command === command)
+            ?.title ?? command,
+      )
+      .join(", ");
+    const action = `Right-click the note's text (on the iPad, More… in the edit menu) and open ${submenu.label}: it lists its items beside its row, by tap, click or Right, and each runs as from the palette. VS Code and Cursor show the titles; the app shows the short ones.`;
+    return `| \`${submenu.id}\` — ${escape(submenu.label)} | ${escape(items)} | ${escape(action)} |`;
+  });
   const settings = Object.entries(generated.configuration.properties).map(
     ([key, value]) => {
       const entry = value as {
@@ -37,11 +48,15 @@ async function main() {
     "<!-- command-setting-inventory:start -->",
     "## Complete command and setting acceptance inventory",
     "",
-    "Use the disposable fixture vault from Setup. These rows enumerate every generated command and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.",
+    "Use the disposable fixture vault from Setup. These rows enumerate every generated command, submenu and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.",
     "",
     "| Command | Default keys | Procedure and expected outcome |",
     "| --- | --- | --- |",
     ...rows,
+    "",
+    "| Submenu of the note's menu | Items | Procedure and expected outcome |",
+    "| --- | --- | --- |",
+    ...submenus,
     "",
     "| Setting | Default | Procedure |",
     "| --- | --- | --- |",
@@ -67,6 +82,7 @@ async function main() {
     const text = readFileSync(path, "utf8");
     const additions = [
       ...generated.commands.map((item) => `Command: ${item.command}`),
+      ...generated.submenus.map((item) => `Submenu: ${item.id}`),
       ...Object.keys(generated.configuration.properties).map(
         (key) => `Setting: ${key}`,
       ),

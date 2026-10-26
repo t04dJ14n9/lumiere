@@ -1128,6 +1128,11 @@ Rules:
 - The right-click menu uses VS Code's `webview/context` menu with
   `webviewSection` for static commands (formatting, Copy Link for Agent),
   after VS Code's own Cut, Copy and Paste, as Obsidian's menu starts with them.
+  Formatting sits in submenus, as Obsidian's editor menu groups it: Format,
+  Highlight (the colours) and Insert (`src/shared/editor-menus.ts`; a
+  manifest's menu item names its submenu, and the generator contributes
+  VS Code's `submenus`). Inside one, host-node shows each command's
+  `shortTitle` (Bold); VS Code's context menus keep the title.
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions

@@ -396,3 +396,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.outgoingLinks.disableExtraContext | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.outgoingLinks.extraContext | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.handleVimCtrlN | not observed | not manually observed | Manual scenario pending | not observed |
+| Submenu: lumiere.markdown.menu.format | not observed | not manually observed | Manual scenario pending | not observed |
+| Submenu: lumiere.markdown.menu.highlight | not observed | not manually observed | Manual scenario pending | not observed |
+| Submenu: lumiere.markdown.menu.insert | not observed | not manually observed | Manual scenario pending | not observed |

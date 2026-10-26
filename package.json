@@ -254,57 +254,68 @@
       {
         "command": "lumiere.markdown.toggleBold",
         "title": "Toggle Bold",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Bold"
       },
       {
         "command": "lumiere.markdown.toggleItalics",
         "title": "Toggle Italics",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Italics"
       },
       {
         "command": "lumiere.markdown.toggleStrikethrough",
         "title": "Toggle Strikethrough",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Strikethrough"
       },
       {
         "command": "lumiere.markdown.toggleHighlight",
         "title": "Toggle Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Highlight"
       },
       {
         "command": "lumiere.markdown.toggleHighlightRed",
         "title": "Toggle Red Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Red"
       },
       {
         "command": "lumiere.markdown.toggleHighlightOrange",
         "title": "Toggle Orange Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Orange"
       },
       {
         "command": "lumiere.markdown.toggleHighlightYellow",
         "title": "Toggle Yellow Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Yellow"
       },
       {
         "command": "lumiere.markdown.toggleHighlightGreen",
         "title": "Toggle Green Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Green"
       },
       {
         "command": "lumiere.markdown.toggleHighlightBlue",
         "title": "Toggle Blue Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Blue"
       },
       {
         "command": "lumiere.markdown.toggleHighlightPurple",
         "title": "Toggle Purple Highlight",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Purple"
       },
       {
         "command": "lumiere.markdown.toggleCode",
         "title": "Toggle Inline Code",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Inline Code"
       },
       {
         "command": "lumiere.markdown.toggleComment",
@@ -314,7 +325,8 @@
       {
         "command": "lumiere.markdown.insertLink",
         "title": "Insert Link",
-        "category": "Lumi\u00e8re"
+        "category": "Lumi\u00e8re",
+        "shortTitle": "Link"
       },
       {
         "command": "lumiere.markdown.insertHorizontalRule",
@@ -1127,6 +1139,20 @@
         "command": "lumiere.pdf.ideContext.send",
         "title": "Send IDE Context to Agent\u2026",
         "category": "Lumi\u00e8re PDF"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "lumiere.markdown.menu.format",
+        "label": "Format"
+      },
+      {
+        "id": "lumiere.markdown.menu.highlight",
+        "label": "Highlight"
+      },
+      {
+        "id": "lumiere.markdown.menu.insert",
+        "label": "Insert"
       }
     ],
     "keybindings": [
@@ -2217,64 +2243,19 @@
           "group": "0_agent@2"
         },
         {
-          "command": "lumiere.markdown.toggleBold",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "submenu": "lumiere.markdown.menu.format",
+          "when": "webviewId == 'lumiere.markdown.editor'",
           "group": "formatting@1"
         },
         {
-          "command": "lumiere.markdown.toggleItalics",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting@1"
+          "submenu": "lumiere.markdown.menu.highlight",
+          "when": "webviewId == 'lumiere.markdown.editor'",
+          "group": "formatting@2"
         },
         {
-          "command": "lumiere.markdown.toggleStrikethrough",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting@1"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlight",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting@1"
-        },
-        {
-          "command": "lumiere.markdown.toggleCode",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting@1"
-        },
-        {
-          "command": "lumiere.markdown.insertLink",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formatting@1"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlightRed",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formattingColour@1"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlightOrange",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formattingColour@2"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlightYellow",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formattingColour@3"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlightGreen",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formattingColour@4"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlightBlue",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formattingColour@5"
-        },
-        {
-          "command": "lumiere.markdown.toggleHighlightPurple",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
-          "group": "formattingColour@6"
+          "submenu": "lumiere.markdown.menu.insert",
+          "when": "webviewId == 'lumiere.markdown.editor'",
+          "group": "formatting@3"
         },
         {
           "command": "lumiere.pdf.lookUp",
@@ -2370,6 +2351,72 @@
           "command": "lumiere.pdf.horizontalScroll",
           "when": "webviewId == 'lumiere.pdf.viewer'",
           "group": "3_pdfView@9"
+        }
+      ],
+      "lumiere.markdown.menu.format": [
+        {
+          "command": "lumiere.markdown.toggleBold",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting@1"
+        },
+        {
+          "command": "lumiere.markdown.toggleItalics",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting@2"
+        },
+        {
+          "command": "lumiere.markdown.toggleStrikethrough",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting@3"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlight",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting@4"
+        },
+        {
+          "command": "lumiere.markdown.toggleCode",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting@5"
+        }
+      ],
+      "lumiere.markdown.menu.highlight": [
+        {
+          "command": "lumiere.markdown.toggleHighlightRed",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@1"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightOrange",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@2"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightYellow",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@3"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightGreen",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@4"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightBlue",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@5"
+        },
+        {
+          "command": "lumiere.markdown.toggleHighlightPurple",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formattingColour@6"
+        }
+      ],
+      "lumiere.markdown.menu.insert": [
+        {
+          "command": "lumiere.markdown.insertLink",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "insert@1"
         }
       ],
       "view/title": [

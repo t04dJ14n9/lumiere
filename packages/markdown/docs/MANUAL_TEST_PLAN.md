@@ -161,7 +161,14 @@ do not install a VSIX or use the owner's profile.
    menu has Cut, Copy and Paste. Copy and Cut put the exact source on the
    clipboard; Paste of a copied web page section arrives as Markdown, as
    Mod+V does. Right-click in a table cell or a property chip: their own
-   menus open instead.
+   menus open instead. Right-click the note's text: Format, Highlight and
+   Insert are submenus (bold to inline code; the six highlight colours;
+   link), each opening beside its row; VS Code and Cursor list the
+   commands' titles (Toggle Bold), the app their short titles (Bold). In
+   the app, open each by a click, by resting the mouse on it, and by Right
+   or Enter, and leave it by Left or Escape. On the iPad (More… in the edit
+   menu) the rows are finger-sized, and one tap opens a submenu and one
+   runs its row.
 
 8. Copy `Core.md` repeatedly into a disposable long note (at least 300 lines).
    At the default `lumiere.markdown.editor.dragScrollSpeed: 4`, drag a text
@@ -1104,7 +1111,7 @@ paths; a missing layout is the legacy preset.
 <!-- command-setting-inventory:start -->
 ## Complete command and setting acceptance inventory
 
-Use the disposable fixture vault from Setup. These rows enumerate every generated command and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.
+Use the disposable fixture vault from Setup. These rows enumerate every generated command, submenu and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.
 
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
@@ -1258,6 +1265,12 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.wiki.copyEnvelope` — Copy Wiki Bridge Envelope | unbound | On a disposable fixture, run Copy Wiki Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.wiki.showLayout` — Show Wiki Layout | unbound | On a disposable fixture, run Show Wiki Layout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.wiki.refresh` — Refresh Wiki Diagnostics | unbound | On a disposable fixture, run Refresh Wiki Diagnostics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+
+| Submenu of the note's menu | Items | Procedure and expected outcome |
+| --- | --- | --- |
+| `lumiere.markdown.menu.format` — Format | Toggle Bold, Toggle Italics, Toggle Strikethrough, Toggle Highlight, Toggle Inline Code | Right-click the note's text (on the iPad, More… in the edit menu) and open Format: it lists its items beside its row, by tap, click or Right, and each runs as from the palette. VS Code and Cursor show the titles; the app shows the short ones. |
+| `lumiere.markdown.menu.highlight` — Highlight | Toggle Red Highlight, Toggle Orange Highlight, Toggle Yellow Highlight, Toggle Green Highlight, Toggle Blue Highlight, Toggle Purple Highlight | Right-click the note's text (on the iPad, More… in the edit menu) and open Highlight: it lists its items beside its row, by tap, click or Right, and each runs as from the palette. VS Code and Cursor show the titles; the app shows the short ones. |
+| `lumiere.markdown.menu.insert` — Insert | Insert Link | Right-click the note's text (on the iPad, More… in the edit menu) and open Insert: it lists its items beside its row, by tap, click or Right, and each runs as from the palette. VS Code and Cursor show the titles; the app shows the short ones. |
 
 | Setting | Default | Procedure |
 | --- | --- | --- |

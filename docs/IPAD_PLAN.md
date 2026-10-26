@@ -325,7 +325,9 @@ to its file. The touch work in section 3 is in:
 - the edit menu (Cut, Copy, Paste) has More…, which opens Lumière's
   right-click menu at the selection, since a long-press belongs to the
   cursor; the menu bar's and keys' commands reach the window
-  (`appCommands` on the window's backend).
+  (`appCommands` on the window's backend). The menu's rows are 44 points
+  tall on a touchscreen, and formatting sits in Format, Highlight and
+  Insert submenus that a tap opens beside their rows.
 - PDFs open in a tab in Lumière's own viewer (EmbedPDF, as in VS Code),
   with its toolbar, outline and search; a finger scrolls the pages. A
   stand-in for the viewer's extension host hands it the PDF
