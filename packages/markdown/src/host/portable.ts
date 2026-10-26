@@ -31,7 +31,27 @@ export type {
   VaultSystem,
 } from "../plugins/vault/api";
 export type { Transport } from "../shared/rpc/endpoint";
-export type { DiffViews, GitAccess, GitBaselineResult } from "../shared/git";
-export type { GitBlameLineResult } from "../shared/git-blame";
+export type {
+  DiffViews,
+  GitAccess,
+  GitBaselineResult,
+  GitRef,
+} from "../shared/git";
+export type {
+  GitBlameLineResult,
+  GitBlameSnapshot,
+  GitIdentity,
+} from "../shared/git-blame";
+export { exceedsDiffLimits, MAX_DIFF_CHARS } from "../shared/diff/limits";
+// Git over the command line, which VS Code's adapter falls back to when its
+// git extension has not opened a repository; a Node host uses them alone.
+export {
+  createSpawnBlameRunner,
+  discoverGitRoot,
+  runBlameLine,
+  type GitBlameRunner,
+} from "./git-blame";
+export { RepositoryWatch } from "./git-watch";
+export { bindDiscoveredRoot, canonicalPath } from "./git-discovered-watch";
 export type { DiagnosticSink, WorkspaceFiles } from "../shared/workspace-files";
 export type { EditorProvider } from "../shared/editor-provider";
