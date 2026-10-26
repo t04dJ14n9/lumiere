@@ -64,3 +64,41 @@ test("the portable host entry imports no VS Code, so other editors can start the
     .map(([file]) => file);
   assert.deepEqual(importers, []);
 });
+
+test("the portable host entry imports no Node built-in, so a browser host can start the plugins", async () => {
+  const esbuild = await import("esbuild");
+  const { builtinModules } = await import("node:module");
+  const builtins = new Set(builtinModules);
+  const result = await esbuild.build({
+    entryPoints: [resolve("src/host/portable.ts")],
+    bundle: true,
+    platform: "browser",
+    format: "esm",
+    write: false,
+    external: ["vscode"],
+    metafile: true,
+    logLevel: "silent",
+    plugins: [
+      {
+        name: "node-builtins",
+        setup(build) {
+          // Kept external, so the metafile names who imports them.
+          build.onResolve({ filter: /^[a-z_:/]+$/ }, (args) =>
+            args.path.startsWith("node:") || builtins.has(args.path)
+              ? { path: args.path, external: true }
+              : undefined,
+          );
+        },
+      },
+    ],
+  });
+  const importers = Object.entries(result.metafile.inputs).flatMap(
+    ([file, input]) =>
+      input.imports
+        .filter(
+          (item) => item.path.startsWith("node:") || builtins.has(item.path),
+        )
+        .map((item) => `${file} imports ${item.path}`),
+  );
+  assert.deepEqual(importers, []);
+});
