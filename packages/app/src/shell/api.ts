@@ -1,6 +1,7 @@
 /**
- * The shell's view of the server (src/server/api.ts): vaults, files,
- * opening, and the event stream. Same origin, so the token cookie goes along.
+ * The window's view of a Lumière server (src/server/api.ts): vaults, files,
+ * opening, trust and the event stream (`httpApi`, part of http-backend.ts).
+ * Same origin, so the token cookie goes along.
  */
 
 export interface VaultList {
@@ -45,20 +46,23 @@ const post = (url: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-export const api = {
-  vaults: () => request<VaultList>("/api/vaults"),
-  addVault: (path: string) => post("/api/vaults", { path }),
-  files: async (vault: string) =>
-    (
-      await request<{ files: FileEntry[] }>(
-        `/api/files?vault=${encodeURIComponent(vault)}`,
-      )
-    ).files,
-  /** A note or folder from outside the shell (a menu, a dropped path). */
-  open: (path: string) => post("/api/open", { path }),
-  trustQuestions: () => request<TrustQuestion[]>("/api/trust"),
-  decideTrust: (vault: string, allowed: boolean) =>
-    post("/api/trust", { vault, allowed }),
+export const httpApi = {
+  vaults: {
+    list: () => request<VaultList>("/api/vaults"),
+    add: (path: string) => post("/api/vaults", { path }),
+    files: async (vault: string) =>
+      (
+        await request<{ files: FileEntry[] }>(
+          `/api/files?vault=${encodeURIComponent(vault)}`,
+        )
+      ).files,
+    open: (path: string) => post("/api/open", { path }),
+  },
+  trust: {
+    questions: () => request<TrustQuestion[]>("/api/trust"),
+    decide: (vault: string, allowed: boolean) =>
+      post("/api/trust", { vault, allowed }),
+  },
   events(listener: (event: ServerEvent) => void): () => void {
     const source = new EventSource("/api/events");
     source.onmessage = (message: MessageEvent<string>) =>

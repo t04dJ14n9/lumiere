@@ -4,6 +4,10 @@
   "private": true,
   "description": "Lumière's own server and app shell: the editor in a window of its own, for the desktop app (apps/desktop) and for a browser.",
   "type": "module",
+  "exports": {
+    "./shell": "./src/shell/window.tsx",
+    "./local": "./src/local/index.ts"
+  },
   "bin": {
     "lumiere-server": "./dist/app/server.js"
   },

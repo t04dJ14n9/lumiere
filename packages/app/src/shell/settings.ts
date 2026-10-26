@@ -1,4 +1,4 @@
-/** Lumière's settings from the window: host-node's `/lumiere/settings`. */
+/** Lumière's settings from a Lumière server: host-node's `/lumiere/settings` (http-backend.ts). */
 import {
   SETTINGS_PATH,
   type SettingChange,
@@ -6,7 +6,7 @@ import {
   type SettingsSnapshot,
 } from "@workshop/host-node/settings";
 
-export const settings = {
+export const httpSettings = {
   async list(): Promise<readonly SettingItem[]> {
     const response = await fetch(SETTINGS_PATH);
     if (!response.ok) {

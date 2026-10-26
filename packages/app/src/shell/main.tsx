@@ -1,10 +1,5 @@
-/** The app shell's entry: index.html loads this module. */
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { App } from "./App";
+/** The window's entry when a Lumière server serves it: index.html loads this module. */
+import { httpBackend } from "./http-backend";
+import { startWindow } from "./window";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+startWindow(document.getElementById("root")!, httpBackend());
