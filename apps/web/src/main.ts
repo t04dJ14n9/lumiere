@@ -23,6 +23,7 @@ import {
 } from "./folders";
 import { HandleFileSystem } from "./handle-fs";
 import { NotePages } from "./note-pages";
+import { fileUrl } from "./shared/routes";
 
 const DATA = "/lumiere-data";
 const DEMO_VAULT = "/vaults/Lumière Demo";
@@ -37,19 +38,11 @@ async function main(): Promise<void> {
     json<ContributedSetting[]>(new URL("contributed.json", base)),
     json<unknown>(new URL("menus.json", base)),
   ]);
-  const fileUrl = new URL("lumiere/file", base).href;
   const notePages = new NotePages({
     base: base.href,
     policy: windowPolicy(),
     isServed: () => Boolean(navigator.serviceWorker?.controller),
   });
-  if (navigator.serviceWorker) {
-    answerWorker({
-      messages: navigator.serviceWorker,
-      worker: new URL("sw.js", base).href,
-      answer: windowAnswers({ pages: notePages }),
-    });
-  }
   const local = await startLocalHost({
     files,
     dataRoot: DATA,
@@ -64,12 +57,26 @@ async function main(): Promise<void> {
         viewer: new URL("pdf/", base).href,
         shim: new URL("page/pdf-shim.js", base).href,
       },
-      resource: (panel, uri) =>
-        `${fileUrl}?panel=${encodeURIComponent(panel)}&uri=${encodeURIComponent(uri)}`,
+      // Answered by the service worker, which asks this window for them.
+      resource: (panel, uri) => fileUrl(base.href, panel, uri),
       servePage: (html) => notePages.serve(html),
     },
     ...(canPickFolders() ? { pickFolder: () => pickFolder(files) } : {}),
   });
+  if (navigator.serviceWorker) {
+    answerWorker({
+      messages: navigator.serviceWorker,
+      worker: new URL("sw.js", base).href,
+      answer: windowAnswers({
+        pages: notePages,
+        files: {
+          panels: local.host.panels,
+          vaults: () => local.vaults.list().open,
+          files,
+        },
+      }),
+    });
+  }
   startWindow(document.getElementById("root")!, local.backend);
   // The last vault opened again; on a first visit, the demo vault.
   const [last] = (await local.backend.vaults.list()).recent;

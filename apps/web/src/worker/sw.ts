@@ -3,11 +3,13 @@
  * of this build are cached when it installs and served from the cache first.
  * Notes are not here; they live in the browser's storage or the reader's
  * folders, which only the window reads. So the worker asks the window for
- * what only it has: a note's page (shared/routes.ts, src/answers.ts).
+ * what only it has: a note's page, and the files the note shows (images,
+ * videos, embedded PDFs), by the routes in shared/routes.ts (src/answers.ts
+ * answers them).
  * scripts/build.mjs builds it into sw.js.
  */
 import { isAppWindow, routeOf, type Route } from "../shared/routes";
-import { notFound, pageResponse } from "./responses";
+import { notFound, pageResponse, vaultFileResponse } from "./responses";
 import { askWindows } from "./windows";
 
 declare const self: ServiceWorkerGlobalScope;
@@ -50,7 +52,7 @@ self.addEventListener("fetch", (event) => {
   }
   const route = routeOf(request.url, self.registration.scope);
   if (route) {
-    event.respondWith(answer(route));
+    event.respondWith(answer(route, request));
     return;
   }
   event.respondWith(
@@ -61,12 +63,18 @@ self.addEventListener("fetch", (event) => {
 });
 
 /** Ask the app's windows for what `route` names. */
-async function answer(route: Route): Promise<Response> {
-  const reply = await askWindows(await appWindows(), {
-    lumiere: "page",
-    id: route.id,
+async function answer(route: Route, request: Request): Promise<Response> {
+  const windows = await appWindows();
+  if (route.kind === "page") {
+    const reply = await askWindows(windows, { lumiere: "page", id: route.id });
+    return reply?.kind === "page" ? pageResponse(reply.html) : notFound();
+  }
+  const { panel, uri } = route;
+  const reply = await askWindows(windows, { lumiere: "file", panel, uri });
+  return vaultFileResponse(reply, {
+    uri,
+    range: request.headers.get("range"),
   });
-  return reply?.kind === "page" ? pageResponse(reply.html) : notFound();
 }
 
 /** The app's windows, also one the worker does not control yet. */

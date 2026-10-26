@@ -8,9 +8,16 @@ import {
   windowAnswers,
   type WorkerMessages,
 } from "../../src/answers";
+import { fileUri } from "@workshop/host-node/core";
+import { MemoryFileSystem, Mounts } from "@workshop/host-web";
 import type { Answer, Question } from "../../src/shared/messages";
 
 const WORKER = "https://example.github.io/lumiere/sw.js";
+const NO_FILES = {
+  panels: { get: () => undefined },
+  vaults: () => [],
+  files: new Mounts(),
+};
 
 /** `navigator.serviceWorker`, as far as the window uses it. */
 function fakeContainer() {
@@ -89,6 +96,7 @@ test("a question the window fails on is answered as not its own", async () => {
 test("the window answers with the pages it serves, and unknown for the rest", async () => {
   const answer = windowAnswers({
     pages: { html: (id) => (id === "p1" ? "<p>Note</p>" : undefined) },
+    files: NO_FILES,
   });
   assert.deepEqual(await answer({ lumiere: "page", id: "p1" }), {
     kind: "page",
@@ -97,4 +105,37 @@ test("the window answers with the pages it serves, and unknown for the rest", as
   assert.deepEqual(await answer({ lumiere: "page", id: "p2" }), {
     kind: "unknown",
   });
+});
+
+test("the window answers a file a page shows from the page's vault", async () => {
+  const files = new Mounts();
+  files.mount("/vaults/Notes", new MemoryFileSystem({ "a.png": "png" }));
+  const answer = windowAnswers({
+    pages: { html: () => undefined },
+    files: {
+      panels: {
+        get: (id) =>
+          id === "p1"
+            ? { document: { uri: fileUri("/vaults/Notes/Welcome.md") } }
+            : undefined,
+      },
+      vaults: () => ["/vaults/Notes"],
+      files,
+    },
+  });
+  const file = await answer({
+    lumiere: "file",
+    panel: "p1",
+    uri: fileUri("/vaults/Notes/a.png"),
+  });
+  assert.equal(file.kind, "file");
+  assert.equal(await (file as { file: Blob }).file.text(), "png");
+  assert.deepEqual(
+    await answer({
+      lumiere: "file",
+      panel: "p2",
+      uri: fileUri("/vaults/Notes/a.png"),
+    }),
+    { kind: "unknown" },
+  );
 });

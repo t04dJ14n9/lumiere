@@ -9,6 +9,13 @@ const BASE = "https://example.github.io/lumiere/";
 const POLICY = `default-src 'self'; img-src 'self' data: blob:`;
 const HTML = `<!doctype html><html><head><meta name="lumiere-panel" content="p1"></head><body></body></html>`;
 
+/** The id a served page's address names. */
+function pageId(url: string): string {
+  const route = routeOf(url, BASE);
+  assert.ok(route?.kind === "page", url);
+  return route.id;
+}
+
 test("a page is served under the app while its tab is open", () => {
   const pages = new NotePages({
     base: BASE,
@@ -17,11 +24,10 @@ test("a page is served under the app while its tab is open", () => {
   });
   const page = pages.serve(HTML);
   assert.ok(page);
-  const route = routeOf(page.url, BASE);
-  assert.equal(route?.kind, "page");
-  assert.match(pages.html(route.id)!, /lumiere-panel/);
+  const id = pageId(page.url);
+  assert.match(pages.html(id)!, /lumiere-panel/);
   page.dispose();
-  assert.equal(pages.html(route.id), undefined);
+  assert.equal(pages.html(id), undefined);
 });
 
 test("the window's policy comes first, so it holds everything in the page", () => {
@@ -30,10 +36,9 @@ test("the window's policy comes first, so it holds everything in the page", () =
     policy: `${POLICY}; x-test "<a>&"`,
     isServed: () => true,
   });
-  const route = routeOf(pages.serve(HTML)!.url, BASE)!;
   assert.ok(
     pages
-      .html(route.id)!
+      .html(pageId(pages.serve(HTML)!.url))!
       .startsWith(
         `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; x-test &quot;&lt;a>&amp;&quot;"><meta name="lumiere-panel"`,
       ),
@@ -46,10 +51,10 @@ test("each page has an address of its own that cannot be guessed", () => {
     policy: POLICY,
     isServed: () => true,
   });
-  const first = routeOf(pages.serve(HTML)!.url, BASE)!;
-  const second = routeOf(pages.serve(HTML)!.url, BASE)!;
-  assert.match(first.id, /^[0-9a-f]{32}$/);
-  assert.notEqual(first.id, second.id);
+  const first = pageId(pages.serve(HTML)!.url);
+  const second = pageId(pages.serve(HTML)!.url);
+  assert.match(first, /^[0-9a-f]{32}$/);
+  assert.notEqual(first, second);
 });
 
 test("without a worker to serve it, or a head to hold the policy, a page is a blob", () => {

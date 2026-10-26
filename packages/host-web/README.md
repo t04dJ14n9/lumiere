@@ -41,6 +41,6 @@ backend gives the window (`packages/app/src/shell/backend.ts`).
 
 - A folder handle reports no changes made from outside; they show on the
   next listing.
-- Files a note shows (images) need their `lumiere/file` URLs answered by the
-  embedder; the web app does not yet.
+- Files a note shows (images, videos, PDFs) need their URLs (`resource`)
+  answered by the embedder: the web app's service worker, the iPad's router.
 - No Git, no extra panels: their settings are not offered.

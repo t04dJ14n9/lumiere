@@ -1,11 +1,13 @@
 /**
  * The window's side of the service worker's questions (shared/messages.ts).
  * The worker asks every window of the app, since it cannot tell which one a
- * note's page belongs to; this one answers what it has, on the port that
- * came with the question, and "unknown" to the rest.
+ * note's page belongs to; this one answers what it has (its notes' pages,
+ * and the files they show), on the port that came with the question, and
+ * "unknown" to the rest.
  */
 import { parseQuestion, type Answer, type Question } from "./shared/messages";
 import type { NotePages } from "./note-pages";
+import { vaultFile, type VaultFilesParts } from "./vault-files";
 
 /** Where the worker's messages arrive: `navigator.serviceWorker`. */
 export interface WorkerMessages {
@@ -42,11 +44,15 @@ export function answerWorker({
   messages.startMessages();
 }
 
-/** What this window answers: the notes' pages it serves. */
+/** What this window answers: the notes' pages it serves, and their files. */
 export function windowAnswers(parts: {
   readonly pages: Pick<NotePages, "html">;
+  readonly files: VaultFilesParts;
 }): (question: Question) => Promise<Answer> {
   return async (question) => {
+    if (question.lumiere === "file") {
+      return vaultFile(parts.files, question);
+    }
     const html = parts.pages.html(question.id);
     return html === undefined ? { kind: "unknown" } : { kind: "page", html };
   };

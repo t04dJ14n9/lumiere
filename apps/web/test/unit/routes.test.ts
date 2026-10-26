@@ -2,7 +2,13 @@
 // window, read by the worker, under the app's address (any path).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isAppWindow, pageUrl, routeOf } from "../../src/shared/routes";
+import { fileUri } from "@workshop/host-node/core";
+import {
+  fileUrl,
+  isAppWindow,
+  pageUrl,
+  routeOf,
+} from "../../src/shared/routes";
 
 const BASE = "https://example.github.io/lumiere/";
 
@@ -14,6 +20,43 @@ test("a note's page is served under the app's address, and read back", () => {
     kind: "page",
     id: "0a1b",
   });
+});
+
+test("a file a note shows is named by its panel and URI, and read back", () => {
+  const uri = fileUri("/vaults/Lumière/Attachments/a#b?c 100%.png");
+  const url = fileUrl(BASE, "p1", uri);
+  assert.ok(url.startsWith(`${BASE}lumiere/file?panel=p1&uri=`));
+  assert.deepEqual(routeOf(url, BASE), { kind: "file", panel: "p1", uri });
+});
+
+test("the mtime the editor adds to a file's URL is not part of the file", () => {
+  const uri = fileUri("/vaults/Notes/a?.png");
+  assert.deepEqual(
+    routeOf(`${fileUrl(BASE, "p1", uri)}?v=1793006713113`, BASE),
+    {
+      kind: "file",
+      panel: "p1",
+      uri,
+    },
+  );
+});
+
+test("a file route needs a panel and a file: URI", () => {
+  const file = (query: string) => routeOf(`${BASE}lumiere/file?${query}`, BASE);
+  assert.equal(
+    file(`uri=${encodeURIComponent("file:///vaults/a.png")}`),
+    undefined,
+  );
+  assert.equal(
+    file(`panel=&uri=${encodeURIComponent("file:///vaults/a.png")}`),
+    undefined,
+  );
+  assert.equal(file("panel=p1"), undefined);
+  assert.equal(
+    file(`panel=p1&uri=${encodeURIComponent("https://example.com/a.png")}`),
+    undefined,
+  );
+  assert.equal(file("panel=p1&uri=not%20a%20url"), undefined);
 });
 
 test("the app's own files, other paths and other apps are not routes", () => {
