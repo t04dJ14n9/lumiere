@@ -1,17 +1,38 @@
-/** Files in memory (vault-fs.ts): a demo vault, the host's data in tests. */
+/**
+ * Files in memory (vault-fs.ts): a demo vault, the host's data in tests, or
+ * a store that keeps every change somewhere else as it happens (`persist`:
+ * the web app's IndexedDB, where a browser cannot write its own storage).
+ */
 import { notFound, type VaultFileSystem } from "./vault-fs";
 
-type Entry =
+export type MemoryEntry =
   | { readonly kind: "file"; data: Uint8Array; mtime: number }
   | { readonly kind: "folder"; mtime: number };
 
+/** Hears each entry set (or removed, as undefined), by path. */
+export type Persist = (path: string, entry: MemoryEntry | undefined) => void;
+
 export class MemoryFileSystem implements VaultFileSystem {
-  private readonly entries = new Map<string, Entry>([
+  private readonly entries = new Map<string, MemoryEntry>([
     ["", { kind: "folder", mtime: Date.now() }],
   ]);
 
-  /** Files to start with, by path: text or bytes. */
-  constructor(files: Readonly<Record<string, string | Uint8Array>> = {}) {
+  /**
+   * Files to start with, by path (text or bytes), or entries a `persist` kept
+   * before; `persist` then hears every change.
+   */
+  constructor(
+    files:
+      | Readonly<Record<string, string | Uint8Array>>
+      | ReadonlyMap<string, MemoryEntry> = {},
+    private readonly persist: Persist = () => {},
+  ) {
+    if (files instanceof Map) {
+      for (const [path, entry] of files) {
+        this.entries.set(clean(path), entry);
+      }
+      return;
+    }
     for (const [path, content] of Object.entries(files)) {
       this.put(path, content);
     }
@@ -39,11 +60,7 @@ export class MemoryFileSystem implements VaultFileSystem {
       throw notFound(path);
     }
     this.requireFolder(parentOf(key));
-    this.entries.set(key, {
-      kind: "file",
-      data: data.slice(),
-      mtime: Date.now(),
-    });
+    this.set(key, { kind: "file", data: data.slice(), mtime: Date.now() });
   }
 
   async stat(path: string) {
@@ -79,7 +96,7 @@ export class MemoryFileSystem implements VaultFileSystem {
         throw new Error(`A file is in the way: ${current}`);
       }
       if (!entry) {
-        this.entries.set(current, { kind: "folder", mtime: Date.now() });
+        this.set(current, { kind: "folder", mtime: Date.now() });
       }
     }
   }
@@ -89,7 +106,7 @@ export class MemoryFileSystem implements VaultFileSystem {
     if ((await this.list(key))?.length) {
       throw new Error(`Folder not empty: ${path}`);
     }
-    this.entries.delete(key);
+    this.unset(key);
   }
 
   async move(from: string, to: string): Promise<void> {
@@ -101,8 +118,8 @@ export class MemoryFileSystem implements VaultFileSystem {
     this.requireFolder(parentOf(target));
     for (const [name, entry] of [...this.entries]) {
       if (name === source || name.startsWith(`${source}/`)) {
-        this.entries.delete(name);
-        this.entries.set(target + name.slice(source.length), entry);
+        this.unset(name);
+        this.set(target + name.slice(source.length), entry);
       }
     }
   }
@@ -113,7 +130,18 @@ export class MemoryFileSystem implements VaultFileSystem {
     void this.mkdir(parentOf(key));
     const data =
       typeof content === "string" ? new TextEncoder().encode(content) : content;
-    this.entries.set(key, { kind: "file", data, mtime: Date.now() });
+    this.set(key, { kind: "file", data, mtime: Date.now() });
+  }
+
+  private set(path: string, entry: MemoryEntry): void {
+    this.entries.set(path, entry);
+    this.persist(path, entry);
+  }
+
+  private unset(path: string): void {
+    if (this.entries.delete(path)) {
+      this.persist(path, undefined);
+    }
   }
 
   private requireFolder(path: string): void {

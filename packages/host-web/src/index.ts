@@ -22,7 +22,7 @@ import { createWebPlatform } from "./platform";
 import { webWorkerLauncher } from "./workers";
 
 export { Mounts } from "./mounts";
-export { MemoryFileSystem } from "./memory-fs";
+export { MemoryFileSystem, type MemoryEntry, type Persist } from "./memory-fs";
 export { notFound, type VaultFileInfo, type VaultFileSystem } from "./vault-fs";
 export { openEditorPage, type EditorPage, type EditorPageUrls } from "./pages";
 export { createWebPlatform } from "./platform";

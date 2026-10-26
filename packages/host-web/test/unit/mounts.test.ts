@@ -111,3 +111,32 @@ test("URIs are written as Node writes them, so equal files compare equal", () =>
     assert.equal(files.toPath(files.uriOf(path)), path);
   }
 });
+
+test("a memory folder reports every change, and starts again from what it reported", async () => {
+  const kept = new Map<string, unknown>();
+  const files = new MemoryFileSystem({}, (path, entry) =>
+    entry ? kept.set(path, entry) : kept.delete(path),
+  );
+  await files.mkdir("daily");
+  await files.write(
+    "daily/Today.md",
+    new TextEncoder().encode("# Today"),
+    "create",
+  );
+  await files.move("daily", "journal");
+  await files.write("Gone.md", new Uint8Array(), "create");
+  await files.remove("Gone.md");
+  await files.write("Kept.md", new TextEncoder().encode("one"), "create");
+  await files.write("Kept.md", new TextEncoder().encode("two"), "replace");
+  assert.deepEqual([...kept.keys()].sort(), [
+    "Kept.md",
+    "journal",
+    "journal/Today.md",
+  ]);
+  const again = new MemoryFileSystem(kept as never);
+  assert.equal(
+    new TextDecoder().decode(await again.read("journal/Today.md")),
+    "# Today",
+  );
+  assert.equal(new TextDecoder().decode(await again.read("Kept.md")), "two");
+});
