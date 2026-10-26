@@ -1,4 +1,5 @@
 import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
+import { RENDER_PENDING_ATTRIBUTE } from "../../plugins/render/api";
 /**
  * CodeMirror sizes a block widget from `estimatedHeight` until it measures
  * the widget, and again when a rebuilt decoration sits outside the viewport.
@@ -133,6 +134,11 @@ export function rememberMarkdownBlockHeight(
 
 const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
 
+/** A fence inside is still rendering (see RENDER_PENDING_ATTRIBUTE). */
+export function hasPendingRender(dom: HTMLElement): boolean {
+  return Boolean(dom.querySelector?.(`[${RENDER_PENDING_ATTRIBUTE}]`));
+}
+
 /** Remember a mounted block's painted height as it changes. */
 export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
   if (
@@ -144,7 +150,8 @@ export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
   }
   const observer = new ResizeObserver((entries) => {
     const height = entries[0]?.contentRect.height ?? 0;
-    if (height > 0) {
+    // A pending diagram's box is the reserve, not its height.
+    if (height > 0 && !hasPendingRender(dom)) {
       rememberMarkdownBlockHeight(source, height);
     }
   });
@@ -156,7 +163,10 @@ export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
 export function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
   blockObservers.get(dom)?.disconnect();
   blockObservers.delete(dom);
-  if (typeof dom.getBoundingClientRect !== "function") {
+  if (
+    typeof dom.getBoundingClientRect !== "function" ||
+    hasPendingRender(dom)
+  ) {
     return;
   }
   const height = dom.getBoundingClientRect().height;
@@ -295,9 +305,17 @@ function formulaHeight(source: string): number {
   return wrapped;
 }
 
-/** Reserve rendered-block height from Markdown source before DOM measure. */
+/**
+ * Reserve rendered-block height from Markdown source before DOM measure. A
+ * drawn diagram's height is its own: the Mermaid formula knows nothing of
+ * the layout, so it must not lift a measured height (a 504 px diagram
+ * reserved 696 px on every remount, then shrank on screen).
+ */
 export function markdownBlockEstimatedHeight(source: string): number {
-  const floor = formulaHeight(source);
   const cached = measuredBlockHeights.get(source);
+  if (cached !== undefined && isMermaidFence(source)) {
+    return cached;
+  }
+  const floor = formulaHeight(source);
   return cached === undefined ? floor : Math.max(floor, cached);
 }

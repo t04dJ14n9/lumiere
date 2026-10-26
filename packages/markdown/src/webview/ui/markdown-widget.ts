@@ -5,6 +5,7 @@ import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
+  hasPendingRender,
   markdownBlockEstimatedHeight,
   rememberMarkdownBlockContentWidth,
   unwatchMarkdownBlock,
@@ -388,7 +389,16 @@ function beginMarkdownBlockRender(options: {
   }
 }
 
+/**
+ * Drop the reserved height once the content is in. A diagram still waiting
+ * for its SVG keeps it: the source shown meanwhile (or its highlighting
+ * finishing) is far shorter than the diagram, and releasing the reserve
+ * then made the block shrink and grow back under the reader.
+ */
 function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
+  if (hasPendingRender(body)) {
+    return;
+  }
   if (shell.style.minHeight && body.getBoundingClientRect().height > 0) {
     shell.style.minHeight = "";
   }

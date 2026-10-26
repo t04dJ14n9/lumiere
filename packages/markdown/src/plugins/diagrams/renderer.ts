@@ -1,12 +1,13 @@
 import type { Logger } from "@workshop/core";
-import type { Fence, RenderPass } from "../render/api";
+import {
+  RENDER_PENDING_ATTRIBUTE,
+  type Fence,
+  type RenderPass,
+} from "../render/api";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";
 import { createMermaidTrust, type MermaidTrust } from "./trust";
 import { MermaidQueue } from "./mount-queue";
-
-/** Marks a diagram whose SVG has not arrived; diagrams.css hears its insertion. */
-export const PENDING_ATTRIBUTE = "data-render-pending";
 
 export interface MermaidLinkPlace {
   side: boolean;
@@ -64,16 +65,16 @@ export class DiagramRenderer {
     const cleanup = () => {
       cancelSchedule();
       events.abort();
-      fence.element.removeAttribute?.(PENDING_ATTRIBUTE);
+      fence.element.removeAttribute?.(RENDER_PENDING_ATTRIBUTE);
       fence.element.innerHTML = original;
       failure?.remove();
       this.cleanups.delete(cleanup);
     };
     this.cleanups.add(cleanup);
-    fence.element.setAttribute?.(PENDING_ATTRIBUTE, "");
+    fence.element.setAttribute?.(RENDER_PENDING_ATTRIBUTE, "");
     cancelSchedule = this.queue.schedule(fence.element, fence.source, {
       onSvg: (svg) => {
-        fence.element.removeAttribute(PENDING_ATTRIBUTE);
+        fence.element.removeAttribute(RENDER_PENDING_ATTRIBUTE);
         fence.element.innerHTML = svg;
         fence.element.setAttribute("aria-label", "Mermaid diagram");
         if (this.openLink) {
@@ -86,7 +87,7 @@ export class DiagramRenderer {
         pass.measure();
       },
       onError: (error) => {
-        fence.element.removeAttribute(PENDING_ATTRIBUTE);
+        fence.element.removeAttribute(RENDER_PENDING_ATTRIBUTE);
         // Obsidian-style guarded chrome: title, error, Allow, and source.
         failure = showMermaidGuard(fence.element, error, fence.source, {
           showAllow: !this.trust.isTrusted(),

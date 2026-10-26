@@ -1,6 +1,13 @@
 import type { EditorView } from "@codemirror/view";
 type Element = EditorView["dom"];
 import type { Disposer } from "@workshop/core";
+/**
+ * Marks an element a fence processor is still filling in (a Mermaid diagram
+ * waiting for its SVG). The rendered block around it keeps the height it
+ * reserved, and records no height, until no such element is left; the
+ * processor calls `measure()` when it removes the mark.
+ */
+export const RENDER_PENDING_ATTRIBUTE = "data-render-pending";
 export interface RenderPass {
   readOnly?: boolean;
   source: string;

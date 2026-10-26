@@ -171,6 +171,17 @@ test("remembered MarkdownBlock height beats the formula on remount", () => {
   assert.equal(markdownBlockEstimatedHeight(source), floor);
 });
 
+test("a drawn Mermaid diagram's height is its estimate, even when the formula guesses taller", () => {
+  clearMarkdownBlockHeights();
+  const lines = Array.from({ length: 12 }, (_, n) => `  N${n} --> N${n + 1}`);
+  const source = ["```mermaid", "flowchart LR", ...lines, "```"].join("\n");
+  const formula = markdownBlockEstimatedHeight(source);
+  rememberMarkdownBlockHeight(source, 220);
+  assert.ok(formula > 600, `formula ${formula}`);
+  assert.equal(markdownBlockEstimatedHeight(source), 220);
+  clearMarkdownBlockHeights();
+});
+
 test("wrapping callout lines reserve multiple visual rows per source line", () => {
   const longLine =
     "> Callout body line 0 with a very long run of words that should wrap on a narrow pane and inflate the painted height beyond line times twenty four.";

@@ -609,3 +609,97 @@ test("MarkdownBlock retains live shell DOM across destroy and toDOM when using t
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
+
+test("a block keeps its reserved height while a diagram inside still waits for its SVG", async () => {
+  clearMarkdownBlockHtmlCache();
+  const prevDoc = globalThis.document;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = true;
+    /** Holds an element marked `data-render-pending`. */
+    hasPending = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector(selector: string) {
+      return selector === "[data-render-pending]" && this.hasPending
+        ? {}
+        : null;
+    }
+    getBoundingClientRect() {
+      return { height: 180 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "```mermaid\nflowchart TB\n  A --> B\n  B --> C\n```";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "diagram",
+      source,
+    };
+    const view = {
+      contentDOM: { clientWidth: 640 },
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure() {},
+    } as unknown as EditorView;
+    let measure = () => {};
+    const render: RenderService = {
+      trusted: true,
+      async into(container, _source, context) {
+        measure = context!.measure!;
+        container.innerHTML =
+          '<pre data-fence="mermaid" data-render-pending><code>flowchart TB</code></pre>';
+        (container as unknown as StubElement).hasPending = true;
+        return {
+          source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+    const widget = new MarkdownBlock(block, render);
+    const shell = widget.toDOM(view) as unknown as StubElement;
+    const body = shell.children[1]!;
+    const reserve = shell.style.minHeight;
+    assert.match(reserve ?? "", /^\d+px$/, "the diagram's height is reserved");
+
+    // The source's highlighting finishes first and asks for a measure.
+    measure();
+    assert.equal(shell.style.minHeight, reserve, "kept while pending");
+
+    body.hasPending = false;
+    measure();
+    assert.equal(shell.style.minHeight, "", "released once the SVG is in");
+    widget.destroy(shell as unknown as HTMLElement);
+  } finally {
+    clearMarkdownBlockHtmlCache();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
