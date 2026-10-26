@@ -2,10 +2,13 @@
  * The web app's service worker. It keeps Lumière working offline: the files
  * of this build are cached when it installs and served from the cache first.
  * Notes are not here; they live in the browser's storage or the reader's
- * folders. scripts/build.mjs builds it into sw.js.
+ * folders, which only the window reads. So the worker asks the window for
+ * what only it has: a note's page (shared/routes.ts, src/answers.ts).
+ * scripts/build.mjs builds it into sw.js.
  */
-// A module, so that `self` below can be the service worker's own scope.
-export {};
+import { isAppWindow, routeOf, type Route } from "../shared/routes";
+import { notFound, pageResponse } from "./responses";
+import { askWindows } from "./windows";
 
 declare const self: ServiceWorkerGlobalScope;
 /** This build's name, for its cache (scripts/build.mjs). */
@@ -45,9 +48,34 @@ self.addEventListener("fetch", (event) => {
   ) {
     return;
   }
+  const route = routeOf(request.url, self.registration.scope);
+  if (route) {
+    event.respondWith(answer(route));
+    return;
+  }
   event.respondWith(
     caches
       .match(request, { ignoreSearch: true })
       .then((cached) => cached ?? fetch(request)),
   );
 });
+
+/** Ask the app's windows for what `route` names. */
+async function answer(route: Route): Promise<Response> {
+  const reply = await askWindows(await appWindows(), {
+    lumiere: "page",
+    id: route.id,
+  });
+  return reply?.kind === "page" ? pageResponse(reply.html) : notFound();
+}
+
+/** The app's windows, also one the worker does not control yet. */
+async function appWindows(): Promise<readonly Client[]> {
+  const windows = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  return windows.filter((window) =>
+    isAppWindow(window.url, self.registration.scope),
+  );
+}

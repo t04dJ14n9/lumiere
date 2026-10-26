@@ -30,6 +30,7 @@ export {
   openPdfPage,
   type EditorPage,
   type EditorPageUrls,
+  type ServedPage,
 } from "./pages";
 export { createWebPlatform } from "./platform";
 export { sha256 } from "./sha256";

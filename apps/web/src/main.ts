@@ -13,6 +13,7 @@ import {
   type VaultFileSystem,
 } from "@workshop/host-web";
 import type { ContributedSetting } from "@workshop/markdown/portable";
+import { answerWorker, windowAnswers } from "./answers";
 import { DEMO } from "./demo";
 import {
   canPickFolders,
@@ -21,6 +22,7 @@ import {
   privateFolder,
 } from "./folders";
 import { HandleFileSystem } from "./handle-fs";
+import { NotePages } from "./note-pages";
 
 const DATA = "/lumiere-data";
 const DEMO_VAULT = "/vaults/Lumière Demo";
@@ -36,6 +38,18 @@ async function main(): Promise<void> {
     json<unknown>(new URL("menus.json", base)),
   ]);
   const fileUrl = new URL("lumiere/file", base).href;
+  const notePages = new NotePages({
+    base: base.href,
+    policy: windowPolicy(),
+    isServed: () => Boolean(navigator.serviceWorker?.controller),
+  });
+  if (navigator.serviceWorker) {
+    answerWorker({
+      messages: navigator.serviceWorker,
+      worker: new URL("sw.js", base).href,
+      answer: windowAnswers({ pages: notePages }),
+    });
+  }
   const local = await startLocalHost({
     files,
     dataRoot: DATA,
@@ -52,6 +66,7 @@ async function main(): Promise<void> {
       },
       resource: (panel, uri) =>
         `${fileUrl}?panel=${encodeURIComponent(panel)}&uri=${encodeURIComponent(uri)}`,
+      servePage: (html) => notePages.serve(html),
     },
     ...(canPickFolders() ? { pickFolder: () => pickFolder(files) } : {}),
   });
@@ -64,6 +79,15 @@ async function main(): Promise<void> {
   await navigator.serviceWorker
     ?.register(new URL("sw.js", base))
     .catch(() => {});
+}
+
+/** The window's content security policy, which a note's page keeps. */
+function windowPolicy(): string {
+  return (
+    document.querySelector<HTMLMetaElement>(
+      'meta[http-equiv="Content-Security-Policy"]',
+    )?.content ?? ""
+  );
 }
 
 /**

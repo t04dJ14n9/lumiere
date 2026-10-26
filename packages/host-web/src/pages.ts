@@ -1,8 +1,8 @@
 /**
  * An editor page without a server: the editor's HTML, with the page shim
  * (`@workshop/host-node` src/page/shim.ts), as a blob: document the window
- * shows in an iframe. A blob document keeps the window's origin, which the
- * editor's transport checks. The page talks to its panel over a channel the
+ * shows in an iframe, or at a URL of the embedder's (`servePage`). Either
+ * keeps the window's origin, which the editor's transport checks. The page talks to its panel over a channel the
  * window hands it (`connect`), since there is no socket to open.
  */
 import {
@@ -22,6 +22,12 @@ export interface EditorPageUrls {
   readonly shim: string;
   /** A file the note shows (an image): a URL the window can answer. */
   resource(panelId: string, uri: string): string;
+  /**
+   * Where a note's page is shown from, or undefined for a blob: URL (the
+   * default). Chromium sends a blob: page's requests past the window's
+   * service worker, so the web app has its worker serve the page instead.
+   */
+  servePage?(html: string): ServedPage | undefined;
   /** A PDF's page (`openPdfPage`), as absolute URLs. */
   readonly pdf: {
     /** The folder of the built viewer: viewer.js, viewer.css, pdfium.wasm. */
@@ -29,6 +35,12 @@ export interface EditorPageUrls {
     /** The built stand-in for its host (host-node's src/page/pdf-shim.ts). */
     readonly shim: string;
   };
+}
+
+/** A page's HTML at a URL a frame can show, until it is disposed. */
+export interface ServedPage {
+  readonly url: string;
+  dispose(): void;
 }
 
 export interface EditorPage {
@@ -61,11 +73,11 @@ export async function openEditorPage(
     `<head><meta name="${TRANSPORT_META}" content="channel">` +
       `<meta name="lumiere-state" content="${escape(note.uri)}">`,
   );
-  const url = URL.createObjectURL(new Blob([page], { type: "text/html" }));
+  const served = urls.servePage?.(page) ?? blobPage(page);
   let socket: PortSocket | undefined;
   return {
     id,
-    url,
+    url: served.url,
     connect() {
       socket?.close();
       const channel = new MessageChannel();
@@ -74,10 +86,15 @@ export async function openEditorPage(
       return channel.port2;
     },
     dispose() {
-      URL.revokeObjectURL(url);
+      served.dispose();
       socket?.close();
     },
   };
+}
+
+function blobPage(html: string): ServedPage {
+  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  return { url, dispose: () => URL.revokeObjectURL(url) };
 }
 
 /** A page's socket over a `MessagePort`, which has no close event of its own. */
