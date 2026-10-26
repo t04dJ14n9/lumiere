@@ -5959,3 +5959,75 @@ error at `test/unit/cursor-bridge/host.test.ts:210`; PDF typechecking is not
 reached. Browser/native suites and Host GUI retest were not run for this
 focused fix. No push; the R7 plan records the local commit, package/install
 verification and exact parent-computerUse retest steps.
+
+## Smooth scrolling through Mermaid notes — 2026-10-26
+
+The owner found scrolling through notes with Mermaid diagrams still bad
+after #389, #392, #396, #398 and #401. Measured first, with a new probe
+(`pnpm measure:scroll`, test/perf) on a generated note (40 sections, a
+Mermaid diagram of one of seven kinds in each, and math, tables, images,
+callouts and code): headless Chromium at 1280×900, scrolled by a fast
+wheel, trackpad flicks, reading bursts, Vim Ctrl+D and `j` held, PageDown
+held and with pauses, and a scrollbar drag. It records frame times, long
+animation frames with their scripts, wheel and key input latency, layout
+shifts, and how long diagrams stay blank on screen. Obsidian 1.14.4 was
+studied with REA as a behaviour reference (notes in the session's shared
+folder); no code was taken.
+
+Frame rates were already 60 fps at full CPU speed; what was bad was
+visual, and found in this order:
+
+1. Mermaid drew a diagram only once it was on screen and scrolling had
+   stopped for 80 ms (#389, #396). While scrolling, 92% of frames showed
+   Mermaid source in place of a diagram, and each diagram then changed
+   height under the reader when it drew. Obsidian draws as soon as
+   CodeMirror mounts the widget (the viewport plus about a screen); so does
+   `diagrams/mount-queue.ts` now: one at a time, a frame apart, nearest the
+   window first, a diagram scrolled past before its turn taken up when its
+   block mounts again (`mw-render-remount`, from MarkdownBlock).
+2. The pending diagram's reserved height was dropped as soon as the
+   placeholder source's highlighting asked for a measure, and the block's
+   ResizeObserver recorded the reserve as its height. Fence processors now
+   mark unfinished elements `data-render-pending` (render/api.ts); a block
+   keeps its reserve, and records no height, until none is left, and
+   drops a reserve it still holds when it comes back drawn.
+3. The reserve was guessed as 48 px plus 72 px a source line, up to four
+   times off (a class diagram drawing at 390 px reserved 1560 px).
+   `webview/ui/mermaid-height.ts` guesses from the diagram's structure,
+   within 25% of the drawn height on 15 diagrams at two widths.
+4. Two listeners on the whole editor could cancel wheel events (the scroll
+   restore's domEventHandlers and the jump recorder's capture listener), so
+   each wheel gesture waited for the main thread. They are passive now.
+5. MarkdownBlock, note embeds and tables read layout while CodeMirror
+   built and dropped them (clientWidth in toDOM, getBoundingClientRect in
+   destroy), one forced layout per block; the reads were redundant.
+
+Before and after (medians of 3 alternating runs of main at abc28d08 and
+this branch, 1x CPU; the machine was shared with other sessions, so frame
+timings vary about ±25% between runs, counts much less):
+
+| Scenario | Blank-diagram frames | Layout shift | Wheel input p50 |
+| --- | --- | --- | --- |
+| Fast wheel | 92% → 0% | 6.1 → 1.2 | 34 → 19 ms |
+| Trackpad flicks | 91% → 0% | 5.0 → 0.6 | 34 → 17 ms |
+| Reading bursts | 13% → 0% | 4.3 → 1.2 | 34 → 17 ms |
+| Vim Ctrl+D held | 23% → 3% | 1.3 → 1.2 | |
+| Vim `j` held | 49% → 0% | 9.2 → 7.8 | |
+| PageDown with pauses (2 runs) | 20% → 1.5% | 10.8 → 4.3 | |
+| PageDown held, 30/s | 31% → 13% | 1.5 → 8.9 | |
+| Scrollbar drag | 71% → 35% | 0.2 → 0.2 | |
+
+Holding `j` no longer has a 317 ms frame (worst 33 ms). A diagram on
+screen draws within about 20 ms instead of 180 ms. Holding PageDown at
+key-repeat speed now draws diagrams while paging, more than Mermaid can
+keep a page ahead of, so they move the text as they draw; before they
+stayed as source until the key was let go. At 4x CPU slowdown the cost of
+drawing during the scroll shows: about twice the frames over 50 ms in a
+fast wheel scroll (12 → 24), work that main did after the scroll stopped;
+PageDown's long-frame blocking fell from 1105 to 242 ms.
+
+Not changed: Mermaid still runs on the main thread (it measures text in
+the DOM); the tables' and sticky headings' wheel listeners still cancel
+wheel events over them; a fresh screen of blocks after a jump still costs
+50–140 ms at 4x. `pnpm check` and `pnpm test:browser` pass; the real
+VS Code suite was not run (it opens VS Code windows on the owner's Mac).
