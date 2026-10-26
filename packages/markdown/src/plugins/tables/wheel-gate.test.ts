@@ -48,7 +48,7 @@ test("wheel forwarding stays off while hovering or editing a cell", () => {
 test("the non-passive wheel listener exists only while forwarding is on", () => {
   const listeners: {
     fn: EventListener;
-    options?: AddEventListenerOptions;
+    options?: AddEventListenerOptions | undefined;
   }[] = [];
   const root = {
     addEventListener(
