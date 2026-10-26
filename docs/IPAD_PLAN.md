@@ -294,6 +294,25 @@ Each one is a PR with its own tests; `pnpm check` passes before every push.
 
 Order: H1 → L1 → C1 and T1 (either first; C1 needs decision 1) → P1 → P2 → R1.
 
+**Where it stands.** H1 is done, with the web app on top (`apps/web`):
+
+- the shared host runs on a `HostPlatform` (Node's, or host-web's), from
+  `@workshop/host-node/core`, which reaches no Node built-in;
+- host-web mounts `VaultFileSystem`s at `/vaults/<name>` and its data at
+  `/lumiere-data`; an editor page is a blob: document that talks to its
+  panel over a `MessageChannel` the window hands it;
+- the window talks to its host through `WindowBackend`: HTTP to a server,
+  or `@workshop/app/local` (host-web in the same page);
+- in the browser, Lumière opens folders the reader picks (Chromium), or keeps
+  vaults in the browser (its private storage where a page can write it, else
+  IndexedDB, as in Safari), and works offline.
+
+For L1 the iPad app gives host-web its files as a `VaultFileSystem` over the
+`VaultFileSystem` Capacitor plugin, and starts the window with
+`startLocalHost` as `apps/web/src/main.ts` does. Not done yet: images in
+notes (their `lumiere/file` URLs need an answer: the web app's service
+worker, or the iPad's scheme handler), and PDFs in tabs.
+
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript
   plugins and the Swift plugins.
