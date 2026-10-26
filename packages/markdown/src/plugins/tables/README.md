@@ -10,31 +10,36 @@ clipboard and toolbar collaborator. The projection reserializes the entire table
 with column-aligned padding on each cell edit, in the existing native input group;
 it never owns undo history. The controller reconciles
 incoming snapshots, preserving the active cell editor across structural edits.
+
 The table never cancels wheel input: whether it is hovered, a cell is open
 or cells are selected, the browser scrolls the note natively. `.table-scroll`
 hides vertical overflow, so it cannot take a vertical wheel, and an open
 cell's scroller is no scroll container at all: the cell grows with its text,
-so its caret is never clipped and its text never scrolls sideways. An open cell keeps the note's caret in its source, so
-CodeMirror keeps its table mounted however far the note scrolls. A table
-unmounted while active (with a grid selection, say) keeps its selection or
-cell for when it returns; the cell takes focus back only if the unmount left
-focus on the body, not if the reader has since moved to the find bar or
-elsewhere. Focus landing in the note's content leaves the table all the
-same, mounted or not. The widget ignores events, so
-CodeMirror never hears a wheel over it; a passive listener reports vertical
-table wheel input through the editor's public scroll-input event, which
-cancels saved-view scroll restoration. Horizontal and Shift-wheel gestures
-stay with the table's overflow box. Chromium latches a mostly vertical
-diagonal wheel to `.table-scroll` when the table can take its sideways part,
-dropping the vertical part; once the table has panned for it, a passive
-listener scrolls the note by that vertical part. Tall wide tables also show a
-sticky mirror of that horizontal scrollbar (BH-016) while the native bar is
-below the note viewport, so columns stay reachable without scrolling to the
-foot; the mirror hides once the native bar is on screen. CSS
-`position: sticky; bottom: 0` keeps it on the note's bottom edge; a
-ResizeObserver (does the table overflow?) and an IntersectionObserver (is the
-native bar on screen?) only decide whether it shows, so scrolling the note
-runs no table script. The selection and focus stay in place during scrolling.
+so its caret is never clipped and its text never scrolls sideways.
+Horizontal and Shift-wheel gestures stay with the table's overflow box.
+Chromium latches a mostly vertical diagonal wheel to `.table-scroll` when the
+table can take its sideways part, dropping the vertical part; once the table
+has panned for it, a passive listener scrolls the note by that vertical part.
+The widget ignores events, so CodeMirror never hears a wheel over it; another
+passive listener reports vertical table wheel input through the editor's
+public scroll-input event, which cancels saved-view scroll restoration.
+
+Tall wide tables also show a sticky mirror of the table's horizontal
+scrollbar (BH-016) while the native bar is below the note viewport, so
+columns stay reachable without scrolling to the foot; the mirror hides once
+the native bar is on screen. CSS `position: sticky; bottom: 0` keeps it on
+the note's bottom edge; a ResizeObserver (does the table overflow?) and an
+IntersectionObserver (is the native bar on screen?) only decide whether it
+shows, so scrolling the note runs no table script.
+
+The selection and focus stay in place during scrolling. An open cell keeps
+the note's caret in its source, so CodeMirror keeps its table mounted however
+far the note scrolls. A table unmounted while active (with a grid selection,
+say) keeps its selection or cell for when it returns; the cell takes focus
+back only if the unmount left focus on the body, not if the reader has since
+moved to the find bar or elsewhere. Focus landing in the note's content
+leaves the table, mounted or not.
+
 Grid Ctrl+C/Cmd+C snapshots the selected rectangle as TSV and writes through
 Editor's validated host clipboard service, preserving grid focus and selection.
 Native copy events and menu commands use the same TSV serialization; ordinary
@@ -134,6 +139,10 @@ Selected cells show their selection background through inline code while keeping
 its theme foreground and monospace styling; unselected code keeps its background.
 The open cell editor and rectangular grid selections share the same inset accent
 selection box; `.table-scroll` overflow would clip a CSS outline.
+A mostly vertical diagonal wheel that Chromium latches to the table moves the
+note by instant scrolls from the main thread, not the compositor's; once the
+table reaches its side, the rest of that gesture stays latched to the table,
+as for any nested scroller.
 
 HTML paste in a focused cell uses the outer editor capture pipeline; the table
 clipboard ignores already-handled events. Rectangular paste keeps TSV semantics.
