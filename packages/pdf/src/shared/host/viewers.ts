@@ -1,4 +1,4 @@
-import type { HostMessage } from "../messages";
+import type { HostMessage, PdfDelivery } from "../messages";
 
 /**
  * The viewer page of one open PDF, as its host shows it: in VS Code a
@@ -14,4 +14,6 @@ export interface PdfWebview {
   setHTML(html: string): void;
   post(message: HostMessage): void;
   onMessage(listener: (message: unknown) => void): () => void;
+  /** How the bytes of load number `load` reach this page (see `PdfDelivery`). */
+  deliver(bytes: ArrayBuffer, load: number): PdfDelivery;
 }

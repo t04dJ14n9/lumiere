@@ -417,7 +417,7 @@ export class PdfViewerPanel {
     this.post({
       type: "load",
       load: this.loads,
-      data: bytes.data,
+      ...this.webview.deliver(bytes.data, this.loads),
       settings: this.settings,
       ...(this.position ? { position: this.position } : {}),
     });

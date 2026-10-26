@@ -67,5 +67,7 @@ function webviewPort(
       const subscription = webview.onDidReceiveMessage(listener);
       return () => subscription.dispose();
     },
+    // A webview takes the ArrayBuffer itself.
+    deliver: (bytes) => ({ data: bytes }),
   };
 }
