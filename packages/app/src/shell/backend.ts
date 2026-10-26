@@ -44,6 +44,11 @@ export interface WindowBackend {
   };
   /** A folder picker the window can show, when it has one; the vault's path. */
   readonly pickFolder?: () => Promise<string | undefined>;
+  /**
+   * Whether the reader may type a folder's path (a browser on a server,
+   * which has no picker that gives one); never where paths mean nothing.
+   */
+  readonly typesPaths?: boolean;
 }
 
 /** A file's page, for a tab's iframe. */

@@ -14,15 +14,17 @@ export interface VaultPickerProps {
 
 export function VaultPicker({ recent, onOpen }: VaultPickerProps) {
   const [typed, setTyped] = useState("");
+  const { pickFolder, typesPaths } = backend();
   return (
     <section className="vault-picker" aria-label="Open a vault">
       <h1>Lumière</h1>
       <p>Open a folder of Markdown notes. An Obsidian vault works as it is.</p>
-      {backend().pickFolder ? (
+      {pickFolder && (
         <button type="button" className="primary" onClick={() => onOpen()}>
           Open Folder…
         </button>
-      ) : (
+      )}
+      {!pickFolder && typesPaths && (
         <form
           onSubmit={(event) => {
             event.preventDefault();

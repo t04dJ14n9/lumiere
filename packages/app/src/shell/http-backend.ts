@@ -24,6 +24,6 @@ export function httpBackend(): WindowBackend {
       }),
     },
     // A browser on a server has no picker that gives a path: one is typed.
-    ...(inDesktopApp() ? { pickFolder } : {}),
+    ...(inDesktopApp() ? { pickFolder } : { typesPaths: true }),
   };
 }
