@@ -5,6 +5,7 @@
   "description": "Lumière PDF: an EmbedPDF-based viewer that copies selections with exact page-and-box locations.",
   "exports": {
     "./host": "./src/extension/extension.ts",
+    "./portable": "./src/host/portable.ts",
     "./contributes.json": "./contributes.json",
     "./lazy-bridge-server": "./scripts/lazy-bridge-server.mjs"
   },
