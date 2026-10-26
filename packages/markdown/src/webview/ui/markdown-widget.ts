@@ -102,6 +102,7 @@ function currentRenderGeneration(render: RenderService): number {
 
 /** Evict pooled off-viewport block shells when render/changed invalidates rendered output. */
 export function evictMarkdownBlockDomPool(render: RenderService): void {
+  blockHtmlCache.clear();
   renderGenerations.set(render, currentRenderGeneration(render) + 1);
   const pool = blockDomPool.get(render);
   if (!pool) {

@@ -48,6 +48,21 @@ export const documentTreeCompleter = ViewPlugin.fromClass(
         this.clearTimer();
         return;
       }
+      if (
+        update.viewportChanged &&
+        update.view.viewport.to > update.state.field(documentTree).length
+      ) {
+        this.clearTimer();
+        this.done = true;
+        const tree = markdownParser.parse(update.state.doc.toString());
+        rememberParsedMarkdown(update.state.doc, tree);
+        queueMicrotask(() => {
+          if (!this.destroyed && update.view.dom.isConnected) {
+            update.view.dispatch({ effects: replaceDocumentTree.of(tree) });
+          }
+        });
+        return;
+      }
       if (update.docChanged) {
         this.schedule(update.view);
       }

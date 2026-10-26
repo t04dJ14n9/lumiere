@@ -222,20 +222,22 @@ export function featureController(root: BaseContext) {
         wantedManifests.map((manifest) => loadWebviewPlugin(manifest.id)),
       );
       const managed = managedIdsForPhase(phase);
-      const applyPhase = async () => {
-        const hadRenderedBlocks = hasMountedRenderFeatures || phase === "all";
-        const affected = await switches.update(managed, () =>
+      const hadRenderedBlocks = hasMountedRenderFeatures || phase === "all";
+      const applySwitch = () =>
+        switches.update(managed, () =>
           wantedPlugins(wantedManifests, settings),
         );
-        await root.settled();
-        if (touchesRenderFeatures(affected)) {
-          hasMountedRenderFeatures = true;
-          if (hadRenderedBlocks) {
-            root.emit("render/changed");
-          }
+      const affected = await ((root.bail(
+        "editor/batchExtensions",
+        applySwitch,
+      ) as Promise<ReadonlySet<string>> | undefined) ?? applySwitch());
+      await root.settled();
+      if (touchesRenderFeatures(affected)) {
+        hasMountedRenderFeatures = true;
+        if (hadRenderedBlocks) {
+          root.emit("render/changed");
         }
-      };
-      await (root.bail("editor/batchExtensions", applyPhase) ?? applyPhase());
+      }
     };
     const next = updates.catch(() => {}).then(run);
     updates = next;

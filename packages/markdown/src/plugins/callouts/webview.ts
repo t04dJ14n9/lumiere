@@ -104,6 +104,17 @@ function registerDisclosures(
 ): void {
   ctx.on("render/postProcess", (pass) => {
     applyCustomCalloutStyles(pass.container);
+    if (!pass.container.isConnected) {
+      let stopped = false;
+      pass.onDispose(() => {
+        stopped = true;
+      });
+      queueMicrotask(() => {
+        if (!stopped && pass.container.isConnected) {
+          applyCustomCalloutStyles(pass.container);
+        }
+      });
+    }
     const disclosures =
       pass.container.querySelectorAll<HTMLDetailsElement>("details.callout");
     if (disclosures.length === 0) {
