@@ -122,6 +122,11 @@ export interface Manifest {
       scope?: "editor" | "workbench";
       /** A further when-clause, for example to show only beside this editor. */
       when?: string;
+      /**
+       * Initial Explorer section state (`visible` | `collapsed` | `hidden`).
+       * Only Markdown Outline starts expanded; other Lumière subpanels collapse.
+       */
+      visibility?: "visible" | "collapsed" | "hidden";
     }[];
   };
 }

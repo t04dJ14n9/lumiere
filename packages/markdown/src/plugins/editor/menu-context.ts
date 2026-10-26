@@ -11,8 +11,8 @@ import type { EditorView } from "@codemirror/view";
  * (two-finger click or Ctrl-click) outside a selection first selects the
  * word under the pointer, as Chromium does there, and the menu opens before
  * the key can follow: the word looks selected but Copy Link for Agent is
- * missing. So the editor element carries the selection as it is when the
- * menu opens; that per-menu context shadows the global key.
+ * missing. So the editor element carries the selection (and webviewSection) as
+ * it is when the menu opens; that per-menu context shadows the global key.
  */
 const CONTEXT_ATTRIBUTE = "data-vscode-context";
 
@@ -43,7 +43,13 @@ export function menuHasSelection(
 
 /** The `data-vscode-context` value for a menu opened now. */
 export function menuContext(hasSelection: boolean): string {
-  return JSON.stringify({ [contributionId("hasSelection")]: hasSelection });
+  // webviewSection must travel with hasSelection: the stamp replaces the
+  // editor element's attribute, and clicks on scroller chrome / widgets may
+  // not sit under contentDOM (where contentAttributes puts webviewSection).
+  return JSON.stringify({
+    webviewSection: "markdownContent",
+    [contributionId("hasSelection")]: hasSelection,
+  });
 }
 
 function readDomSelection(view: EditorView): DomSelection | null {
@@ -74,10 +80,11 @@ export const menuSelectionContext = ViewPlugin.define((view) => {
     );
     view.dom.setAttribute(CONTEXT_ATTRIBUTE, menuContext(hasSelection));
   };
-  view.dom.addEventListener("contextmenu", stampSelection);
+  // Capture: stamp before VS Code's window listener reads data-vscode-context.
+  view.dom.addEventListener("contextmenu", stampSelection, true);
   return {
     destroy() {
-      view.dom.removeEventListener("contextmenu", stampSelection);
+      view.dom.removeEventListener("contextmenu", stampSelection, true);
       view.dom.removeAttribute(CONTEXT_ATTRIBUTE);
     },
   };

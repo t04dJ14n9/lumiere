@@ -50,6 +50,11 @@ test("the Tags view lists the vault's tags and a click picks a note to open", as
     "Ideas (1)",
   ]);
   const [project] = await view.source.roots();
+  assert.equal(
+    project!.expanded,
+    false,
+    "hierarchical tag nodes start collapsed",
+  );
   assert.deepEqual(project!.command, {
     id: SEARCH_COMMAND,
     args: ["memory:///vault", "project"],

@@ -109,7 +109,12 @@ export default defineManifest({
       },
     ],
     views: [
-      { id: "outgoingLinks", name: "Outgoing Links", scope: "workbench" },
+      {
+        id: "outgoingLinks",
+        name: "Outgoing Links",
+        scope: "workbench",
+        visibility: "collapsed",
+      },
     ],
   },
 } as const);

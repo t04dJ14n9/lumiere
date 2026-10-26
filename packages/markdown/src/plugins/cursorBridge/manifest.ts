@@ -19,6 +19,7 @@ export default defineManifest({
         name: "·",
         scope: "workbench",
         when: "(editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed",
+        visibility: "collapsed",
       },
     ],
     commands: [

@@ -2,7 +2,11 @@ import { readdirSync, existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import type { Manifest } from "../src/shared/manifest";
-import { MARKDOWN_EDITOR, whenActive } from "../src/shared/editor-provider";
+import {
+  MARKDOWN_EDITOR,
+  whenActive,
+  whenWebview,
+} from "../src/shared/editor-provider";
 import { contributionId } from "../src/shared/setting-schema";
 const pluginsDirectory = fileURLToPath(
   new URL("../src/plugins", import.meta.url),
@@ -48,6 +52,7 @@ export async function contributions() {
       when: [whenEnabled(manifest, view.scope), view.when]
         .filter(Boolean)
         .join(" && "),
+      ...(view.visibility ? { visibility: view.visibility } : {}),
     })),
   );
   return {
@@ -231,6 +236,26 @@ function contributionKeyWhen(
   return parts.join(" && ");
 }
 
+/**
+ * webview/context must use `webviewId` (VS Code docs), not
+ * `activeCustomEditorId`. The latter is a workbench key that is not always
+ * true while the webview context menu is built (seen on Windows/Cursor
+ * remote as Cut/Copy/Paste only — no Copy Link for Agent / formatting).
+ * PDF already gates on webviewId; match that.
+ */
+function menuEnablement(
+  manifest: Manifest,
+  location: "editor/title" | "webview/context" | "view/title",
+): string {
+  if (location === "view/title") {
+    return whenEnabled(manifest, "workbench");
+  }
+  if (location === "webview/context") {
+    return `${whenWebview(MARKDOWN_EDITOR)} && ${contributionId(`plugin.${manifest.id}`)}`;
+  }
+  return whenEnabled(manifest, "editor");
+}
+
 function manifestMenus(
   manifests: readonly Manifest[],
   location: "editor/title" | "webview/context" | "view/title",
@@ -240,13 +265,7 @@ function manifestMenus(
       .filter((menu) => menu.location === location)
       .map((menu) => ({
         command: contributionId(menu.command),
-        when: [
-          whenEnabled(
-            manifest,
-            location === "view/title" ? "workbench" : "editor",
-          ),
-          menu.when,
-        ]
+        when: [menuEnablement(manifest, location), menu.when]
           .filter(Boolean)
           .join(" && "),
         ...(menu.group ? { group: menu.group } : {}),

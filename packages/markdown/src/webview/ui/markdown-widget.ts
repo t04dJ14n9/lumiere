@@ -216,10 +216,46 @@ export class MarkdownBlock extends WidgetType {
   }
 }
 
+const BLOCK_HTML_CACHE_LIMIT = 256;
+const blockHtmlCache = new Map<string, string>();
+
+function blockCacheKey(block: RenderBlock): string {
+  return `${block.kind}\0${block.source}`;
+}
+
+function getCachedBlockHtml(key: string): string | undefined {
+  const cached = blockHtmlCache.get(key);
+  if (cached !== undefined) {
+    blockHtmlCache.delete(key);
+    blockHtmlCache.set(key, cached);
+  }
+  return cached;
+}
+
+function setCachedBlockHtml(key: string, html: string): void {
+  if (!html) {
+    return;
+  }
+  if (blockHtmlCache.has(key)) {
+    blockHtmlCache.delete(key);
+  } else if (blockHtmlCache.size >= BLOCK_HTML_CACHE_LIMIT) {
+    const oldest = blockHtmlCache.keys().next().value;
+    if (oldest !== undefined) {
+      blockHtmlCache.delete(oldest);
+    }
+  }
+  blockHtmlCache.set(key, html);
+}
+
+/** Test helper: clear cached MarkdownBlock HTML snapshots. */
+export function clearMarkdownBlockHtmlCache(): void {
+  blockHtmlCache.clear();
+}
+
 /**
- * First paint returns the shell + height reserve immediately; Mermaid /
- * MathJax / embed HTML start on idle (or the next frames) so a wide draw
- * margin mounting many blocks does not stall the opening frame.
+ * Below-fold blocks are already gated by `DeferredBlockWidget`, and heavy
+ * uncached Mermaid fences self-gate via `observeNearViewport`. Render
+ * synchronously in `toDOM` so viewport blocks never flash blank for 120ms.
  */
 function scheduleMarkdownBlockRender(options: {
   view: EditorView;
@@ -230,51 +266,10 @@ function scheduleMarkdownBlockRender(options: {
   isLive: () => boolean;
   setPass: (pass: RenderPass) => void;
 }): () => void {
-  let cancelled = false;
-  const start = () => {
-    if (cancelled || !options.isLive()) {
-      return;
-    }
+  if (options.isLive()) {
     beginMarkdownBlockRender(options);
-  };
-  const idle = (
-    globalThis as typeof globalThis & {
-      requestIdleCallback?: (
-        callback: () => void,
-        opts?: { timeout: number },
-      ) => number;
-      cancelIdleCallback?: (id: number) => void;
-    }
-  ).requestIdleCallback;
-  const cancelIdle = (
-    globalThis as typeof globalThis & {
-      cancelIdleCallback?: (id: number) => void;
-    }
-  ).cancelIdleCallback;
-  if (typeof idle === "function") {
-    const id = idle(start, { timeout: 120 });
-    return () => {
-      cancelled = true;
-      cancelIdle?.(id);
-    };
   }
-  if (typeof requestAnimationFrame === "function") {
-    const outer = requestAnimationFrame(() => {
-      if (cancelled) {
-        return;
-      }
-      requestAnimationFrame(start);
-    });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(outer);
-    };
-  }
-  // Unit tests (no window timers): render synchronously so Edit/click still work.
-  start();
-  return () => {
-    cancelled = true;
-  };
+  return () => {};
 }
 
 function beginMarkdownBlockRender(options: {
@@ -287,11 +282,18 @@ function beginMarkdownBlockRender(options: {
   setPass: (pass: RenderPass) => void;
 }): void {
   const { view, shell, body, block, render, isLive, setPass } = options;
+  const cacheKey = blockCacheKey(block);
+  const rememberHtml = () => {
+    if (!shell.classList.contains("render-error") && body.innerHTML) {
+      setCachedBlockHtml(cacheKey, body.innerHTML);
+    }
+  };
   void render
     .into(body, block.source, {
       sourceLine: view.state.doc.lineAt(block.from).number - 1,
       measure: () => {
         if (isLive()) {
+          rememberHtml();
           releasePaintReserve(shell, body);
           view.requestMeasure();
         }
@@ -299,7 +301,9 @@ function beginMarkdownBlockRender(options: {
     })
     .then((result) => {
       setPass(result);
-      if (!isLive()) {
+      if (isLive()) {
+        rememberHtml();
+      } else {
         void result.dispose();
       }
     })
@@ -310,6 +314,15 @@ function beginMarkdownBlockRender(options: {
         view.requestMeasure();
       }
     });
+  if (!body.innerHTML) {
+    const cachedHtml = getCachedBlockHtml(cacheKey);
+    if (cachedHtml !== undefined) {
+      body.classList.add("markdown-rendered");
+      body.innerHTML = cachedHtml;
+    }
+  } else {
+    rememberHtml();
+  }
 }
 
 /** Drop estimatedHeight minHeight once the body has painted height (BH-007). */

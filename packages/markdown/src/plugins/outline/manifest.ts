@@ -91,6 +91,7 @@ export default defineManifest({
         name: "Markdown Outline",
         scope: "workbench",
         when: whenActive(MARKDOWN_EDITOR),
+        visibility: "visible",
       },
     ],
   },

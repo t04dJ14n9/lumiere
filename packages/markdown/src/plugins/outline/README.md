@@ -33,8 +33,10 @@ targets the view itself, including after moving it to the secondary sidebar or
 panel; showing restores and focuses it in its current location.
 
 When a Lumière editor becomes active, the plugin hides VS Code's
-native **Outline**, shows **Markdown Outline** and **Tags**, then returns focus to
-the editor. Leaving the last Workshop editor restores the native Outline after a
+native **Outline**, focuses **Markdown Outline** (expanded by default), and
+returns focus to the editor. **Tags** and other Explorer subpanels stay
+collapsed by default (`visibility: "collapsed"`); they are not focused on
+enter. Leaving the last Workshop editor restores the native Outline after a
 short debounce; restore is skipped if Lumière PDF (or another Workshop editor) already owns the active tab. Manual
 changes to Outline while a Workshop editor stays active are left alone until the
 next enter/leave. Tags also use the same `activeCustomEditorId` when-clause as
@@ -49,7 +51,7 @@ Markdown Outline so they do not linger beside non-Workshop editors.
 - `tree.ts`: heading nodes, parent lookup and editor-to-source coordinates.
 - `view.ts`: refresh timing, cursor following and expansion traversal.
 - `actions.ts`: commands, configuration reads and the follow context key.
-- `focus.ts`: native Outline ↔ Markdown Outline/Tags enter/leave swap.
+- `focus.ts`: native Outline ↔ Markdown Outline enter/leave swap (Tags stay collapsed).
 - `commands.ts`: view, command, setting and context identifiers.
 - `headings.ts`: nesting headings and finding the caret's section.
 - `manifest.ts`: view/title actions, the view, keybinding and the follow setting.

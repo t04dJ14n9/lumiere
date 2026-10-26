@@ -186,6 +186,27 @@ test("Tags and Markdown Outline views require the Lumière editor", async () => 
   );
 });
 
+test("Explorer Markdown Outline expands by default; Tags and other Lumière subpanels collapse", async () => {
+  const { views } = await contributions();
+  assert.ok(views);
+  const byId = Object.fromEntries(
+    views.explorer.map((view) => [view.id, view] as const),
+  );
+  assert.equal(byId["lumiere.markdown.outline"]?.visibility, "visible");
+  for (const id of [
+    "lumiere.markdown.tags",
+    "lumiere.markdown.backlinks",
+    "lumiere.markdown.outgoingLinks",
+    "lumiere.markdown.cursorBridge.editPromptProbe",
+  ]) {
+    assert.equal(
+      byId[id]?.visibility,
+      "collapsed",
+      `${id} must contribute visibility collapsed`,
+    );
+  }
+});
+
 test("Toggle Markdown Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
   const { keybindings, commands, menus } = await contributions();
   const command = commands.find(

@@ -18,6 +18,11 @@ export interface Resources {
   /** Vault containment for a target that is not itself a known source note. */
   authorizeTarget?(target: string): Promise<void>;
   load(target: string, source?: string, syntax?: LinkSyntax): Promise<Resource>;
+  peek?(
+    target: string,
+    source?: string,
+    syntax?: LinkSyntax,
+  ): Resource | undefined;
 }
 declare module "@workshop/core" {
   interface Services {
