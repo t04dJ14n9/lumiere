@@ -23,6 +23,7 @@ encoded `/` or `\` in a URI is refused.
 - `src/index.ts`: `startHostWeb`, and what an embedder needs.
 - `src/vault-fs.ts`: `VaultFileSystem`, a folder by paths relative to it.
 - `src/memory-fs.ts`: one in memory; with `persist`, kept elsewhere as it changes.
+- `src/idb-folder.ts`: one kept in IndexedDB (Safari's vaults, the iPad's own data).
 - `src/mounts.ts`: the host's `HostFiles` over the mounted folders, and their watchers.
 - `src/platform.ts`: the `HostPlatform`: files, the store in the data folder, workers, SHA-256.
 - `src/pages.ts`: a note's page as a blob: document, and its channel.

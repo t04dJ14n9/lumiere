@@ -21,7 +21,6 @@ A first visit opens a short demo vault; later visits reopen the last vault.
 
 - `src/main.ts`: mounts the vaults and starts host-web and the window.
 - `src/handle-fs.ts`: a vault in a folder handle (picked, or private storage).
-- `src/idb-folder.ts`: a vault in IndexedDB.
 - `src/folders.ts`: picking folders, and remembering them.
 - `src/demo.ts`: the demo vault.
 - `index.html`: the page and its content security policy, which a note's

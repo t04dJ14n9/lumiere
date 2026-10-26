@@ -21,6 +21,7 @@ import type { Mounts } from "./mounts";
 import { createWebPlatform } from "./platform";
 import { webWorkerLauncher } from "./workers";
 
+export { indexedDbFolder } from "./idb-folder";
 export { Mounts } from "./mounts";
 export { MemoryFileSystem, type MemoryEntry, type Persist } from "./memory-fs";
 export { notFound, type VaultFileInfo, type VaultFileSystem } from "./vault-fs";

@@ -1,9 +1,9 @@
 /**
- * A folder kept in IndexedDB, for browsers that cannot write their own
- * private storage from a page (Safari). Its files are held in memory
- * (host-web's MemoryFileSystem) and every change is written through.
+ * A folder kept in IndexedDB: for browsers that cannot write their own
+ * private storage from a page (Safari), and the iPad app's own data. Its
+ * files are held in memory (memory-fs.ts) and every change is written through.
  */
-import { MemoryFileSystem, type MemoryEntry } from "@workshop/host-web";
+import { MemoryFileSystem, type MemoryEntry } from "./memory-fs";
 
 const DATABASE = "lumiere-files";
 const ENTRIES = "entries";

@@ -7,6 +7,7 @@ import { startLocalHost } from "@workshop/app/local";
 import { startWindow } from "@workshop/app/shell";
 import { parseMenus } from "@workshop/host-node/core";
 import {
+  indexedDbFolder,
   MemoryFileSystem,
   Mounts,
   type VaultFileSystem,
@@ -20,7 +21,6 @@ import {
   privateFolder,
 } from "./folders";
 import { HandleFileSystem } from "./handle-fs";
-import { indexedDbFolder } from "./idb-folder";
 
 const DATA = "/lumiere-data";
 const DEMO_VAULT = "/vaults/Lumière Demo";
