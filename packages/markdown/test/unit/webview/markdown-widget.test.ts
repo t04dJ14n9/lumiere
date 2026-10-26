@@ -999,3 +999,87 @@ test("a block whose diagram drew while it was scrolled out drops its reserve whe
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
+
+test("a block's cleanup runs when CodeMirror destroys it through an equal widget", async () => {
+  clearMarkdownBlockHtmlCache();
+  const prevDoc = globalThis.document;
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      removeEventListener() {},
+      defaultView: { addEventListener() {}, removeEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = { add() {}, contains: () => false };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    getBoundingClientRect() {
+      return { height: 40 };
+    }
+  }
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "> [!note]\n> a callout";
+    const block: RenderBlock = {
+      from: 40,
+      to: 40 + source.length,
+      kind: "blockquote",
+      source,
+    };
+    const view = {
+      state: { doc: { lineAt: () => ({ number: 3 }) } },
+      requestMeasure() {},
+    } as unknown as EditorView;
+    let finish = () => {};
+    let disposed = 0;
+    const render: RenderService = {
+      trusted: true,
+      into(container) {
+        return new Promise<RenderPass>((resolve) => {
+          finish = () =>
+            resolve({
+              source,
+              container,
+              sourceLine: 2,
+              ancestry: [],
+              renderKey: source,
+              measure() {},
+              onDispose() {},
+              async dispose() {
+                disposed++;
+              },
+            } as RenderPass);
+        });
+      },
+    };
+    const built = new MarkdownBlock(block, render);
+    const shell = built.toDOM(view);
+    // An edit above moves the block: CodeMirror keeps its DOM, swaps in the
+    // equal widget built for the new position, and later destroys through it.
+    const moved = new MarkdownBlock(
+      { ...block, from: 41, to: 41 + source.length },
+      render,
+    );
+    assert.ok(moved.eq(built));
+    moved.destroy(shell);
+    finish();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(disposed, 1, "the unfinished render is disposed");
+  } finally {
+    clearMarkdownBlockHtmlCache();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});

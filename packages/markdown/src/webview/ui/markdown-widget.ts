@@ -3,6 +3,7 @@ import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
+import { destroyElement, untilDestroyed } from "./element-lifetime";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
   announceRemount,
@@ -159,7 +160,6 @@ function rememberPooledShell(
 
 /** Own a render pass and retain finished DOM across viewport exit/re-entry (`RW`). */
 export class MarkdownBlock extends WidgetType {
-  private readonly lifetimes = new WeakMap<HTMLElement, () => void>();
   private retained: RetainedShell | undefined;
 
   constructor(
@@ -256,7 +256,7 @@ export class MarkdownBlock extends WidgetType {
     if (this.editing.guardMargin) {
       bindFenceClickGuard(view, entry.shell, this.block, events.signal);
     }
-    this.lifetimes.set(entry.shell, () => {
+    untilDestroyed(entry.shell, () => {
       events.abort();
       if (isShellSettled(entry, this.render)) {
         this.retained = entry;
@@ -293,8 +293,7 @@ export class MarkdownBlock extends WidgetType {
 
   override destroy(dom: HTMLElement): void {
     unwatchMarkdownBlock(dom);
-    this.lifetimes.get(dom)?.();
-    this.lifetimes.delete(dom);
+    destroyElement(dom);
   }
 
   override get estimatedHeight(): number {

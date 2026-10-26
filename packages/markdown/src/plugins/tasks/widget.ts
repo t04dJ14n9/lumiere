@@ -1,8 +1,11 @@
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
+import {
+  destroyElement,
+  untilDestroyed,
+} from "../../webview/ui/element-lifetime";
 import { taskEdit } from "./edits";
 export class TaskBox extends WidgetType {
-  private readonly events = new WeakMap<HTMLElement, AbortController>();
   constructor(
     readonly line: string,
     readonly checked: boolean,
@@ -25,7 +28,7 @@ export class TaskBox extends WidgetType {
     checkbox.setAttribute("aria-label", "Task");
     checkbox.dataset.task = this.status;
     const events = new AbortController();
-    this.events.set(checkbox, events);
+    untilDestroyed(checkbox, () => events.abort());
     // A toggle replaces this widget. Letting the native mouse press focus the
     // checkbox would then leave focus on the body when the old input is removed,
     // losing the editor's caret and exposing the browser's focus scrolling.
@@ -55,7 +58,6 @@ export class TaskBox extends WidgetType {
     return checkbox;
   }
   override destroy(node: HTMLElement): void {
-    this.events.get(node)?.abort();
-    this.events.delete(node);
+    destroyElement(node);
   }
 }
