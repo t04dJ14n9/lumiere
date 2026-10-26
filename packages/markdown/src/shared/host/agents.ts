@@ -1,4 +1,4 @@
-import type { IdeContextHostApis } from "@workshop/agents/ide-context";
+import type { IdeContextHostApis, TempFs } from "@workshop/agents/ide-context";
 
 /** The `lumiere.markdown.copyLinkForAgent.target` setting. */
 export type CopyLinkTarget =
@@ -28,4 +28,14 @@ export interface AgentHost {
   writeScratchFile(name: string, text: string): Promise<string>;
   /** The editor's tabs and diagnostics for an IDE context packet; absent where the editor has none. */
   ideContextHost?(): IdeContextHostApis;
+  /** Where IDE context packets go for agents that read files (Codex); absent where none can. */
+  readonly ideContextTemp?: IdeContextTemp;
+}
+
+/** The shared temp folder agents read IDE context packets from. */
+export interface IdeContextTemp {
+  readonly fs: TempFs;
+  readonly dir: string;
+  /** A published packet's `file:` URI, for the agent's add-file command. */
+  fileUri(path: string): string;
 }

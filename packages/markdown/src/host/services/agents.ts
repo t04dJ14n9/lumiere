@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { createVsCodeIdeContextHost } from "@workshop/agents/ide-context";
 import type { AgentHost, CopyLinkTarget } from "../../shared/host";
+import { ideContextTemp } from "../ide-context-temp";
 
 /** Extensions that bring an agent chat of their own besides the editor's. */
 const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
@@ -35,6 +36,7 @@ export function createAgentHost(): AgentHost {
       return vscode.Uri.file(file).toString();
     },
     ideContextHost: () => createVsCodeIdeContextHost(vscode),
+    ideContextTemp,
   };
 }
 

@@ -1,4 +1,3 @@
-import { pathToFileUriString } from "./file-uri";
 import { IDE_CONTEXT_AGENT_COMMANDS } from "./agent-commands";
 import {
   publishIdeContextTemp,
@@ -29,6 +28,8 @@ export interface SendIdeContextDeps {
   renewLease?: typeof renewLeaseAtomic;
   tempFs?: TempFs;
   tempDir?: string;
+  /** A published packet's `file:` URI, by the host's path rules; needed with `tempFs`. */
+  tempFileUri?: (path: string) => string;
   now?: () => number;
   leaseMs?: number;
   owner?: LeaseSidecar["owner"];
@@ -91,6 +92,7 @@ async function attachCodexWithRetries(
   fs: TempFs,
   args: {
     finalPath: string;
+    fileUri: (path: string) => string;
     renew: typeof renewLeaseAtomic;
     now: () => number;
     leaseMs: number;
@@ -116,7 +118,7 @@ async function attachCodexWithRetries(
       }
       await deps.executeCommand(
         IDE_CONTEXT_AGENT_COMMANDS.codexAddFile,
-        pathToFileUriString(args.finalPath),
+        args.fileUri(args.finalPath),
       );
       return true;
     } catch {
@@ -178,7 +180,8 @@ async function sendCodex(
   deps: SendIdeContextDeps,
 ): Promise<SendIdeContextResult> {
   const fs = deps.tempFs;
-  if (!fs) {
+  const fileUri = deps.tempFileUri;
+  if (!fs || !fileUri) {
     deps.inform?.("IDE context copied (Codex temp FS unavailable)");
     return { markdown: md, opened: "clipboard", softFailWarning: "no temp fs" };
   }
@@ -193,6 +196,7 @@ async function sendCodex(
   }
   const attached = await attachCodexWithRetries(deps, fs, {
     finalPath: published.finalPath,
+    fileUri,
     renew: published.renew,
     now: published.now,
     leaseMs: published.leaseMs,
