@@ -12,6 +12,7 @@ const FORBIDDEN_BY_HOST = {
 };
 const HOST_NODE_ENTRIES = [
   "@workshop/host-node",
+  "@workshop/host-node/core",
   "@workshop/host-node/embedding",
   "@workshop/host-node/palette",
   "@workshop/host-node/views",

@@ -31,7 +31,11 @@ test("listing walks the vault but not hidden folders or node_modules, and stops 
   ]);
   assert.equal(all.partial, false);
   assert.ok(all.files.every((file) => file.uri.startsWith("file://")));
-  const shallow = await listVault(nodeFiles, { root, limit: 100, shallow: true });
+  const shallow = await listVault(nodeFiles, {
+    root,
+    limit: 100,
+    shallow: true,
+  });
   assert.deepEqual(
     shallow.files.map((file) => file.path),
     ["Home.md"],

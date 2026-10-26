@@ -2,7 +2,6 @@
  * Every open editor page, and the custom editor registry the editor host
  * registers Lumière's editor with (VS Code's `registerCustomEditorProvider`).
  */
-import { randomUUID } from "node:crypto";
 import type { Disposer } from "@workshop/core";
 import {
   MARKDOWN_EDITOR,
@@ -60,7 +59,7 @@ export class PanelHub implements CustomEditors {
     }
     const document = await this.documents.open(request.uri);
     this.documents.retain(document.uri);
-    const id = randomUUID();
+    const id = panelId();
     const panel = new LivePanel(
       id,
       document,
@@ -180,4 +179,15 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T> {
       },
     );
   });
+}
+
+/**
+ * A page's panel id: 128 random bits. Not `crypto.randomUUID`, which a
+ * browser offers only in a secure context.
+ */
+function panelId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }

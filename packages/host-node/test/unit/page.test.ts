@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { injectShim, pageQuery, socketSource } from "../../src/host/page";
+import { injectShim, socketSource } from "../../src/host/page";
+import { pageQuery } from "../../src/host/page-query";
 
 const url = (query: string) => new URL(`http://h/lumiere/editor?${query}`);
 
