@@ -1,5 +1,5 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
-import type { StateEffect } from "@codemirror/state";
+import type { SelectionRange, StateEffect } from "@codemirror/state";
 import type { BaseContext, Infer } from "@workshop/core";
 import type {} from "./api";
 import type { viewState } from "./protocol";
@@ -17,19 +17,80 @@ interface PendingScroll {
   left: number;
   applied: boolean;
   settleUntil: number;
+  /** Where the pin last left the scroller, once applied. */
+  scrollTop: number;
 }
 export function createViewState(ctx: BaseContext) {
   return new ViewState(ctx);
 }
 const SETTLE_MS = 1500;
+/**
+ * Input that means the reader is taking over, wherever it lands in the
+ * scroller: the text, a gutter, a readable-width margin or the scrollbar.
+ */
+const READER_INPUT = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+/** Browsers round scroll positions to device pixels. */
+const SCROLL_TOLERANCE = 1;
+
+/** True when something other than the pin moved the scroller since it last wrote. */
+function isScrolledByOthers(scrollTop: number, saved: PendingScroll): boolean {
+  return (
+    saved.applied && Math.abs(scrollTop - saved.scrollTop) > SCROLL_TOLERANCE
+  );
+}
+
 class ViewState {
   private readonly pendingScroll = new WeakMap<EditorView, PendingScroll>();
+  /** Per view, stops listening for the reader once its pin ends. */
+  private readonly readerListeners = new WeakMap<EditorView, AbortController>();
   readonly restoreScrollPosition;
 
   constructor(ctx: BaseContext) {
-    // Ignored widgets bypass CodeMirror's DOM handlers, even for real input.
-    ctx.on("editor/scrollInput", (view) => this.pendingScroll.delete(view));
+    // Widgets that scroll the note themselves (table wheel forwarding) say so.
+    ctx.on("editor/scrollInput", (view) => this.unpin(view));
     this.restoreScrollPosition = this.scrollExtensions();
+  }
+
+  private pin(view: EditorView, pending: PendingScroll): void {
+    this.pendingScroll.set(view, pending);
+    if (!this.readerListeners.has(view)) {
+      this.readerListeners.set(view, this.listenForReader(view));
+    }
+  }
+
+  private unpin(view: EditorView): void {
+    this.pendingScroll.delete(view);
+    this.readerListeners.get(view)?.abort();
+    this.readerListeners.delete(view);
+  }
+
+  /**
+   * Any scroll the pin did not make is the reader's (a wheel over a margin,
+   * a scrollbar drag, PageDown outside the text), so it ends the pin. The
+   * listeners sit on the scroller, not CodeMirror's content element, so
+   * margins and gutters count, and only while a pin is held. Capture runs
+   * them before CodeMirror's own scroll listener, which measures at once and
+   * would correct the pin first. All are passive: a wheel or touch listener
+   * that is not makes every gesture wait for the main thread.
+   */
+  private listenForReader(view: EditorView): AbortController {
+    const listening = new AbortController();
+    const options = { capture: true, passive: true, signal: listening.signal };
+    const scroller = view.scrollDOM;
+    scroller.addEventListener(
+      "scroll",
+      () => {
+        const saved = this.pendingScroll.get(view);
+        if (saved && isScrolledByOthers(scroller.scrollTop, saved)) {
+          this.unpin(view);
+        }
+      },
+      options,
+    );
+    for (const type of READER_INPUT) {
+      scroller.addEventListener(type, () => this.unpin(view), options);
+    }
+    return listening;
   }
 
   private anchorOffset(view: EditorView, from: number): number {
@@ -44,41 +105,42 @@ class ViewState {
       key: this.pendingScroll,
       read: (current) =>
         this.pendingScroll.get(current) === saved
-          ? this.anchorOffset(current, saved.from) - saved.offset
+          ? {
+              // CodeMirror may measure before the reader's scroll event
+              // arrives, from its listener on an ancestor scroller.
+              isScrolledByOthers: isScrolledByOthers(
+                current.scrollDOM.scrollTop,
+                saved,
+              ),
+              difference: this.anchorOffset(current, saved.from) - saved.offset,
+            }
           : undefined,
-      write: (difference, current) => {
-        if (difference !== undefined && Math.abs(difference) > 0.5) {
-          current.scrollDOM.scrollTop += difference;
+      write: (measured, current) => {
+        if (!measured) {
+          return;
+        }
+        if (measured.isScrolledByOthers) {
+          this.unpin(current);
+        } else if (Math.abs(measured.difference) > 0.5) {
+          this.scrollPinned(current, saved, measured.difference);
         }
       },
     });
   }
 
-  private scrollExtensions() {
-    const cancelScrollRestore = (_event: Event, view: EditorView): void => {
-      this.pendingScroll.delete(view);
-    };
+  /** Scroll by `difference`, remembering where the browser actually put it. */
+  private scrollPinned(
+    view: EditorView,
+    saved: PendingScroll,
+    difference: number,
+  ): void {
+    view.scrollDOM.scrollTop += difference;
+    saved.scrollTop = view.scrollDOM.scrollTop;
+  }
 
+  private scrollExtensions() {
     return [
-      EditorView.scrollHandler.of((view, range) => {
-        const saved = this.pendingScroll.get(view);
-        if (!saved) {
-          return false;
-        }
-        if (saved.applied || range.head !== saved.from) {
-          this.pendingScroll.delete(view);
-          return false;
-        }
-        saved.applied = true;
-        saved.settleUntil = Date.now() + SETTLE_MS;
-        // Runs in CodeMirror's measured scrolling phase, including when one wrapped
-        // line is taller than the viewport. Ordinary navigation margins are clamped.
-        view.scrollDOM.scrollTop +=
-          this.anchorOffset(view, saved.from) - saved.offset;
-        view.scrollDOM.scrollLeft = saved.left;
-        this.correctPinnedScroll(view, saved);
-        return true;
-      }),
+      EditorView.scrollHandler.of((view, range) => this.applyPin(view, range)),
       ViewPlugin.define((view) => ({
         update: (update) => {
           const saved = this.pendingScroll.get(view);
@@ -89,25 +151,40 @@ class ViewState {
             return;
           }
           if (Date.now() > saved.settleUntil) {
-            this.pendingScroll.delete(view);
+            this.unpin(view);
           } else {
             this.correctPinnedScroll(view, saved);
           }
         },
+        destroy: () => this.unpin(view),
       })),
-      // Observers, not handlers: CodeMirror listens passively when no
-      // handler wants an event type, so a wheel or touch scroll starts on
-      // the compositor instead of waiting for the main thread each time.
-      EditorView.domEventObservers({
-        wheel: cancelScrollRestore,
-        touchstart: cancelScrollRestore,
-      }),
-      EditorView.domEventHandlers({
-        pointerdown: cancelScrollRestore,
-        keydown: cancelScrollRestore,
-      }),
     ];
   }
+
+  /** Place the pinned line where CodeMirror would scroll to it. */
+  private applyPin(view: EditorView, range: SelectionRange): boolean {
+    const saved = this.pendingScroll.get(view);
+    if (!saved) {
+      return false;
+    }
+    if (saved.applied || range.head !== saved.from) {
+      this.unpin(view);
+      return false;
+    }
+    saved.applied = true;
+    saved.settleUntil = Date.now() + SETTLE_MS;
+    // Runs in CodeMirror's measured scrolling phase, including when one wrapped
+    // line is taller than the viewport. Ordinary navigation margins are clamped.
+    this.scrollPinned(
+      view,
+      saved,
+      this.anchorOffset(view, saved.from) - saved.offset,
+    );
+    view.scrollDOM.scrollLeft = saved.left;
+    this.correctPinnedScroll(view, saved);
+    return true;
+  }
+
   /** The line at the top of the viewport, and how far above the top it starts. */
   private topLine(view: EditorView): { from: number; offset: number } {
     const viewport = view.scrollDOM.getBoundingClientRect();
@@ -147,11 +224,12 @@ class ViewState {
       : this.topLine(view);
     const left = view.scrollDOM.scrollLeft;
     change();
-    this.pendingScroll.set(view, {
+    this.pin(view, {
       ...top,
       left,
       applied: false,
       settleUntil: 0,
+      scrollTop: 0,
     });
     view.dispatch({
       effects: EditorView.scrollIntoView(top.from, { y: "start" }),
@@ -164,12 +242,13 @@ class ViewState {
     const effects: StateEffect<unknown>[] = [];
     if (saved.scrollAnchor) {
       const from = Math.min(saved.scrollAnchor.from, length);
-      this.pendingScroll.set(view, {
+      this.pin(view, {
         from,
         offset: saved.scrollAnchor.offset,
         left: saved.scrollLeft ?? 0,
         applied: false,
         settleUntil: 0,
+        scrollTop: 0,
       });
       effects.push(EditorView.scrollIntoView(from, { y: "start" }));
     }

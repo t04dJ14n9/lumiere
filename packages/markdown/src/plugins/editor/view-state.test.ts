@@ -13,17 +13,52 @@ type ScrollMeasurement = NonNullable<
   Parameters<EditorView["requestMeasure"]>[0]
 >;
 
+/**
+ * A scroller that, as a browser's, keeps its position between 0 and
+ * `maxScrollTop`, and records how it is listened to. Events dispatched on it
+ * land outside the text: in a margin, a gutter or on the scrollbar.
+ */
+class FakeScroller extends EventTarget {
+  scrollLeft = 0;
+  maxScrollTop = Infinity;
+  readonly listened: { type: string; options: unknown }[] = [];
+  #scrollTop: number;
+
+  constructor(scrollTop: number) {
+    super();
+    this.#scrollTop = scrollTop;
+  }
+
+  get scrollTop(): number {
+    return this.#scrollTop;
+  }
+
+  set scrollTop(value: number) {
+    this.#scrollTop = Math.min(Math.max(value, 0), this.maxScrollTop);
+  }
+
+  getBoundingClientRect() {
+    return { top: 0 };
+  }
+
+  override addEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject | null,
+    options?: AddEventListenerOptions | boolean,
+  ): void {
+    this.listened.push({ type, options });
+    super.addEventListener(type, listener, options);
+  }
+}
+
+/** A panel restored to line 0 at the top, which starts at 720 px. */
 function restoredPanel(presentation: ReturnType<typeof createViewState>) {
   let state = EditorState.create({
     doc: "note",
     extensions: presentation.restoreScrollPosition,
   });
   const geometry = { top: 720 };
-  const scrollDOM = {
-    scrollTop: 600,
-    scrollLeft: 0,
-    getBoundingClientRect: () => ({ top: 0 }),
-  };
+  const scrollDOM = new FakeScroller(600);
   const measures: ScrollMeasurement[] = [];
   const view = {
     get state() {
@@ -42,30 +77,36 @@ function restoredPanel(presentation: ReturnType<typeof createViewState>) {
       state = state.update(spec).state;
     },
   } as unknown as EditorView;
-  presentation.restoreViewState(
-    view,
-    viewState.parse({
-      anchor: 0,
-      head: 0,
-      scrollTop: 600,
-      scrollAnchor: { from: 0, offset: 0 },
-      mode: "livePreview",
-    }),
-  );
-  const handler = state.facet(EditorView.scrollHandler)[0]!;
-  assert.equal(
-    handler(view, EditorSelection.cursor(0), {
-      x: "nearest",
-      y: "start",
-      xMargin: 0,
-      yMargin: 0,
-    }),
-    true,
-  );
+  /** Restore, and let CodeMirror scroll to the restored line. */
+  const restore = () => {
+    presentation.restoreViewState(
+      view,
+      viewState.parse({
+        anchor: 0,
+        head: 0,
+        scrollTop: 600,
+        scrollAnchor: { from: 0, offset: 0 },
+        mode: "livePreview",
+      }),
+    );
+    const handler = state.facet(EditorView.scrollHandler)[0]!;
+    assert.equal(
+      handler(view, EditorSelection.cursor(0), {
+        x: "nearest",
+        y: "start",
+        xMargin: 0,
+        yMargin: 0,
+      }),
+      true,
+    );
+  };
+  restore();
   return {
     view,
     geometry,
     scrollDOM,
+    restore,
+    /** Run CodeMirror's next measurement: the queued pin corrections. */
     flushMeasurements() {
       for (const request of measures) {
         request.write?.(request.read(view), view);
@@ -91,6 +132,73 @@ test("widget scroll input cancels applied restore and queued layout correction o
   await root.dispose();
 });
 
+test("scrolling away from a restored line keeps content growing above it from pulling the view back", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  // A wheel over a margin, a scrollbar drag, PageDown outside the text.
+  const scrolled = restoredPanel(presentation);
+  scrolled.scrollDOM.scrollTop += 300;
+  scrolled.scrollDOM.dispatchEvent(new Event("scroll"));
+  // CodeMirror measures before the scroll event arrives.
+  const measuredFirst = restoredPanel(presentation);
+  measuredFirst.scrollDOM.scrollTop += 300;
+  for (const panel of [scrolled, measuredFirst]) {
+    const readerTop = panel.scrollDOM.scrollTop;
+    panel.geometry.top += 60;
+    panel.flushMeasurements();
+    panel.scrollDOM.dispatchEvent(new Event("scroll"));
+    panel.geometry.top += 60;
+    panel.flushMeasurements();
+    assert.equal(panel.scrollDOM.scrollTop, readerTop);
+  }
+  await root.dispose();
+});
+
+test("the restored line stays pinned through its own corrections, even where the browser clamps them", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const panel = restoredPanel(presentation);
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  panel.geometry.top += 60;
+  panel.flushMeasurements();
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  assert.equal(panel.scrollDOM.scrollTop, 780);
+
+  // The note below is not measured yet, so it cannot scroll as far as the pin asks.
+  panel.scrollDOM.maxScrollTop = 800;
+  panel.geometry.top += 40;
+  panel.flushMeasurements();
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  assert.equal(panel.scrollDOM.scrollTop, 800);
+
+  panel.scrollDOM.maxScrollTop = Infinity;
+  panel.geometry.top += 10;
+  panel.flushMeasurements();
+  assert.equal(panel.scrollDOM.scrollTop, 830);
+  await root.dispose();
+});
+
+test("reader input anywhere in the scroller ends the pin, and never makes scrolling wait", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const panel = restoredPanel(presentation);
+  for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
+    panel.restore();
+    const readerTop = panel.scrollDOM.scrollTop;
+    panel.scrollDOM.dispatchEvent(new Event(type));
+    panel.geometry.top += 60;
+    panel.flushMeasurements();
+    assert.equal(panel.scrollDOM.scrollTop, readerTop, type);
+  }
+  const waitedFor = panel.scrollDOM.listened.filter(
+    ({ options }) =>
+      typeof options !== "object" ||
+      !(options as AddEventListenerOptions).passive,
+  );
+  assert.deepEqual(waitedFor, []);
+  await root.dispose();
+});
+
 /** A panel scrolled to 600 px, its top line (at 40) starting 10 px above. */
 function scrolledPanel(presentation: ReturnType<typeof createViewState>) {
   let state = EditorState.create({
@@ -98,11 +206,7 @@ function scrolledPanel(presentation: ReturnType<typeof createViewState>) {
     extensions: presentation.restoreScrollPosition,
   });
   const line = { from: 40, top: 590 };
-  const scrollDOM = {
-    scrollTop: 600,
-    scrollLeft: 0,
-    getBoundingClientRect: () => ({ top: 0 }),
-  };
+  const scrollDOM = new FakeScroller(600);
   const dispatched: TransactionSpec[] = [];
   const view = {
     get state() {
@@ -276,29 +380,4 @@ test("scroll events coalesce through debounced checkpoint and flush on dispose",
   await root.dispose();
   assert.equal(persisted.length, 1);
   assert.equal((persisted[0] as { scrollTop: number }).scrollTop, 240);
-});
-
-test("scroll restore watches wheel and touch passively, so scrolling never waits for it", () => {
-  const presentation = createViewState(createRoot());
-  // ViewPlugin keeps its DOM handlers and observers in (internal) fields;
-  // a type with a handler is listened to without `passive`.
-  const plugins = (presentation.restoreScrollPosition as unknown[]).filter(
-    (
-      extension,
-    ): extension is {
-      domEventHandlers?: Record<string, unknown>;
-      domEventObservers?: Record<string, unknown>;
-    } =>
-      typeof extension === "object" &&
-      extension !== null &&
-      "create" in extension,
-  );
-  const handled = plugins.flatMap((plugin) =>
-    Object.keys(plugin.domEventHandlers ?? {}),
-  );
-  const observed = plugins.flatMap((plugin) =>
-    Object.keys(plugin.domEventObservers ?? {}),
-  );
-  assert.deepEqual(handled.sort(), ["keydown", "pointerdown"]);
-  assert.deepEqual(observed.sort(), ["touchstart", "wheel"]);
 });
