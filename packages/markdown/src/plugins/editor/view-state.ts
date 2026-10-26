@@ -100,33 +100,44 @@ class ViewState {
     return block.top + (view.documentTop - top) / view.scaleY;
   }
 
-  /** Re-pin the restored line after CodeMirror's next measurement. */
+  /**
+   * Re-pin the restored line after CodeMirror's next measurement, once
+   * CodeMirror has held its own anchor. Its anchor is usually the restored
+   * line, so it already undoes content growing above it; correcting in the
+   * measurement as well scrolled twice, and the line ended a whole image
+   * too high. A microtask queued there runs after CodeMirror's measuring
+   * and before the frame is painted, so only what is left is corrected.
+   */
   private correctPinnedScroll(view: EditorView, saved: PendingScroll): void {
     view.requestMeasure({
       key: this.pendingScroll,
+      // CodeMirror may measure before the reader's scroll event arrives,
+      // from its listener on an ancestor scroller.
       read: (current) =>
-        this.pendingScroll.get(current) === saved
-          ? {
-              // CodeMirror may measure before the reader's scroll event
-              // arrives, from its listener on an ancestor scroller.
-              isScrolledByOthers: isScrolledByOthers(
-                current.scrollDOM.scrollTop,
-                saved,
-              ),
-              difference: this.anchorOffset(current, saved.from) - saved.offset,
-            }
-          : undefined,
-      write: (measured, current) => {
-        if (!measured) {
-          return;
-        }
-        if (measured.isScrolledByOthers) {
+        this.pendingScroll.get(current) === saved &&
+        isScrolledByOthers(current.scrollDOM.scrollTop, saved),
+      write: (isScrolledAway, current) => {
+        if (isScrolledAway) {
           this.unpin(current);
-        } else if (Math.abs(measured.difference) > 0.5) {
-          this.scrollPinned(current, saved, measured.difference);
+        } else {
+          queueMicrotask(() => this.settlePin(current, saved));
         }
       },
     });
+  }
+
+  /** Put the restored line back where it was saved, if it is not there. */
+  private settlePin(view: EditorView, saved: PendingScroll): void {
+    if (this.pendingScroll.get(view) !== saved) {
+      return;
+    }
+    const difference = this.anchorOffset(view, saved.from) - saved.offset;
+    if (Math.abs(difference) > 0.5) {
+      this.scrollPinned(view, saved, difference);
+    } else {
+      // CodeMirror's own anchoring may have scrolled: that was not the reader.
+      saved.scrollTop = view.scrollDOM.scrollTop;
+    }
   }
 
   /** Scroll by `difference`, remembering where the browser actually put it. */

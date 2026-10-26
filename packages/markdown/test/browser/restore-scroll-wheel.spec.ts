@@ -1,9 +1,10 @@
 /**
  * Reopening a note restores its reading position and keeps the restored line
- * pinned while images above it load. A wheel over the readable-width margin
- * (outside `.cm-content`) right after the restore must take over: the note
- * follows the wheel and is not pulled back to the restored line as the
- * images above it keep growing.
+ * pinned while images above it load, exactly once: CodeMirror's anchoring
+ * and the pin must not both undo the same growth. A wheel over the
+ * readable-width margin (outside `.cm-content`) right after the restore must
+ * take over: the note follows the wheel and is not pulled back to the
+ * restored line as the images above it keep growing.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
@@ -141,4 +142,30 @@ test("a wheel over the margin right after a restore is not pulled back to the re
     watched.highestOffset,
     "the restored line stays where the wheel left it",
   ).toBeLessThan(-300);
+});
+
+test("the restored line stays where it was saved while the images above it load", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 760 });
+  const source = note();
+  await open(page, source, "obsidian", { trusted: true });
+  await constrain(page);
+  await serveSlowImages(page);
+  const from = source.indexOf("Restored line");
+  await page.evaluate(
+    (from) =>
+      window.harness.restore({
+        anchor: from,
+        head: from,
+        scrollTop: 0,
+        scrollAnchor: { from, offset: 0 },
+        mode: "livePreview",
+      }),
+    from,
+  );
+  const watched = await watchRestoredLine(page, from, 1800);
+  const offset = await restoredLineOffset(page, from);
+  expect(watched.grewAbove, "the images above loaded").toBeGreaterThan(300);
+  expect(Math.abs(offset)).toBeLessThanOrEqual(2);
 });
