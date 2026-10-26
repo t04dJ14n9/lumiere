@@ -76,8 +76,9 @@ export class TableClipboard {
     event.preventDefault();
     const range = this.selection.range;
     const model = this.grid.model;
-    // Obsidian (REA app.js copySelection): text/plain, text/markdown, text/html,
-    // obsidian/table. Keep TSV as text/plain for spreadsheets; MD/HTML for notes.
+    // The four flavors Obsidian offers for a copied table: TSV as text/plain
+    // for spreadsheets, Markdown and HTML for notes, and obsidian/table rows,
+    // which a table paste reads back cell for cell.
     event.clipboardData.setData("text/plain", copyCells(model, range));
     event.clipboardData.setData(
       "text/markdown",

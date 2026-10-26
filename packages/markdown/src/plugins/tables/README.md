@@ -137,7 +137,7 @@ selection box; `.table-scroll` overflow would clip a CSS outline.
 
 HTML paste in a focused cell uses the outer editor capture pipeline; the table
 clipboard ignores already-handled events. Rectangular paste keeps TSV semantics.
-Copy publishes TSV as `text/plain` (spreadsheets), Markdown and HTML table flavors, and an `obsidian/table` JSON payload (REA Obsidian `copySelection`).
+Copy publishes TSV as `text/plain` (spreadsheets), Markdown and HTML table flavors, and an `obsidian/table` JSON payload of rows that a table paste reads back cell for cell, the same four flavors Obsidian offers.
 Menu paste reads plain text through the host. Shift+Enter stores `<br>`, as measured in Obsidian. Rectangular selections and
 keyboard menus on grips are additional capabilities. Generic block insertion and
 link-creation submenus are outside this cell menu; editor commands still work.

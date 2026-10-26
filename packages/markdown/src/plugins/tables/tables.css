@@ -24,7 +24,7 @@
   font-size: 14px;
   line-height: 1;
   overflow: hidden;
-  /* Instant, like Obsidian. A fade starts one animation per grip on hover. */
+  /* Grips appear at once: a fade would start one animation per grip on hover. */
   transition: none;
 }
 .table-handle[hidden],
