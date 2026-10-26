@@ -13,6 +13,7 @@ import {
 import { silentLogger, type Logger } from "@workshop/core";
 import type {
   ContributedSetting,
+  InkService,
   WorkerLauncher,
   WorkerName,
 } from "@workshop/markdown/portable";
@@ -51,6 +52,8 @@ export interface HostWebOptions {
   readonly menus?: readonly MenuContribution[];
   readonly identity?: HostIdentity;
   readonly logger?: Logger;
+  /** A canvas to draw on, where the app has one (the iPad's PencilKit). */
+  readonly ink?: InkService;
 }
 
 export function startHostWeb(options: HostWebOptions): Promise<LumiereHost> {
@@ -64,5 +67,6 @@ export function startHostWeb(options: HostWebOptions): Promise<LumiereHost> {
     contributed: options.contributed,
     ...(options.menus ? { menus: options.menus } : {}),
     logger: options.logger ?? silentLogger,
+    ...(options.ink ? { ink: options.ink } : {}),
   });
 }

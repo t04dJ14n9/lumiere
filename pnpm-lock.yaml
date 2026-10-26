@@ -299,6 +299,9 @@ importers:
       '@workshop/core':
         specifier: workspace:*
         version: link:../core
+      '@workshop/ink':
+        specifier: workspace:*
+        version: link:../ink
       dompurify:
         specifier: 3.4.17
         version: 3.4.17

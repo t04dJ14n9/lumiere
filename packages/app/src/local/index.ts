@@ -13,6 +13,7 @@ import {
 import type { Logger } from "@workshop/core";
 import type {
   ContributedSetting,
+  InkService,
   WorkerLauncher,
   WorkerName,
 } from "@workshop/markdown/portable";
@@ -38,6 +39,8 @@ export interface LocalHostConfig {
   /** Let the reader pick a folder: mount it and give its path. */
   readonly pickFolder?: () => Promise<string | undefined>;
   readonly logger?: Logger;
+  /** A canvas to draw on, where the app has one (the iPad's PencilKit). */
+  readonly ink?: InkService;
 }
 
 export interface LocalHost {
@@ -60,6 +63,7 @@ export async function startLocalHost(
     contributed: config.contributed,
     ...(config.menus ? { menus: config.menus } : {}),
     ...(config.logger ? { logger: config.logger } : {}),
+    ...(config.ink ? { ink: config.ink } : {}),
   });
   const vaults = new LocalVaults(
     files,

@@ -44,11 +44,17 @@ import {
 import { workbenchFeatures as startWorkbenchFeatures } from "./workshop-features";
 import { createOkfFacade } from "../plugins/okfCore/facade";
 import type { CursorBridgeConfig } from "../plugins/cursorBridge/host";
+import type { InkService } from "@workshop/ink/service";
 
 /** What only some editors offer the plugins. */
 export interface BootstrapOptions {
   /** Cursor's Chat and Edit hand-off; without it the bridge stays off. */
   readonly cursorBridge?: CursorBridgeConfig;
+  /**
+   * A canvas to draw on (PencilKit on the iPad); without it the plugins
+   * that draw (`sketch`) wait and show nothing.
+   */
+  readonly ink?: InkService;
 }
 
 /**
@@ -66,6 +72,9 @@ export async function bootstrap(
   providePluginStates(root);
   if (vaultSystem) {
     root.provide("vaultSystem", vaultSystem);
+  }
+  if (options.ink) {
+    root.provide("ink", options.ink);
   }
   root.plugin(documentHost);
   root.plugin(vaultsHost);
