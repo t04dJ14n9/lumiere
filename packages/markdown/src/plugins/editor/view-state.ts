@@ -2,6 +2,7 @@ import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { SelectionRange, StateEffect } from "@codemirror/state";
 import type { BaseContext, Infer } from "@workshop/core";
 import type {} from "./api";
+import { keepTextBelowStill } from "./keep-below-still";
 import type { viewState } from "./protocol";
 type EditorViewState = Infer<typeof viewState>;
 
@@ -158,6 +159,7 @@ class ViewState {
         },
         destroy: () => this.unpin(view),
       })),
+      keepTextBelowStill((view) => this.pendingScroll.has(view)),
     ];
   }
 

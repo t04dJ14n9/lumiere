@@ -28,7 +28,6 @@ import {
   MarkdownBlock,
 } from "../../webview/ui/markdown-widget";
 import { markdownBlockWidthTracker } from "../../webview/ui/markdown-block-height";
-import { keepTextBelowStill } from "../../webview/ui/keep-below-still";
 import {
   escapeBlock,
   verticalBlock,
@@ -157,7 +156,6 @@ function engineExtensions(ctx: Context) {
     documentTree,
     documentTreeCompleter,
     markdownBlockWidthTracker,
-    keepTextBelowStill,
     renderRevision,
     pointerSelectionTracking,
     fenceGuardSelectionSupport,
