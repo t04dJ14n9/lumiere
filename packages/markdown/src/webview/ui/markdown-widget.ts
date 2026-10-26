@@ -1,16 +1,11 @@
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
-import {
-  RENDER_PENDING_ATTRIBUTE,
-  RENDER_REMOUNT_EVENT,
-  type RenderPass,
-  type RenderService,
-} from "../../plugins/render/api";
+import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
+import { announceRemount, releasePaintReserve } from "./markdown-block-reserve";
 import {
-  hasPendingRender,
   markdownBlockEstimatedHeight,
   unwatchMarkdownBlock,
   watchMarkdownBlock,
@@ -392,34 +387,6 @@ function beginMarkdownBlockRender(options: {
     }
   } else {
     rememberHtml();
-  }
-}
-
-/**
- * Drop the reserved height once the content is in. A diagram still waiting
- * for its SVG keeps it: the source shown meanwhile (or its highlighting
- * finishing) is far shorter than the diagram, and releasing the reserve
- * then made the block shrink and grow back under the reader.
- */
-function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
-  if (hasPendingRender(body)) {
-    return;
-  }
-  if (
-    shell.style.minHeight &&
-    shell.isConnected &&
-    body.getBoundingClientRect().height > 0
-  ) {
-    shell.style.minHeight = "";
-  }
-}
-
-/** Tell parts still rendering that their block is back (see RENDER_REMOUNT_EVENT). */
-function announceRemount(body: HTMLElement): void {
-  for (const element of body.querySelectorAll?.(
-    `[${RENDER_PENDING_ATTRIBUTE}]`,
-  ) ?? []) {
-    element.dispatchEvent(new Event(RENDER_REMOUNT_EVENT));
   }
 }
 
