@@ -13,7 +13,9 @@
   On a narrow screen the note takes the whole width and the files or the
   outline float over it. More… in the edit menu opens Lumière's right-click
   menu, and the keyboard stays down until you tap the note. PDFs open in
-  tabs in Lumière's PDF viewer, in the web app too.
+  tabs in Lumière's PDF viewer, in the web app too, and a note's images,
+  videos and embedded PDFs show. One tap is enough on the editor's
+  buttons.
 - **Lumière desktop and the web app**: a lighter tab bar, with tabs as soft
   pills. Plugins that need what the app cannot give them (Git, VS Code)
   are off there.

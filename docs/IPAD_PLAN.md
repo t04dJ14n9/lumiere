@@ -335,15 +335,19 @@ to its file. The touch work in section 3 is in:
   Cursor bridges, Marp) are off, as their settings are hidden.
 - `apps/ipad/scripts/sample-vault.mjs` writes a sample vault with linked
   notes and PDFs, for trying the app.
+- a note's images, videos and embedded PDFs load: the app's router
+  (`VaultRouter.swift`) serves vault files at `/_lumiere/vault/<id>/<path>`
+  through Capacitor's file handler, with their types and byte ranges.
+- one tap is enough: the editor's controls that only hovering revealed
+  (Edit on a block, Copy on code, table handles) no longer take the first
+  tap, which WebKit spends on a hover that reveals something.
 
 Not done yet:
 
-- on the real iPad: whether the first tap after launch still seems only to
-  wake the page (in the simulator it opens the note, after a moment);
-  whether the edit menu shows after a long-press (in the simulator it shows
-  on a tap on the selection); Split View widths;
-- images and PDFs embedded in notes (their `lumiere/file` URLs need an
-  answer: the web app's service worker, or the iPad's scheme handler);
+- on the real iPad: whether the edit menu shows after a long-press (in the
+  simulator it shows on a tap on the selection); Split View widths;
+- images and PDFs embedded in notes in the web app (their `lumiere/file`
+  URLs need an answer there: its service worker);
 - the Pencil (P1): only the sketch format exists (`packages/ink`).
 
 Who does what:
