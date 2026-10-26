@@ -4,5 +4,6 @@
     "lib": ["ES2022", "DOM"],
     "types": ["node"]
   },
-  "include": ["./**/*.ts", "../src/shared/**/*.ts"]
+  "include": ["./**/*.ts", "../src/shared/**/*.ts"],
+  "exclude": ["fixtures/layers"]
 }

@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import * as path from "node:path";
-import * as vscode from "vscode";
+import type { PdfFiles } from "../../shared/host";
 
 /** Let a file write settle before reloading the PDF. */
 const RELOAD_DELAY_MS = 150;
@@ -11,6 +10,13 @@ export interface PdfBytes {
   sha256: string;
 }
 
+export interface SourceEvents {
+  /** The file changed on disk and has settled. */
+  changed(): void;
+  /** A read failed; the message says which file and why. */
+  failed(message: string): void;
+}
+
 /**
  * The PDF file behind one editor: reads it, hashes it, and watches it for
  * changes.
@@ -19,16 +25,21 @@ export interface PdfBytes {
  * viewer, and a slow read never replaces a newer one (each read has a
  * generation; only the latest may finish).
  */
-export class PdfSource implements vscode.Disposable {
+export class PdfSource {
   sha256: string | undefined;
   private generation = 0;
-  private readonly watcher: vscode.Disposable;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private readonly stopWatching: () => void;
 
   constructor(
-    readonly uri: vscode.Uri,
-    onChangeOnDisk: () => void,
+    readonly uri: string,
+    private readonly files: PdfFiles,
+    private readonly events: SourceEvents,
   ) {
-    this.watcher = watchFile(uri, onChangeOnDisk);
+    this.stopWatching = files.watch(uri, () => {
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => events.changed(), RELOAD_DELAY_MS);
+    });
   }
 
   /** Start a new read; resolves `undefined` if a newer read started meanwhile or it failed. */
@@ -36,10 +47,10 @@ export class PdfSource implements vscode.Disposable {
     const generation = ++this.generation;
     let bytes: Uint8Array;
     try {
-      bytes = await vscode.workspace.fs.readFile(this.uri);
+      bytes = await this.files.read(this.uri);
     } catch (error) {
-      void vscode.window.showErrorMessage(
-        `Could not read ${displayPath(this.uri)}: ${String(error)}`,
+      this.events.failed(
+        `Could not read ${this.files.displayPath(this.uri)}: ${String(error)}`,
       );
       return undefined;
     }
@@ -53,41 +64,9 @@ export class PdfSource implements vscode.Disposable {
   dispose(): void {
     // A read in flight finishes into a stale generation and is dropped.
     this.generation++;
-    this.watcher.dispose();
+    clearTimeout(this.timer);
+    this.stopWatching();
   }
-}
-
-function watchFile(uri: vscode.Uri, onChange: () => void): vscode.Disposable {
-  if (uri.scheme !== "file") {
-    return new vscode.Disposable(() => undefined);
-  }
-  const watcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(
-      vscode.Uri.file(path.dirname(uri.fsPath)),
-      path.basename(uri.fsPath),
-    ),
-  );
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const reload = (): void => {
-    clearTimeout(timer);
-    timer = setTimeout(onChange, RELOAD_DELAY_MS);
-  };
-  const subscriptions = [
-    watcher.onDidChange(reload),
-    watcher.onDidCreate(reload),
-  ];
-  return new vscode.Disposable(() => {
-    clearTimeout(timer);
-    for (const subscription of subscriptions) {
-      subscription.dispose();
-    }
-    watcher.dispose();
-  });
-}
-
-/** The path agents should use: workspace-relative when possible. */
-export function displayPath(uri: vscode.Uri): string {
-  return vscode.workspace.asRelativePath(uri, false).replaceAll("\\", "/");
 }
 
 /** The bytes as an ArrayBuffer of their own, which the webview can take over. */

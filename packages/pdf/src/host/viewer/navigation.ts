@@ -1,6 +1,6 @@
-import type { HostMessage } from "../../../shared/messages";
-import type { PdfLocation } from "../../../shared/pdf-location";
-import type { ViewerAction } from "../../../shared/view-state";
+import type { HostMessage } from "../../shared/messages";
+import type { PdfLocation } from "../../shared/pdf-location";
+import type { ViewerAction } from "../../shared/view-state";
 
 /**
  * Where the reader is sent: pages, boxes and view actions for one editor.
