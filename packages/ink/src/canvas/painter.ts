@@ -1,37 +1,32 @@
 /**
- * Draws the page on the canvas from the format's own shapes (`strokeFills`,
- * `paperMarks`), so the page while drawing is the page the SVG shows: the
- * same outlines, the same pieces of pencil shading, the same paper.
+ * Draws the sketch on the canvas from the format's own shapes
+ * (`strokeFills`, `paperMarksWithin`), so what is drawn is what the SVG
+ * shows: the same outlines, the same pieces of pencil shading, the same
+ * paper. The paper has no edge here: it fills whatever the camera shows.
  *
- * The canvases cover the view, not the page; each paint places the page by
- * the view's scroll and the page's layout, and draws only the strokes in
- * sight.
+ * The canvases cover the view; each paint places the sketch by the camera
+ * and draws only the strokes in sight.
  */
 import {
   PAPER_DOT,
   PAPER_LINE,
-  paperMarks,
+  paperMarksWithin,
   strokeFills,
   type InkStroke,
   type Paper,
+  type PaperArea,
 } from "../format";
-import { boundsOf, type PageLayout } from "./page";
-import { MUTED, PAGE_EDGE } from "./styles";
+import { boundsOf, overlaps } from "./bounds";
+import { visibleArea, type Camera } from "./camera";
+import { MUTED } from "./styles";
 
 export interface Viewport {
   /** CSS pixels. */
   readonly width: number;
   readonly height: number;
-  readonly scrollTop: number;
   /** Device pixels per CSS pixel. */
   readonly ratio: number;
-  readonly layout: PageLayout;
-}
-
-export interface PageShown {
-  readonly width: number;
-  readonly height: number;
-  readonly paper: Paper;
+  readonly camera: Camera;
 }
 
 /** The eraser's reach around the pointer, in the sketch's points. */
@@ -40,6 +35,14 @@ export interface EraserRing {
   readonly y: number;
   readonly radius: number;
 }
+
+/**
+ * Marks closer than this on screen, in CSS pixels, would be a grey wash
+ * (and, zoomed far out on fine paper, millions of dots): they are left out.
+ */
+const FINEST_MARKS = 6;
+/** The paper's marks are worked out for squares this large, in points, and kept while the view stays within them. */
+const PAPER_CHUNK = 512;
 
 /** The canvas's backing store at the view's size and the screen's density. */
 export function fitLayer(canvas: HTMLCanvasElement, viewport: Viewport): void {
@@ -54,34 +57,31 @@ export function fitLayer(canvas: HTMLCanvasElement, viewport: Viewport): void {
 }
 
 /** The paper and every stroke in sight. */
-export function paintPage(
+export function paintBoard(
   context: CanvasRenderingContext2D,
   viewport: Viewport,
-  page: PageShown,
+  paper: Paper,
   strokes: readonly InkStroke[],
 ): void {
-  startPaint(context, viewport, page);
-  paintPaper(context, page, viewport.layout.scale);
-  const top =
-    (viewport.scrollTop - viewport.layout.top) / viewport.layout.scale;
-  const bottom = top + viewport.height / viewport.layout.scale;
+  const area = visibleArea(viewport.camera, viewport);
+  startPaint(context, viewport);
+  paintPaper(context, paper, area, viewport.camera.zoom);
   for (const stroke of strokes) {
     const bounds = boundsOf(stroke);
-    if (bounds && bounds.bottom >= top && bounds.top <= bottom) {
+    if (bounds && overlaps(bounds, area)) {
       fill(context, preparedFills(stroke));
     }
   }
   context.restore();
 }
 
-/** The stroke being drawn, or the eraser's ring, over the page. */
+/** The stroke being drawn, or the eraser's ring, over the paper. */
 export function paintLive(
   context: CanvasRenderingContext2D,
   viewport: Viewport,
-  page: PageShown,
   shown: { readonly stroke?: InkStroke; readonly eraser?: EraserRing },
 ): void {
-  startPaint(context, viewport, page);
+  startPaint(context, viewport);
   if (shown.stroke) {
     fill(context, prepare(shown.stroke));
   }
@@ -91,55 +91,56 @@ export function paintLive(
     context.arc(x, y, radius, 0, 2 * Math.PI);
     context.fillStyle = "rgba(255, 255, 255, 0.35)";
     context.fill();
-    context.lineWidth = 1.5 / viewport.layout.scale;
+    context.lineWidth = 1.5 / viewport.camera.zoom;
     context.strokeStyle = MUTED;
     context.stroke();
   }
   context.restore();
 }
 
-/** Cleared, in the sketch's coordinates, and clipped to the page's width as the SVG's view box is. */
+/** Cleared, and in the sketch's coordinates as the camera sees them. */
 function startPaint(
   context: CanvasRenderingContext2D,
   viewport: Viewport,
-  page: PageShown,
 ): void {
-  const { ratio, layout, scrollTop } = viewport;
+  const { ratio, camera } = viewport;
+  const scale = ratio * camera.zoom;
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
   context.save();
   context.setTransform(
-    ratio * layout.scale,
+    scale,
     0,
     0,
-    ratio * layout.scale,
-    ratio * layout.left,
-    ratio * (layout.top - scrollTop),
+    scale,
+    -camera.x * scale,
+    -camera.y * scale,
   );
-  context.beginPath();
-  // Downwards without end: what is drawn below the page grows it.
-  context.rect(0, 0, page.width, 1e6);
-  context.clip();
 }
 
 function paintPaper(
   context: CanvasRenderingContext2D,
-  page: PageShown,
-  scale: number,
+  paper: Paper,
+  area: PaperArea,
+  zoom: number,
 ): void {
-  // A transparent page shows white here, as on the iPad: ink is drawn as on light paper.
-  context.fillStyle =
-    page.paper.color === "none" ? "#ffffff" : page.paper.color;
-  context.fillRect(0, 0, page.width, page.height);
-  const marks = paperPaths(page);
+  // A transparent paper shows white here, as on the iPad: ink is drawn as on light paper.
+  context.fillStyle = paper.color === "none" ? "#ffffff" : paper.color;
+  context.fillRect(
+    area.left,
+    area.top,
+    area.right - area.left,
+    area.bottom - area.top,
+  );
+  if (paper.style === "plain" || paper.spacing * zoom < FINEST_MARKS) {
+    return;
+  }
+  const marks = paperPaths(paper, area);
   context.lineWidth = PAPER_LINE.width;
   context.strokeStyle = PAPER_LINE.color;
   context.stroke(marks.lines);
   context.fillStyle = PAPER_DOT.color;
   context.fill(marks.dots);
-  context.lineWidth = 1 / scale;
-  context.strokeStyle = PAGE_EDGE;
-  context.strokeRect(0, 0, page.width, page.height);
 }
 
 interface PaperPaths {
@@ -148,31 +149,38 @@ interface PaperPaths {
   readonly dots: Path2D;
 }
 
-let paper: PaperPaths | undefined;
+let paperCache: PaperPaths | undefined;
 
-/** The paper's marks as paths, kept until the page changes size. */
-function paperPaths(page: PageShown): PaperPaths {
-  const key = JSON.stringify([page.paper, page.width, page.height]);
-  if (paper?.key === key) {
-    return paper;
+/** The paper's marks over the chunks the view is in, kept while it stays in them. */
+function paperPaths(paper: Paper, area: PaperArea): PaperPaths {
+  const chunk = {
+    left: Math.floor(area.left / PAPER_CHUNK) * PAPER_CHUNK,
+    top: Math.floor(area.top / PAPER_CHUNK) * PAPER_CHUNK,
+    right: Math.ceil(area.right / PAPER_CHUNK) * PAPER_CHUNK,
+    bottom: Math.ceil(area.bottom / PAPER_CHUNK) * PAPER_CHUNK,
+  };
+  const key = JSON.stringify([paper, chunk]);
+  if (paperCache?.key === key) {
+    return paperCache;
   }
-  const marks = paperMarks(page.paper, page);
+  const marks = paperMarksWithin(paper, chunk);
   const lines = new Path2D();
   for (const y of marks.across) {
-    lines.moveTo(0, y);
-    lines.lineTo(page.width, y);
+    lines.moveTo(chunk.left, y);
+    lines.lineTo(chunk.right, y);
   }
   for (const x of marks.down) {
-    lines.moveTo(x, 0);
-    lines.lineTo(x, page.height);
+    lines.moveTo(x, chunk.top);
+    lines.lineTo(x, chunk.bottom);
   }
   const dots = new Path2D();
+  const radius = PAPER_DOT.diameter / 2;
   for (const [x, y] of marks.dots) {
-    dots.moveTo(x + PAPER_DOT.diameter / 2, y);
-    dots.arc(x, y, PAPER_DOT.diameter / 2, 0, 2 * Math.PI);
+    dots.moveTo(x + radius, y);
+    dots.arc(x, y, radius, 0, 2 * Math.PI);
   }
-  paper = { key, lines, dots };
-  return paper;
+  paperCache = { key, lines, dots };
+  return paperCache;
 }
 
 interface PreparedFills {

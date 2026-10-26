@@ -1,10 +1,19 @@
 /**
  * The canvas's keys. It is modal: while it is open, the window's own
  * shortcuts and the app menu's wait (⌘W would close the note being drawn
- * in), except the system's own: quitting, hiding and minimizing.
+ * in), except the system's own: quitting, hiding and minimizing. ⌘= and
+ * ⌘− zoom, and ⌘0 shows the sketch at its own size again, as in Freeform.
  */
 
-export type CanvasKeyAction = "undo" | "redo" | "done" | "cancel" | "swallow";
+export type CanvasKeyAction =
+  | "undo"
+  | "redo"
+  | "done"
+  | "cancel"
+  | "zoomIn"
+  | "zoomOut"
+  | "actualSize"
+  | "swallow";
 
 export interface CanvasKeyPress {
   readonly key: string;
@@ -34,6 +43,15 @@ export function canvasKeyAction(
     case "Enter":
     case "NumpadEnter":
       return "done";
+    case "Equal":
+    case "NumpadAdd":
+      return "zoomIn";
+    case "Minus":
+    case "NumpadSubtract":
+      return "zoomOut";
+    case "Digit0":
+    case "Numpad0":
+      return "actualSize";
     default:
       return SYSTEM_KEYS.has(press.code) ? undefined : "swallow";
   }

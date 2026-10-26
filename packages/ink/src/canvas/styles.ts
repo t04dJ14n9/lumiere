@@ -17,10 +17,8 @@ export const MUTED = "#59636e";
 export const ACCENT = "#0a64d6";
 const BAR = "#f6f8fa";
 const BORDER = "#d1d9e0";
-/** Round the page, where the page grows into. */
-export const BACKDROP = "#e6e9ed";
-/** The page's edge, drawn on the canvas. */
-export const PAGE_EDGE = "#c4ccd5";
+/** Behind the canvas, before its first paint. */
+const BACKDROP = "#ffffff";
 
 export const dialogStyle: Style = {
   position: "fixed",
@@ -85,16 +83,11 @@ export const mainStyle: Style = {
   minHeight: "0",
 };
 
-export const scrollerStyle: Style = {
+export const surfaceStyle: Style = {
   position: "absolute",
   inset: "0",
-  overflowX: "hidden",
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-};
-
-export const sheetStyle: Style = {
-  position: "absolute",
+  overflow: "hidden",
+  overscrollBehavior: "none",
   touchAction: "none",
   cursor: "crosshair",
   outline: "none",

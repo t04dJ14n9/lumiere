@@ -4,7 +4,7 @@
  * its reach of the stroke's ink.
  */
 import type { InkPoint, InkStroke } from "../format";
-import { boundsOf, type Bounds } from "./page";
+import { boundsOf, overlaps } from "./bounds";
 
 export interface Point {
   readonly x: number;
@@ -105,13 +105,4 @@ function crosses(a: Segment, b: Segment): boolean {
 /** Which side of the line through `a` and `b` the point is on (the cross product's sign). */
 function side(a: Point, b: Point, point: Point): number {
   return (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x);
-}
-
-function overlaps(a: Bounds, b: Bounds): boolean {
-  return (
-    a.left <= b.right &&
-    b.left <= a.right &&
-    a.top <= b.bottom &&
-    b.top <= a.bottom
-  );
 }

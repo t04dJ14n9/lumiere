@@ -55,7 +55,7 @@ A sketch is one file, `*.sketch.svg`, that shows as drawn in any SVG viewer
 
 `webInk()` (`@workshop/ink/canvas`) is the `ink` service in a browser: a
 canvas over the whole window, laid out as the iPad's (Cancel, the sketch's
-name, undo, redo and Done above; the page, filling the width; the tools
+name, undo, redo and Done above; the paper, filling the window; the tools
 floating below).
 
 - **Input.** Pointer Events, with the samples the browser coalesced. A pen
@@ -71,16 +71,28 @@ floating below).
   strokes. A pen's eraser end erases too. The tools chosen last are kept
   while the window lives.
 - **Drawn as the file draws.** The canvas fills the format's own outlines
-  (`strokeFills`) and paper (`paperMarks`), so what is drawn is what the
-  SVG shows.
-- **The page** fills the width (at most 1.5 CSS pixels per point), scrolls,
-  and grows downwards to hold what is drawn below it. Two canvases the size
-  of the view, not the page, draw it: one for the page and its strokes, one
-  for the stroke being drawn.
-- **Like the iPad:** once a pen has drawn, a finger scrolls; a finger
-  drawing when a pen comes down was a palm. Undo and redo (⌘Z, ⇧⌘Z) are the
-  canvas's own. Cancel asks before dropping a drawing; Escape is Cancel and
-  ⌘↩ is Done. While it is open, the window's own shortcuts wait.
+  (`strokeFills`) and paper (`paperMarksWithin`), so what is drawn is what
+  the SVG shows.
+- **No edge, as Freeform's and the iPad's.** The paper goes on in every
+  direction. Scrolling (a trackpad, a wheel, Shift with a wheel) pans; a
+  pinch, or Ctrl with the wheel, zooms about the pointer, from a quarter to
+  four times; ⌘= and ⌘− zoom, ⌘0 shows the sketch at its own size. A mouse
+  also pans with its middle button or with Space held. The sketch opens at
+  its own size, centred, a margin below the bar. Two canvases the size of
+  the view draw wherever the camera looks: one for the paper and the
+  strokes, one for the stroke being drawn.
+- **Done keeps what was drawn** (`board.ts`, as the iPad's `Board.swift`):
+  the strokes' bounds with a 16-point margin, widened to whole steps of the
+  paper's spacing from the sketch's origin, so its lines fall where the SVG
+  draws them; the cut's top left becomes the sketch's origin. A new sketch
+  left blank is not saved (Done answers as Cancel); one that existed,
+  erased to nothing, is saved empty at its old size; one left as it was
+  comes back as it was, with PencilKit's own data.
+- **Like the iPad:** once a pen has drawn, a finger pans; two fingers pan
+  and pinch; a finger drawing when a pen comes down was a palm. Undo and
+  redo (⌘Z, ⇧⌘Z) are the canvas's own. Cancel asks before dropping a
+  drawing; Escape is Cancel and ⌘↩ is Done. While it is open, the window's
+  own shortcuts wait.
 - **Styled through the CSSOM**, since the windows that host it allow no
   inline `<style>`.
 
@@ -96,15 +108,17 @@ floating below).
 - `src/canvas/index.ts`: `webInk`, the service in a browser.
 - `src/canvas/sketch-canvas.ts`: one canvas, open until Done or Cancel.
 - `src/canvas/view.ts`, `palette.ts`, `styles.ts`: its elements, its tools, its looks.
-- `src/canvas/pointer.ts`: the pointer on the page: drawing, erasing, a finger scrolling.
-- `src/canvas/painter.ts`: the page and strokes on a canvas, from the format's shapes.
+- `src/canvas/pointer.ts`: the pointer: drawing, erasing, panning, two fingers pinching.
+- `src/canvas/navigation.ts`: the trackpad and the wheel: panning and zooming.
+- `src/canvas/painter.ts`: the paper and strokes on a canvas, from the format's shapes.
 - `src/canvas/input.ts`, `speed.ts`, `nibs.ts`, `recorder.ts`: samples, pressure from speed, the inks, a stroke as it is drawn.
-- `src/canvas/history.ts`, `erase.ts`, `page.ts`, `keys.ts`: undo, the eraser, the page's size and growth, the keys.
+- `src/canvas/camera.ts`, `board.ts`: where the view looks; what Done keeps.
+- `src/canvas/history.ts`, `erase.ts`, `bounds.ts`, `keys.ts`: undo, the eraser, where ink reaches, the keys.
 
 `src/format` and `src/service` are pure: no DOM, Node or host APIs. In
 `src/canvas`, everything but `index.ts`, `sketch-canvas.ts`, `view.ts`,
-`palette.ts`, `styles.ts`, `pointer.ts` and `painter.ts` is pure too, and
-tested under Node.
+`palette.ts`, `styles.ts`, `pointer.ts`, `navigation.ts` and `painter.ts`
+is pure too, and tested under Node.
 
 ## Limits
 

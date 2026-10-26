@@ -1,12 +1,13 @@
 /**
  * The canvas's elements, laid out as the iPad's: a bar with Cancel, the
- * sketch's name, undo, redo and Done; the page, scrolling under it; and the
- * tools floating at the bottom, where PencilKit's tool picker sits.
+ * sketch's name, undo, redo and Done; the paper, filling the window under
+ * it; and the tools floating at the bottom, where PencilKit's tool picker
+ * sits.
  *
- * The page is drawn on two canvases the size of the view, not of the page,
- * which grows too tall for one canvas: `base` holds the paper and the
- * strokes drawn, `live` the stroke being drawn. The sheet under them is
- * what scrolls and takes the pointer.
+ * The paper has no edge, so it is drawn on two canvases the size of the
+ * view, wherever the view looks: `base` holds the paper and the strokes
+ * drawn, `live` the stroke being drawn. The surface under them takes the
+ * pointer and the wheel.
  */
 import {
   confirmStyle,
@@ -19,8 +20,7 @@ import {
   layerStyle,
   mainStyle,
   paletteStyle,
-  scrollerStyle,
-  sheetStyle,
+  surfaceStyle,
   styled,
   titleStyle,
   buttonStyle,
@@ -32,11 +32,8 @@ export interface CanvasView {
   readonly undo: HTMLButtonElement;
   readonly redo: HTMLButtonElement;
   readonly done: HTMLButtonElement;
-  readonly scroller: HTMLDivElement;
-  /** As tall as the scrolled content. */
-  readonly content: HTMLDivElement;
-  /** Where the pointer draws: the page and the room below it. */
-  readonly sheet: HTMLDivElement;
+  /** Where the pointer draws, pans and zooms: the whole view. */
+  readonly surface: HTMLDivElement;
   readonly base: HTMLCanvasElement;
   readonly live: HTMLCanvasElement;
   readonly palette: HTMLDivElement;
@@ -62,21 +59,15 @@ export function buildCanvasView(title: string): CanvasView {
   header.append(cancel, heading, undo, redo, done);
 
   const main = styled(document.createElement("div"), mainStyle);
-  const scroller = styled(document.createElement("div"), scrollerStyle);
-  const content = styled(document.createElement("div"), {
-    position: "relative",
-  });
-  const sheet = styled(document.createElement("div"), sheetStyle);
+  const surface = styled(document.createElement("div"), surfaceStyle);
   // Focusable, so the canvas's keys reach it and not the note behind it.
-  sheet.tabIndex = -1;
-  content.append(sheet);
-  scroller.append(content);
+  surface.tabIndex = -1;
   const base = styled(document.createElement("canvas"), layerStyle);
   const live = styled(document.createElement("canvas"), layerStyle);
   const palette = styled(document.createElement("div"), paletteStyle);
   palette.setAttribute("role", "toolbar");
   palette.setAttribute("aria-label", "Tools");
-  main.append(scroller, base, live, palette);
+  main.append(surface, base, live, palette);
 
   const confirm = buildConfirm();
   dialog.append(header, main, confirm.panel);
@@ -86,9 +77,7 @@ export function buildCanvasView(title: string): CanvasView {
     undo,
     redo,
     done,
-    scroller,
-    content,
-    sheet,
+    surface,
     base,
     live,
     palette,

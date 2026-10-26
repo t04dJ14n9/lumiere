@@ -408,18 +408,23 @@ a browser):
   width and opacity the ink drew there; what the pixel eraser cut away is
   left out. A sketch edited elsewhere is rebuilt from its strokes.
 - **The web canvas** (`@workshop/ink/canvas`, desktop and web) is laid out
-  as the iPad's: Cancel, the name, undo, redo and Done above; the page
-  filling the width (at most 1.5×) and growing downwards; pen, pencil,
-  marker and eraser floating below, each ink in three widths and six
-  colours, kept while the window lives. A pen tablet draws with its
-  pressure and tilt (a pen's eraser end erases); a mouse, trackpad or
-  finger with the line thinning as it speeds up, its force stored as read
-  (0.5). Once a pen has drawn, a finger scrolls; a finger drawing when a
-  pen lands was a palm. It has its own undo (⌘Z, ⇧⌘Z), Escape is Cancel
-  and ⌘↩ Done, and the window's shortcuts wait while it is open. It fills
-  the format's own outlines and paper: in a check of pen, pencil, marker
-  and mouse strokes, the canvas and the saved SVG differ by 0.0004 levels
-  on average.
+  as the iPad's: Cancel, the name, undo, redo and Done above; the paper
+  with no edge, as the iPad's; pen, pencil, marker and eraser floating
+  below, each ink in three widths and six colours, kept while the window
+  lives. Scrolling pans in every direction, a pinch or Ctrl with the wheel
+  zooms (a quarter to four times), ⌘= ⌘− ⌘0 too; a mouse also pans with
+  its middle button or Space. The sketch opens at its own size, centred,
+  and Done keeps what was drawn as the iPad does (`board.ts`, the same
+  rule as `Board.swift`): a 16-point margin, cut on the paper's lines; a
+  new sketch left blank is not saved, one erased to nothing keeps its old
+  size. A pen tablet draws with its pressure and tilt (a pen's eraser end
+  erases); a mouse, trackpad or finger with the line thinning as it speeds
+  up, its force stored as read (0.5). Once a pen has drawn, a finger pans
+  and two pinch; a finger drawing when a pen lands was a palm. It has its
+  own undo (⌘Z, ⇧⌘Z), Escape is Cancel and ⌘↩ Done, and the window's
+  shortcuts wait while it is open. It fills the format's own outlines and
+  paper: a sketch reopened at its own size matches its saved SVG pixel for
+  pixel.
 - Fixed on the way: a rewritten image shows its new version; a Markdown
   image whose path has spaces shows; a plugin can write a new file in
   host-web's vaults; a shaded stroke's pieces meet without a notch.
@@ -433,9 +438,13 @@ Checked in a browser (Chromium, the desktop app's server and the built web
 app, disposable vaults), with a mouse and with pen events sent by script:
 the pencil and the canvas, pressure and tilt in the file, speed thinning,
 the pencil's shading, the marker multiplying, the eraser, undo and redo,
-Cancel asking first, the page growing, Done writing the file and its
-embed, a click reopening the sketch as drawn, and the note showing the
-edit.
+Cancel asking first, Done writing the file and its embed, a click
+reopening the sketch as drawn, and the note showing the edit. The web
+canvas's edgeless paper too, on a test page with pointer, wheel and key
+events sent by script: panning by wheel, Space, the middle button and a
+finger after a pen; a two-finger pinch and Ctrl with the wheel zooming
+about their point; ⌘0; Done cutting to the strokes on the paper's lines;
+a blank new sketch not saved.
 
 Not checked with a real Pencil yet (Grok Bot, against Notes, section 5.1):
 the feel (latency, palm rejection), how pressure and tilt change width and

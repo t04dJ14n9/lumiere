@@ -1,36 +1,40 @@
 /**
- * One canvas, open over the whole window until Done or Cancel: the page and
- * its strokes, their own undo history, the palette, the pointer and the
- * keys. Done gives back the drawing and the page's height; Cancel gives
- * nothing, asking first if anything was drawn.
+ * One canvas, open over the whole window until Done or Cancel: the paper
+ * and its strokes, their own undo history, the palette, the pointer, the
+ * wheel and the keys. The paper has no edge, as Freeform's: the camera
+ * pans and zooms over it. Done gives back what was drawn, cut to its
+ * strokes (board.ts); Cancel gives nothing, asking first if anything was
+ * drawn.
  */
 import { emptySketch, type InkStroke, type Sketch } from "../format";
 import type { InkRequest } from "../service/ink";
+import { savedSketch } from "./board";
+import {
+  dragged,
+  openingCamera,
+  pinched,
+  toSketch,
+  zoomedAt,
+  type Camera,
+  type ViewPoint,
+} from "./camera";
 import { StrokeHistory } from "./history";
 import { canvasKeyAction, isApplePlatform } from "./keys";
+import { listenForNavigation } from "./navigation";
 import { FIRST_CHOICE, type ToolChoice } from "./nibs";
 import {
-  finishedSketch,
-  pageHeightHolding,
-  pageLayout,
-  type PageLayout,
-} from "./page";
-import {
   fitLayer,
+  paintBoard,
   paintLive,
-  paintPage,
   type EraserRing,
-  type PageShown,
   type Viewport,
 } from "./painter";
 import { Palette } from "./palette";
 import { PointerInput, type PointerHost } from "./pointer";
 import { buildCanvasView, showConfirm, type CanvasView } from "./view";
 
-/** Room below the page to draw into, at least, in CSS pixels: the page grows into it. */
-const ROOM_BELOW = 240;
-/** Room under everything, so the page scrolls clear of the floating tools. */
-const PALETTE_ROOM = 88;
+/** How much ⌘= and ⌘− zoom by. */
+const ZOOM_STEP = 1.25;
 
 /** The tools chosen last, while the window lives. */
 let remembered: ToolChoice = FIRST_CHOICE;
@@ -47,6 +51,8 @@ export function openSketchCanvas(
 class SketchCanvas {
   private readonly view: CanvasView;
   private readonly sketch: Sketch;
+  /** A new sketch left blank is not saved. */
+  private readonly isNew: boolean;
   private readonly history: StrokeHistory;
   private readonly palette: Palette;
   private readonly pointer: PointerInput;
@@ -56,8 +62,9 @@ class SketchCanvas {
   };
   private readonly listening = new AbortController();
   private readonly resizing = new ResizeObserver(() => this.relayout());
-  private pageHeight: number;
-  private layout: PageLayout = { scale: 1, left: 0, top: 0 };
+  /** Set once the view has a size: the sketch opens at its own size. */
+  private camera: Camera | undefined;
+  private isSpaceHeld = false;
   private live: { stroke?: InkStroke; eraser?: EraserRing } = {};
   /** Strokes the eraser has touched while it is still down. */
   private erasing = new Set<InkStroke>();
@@ -70,7 +77,7 @@ class SketchCanvas {
     private readonly resolve: (sketch: Sketch | undefined) => void,
   ) {
     this.sketch = request.sketch ?? emptySketch();
-    this.pageHeight = this.sketch.height;
+    this.isNew = request.sketch === undefined;
     this.history = new StrokeHistory(this.sketch.strokes);
     this.view = buildCanvasView(request.title);
     this.layers = {
@@ -90,42 +97,34 @@ class SketchCanvas {
     this.view.dialog.showModal();
     this.listen();
     this.relayout();
-    this.view.sheet.focus({ preventScroll: true });
+    this.view.surface.focus({ preventScroll: true });
   }
 
   private listen(): void {
     const { view } = this;
-    const options = { signal: this.listening.signal };
-    view.done.addEventListener("click", () => this.done(), options);
-    view.cancel.addEventListener("click", () => this.cancel(), options);
-    view.undo.addEventListener("click", () => this.undo(), options);
-    view.redo.addEventListener("click", () => this.redo(), options);
+    const { signal } = this.listening;
+    view.done.addEventListener("click", () => this.done(), { signal });
+    view.cancel.addEventListener("click", () => this.cancel(), { signal });
+    view.undo.addEventListener("click", () => this.undo(), { signal });
+    view.redo.addEventListener("click", () => this.redo(), { signal });
     view.confirm.discard.addEventListener(
       "click",
       () => this.finish(undefined),
-      options,
+      { signal },
     );
-    view.confirm.keep.addEventListener(
-      "click",
-      () => this.keepDrawing(),
-      options,
-    );
-    view.scroller.addEventListener(
-      "scroll",
-      () => this.schedule(true),
-      options,
-    );
-    view.dialog.addEventListener(
-      "keydown",
-      (event) => this.key(event),
-      options,
-    );
+    view.confirm.keep.addEventListener("click", () => this.keepDrawing(), {
+      signal,
+    });
+    view.dialog.addEventListener("keydown", (event) => this.key(event), {
+      signal,
+    });
+    view.dialog.addEventListener("keyup", (event) => this.keyUp(event), {
+      signal,
+    });
     // Escape is handled as a key; the dialog must not close on its own.
-    view.dialog.addEventListener(
-      "cancel",
-      (event) => event.preventDefault(),
-      options,
-    );
+    view.dialog.addEventListener("cancel", (event) => event.preventDefault(), {
+      signal,
+    });
     view.dialog.addEventListener(
       "close",
       () => {
@@ -133,16 +132,41 @@ class SketchCanvas {
           view.dialog.showModal();
         }
       },
-      options,
+      { signal },
     );
-    this.resizing.observe(view.scroller);
+    listenForNavigation(
+      view.surface,
+      {
+        scroll: (dx, dy) =>
+          this.moveCamera((camera) => dragged(camera, -dx, -dy)),
+        zoomAt: (client, factor) =>
+          this.moveCamera((camera) =>
+            zoomedAt(camera, this.inView(client), factor),
+          ),
+      },
+      signal,
+    );
+    this.resizing.observe(view.surface);
   }
 
   private pointerHost(): PointerHost {
     return {
-      sheet: this.view.sheet,
-      scroller: this.view.scroller,
-      scale: () => this.layout.scale,
+      surface: this.view.surface,
+      toSketch: (client) =>
+        toSketch(
+          this.camera ?? openingCamera(this.viewSize(), this.sketch),
+          this.inView(client),
+        ),
+      drag: (dx, dy) => this.moveCamera((camera) => dragged(camera, dx, dy)),
+      pinch: (before, after) =>
+        this.moveCamera((camera) =>
+          pinched(
+            camera,
+            [this.inView(before[0]), this.inView(before[1])],
+            [this.inView(after[0]), this.inView(after[1])],
+          ),
+        ),
+      isPanning: () => this.isSpaceHeld,
       choice: () => this.palette.current,
       strokes: () => this.shownStrokes(),
       drawing: (stroke) => {
@@ -173,6 +197,11 @@ class SketchCanvas {
   private key(event: KeyboardEvent): void {
     // Keys pressed in the canvas are its own; the window behind it never sees them.
     event.stopPropagation();
+    if (event.code === "Space") {
+      event.preventDefault();
+      this.holdSpace(true);
+      return;
+    }
     const action = canvasKeyAction({
       key: event.key,
       code: event.code,
@@ -187,12 +216,48 @@ class SketchCanvas {
       this.keepDrawing();
     } else if (action === "cancel") {
       this.cancel();
-    } else if (action === "undo") {
-      this.undo();
-    } else if (action === "redo") {
-      this.redo();
     } else if (action === "done") {
       this.done();
+    } else if (action !== "swallow") {
+      this.edit(action);
+    }
+  }
+
+  private keyUp(event: KeyboardEvent): void {
+    event.stopPropagation();
+    if (event.code === "Space") {
+      this.holdSpace(false);
+    }
+  }
+
+  /** Space held: the mouse pans, as in Freeform and most drawing apps. */
+  private holdSpace(isHeld: boolean): void {
+    this.isSpaceHeld = isHeld;
+    this.view.surface.style.cursor = isHeld ? "grab" : "crosshair";
+  }
+
+  private edit(
+    action: "undo" | "redo" | "zoomIn" | "zoomOut" | "actualSize",
+  ): void {
+    const centre = {
+      x: this.viewSize().width / 2,
+      y: this.viewSize().height / 2,
+    };
+    switch (action) {
+      case "undo":
+        return this.undo();
+      case "redo":
+        return this.redo();
+      case "zoomIn":
+        return this.moveCamera((camera) => zoomedAt(camera, centre, ZOOM_STEP));
+      case "zoomOut":
+        return this.moveCamera((camera) =>
+          zoomedAt(camera, centre, 1 / ZOOM_STEP),
+        );
+      case "actualSize":
+        return this.moveCamera((camera) =>
+          zoomedAt(camera, centre, 1 / camera.zoom),
+        );
     }
   }
 
@@ -216,7 +281,6 @@ class SketchCanvas {
   private afterChange(): void {
     this.view.undo.disabled = !this.history.canUndo;
     this.view.redo.disabled = !this.history.canRedo;
-    this.growPage();
     this.schedule(true);
   }
 
@@ -227,28 +291,29 @@ class SketchCanvas {
       : strokes.filter((stroke) => !this.erasing.has(stroke));
   }
 
-  /** Strokes drawn below the page take the page down with them; it never shrinks. */
-  private growPage(): void {
-    const height = pageHeightHolding(this.history.strokes, this.pageHeight);
-    if (height > this.pageHeight) {
-      this.pageHeight = height;
-      this.relayout();
+  private moveCamera(move: (camera: Camera) => Camera): void {
+    if (this.camera) {
+      this.camera = move(this.camera);
+      this.schedule(true);
     }
   }
 
+  /** A point of the window in the view's own coordinates. */
+  private inView(client: ViewPoint): ViewPoint {
+    const origin = this.view.surface.getBoundingClientRect();
+    return { x: client.x - origin.left, y: client.y - origin.top };
+  }
+
+  private viewSize(): { width: number; height: number } {
+    const { surface } = this.view;
+    return { width: surface.clientWidth, height: surface.clientHeight };
+  }
+
   private relayout(): void {
-    const { scroller, sheet, content } = this.view;
-    this.layout = pageLayout(scroller.clientWidth, this.sketch.width);
-    const { scale, left, top } = this.layout;
-    const page = this.pageHeight * scale;
-    const below = Math.max(ROOM_BELOW, scroller.clientHeight / 2);
-    Object.assign(sheet.style, {
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${this.sketch.width * scale}px`,
-      height: `${page + below}px`,
-    });
-    content.style.height = `${top + page + below + PALETTE_ROOM}px`;
+    const size = this.viewSize();
+    if (size.width > 0) {
+      this.camera ??= openingCamera(size, this.sketch);
+    }
     this.view.undo.disabled = !this.history.canUndo;
     this.view.redo.disabled = !this.history.canRedo;
     this.schedule(true);
@@ -263,40 +328,31 @@ class SketchCanvas {
   }
 
   private paint(): void {
-    if (this.isFinished) {
+    const { camera } = this;
+    if (this.isFinished || !camera) {
       return;
     }
-    const viewport = this.viewport();
-    const page = this.page();
+    const viewport: Viewport = {
+      ...this.viewSize(),
+      ratio: window.devicePixelRatio || 1,
+      camera,
+    };
     if (this.isBaseStale) {
       this.isBaseStale = false;
       fitLayer(this.view.base, viewport);
-      paintPage(this.layers.base, viewport, page, this.shownStrokes());
+      paintBoard(
+        this.layers.base,
+        viewport,
+        this.sketch.paper,
+        this.shownStrokes(),
+      );
     }
     fitLayer(this.view.live, viewport);
-    paintLive(this.layers.live, viewport, page, this.live);
-  }
-
-  private viewport(): Viewport {
-    const { scroller } = this.view;
-    return {
-      width: scroller.clientWidth,
-      height: scroller.clientHeight,
-      scrollTop: scroller.scrollTop,
-      ratio: window.devicePixelRatio || 1,
-      layout: this.layout,
-    };
-  }
-
-  private page(): PageShown {
-    const { width, paper } = this.sketch;
-    return { width, height: this.pageHeight, paper };
+    paintLive(this.layers.live, viewport, this.live);
   }
 
   private done(): void {
-    this.finish(
-      finishedSketch(this.sketch, this.history.strokes, this.pageHeight),
-    );
+    this.finish(savedSketch(this.sketch, this.history.strokes, this.isNew));
   }
 
   private cancel(): void {
@@ -314,7 +370,7 @@ class SketchCanvas {
 
   private keepDrawing(): void {
     showConfirm(this.view.confirm, false);
-    this.view.sheet.focus({ preventScroll: true });
+    this.view.surface.focus({ preventScroll: true });
   }
 
   private finish(sketch: Sketch | undefined): void {

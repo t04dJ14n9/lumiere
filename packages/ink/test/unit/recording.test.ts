@@ -191,6 +191,9 @@ test("the canvas keeps its keys, and lets the system's through", () => {
   assert.equal(press("KeyY"), "redo");
   assert.equal(press("Enter"), "done");
   assert.equal(press("Escape", { mod: false }), "cancel");
+  assert.equal(press("Equal"), "zoomIn");
+  assert.equal(press("Minus"), "zoomOut");
+  assert.equal(press("Digit0"), "actualSize");
   assert.equal(press("KeyW"), "swallow", "⌘W would close the note behind");
   assert.equal(press("KeyQ"), undefined, "quitting is the system's");
   assert.equal(press("KeyZ", { mod: false }), undefined, "typing is nobody's");
