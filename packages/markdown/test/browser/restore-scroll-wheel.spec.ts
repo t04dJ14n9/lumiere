@@ -153,17 +153,14 @@ test("the restored line stays where it was saved while the images above it load"
   await constrain(page);
   await serveSlowImages(page);
   const from = source.indexOf("Restored line");
-  await page.evaluate(
-    (from) =>
-      window.harness.restore({
-        anchor: from,
-        head: from,
-        scrollTop: 0,
-        scrollAnchor: { from, offset: 0 },
-        mode: "livePreview",
-      }),
-    from,
-  );
+  const saved = {
+    anchor: from,
+    head: from,
+    scrollTop: 0,
+    scrollAnchor: { from, offset: 0 },
+    mode: "livePreview" as const,
+  };
+  await page.evaluate((state) => window.harness.restore(state), saved);
   const watched = await watchRestoredLine(page, from, 1800);
   const offset = await restoredLineOffset(page, from);
   expect(watched.grewAbove, "the images above loaded").toBeGreaterThan(300);
