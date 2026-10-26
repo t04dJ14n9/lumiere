@@ -95,11 +95,16 @@ class ViewState {
           }
         },
       })),
-      EditorView.domEventHandlers({
+      // Observers, not handlers: CodeMirror listens passively when no
+      // handler wants an event type, so a wheel or touch scroll starts on
+      // the compositor instead of waiting for the main thread each time.
+      EditorView.domEventObservers({
         wheel: cancelScrollRestore,
+        touchstart: cancelScrollRestore,
+      }),
+      EditorView.domEventHandlers({
         pointerdown: cancelScrollRestore,
         keydown: cancelScrollRestore,
-        touchstart: cancelScrollRestore,
       }),
     ];
   }

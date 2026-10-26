@@ -277,3 +277,28 @@ test("scroll events coalesce through debounced checkpoint and flush on dispose",
   assert.equal(persisted.length, 1);
   assert.equal((persisted[0] as { scrollTop: number }).scrollTop, 240);
 });
+
+test("scroll restore watches wheel and touch passively, so scrolling never waits for it", () => {
+  const presentation = createViewState(createRoot());
+  // ViewPlugin keeps its DOM handlers and observers in (internal) fields;
+  // a type with a handler is listened to without `passive`.
+  const plugins = (presentation.restoreScrollPosition as unknown[]).filter(
+    (
+      extension,
+    ): extension is {
+      domEventHandlers?: Record<string, unknown>;
+      domEventObservers?: Record<string, unknown>;
+    } =>
+      typeof extension === "object" &&
+      extension !== null &&
+      "create" in extension,
+  );
+  const handled = plugins.flatMap((plugin) =>
+    Object.keys(plugin.domEventHandlers ?? {}),
+  );
+  const observed = plugins.flatMap((plugin) =>
+    Object.keys(plugin.domEventObservers ?? {}),
+  );
+  assert.deepEqual(handled.sort(), ["keydown", "pointerdown"]);
+  assert.deepEqual(observed.sort(), ["touchstart", "wheel"]);
+});

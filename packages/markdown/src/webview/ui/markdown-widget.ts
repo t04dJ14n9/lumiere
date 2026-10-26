@@ -5,9 +5,14 @@ import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
+  announceRemount,
+  releasePaintReserve,
+  releaseReserveOnceMounted,
+} from "./markdown-block-reserve";
+import {
   markdownBlockEstimatedHeight,
-  rememberMarkdownBlockContentWidth,
-  rememberMarkdownBlockHeight,
+  unwatchMarkdownBlock,
+  watchMarkdownBlock,
 } from "./markdown-block-height";
 import { selectRenderedSource } from "./source-selection";
 
@@ -48,38 +53,6 @@ export const FENCED_PREVIEW: BlockEditing = {
   guardMargin: true,
   select: fenceBody,
 };
-
-const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
-
-function watchMarkdownBlock(dom: HTMLElement, source: string): void {
-  if (
-    !source ||
-    blockObservers.has(dom) ||
-    typeof ResizeObserver === "undefined"
-  ) {
-    return;
-  }
-  const observer = new ResizeObserver((entries) => {
-    const height = entries[0]?.contentRect.height ?? 0;
-    if (height > 0) {
-      rememberMarkdownBlockHeight(source, height);
-    }
-  });
-  observer.observe(dom);
-  blockObservers.set(dom, observer);
-}
-
-function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
-  blockObservers.get(dom)?.disconnect();
-  blockObservers.delete(dom);
-  if (typeof dom.getBoundingClientRect !== "function") {
-    return;
-  }
-  const height = dom.getBoundingClientRect().height;
-  if (height > 0) {
-    rememberMarkdownBlockHeight(source, height);
-  }
-}
 
 interface RetainedShell {
   readonly shell: HTMLElement;
@@ -204,8 +177,9 @@ export class MarkdownBlock extends WidgetType {
     );
   }
 
+  // The note's width comes from markdownBlockWidthTracker: reading it here
+  // forced a layout for every block CodeMirror mounted.
   override toDOM(view: EditorView): HTMLElement {
-    rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     const poolKey = `${this.block.kind}\0${this.editing.reveal}\0${this.editing.guardMargin ? 1 : 0}\0${this.editing.editSummary ? 1 : 0}\0${this.block.source}`;
     const reusable = isShellReusable(this.retained, this.render)
       ? this.retained!
@@ -214,6 +188,8 @@ export class MarkdownBlock extends WidgetType {
       this.retained = reusable;
       reusable.currentView = view;
       this.mountShell(view, reusable, poolKey);
+      announceRemount(reusable.body);
+      releaseReserveOnceMounted(view, reusable.shell, reusable.body);
       return reusable.shell;
     }
     const created = this.createShell(view);
@@ -316,7 +292,7 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override destroy(dom: HTMLElement): void {
-    unwatchMarkdownBlock(dom, this.block.source);
+    unwatchMarkdownBlock(dom);
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
   }
@@ -416,12 +392,6 @@ function beginMarkdownBlockRender(options: {
     }
   } else {
     rememberHtml();
-  }
-}
-
-function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
-  if (shell.style.minHeight && body.getBoundingClientRect().height > 0) {
-    shell.style.minHeight = "";
   }
 }
 

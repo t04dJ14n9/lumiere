@@ -1,12 +1,13 @@
 import type { Logger } from "@workshop/core";
-import type { Fence, RenderPass } from "../render/api";
+import {
+  RENDER_PENDING_ATTRIBUTE,
+  type Fence,
+  type RenderPass,
+} from "../render/api";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";
 import { createMermaidTrust, type MermaidTrust } from "./trust";
-import {
-  MermaidViewportScheduler,
-  observeNearViewport,
-} from "./viewport-schedule";
+import { MermaidQueue } from "./mount-queue";
 
 export interface MermaidLinkPlace {
   side: boolean;
@@ -41,7 +42,7 @@ export class DiagramRenderer {
   private readonly cleanups = new Set<() => void>();
   private readonly trust: MermaidTrust;
   private readonly openLink: MermaidLinkOpen | undefined;
-  private readonly scheduler: MermaidViewportScheduler;
+  private readonly queue: MermaidQueue;
 
   constructor(
     private readonly logger: Logger,
@@ -50,11 +51,7 @@ export class DiagramRenderer {
   ) {
     this.trust = trust;
     this.openLink = openLink;
-    // Mermaid mutates shared engine state; the scheduler keeps renders serial,
-    // yields between diagrams, and paints after near-viewport scroll settle.
-    this.scheduler = new MermaidViewportScheduler({
-      watch: observeNearViewport,
-      settleMs: 80,
+    this.queue = new MermaidQueue({
       render: (source) => this.renderMermaidSvg(source),
       cacheKey: (source) => this.cacheKeyFor(source),
     });
@@ -68,13 +65,16 @@ export class DiagramRenderer {
     const cleanup = () => {
       cancelSchedule();
       events.abort();
+      fence.element.removeAttribute?.(RENDER_PENDING_ATTRIBUTE);
       fence.element.innerHTML = original;
       failure?.remove();
       this.cleanups.delete(cleanup);
     };
     this.cleanups.add(cleanup);
-    cancelSchedule = this.scheduler.schedule(fence.element, fence.source, {
+    fence.element.setAttribute?.(RENDER_PENDING_ATTRIBUTE, "");
+    cancelSchedule = this.queue.schedule(fence.element, fence.source, {
       onSvg: (svg) => {
+        fence.element.removeAttribute(RENDER_PENDING_ATTRIBUTE);
         fence.element.innerHTML = svg;
         fence.element.setAttribute("aria-label", "Mermaid diagram");
         if (this.openLink) {
@@ -87,6 +87,7 @@ export class DiagramRenderer {
         pass.measure();
       },
       onError: (error) => {
+        fence.element.removeAttribute(RENDER_PENDING_ATTRIBUTE);
         // Obsidian-style guarded chrome: title, error, Allow, and source.
         failure = showMermaidGuard(fence.element, error, fence.source, {
           showAllow: !this.trust.isTrusted(),

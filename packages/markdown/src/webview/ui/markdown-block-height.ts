@@ -1,4 +1,6 @@
 import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
+import { RENDER_PENDING_ATTRIBUTE } from "../../plugins/render/api";
+import { mermaidBlockHeight } from "./mermaid-height";
 /**
  * CodeMirror sizes a block widget from `estimatedHeight` until it measures
  * the widget, and again when a rebuilt decoration sits outside the viewport.
@@ -12,10 +14,10 @@ import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
  * painted box, not bare quote lines.
  *
  * Mermaid fences are special: a short source can render a tall SVG (hundreds
- * of px). Plain line×24 under-reserves; use a taller per-line factor and a
- * floor so remounts keep scroll/PageDown valid until measure. MarkdownBlock
- * also applies this reserve as minHeight so a remount that still sits in the
- * draw margin cannot measure the pre-SVG shell (~182) before Mermaid finishes.
+ * of px), and how tall depends on the kind of diagram, so mermaid-height.ts
+ * guesses from its structure. MarkdownBlock also applies this reserve as
+ * minHeight so a remount that still sits in the draw margin cannot measure
+ * the pre-SVG shell (~182) before Mermaid finishes.
  *
  * Display math (`$$…$$`) is the same shape: a one-line matrix or stacked
  * fraction typesets far taller than its source. Count `\\` rows inside the
@@ -36,10 +38,6 @@ import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
  */
 const LINE = 24;
 const CHROME = 12;
-/** Mermaid node/edge layouts are much taller than source text lines. */
-const MERMAID_LINE = 72;
-const MERMAID_MIN = 320;
-const MERMAID_CHROME = 48;
 /** MathJax SVG row height for matrices / align / stacked fractions. */
 const MATH_LINE = 48;
 const MATH_MIN = 160;
@@ -129,6 +127,43 @@ export function rememberMarkdownBlockHeight(
   if (height > previous) {
     measuredBlockHeights.set(source, height);
   }
+}
+
+const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
+
+/** A fence inside is still rendering (see RENDER_PENDING_ATTRIBUTE). */
+export function hasPendingRender(dom: HTMLElement): boolean {
+  return Boolean(dom.querySelector?.(`[${RENDER_PENDING_ATTRIBUTE}]`));
+}
+
+/** Remember a mounted block's painted height as it changes. */
+export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
+  if (
+    !source ||
+    blockObservers.has(dom) ||
+    typeof ResizeObserver === "undefined"
+  ) {
+    return;
+  }
+  const observer = new ResizeObserver((entries) => {
+    const height = entries[0]?.contentRect.height ?? 0;
+    // A pending diagram's box is the reserve, not its height.
+    if (height > 0 && !hasPendingRender(dom)) {
+      rememberMarkdownBlockHeight(source, height);
+    }
+  });
+  observer.observe(dom);
+  blockObservers.set(dom, observer);
+}
+
+/**
+ * Stop watching an unmounted block. Its observer has already recorded the
+ * last height it painted at; reading it again here would force a layout for
+ * every block CodeMirror unmounts, in the middle of its DOM update.
+ */
+export function unwatchMarkdownBlock(dom: HTMLElement): void {
+  blockObservers.get(dom)?.disconnect();
+  blockObservers.delete(dom);
 }
 
 /** Test helper: drop remembered MarkdownBlock heights. */
@@ -244,7 +279,7 @@ function formulaHeight(source: string): number {
   }
   const lines = Math.max(1, source.split("\n").length);
   if (isMermaidFence(source)) {
-    return Math.max(MERMAID_MIN, MERMAID_CHROME + lines * MERMAID_LINE);
+    return mermaidBlockHeight(source, estimateContentWidthPx);
   }
   if (isDisplayMath(source)) {
     return Math.max(MATH_MIN, CHROME + mathRows(source) * MATH_LINE);
@@ -261,9 +296,17 @@ function formulaHeight(source: string): number {
   return wrapped;
 }
 
-/** Reserve rendered-block height from Markdown source before DOM measure. */
+/**
+ * Reserve rendered-block height from Markdown source before DOM measure. A
+ * drawn diagram's height is its own: the Mermaid formula knows nothing of
+ * the layout, so it must not lift a measured height (a 504 px diagram
+ * reserved 696 px on every remount, then shrank on screen).
+ */
 export function markdownBlockEstimatedHeight(source: string): number {
-  const floor = formulaHeight(source);
   const cached = measuredBlockHeights.get(source);
+  if (cached !== undefined && isMermaidFence(source)) {
+    return cached;
+  }
+  const floor = formulaHeight(source);
   return cached === undefined ? floor : Math.max(floor, cached);
 }
