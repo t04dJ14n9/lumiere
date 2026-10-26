@@ -28,4 +28,10 @@ export { parseMenus, type MenuContribution } from "./host/context-menu";
 export type { PageSocket, PanelUrls } from "./host/panel";
 export type { HostIdentity } from "./host/services";
 export { SETTINGS_FILE } from "./host/settings";
+export {
+  createSettingsService,
+  type SettingsService,
+} from "./host/settings-service";
+export { listVault } from "./host/vault";
+export type { TreeHub } from "./host/trees";
 export { STATE_FILE } from "./host/workspace";
