@@ -409,9 +409,15 @@ input[type="checkbox"]:focus-visible {
   opacity: 0;
   transition: opacity 120ms;
 }
-.hybrid-block:hover > .edit-block,
 .edit-block:focus-visible {
   opacity: 1;
+}
+/* Hovering reveals only where there is hover: on a touch screen WebKit
+   spends the first tap on a reveal and drops the tap (hover-reveals test). */
+@media (hover: hover) {
+  .hybrid-block:hover > .edit-block {
+    opacity: 1;
+  }
 }
 .edit-block:hover {
   color: var(--vscode-editor-foreground);

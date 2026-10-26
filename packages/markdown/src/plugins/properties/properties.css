@@ -186,9 +186,15 @@
   color: var(--muted);
   opacity: 0;
 }
-.property-row:hover .metadata-property-link-flair,
 .property-row:focus-within .metadata-property-link-flair {
   opacity: 1;
+}
+/* Hovering reveals only where there is hover: on a touch screen WebKit
+   spends the first tap on a reveal and drops the tap (hover-reveals test). */
+@media (hover: hover) {
+  .property-row:hover .metadata-property-link-flair {
+    opacity: 1;
+  }
 }
 .properties button[data-property-add],
 .properties .metadata-add-button.text-icon-button {
