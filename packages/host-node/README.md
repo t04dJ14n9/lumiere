@@ -24,6 +24,9 @@ over Node, then starts the plugins with the same `bootstrap` VS Code uses
 any Node web server:
 
 - `/lumiere/editor?path=&root=`: a note's page;
+- `/lumiere/pdf?path=&root=`: a PDF's page, Lumière PDF's viewer
+  (`/lumiere/pdf/viewer/*`), which fetches the PDF from `/lumiere/pdf/bytes`.
+  It runs only when the embedder passes the built viewer (`EditorAssets.pdf`);
 - `/lumiere/m/*`: the built editor;
 - `/lumiere/page/shim.js`: the page shim;
 - `/lumiere/file`: a note's images;
@@ -72,6 +75,7 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/documents.ts`: notes on disk, edited in memory, saved after a pause.
 - `src/host/panels.ts`, `src/host/panel.ts`: editor pages as panels, and their sockets.
 - `src/host/routes.ts`, `src/host/page.ts`, `src/host/static.ts`: the routes above.
+- `src/host/pdf-pages.ts`, `src/host/pdf-routes.ts`: PDF tabs, on Lumière PDF's viewer core (`@workshop/pdf/portable`) and the same page shim and socket as notes.
 - `src/host/trees.ts`, `src/host/view-routes.ts`: the plugins' tree views and their routes.
 - `src/host/settings-routes.ts`: the settings for a settings page, and changes to them.
 - `src/host/context-menu.ts`, `src/host/when.ts`, `src/page/context-menu.ts`: the right-click menu, its when-clauses, and drawing it.

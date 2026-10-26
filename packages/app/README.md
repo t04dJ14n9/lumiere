@@ -106,7 +106,9 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 
 ## Limits
 
-- Markdown only: PDFs are listed but do not open yet.
+- PDFs open in Lumière PDF's viewer: scroll, zoom, find and select. Its
+  plugins (Copy Link for Agent, look up, the outline view) and the PDF
+  settings work only in VS Code for now, and links in a PDF do not open.
 - One window per server.
 - Git blame and the change gutter start off in the app (`src/server/defaults.ts`):
   git runs with the repository's own configuration, which can name programs

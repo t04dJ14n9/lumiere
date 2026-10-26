@@ -49,22 +49,7 @@ export interface RunningServer {
 }
 
 export async function startServer(setup: ServerSetup): Promise<RunningServer> {
-  const markdown = path.join(setup.assets, "markdown");
-  const lumiere = await startLumiere({
-    identity: { appName: "Lumière", uriScheme: "lumiere" },
-    markdown,
-    contributed: withAppDefaults(
-      await readContributed(path.join(setup.assets, "contributed.json")),
-    ),
-    menus: await readMenus(path.join(setup.assets, "menus.json")),
-    commands: await readCommands(path.join(setup.assets, "commands.json")),
-    data: setup.data,
-    logger: setup.logger,
-  });
-  const editor = createEditorRoutes(lumiere, {
-    markdown,
-    shim: path.join(setup.assets, "page", "shim.js"),
-  });
+  const { lumiere, editor } = await startEditor(setup);
   const api = createApi(...(await loadState(setup, lumiere)), setup.version);
   const shell = path.join(setup.assets, "shell");
   let port = setup.port;
@@ -104,6 +89,29 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
       return stopping;
     },
   };
+}
+
+/** Lumière's plugins, and the routes that serve their pages (notes and PDFs). */
+async function startEditor(setup: ServerSetup) {
+  const markdown = path.join(setup.assets, "markdown");
+  const lumiere = await startLumiere({
+    identity: { appName: "Lumière", uriScheme: "lumiere" },
+    markdown,
+    contributed: withAppDefaults(
+      await readContributed(path.join(setup.assets, "contributed.json")),
+    ),
+    menus: await readMenus(path.join(setup.assets, "menus.json")),
+    commands: await readCommands(path.join(setup.assets, "commands.json")),
+    data: setup.data,
+    logger: setup.logger,
+  });
+  const editor = createEditorRoutes(lumiere, {
+    markdown,
+    shim: path.join(setup.assets, "page", "shim.js"),
+    pdf: path.join(setup.assets, "pdf"),
+    log: (message) => setup.logger.warn(message),
+  });
+  return { lumiere, editor };
 }
 
 /** The vaults (the recent ones, and those given at start) and the window's layout. */

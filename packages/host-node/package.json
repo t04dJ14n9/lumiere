@@ -19,6 +19,7 @@
   "dependencies": {
     "@workshop/core": "workspace:*",
     "@workshop/markdown": "workspace:*",
+    "@workshop/pdf": "workspace:*",
     "ws": "8.22.0"
   },
   "devDependencies": {

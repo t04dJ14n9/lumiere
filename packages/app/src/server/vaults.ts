@@ -83,7 +83,8 @@ export class Vaults {
       await this.add(resolved);
       return;
     }
-    if (kindOf(resolved) !== "note") {
+    const kind = kindOf(resolved);
+    if (kind !== "note" && kind !== "pdf") {
       throw new Error(`Not a note: ${target}`);
     }
     const vault =

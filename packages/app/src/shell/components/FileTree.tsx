@@ -76,8 +76,8 @@ function FolderItems({
             className="tree-file"
             data-kind={file.kind}
             aria-current={file.path === activePath ? "page" : undefined}
-            // Only notes open for now; PDFs come with the PDF reader (HOSTS_PLAN M5).
-            disabled={file.kind !== "note"}
+            // Notes and PDFs open; images and other files do not yet.
+            disabled={file.kind !== "note" && file.kind !== "pdf"}
             onClick={() => onOpen(file.path)}
           >
             {file.path.slice(file.path.lastIndexOf("/") + 1)}

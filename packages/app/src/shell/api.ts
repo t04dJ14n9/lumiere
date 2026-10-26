@@ -73,18 +73,19 @@ export const api = {
   },
 };
 
-/** Whether a path names a Markdown note that `/lumiere/editor` can open. */
+/** Whether a path names a Markdown note or PDF that the app can open in a tab. */
 export function isNotePath(path: string): boolean {
-  return /\.(?:md|markdown)$/i.test(path);
+  return /\.(?:md|markdown|pdf)$/i.test(path);
 }
 
-/** The editor page for a vault file (host-node's `/lumiere/editor`). */
+/** The page for a vault file: host-node's editor, or its PDF viewer for a PDF. */
 export function editorUrl(vault: string, path: string): string {
   const query = new URLSearchParams({
     path: joinPath(vault, path),
     root: vault,
   });
-  return `/lumiere/editor?${query.toString()}`;
+  const page = /\.pdf$/i.test(path) ? "pdf" : "editor";
+  return `/lumiere/${page}?${query.toString()}`;
 }
 
 /** A vault path back to vault-relative, or undefined outside the vault. */

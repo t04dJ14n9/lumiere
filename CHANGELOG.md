@@ -17,7 +17,8 @@
   ⇧⌘] / ⇧⌘[ step through them. ⌘B and ⌥⌘B hide the files and the
   outline. Open Folder… uses the native picker, and
   Markdown files open from Finder or the command line. Unsaved notes are written when you quit. The same window
-  also runs in a browser (`packages/app`). PDFs do not open there yet.
+  also runs in a browser (`packages/app`). PDFs open in tabs in Lumière
+  PDF's viewer, from the files, Finder or the command line.
 - Outside VS Code (the desktop app, DeepSeek Harness), right-clicking in a
   note shows Lumière's menu as in VS Code: Copy Link for Agent with text
   selected, formatting and highlight colours, then Cut, Copy and Paste.
