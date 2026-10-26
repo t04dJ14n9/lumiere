@@ -156,20 +156,14 @@ export function watchMarkdownBlock(dom: HTMLElement, source: string): void {
   blockObservers.set(dom, observer);
 }
 
-/** Stop watching an unmounted block, remembering its last height. */
-export function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
+/**
+ * Stop watching an unmounted block. Its observer has already recorded the
+ * last height it painted at; reading it again here would force a layout for
+ * every block CodeMirror unmounts, in the middle of its DOM update.
+ */
+export function unwatchMarkdownBlock(dom: HTMLElement): void {
   blockObservers.get(dom)?.disconnect();
   blockObservers.delete(dom);
-  if (
-    typeof dom.getBoundingClientRect !== "function" ||
-    hasPendingRender(dom)
-  ) {
-    return;
-  }
-  const height = dom.getBoundingClientRect().height;
-  if (height > 0) {
-    rememberMarkdownBlockHeight(source, height);
-  }
 }
 
 /** Test helper: drop remembered MarkdownBlock heights. */

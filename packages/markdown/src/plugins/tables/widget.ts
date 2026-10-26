@@ -31,16 +31,10 @@ function watchTableRoot(root: HTMLElement, source: string): void {
   tableObservers.set(root, observer);
 }
 
-function unwatchTableRoot(root: HTMLElement, source: string): void {
+/** The observer has the last height; reading it here forced a layout per unmount. */
+function unwatchTableRoot(root: HTMLElement): void {
   tableObservers.get(root)?.disconnect();
   tableObservers.delete(root);
-  if (typeof root.getBoundingClientRect !== "function") {
-    return;
-  }
-  const height = root.getBoundingClientRect().height;
-  if (height > 0) {
-    rememberTableHeight(source, height);
-  }
 }
 
 interface RetainedTable {
@@ -65,7 +59,7 @@ export function enableTableRetention(
     retainedPools.delete(environment);
     for (const entry of pool) {
       retainedByRoot.delete(entry.root);
-      unwatchTableRoot(entry.root, entry.source);
+      unwatchTableRoot(entry.root);
       entry.controller.destroy();
       controllers.delete(entry.root);
     }
@@ -212,7 +206,7 @@ export class TableWidget extends WidgetType {
     return true;
   }
   override destroy(root: HTMLElement): void {
-    unwatchTableRoot(root, this.block.source);
+    unwatchTableRoot(root);
     const retained = retainedByRoot.get(root);
     const pool = retainedPools.get(this.environment);
     if (retained && pool && pool.has(retained)) {

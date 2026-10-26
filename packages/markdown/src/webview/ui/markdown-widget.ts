@@ -7,7 +7,6 @@ import { bindFenceClickGuard } from "./fence-click-guard";
 import {
   hasPendingRender,
   markdownBlockEstimatedHeight,
-  rememberMarkdownBlockContentWidth,
   unwatchMarkdownBlock,
   watchMarkdownBlock,
 } from "./markdown-block-height";
@@ -174,8 +173,9 @@ export class MarkdownBlock extends WidgetType {
     );
   }
 
+  // The note's width comes from markdownBlockWidthTracker: reading it here
+  // forced a layout for every block CodeMirror mounted.
   override toDOM(view: EditorView): HTMLElement {
-    rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     const poolKey = `${this.block.kind}\0${this.editing.reveal}\0${this.editing.guardMargin ? 1 : 0}\0${this.editing.editSummary ? 1 : 0}\0${this.block.source}`;
     const reusable = isShellReusable(this.retained, this.render)
       ? this.retained!
@@ -286,7 +286,7 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override destroy(dom: HTMLElement): void {
-    unwatchMarkdownBlock(dom, this.block.source);
+    unwatchMarkdownBlock(dom);
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
   }
@@ -399,7 +399,11 @@ function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
   if (hasPendingRender(body)) {
     return;
   }
-  if (shell.style.minHeight && body.getBoundingClientRect().height > 0) {
+  if (
+    shell.style.minHeight &&
+    shell.isConnected &&
+    body.getBoundingClientRect().height > 0
+  ) {
     shell.style.minHeight = "";
   }
 }

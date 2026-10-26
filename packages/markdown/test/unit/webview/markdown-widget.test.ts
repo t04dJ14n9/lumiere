@@ -703,3 +703,89 @@ test("a block keeps its reserved height while a diagram inside still waits for i
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });
+
+test("mounting and unmounting a block reads no layout", async () => {
+  clearMarkdownBlockHtmlCache();
+  const prevDoc = globalThis.document;
+  let layoutReads = 0;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    /** CodeMirror calls toDOM before it inserts the block. */
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    getBoundingClientRect() {
+      layoutReads++;
+      return { height: 120 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "> [!note] Title\n> Body";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "callout",
+      source,
+    };
+    const view = {
+      contentDOM: {
+        get clientWidth() {
+          layoutReads++;
+          return 640;
+        },
+      },
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure() {},
+    } as unknown as EditorView;
+    const render: RenderService = {
+      trusted: true,
+      async into(container, _source, context) {
+        container.innerHTML = '<div class="callout">Body</div>';
+        context?.measure?.();
+        return {
+          source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+    const widget = new MarkdownBlock(block, render);
+    const shell = widget.toDOM(view);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    widget.destroy(shell);
+    assert.equal(layoutReads, 0, "each read forces a layout mid-update");
+  } finally {
+    clearMarkdownBlockHtmlCache();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
