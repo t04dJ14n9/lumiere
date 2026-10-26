@@ -157,7 +157,11 @@ function rememberPooledShell(
   pool.set(key, entry);
 }
 
-/** Own a render pass and retain finished DOM across viewport exit/re-entry (`RW`). */
+/**
+ * A rendered Markdown block (callout, formula, diagram, embed, HTML). It owns
+ * its render pass, and a finished block goes to a pool when it scrolls out,
+ * so it comes back drawn instead of rendering again.
+ */
 export class MarkdownBlock extends WidgetType {
   constructor(
     readonly block: RenderBlock,
