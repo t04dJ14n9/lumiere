@@ -30,7 +30,8 @@ const contributions: MenuContribution[] = [
     command: "lumiere.markdown.copyLinkForAgent",
     title: "Copy Link for Agent",
     group: "0_agent@1",
-    when: "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
+    // VS Code's own key for a webview's menus (main #390); Bold keeps the older one.
+    when: "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge && webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
   },
   {
     command: "lumiere.pdf.fitWidth",
@@ -43,6 +44,7 @@ const contributions: MenuContribution[] = [
 test("items show when their clause holds, grouped and ordered as VS Code orders them", () => {
   const keys: Record<string, unknown> = {
     activeCustomEditorId: EDITOR,
+    webviewId: EDITOR,
     webviewSection: "markdownContent",
     "lumiere.markdown.hasSelection": true,
     "lumiere.markdown.plugin.agentBridge": true,

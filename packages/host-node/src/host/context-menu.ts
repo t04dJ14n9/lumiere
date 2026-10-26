@@ -76,7 +76,7 @@ export interface ContextMenuOptions {
   readonly contributions: readonly MenuContribution[];
   readonly keys: ContextKeys;
   readonly commands: Pick<HostCommands, "execute">;
-  /** The editor's view type: VS Code's `activeCustomEditorId` and `webview`. */
+  /** The editor's view type: VS Code's `activeCustomEditorId`, `webview` and `webviewId`. */
   readonly viewType: string;
   readonly log: (message: string) => void;
 }
@@ -140,6 +140,16 @@ async function showMenu(
   }
 }
 
+/**
+ * The keys VS Code sets to a webview editor's view type. Menus may use any
+ * of them; `webviewId` is the one VS Code documents for `webview/context`.
+ */
+const EDITOR_KEYS: ReadonlySet<string> = new Set([
+  "activeCustomEditorId",
+  "webview",
+  "webviewId",
+]);
+
 /** The element's context first, then what VS Code knows about the editor, then the plugins' keys. */
 function lookupKey(
   key: string,
@@ -149,7 +159,7 @@ function lookupKey(
   if (key in context) {
     return context[key];
   }
-  if (key === "activeCustomEditorId" || key === "webview") {
+  if (EDITOR_KEYS.has(key)) {
     return options.viewType;
   }
   return options.keys.get(key);
