@@ -10,16 +10,31 @@ function device(queries: Record<string, boolean>) {
 }
 
 test("a touch-only tablet waits for a tap before the editor takes focus", () => {
-  const ipad = device({ "(pointer: coarse)": true });
+  const ipad = device({
+    "(pointer: coarse)": true,
+    "(any-pointer: coarse)": true,
+  });
   assert.equal(focusOpensKeyboard(ipad), true);
 });
 
-test("a computer, or a tablet with a trackpad, takes focus at once", () => {
-  const mac = device({ "(any-pointer: fine)": true });
-  assert.equal(focusOpensKeyboard(mac), false);
-  const ipadWithTrackpad = device({
+test("an iPad with a paired Pencil still waits for a tap", () => {
+  // What WebKit reports on an iPad Pro with a Pencil paired: the Pencil
+  // counts as a fine pointer that hovers, but the finger stays primary.
+  const ipadWithPencil = device({
     "(pointer: coarse)": true,
+    "(any-pointer: coarse)": true,
     "(any-pointer: fine)": true,
+    "(any-hover: hover)": true,
   });
-  assert.equal(focusOpensKeyboard(ipadWithTrackpad), false);
+  assert.equal(focusOpensKeyboard(ipadWithPencil), true);
+});
+
+test("a computer takes focus at once", () => {
+  const mac = device({
+    "(pointer: fine)": true,
+    "(any-pointer: fine)": true,
+    "(hover: hover)": true,
+    "(any-hover: hover)": true,
+  });
+  assert.equal(focusOpensKeyboard(mac), false);
 });
