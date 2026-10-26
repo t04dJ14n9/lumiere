@@ -5,16 +5,29 @@
  * never parses the whole note inside a scroll's viewport update (which took
  * about 140 ms for this note on an M-series Mac).
  */
+import { performance } from "node:perf_hooks";
 import { expect, test, type Page } from "@playwright/test";
+import { markdownParser } from "../../src/markdown/dialect/parser";
 import { open } from "./harness";
 import { note } from "../support/perf-note";
 
 /**
- * The longest task allowed. Publishing the complete tree still costs its
+ * The longest task allowed, scaled to this machine: most of what a parse of
+ * the whole note takes here. Publishing the complete tree still costs its
  * readers (block index, gutter classes) time in proportion to the note,
- * about 35 ms here; the margin is for slower or loaded machines.
+ * about a third of a whole parse, and a whole parse inside a scroll is the
+ * bug. A fixed limit failed on CI's slower runners (117 ms, where an
+ * M-series Mac takes 35 ms) or would miss the bug on a fast machine.
  */
-const LONGEST_TASK_MS = 100;
+function longestTaskAllowed(source: string): number {
+  let fastest = Infinity;
+  for (let run = 0; run < 3; run++) {
+    const start = performance.now();
+    markdownParser.parse(source);
+    fastest = Math.min(fastest, performance.now() - start);
+  }
+  return 0.8 * fastest;
+}
 
 /**
  * A page that never idles while it scrolls: every idle callback waits for
@@ -74,7 +87,11 @@ test("scrolling a large note end to end after it opens runs no long task", async
   await open(page, source, "obsidian", {
     features: { vim: { enabled: false, config: {} } },
   });
+  const allowed = longestTaskAllowed(source);
   const tasks = await scrollToEndRightAway(page);
   await expect(page.getByText("Plain paragraph 23999.")).toBeVisible();
-  expect(Math.max(0, ...tasks)).toBeLessThan(LONGEST_TASK_MS);
+  expect(
+    Math.max(0, ...tasks),
+    `allowed ${Math.round(allowed)} ms`,
+  ).toBeLessThan(allowed);
 });
