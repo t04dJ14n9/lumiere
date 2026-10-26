@@ -8,6 +8,12 @@ import type { Disposer } from "@workshop/core";
  * processor calls `measure()` when it removes the mark.
  */
 export const RENDER_PENDING_ATTRIBUTE = "data-render-pending";
+/**
+ * Dispatched on each pending element of a rendered block that CodeMirror
+ * mounts again (scrolled back into its viewport), so a processor that
+ * skipped it while it was out of the page can take it up.
+ */
+export const RENDER_REMOUNT_EVENT = "mw-render-remount";
 export interface RenderPass {
   readOnly?: boolean;
   source: string;

@@ -1,7 +1,12 @@
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
-import type { RenderPass, RenderService } from "../../plugins/render/api";
+import {
+  RENDER_PENDING_ATTRIBUTE,
+  RENDER_REMOUNT_EVENT,
+  type RenderPass,
+  type RenderService,
+} from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
@@ -184,6 +189,7 @@ export class MarkdownBlock extends WidgetType {
       this.retained = reusable;
       reusable.currentView = view;
       this.mountShell(view, reusable, poolKey);
+      announceRemount(reusable.body);
       return reusable.shell;
     }
     const created = this.createShell(view);
@@ -405,6 +411,15 @@ function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
     body.getBoundingClientRect().height > 0
   ) {
     shell.style.minHeight = "";
+  }
+}
+
+/** Tell parts still rendering that their block is back (see RENDER_REMOUNT_EVENT). */
+function announceRemount(body: HTMLElement): void {
+  for (const element of body.querySelectorAll?.(
+    `[${RENDER_PENDING_ATTRIBUTE}]`,
+  ) ?? []) {
+    element.dispatchEvent(new Event(RENDER_REMOUNT_EVENT));
   }
 }
 

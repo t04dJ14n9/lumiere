@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import {
   MermaidQueue,
   MermaidSvgCache,
-  MOUNT_ANIMATION,
   watchMount,
   type MountWatch,
 } from "./mount-queue";
+import { RENDER_REMOUNT_EVENT } from "../render/api";
 
 interface FakeElement {
   id: string;
@@ -241,25 +241,14 @@ test("MermaidSvgCache evicts the least recently used entry", () => {
   assert.equal(cache.get("c"), "C");
 });
 
-test("watchMount hears the mount animation start on its own element only", () => {
-  const target = new EventTarget() as EventTarget & { isConnected: boolean };
-  target.isConnected = false;
+test("watchMount takes a diagram up at once, and again each time its block remounts", () => {
+  const target = new EventTarget();
   let count = 0;
   const stop = watchMount(target as unknown as Element, () => count++);
-  const start = (name: string, from: EventTarget = target) => {
-    const event = Object.assign(new Event("animationstart"), {
-      animationName: name,
-    });
-    Object.defineProperty(event, "target", { value: from });
-    target.dispatchEvent(event);
-  };
-  assert.equal(count, 0, "not in the page yet");
-  start(MOUNT_ANIMATION);
-  assert.equal(count, 1);
-  start("mw-caret-blink");
-  start(MOUNT_ANIMATION, new EventTarget());
-  assert.equal(count, 1, "other animations and descendants are ignored");
+  assert.equal(count, 1, "scheduled as its block is built");
+  target.dispatchEvent(new Event(RENDER_REMOUNT_EVENT));
+  assert.equal(count, 2);
   stop();
-  start(MOUNT_ANIMATION);
-  assert.equal(count, 1);
+  target.dispatchEvent(new Event(RENDER_REMOUNT_EVENT));
+  assert.equal(count, 2);
 });

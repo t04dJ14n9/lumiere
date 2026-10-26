@@ -15,6 +15,8 @@
  * first.
  */
 
+import { RENDER_REMOUNT_EVENT } from "../render/api";
+
 /** Calls `onMount` each time `element` is put in the page; returns a stop. */
 export type MountWatch = (element: Element, onMount: () => void) => () => void;
 
@@ -70,32 +72,16 @@ export class MermaidSvgCache {
 
 const sharedCache = new MermaidSvgCache();
 
-/** The animation `diagrams.css` gives a pending diagram; it restarts on every insertion. */
-export const MOUNT_ANIMATION = "mw-diagram-mounted";
-
 /**
- * Hear insertions through `animationstart`: the browser starts a CSS
- * animation each time an element that has one is inserted, and the event
- * costs no layout read or observer. Without the DOM (tests), mount at once.
+ * A diagram is taken up when it is scheduled, which happens as its block is
+ * built, just before CodeMirror puts it in the page (the queue checks after
+ * a frame), and again each time its block is mounted after being scrolled
+ * out (RENDER_REMOUNT_EVENT, from MarkdownBlock).
  */
 export function watchMount(element: Element, onMount: () => void): () => void {
-  if (typeof element.addEventListener !== "function") {
-    onMount();
-    return () => {};
-  }
-  const listener = (event: Event) => {
-    if (
-      event.target === element &&
-      (event as AnimationEvent).animationName === MOUNT_ANIMATION
-    ) {
-      onMount();
-    }
-  };
-  element.addEventListener("animationstart", listener);
-  if (element.isConnected) {
-    onMount();
-  }
-  return () => element.removeEventListener("animationstart", listener);
+  element.addEventListener?.(RENDER_REMOUNT_EVENT, onMount);
+  onMount();
+  return () => element.removeEventListener?.(RENDER_REMOUNT_EVENT, onMount);
 }
 
 function afterNextFrame(): Promise<void> {
