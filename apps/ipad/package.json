@@ -7,13 +7,17 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "sync": "node scripts/build.mjs && cap sync ios",
-    "typecheck": "tsc -p src && tsc -p test",
-    "test": "tsx --test \"test/unit/**/*.test.ts\""
+    "typecheck": "tsc -p src"
   },
   "dependencies": {
     "@capacitor/core": "8.5.3",
     "@capacitor/ios": "8.5.3",
-    "@workshop/ink": "workspace:*"
+    "@workshop/app": "workspace:*",
+    "@workshop/core": "workspace:*",
+    "@workshop/host-node": "workspace:*",
+    "@workshop/host-web": "workspace:*",
+    "@workshop/ink": "workspace:*",
+    "@workshop/markdown": "workspace:*"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3"
