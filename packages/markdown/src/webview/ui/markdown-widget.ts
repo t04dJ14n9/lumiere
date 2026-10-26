@@ -89,20 +89,55 @@ interface RetainedShell {
   pass?: RenderPass;
   settled: boolean;
   alive: boolean;
+  generation: number;
 }
 
 const BLOCK_DOM_CACHE_LIMIT = 128;
 let blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+let renderGenerations = new WeakMap<RenderService, number>();
 
-function isShellSettled(entry: RetainedShell | undefined): boolean {
-  if (!entry || !entry.settled || !entry.alive) {
+function currentRenderGeneration(render: RenderService): number {
+  return renderGenerations.get(render) ?? 0;
+}
+
+/** Evict pooled off-viewport block shells when render/changed invalidates rendered output. */
+export function evictMarkdownBlockDomPool(render: RenderService): void {
+  renderGenerations.set(render, currentRenderGeneration(render) + 1);
+  const pool = blockDomPool.get(render);
+  if (!pool) {
+    return;
+  }
+  blockDomPool.delete(render);
+  for (const entry of pool.values()) {
+    if (!entry.shell.isConnected) {
+      entry.alive = false;
+      void entry.pass?.dispose();
+    }
+  }
+}
+
+function isShellSettled(
+  entry: RetainedShell | undefined,
+  render: RenderService,
+): boolean {
+  if (
+    !entry ||
+    !entry.settled ||
+    !entry.alive ||
+    entry.generation !== currentRenderGeneration(render)
+  ) {
     return false;
   }
   return !entry.shell.classList?.contains?.("render-error");
 }
 
-function isShellReusable(entry: RetainedShell | undefined): boolean {
-  return Boolean(entry && !entry.shell.isConnected && isShellSettled(entry));
+function isShellReusable(
+  entry: RetainedShell | undefined,
+  render: RenderService,
+): boolean {
+  return Boolean(
+    entry && !entry.shell.isConnected && isShellSettled(entry, render),
+  );
 }
 
 function takePooledShell(
@@ -111,7 +146,7 @@ function takePooledShell(
 ): RetainedShell | undefined {
   const pool = blockDomPool.get(render);
   const entry = pool?.get(key);
-  if (!entry || !isShellReusable(entry)) {
+  if (!entry || !isShellReusable(entry, render)) {
     return undefined;
   }
   pool!.delete(key);
@@ -171,7 +206,7 @@ export class MarkdownBlock extends WidgetType {
   override toDOM(view: EditorView): HTMLElement {
     rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     const poolKey = `${this.block.kind}\0${this.editing.reveal}\0${this.editing.guardMargin ? 1 : 0}\0${this.editing.editSummary ? 1 : 0}\0${this.block.source}`;
-    const reusable = isShellReusable(this.retained)
+    const reusable = isShellReusable(this.retained, this.render)
       ? this.retained!
       : takePooledShell(this.render, poolKey);
     if (reusable) {
@@ -187,7 +222,7 @@ export class MarkdownBlock extends WidgetType {
       block: this.block,
       render: this.render,
       onSettled: () => {
-        if (isShellSettled(created)) {
+        if (isShellSettled(created, this.render)) {
           this.retained = created;
           rememberPooledShell(this.render, poolKey, created);
         }
@@ -221,6 +256,7 @@ export class MarkdownBlock extends WidgetType {
       currentView: view,
       settled: false,
       alive: true,
+      generation: currentRenderGeneration(this.render),
     };
   }
 
@@ -245,7 +281,7 @@ export class MarkdownBlock extends WidgetType {
     }
     this.lifetimes.set(entry.shell, () => {
       events.abort();
-      if (isShellSettled(entry)) {
+      if (isShellSettled(entry, this.render)) {
         this.retained = entry;
         rememberPooledShell(this.render, poolKey, entry);
       } else {
@@ -324,6 +360,7 @@ function setCachedBlockHtml(key: string, html: string): void {
 export function clearMarkdownBlockHtmlCache(): void {
   blockHtmlCache.clear();
   blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+  renderGenerations = new WeakMap<RenderService, number>();
 }
 
 function beginMarkdownBlockRender(options: {
@@ -347,7 +384,9 @@ function beginMarkdownBlockRender(options: {
         if (entry.alive) {
           rememberHtml();
           releasePaintReserve(shell, body);
-          entry.currentView.requestMeasure();
+          if (shell.isConnected) {
+            entry.currentView.requestMeasure();
+          }
         }
       },
     })

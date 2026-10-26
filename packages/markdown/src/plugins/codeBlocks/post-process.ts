@@ -14,6 +14,14 @@ interface CodePassOptions {
 
 export function bindCodePass(options: CodePassOptions): void {
   const { pass, cleanups } = options;
+  // Only fenced code; other blocks (query results) may contain code elements.
+  const codes = pass.container.querySelectorAll<HTMLElement>("pre > code");
+  const replacedMermaid = pass.container.querySelectorAll<HTMLElement>(
+    'pre[data-fence="mermaid"]:not(:has(> code))',
+  );
+  if (codes.length === 0 && replacedMermaid.length === 0) {
+    return;
+  }
   let isActive = true;
   const events = new AbortController();
   const copies: HTMLElement[] = [];
@@ -31,10 +39,10 @@ export function bindCodePass(options: CodePassOptions): void {
   };
   cleanups.add(cleanup);
   pass.onDispose(cleanup);
-  // Only fenced code; other blocks (query results) may contain code elements.
-  for (const code of pass.container.querySelectorAll<HTMLElement>(
-    "pre > code",
-  )) {
+  for (const pre of replacedMermaid) {
+    bindMermaidPre(pre, options, events.signal, copies);
+  }
+  for (const code of codes) {
     const copy = copyButton(code, options, events.signal);
     copies.push(copy);
     const label = labelFor(code, copy);
@@ -86,7 +94,14 @@ function highlightCode(
 }
 
 function labelFor(code: HTMLElement, copy: HTMLElement): HTMLElement | null {
-  const label = languageLabel(code.className);
+  return labelForClass(code.className, copy);
+}
+
+function labelForClass(
+  className: string,
+  copy: HTMLElement,
+): HTMLElement | null {
+  const label = languageLabel(className);
   if (!label) {
     return null;
   }
@@ -99,10 +114,23 @@ function labelFor(code: HTMLElement, copy: HTMLElement): HTMLElement | null {
 
 function copyButton(
   code: HTMLElement,
+  options: Pick<CodePassOptions, "editor" | "logger">,
+  signal: AbortSignal,
+): HTMLButtonElement {
+  return copyButtonForPre(
+    code.parentElement!,
+    () => code.textContent ?? "",
+    options,
+    signal,
+  );
+}
+
+function copyButtonForPre(
+  pre: HTMLElement,
+  readText: () => string,
   { editor, logger }: Pick<CodePassOptions, "editor" | "logger">,
   signal: AbortSignal,
 ): HTMLButtonElement {
-  const pre = code.parentElement!;
   const copy = document.createElement("button");
   copy.type = "button";
   copy.className = "copy-code";
@@ -113,7 +141,7 @@ function copyButton(
     "click",
     () => {
       void editor.clipboard
-        .write(code.textContent ?? "")
+        .write(readText())
         .catch((error) => logger.error("Copy failed", error));
     },
     { signal },
@@ -152,4 +180,23 @@ function revealCode({ code, event, source, editor }: CodeClick): void {
   }
   view.dispatch({ selection: { anchor: from }, scrollIntoView: true });
   view.focus();
+}
+
+function bindMermaidPre(
+  pre: HTMLElement,
+  options: CodePassOptions,
+  signal: AbortSignal,
+  copies: HTMLElement[],
+): void {
+  const rawSource = decodeURIComponent(pre.dataset.source ?? "");
+  const copy = copyButtonForPre(pre, () => rawSource, options, signal);
+  copies.push(copy);
+  const label = labelForClass(
+    `language-${pre.dataset.fence ?? "mermaid"}`,
+    copy,
+  );
+  if (label) {
+    copies.push(label);
+  }
+  options.pass.onDispose(() => copy.remove());
 }

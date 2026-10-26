@@ -71,11 +71,15 @@ export const onlineVideosWebview: Plugin<Infer<typeof config>> = {
 };
 
 export function mountVideos(pass: RenderPass, mount: Mount): void {
+  const images = pass.container.querySelectorAll<HTMLImageElement>(
+    "img.note-image[data-resource]",
+  );
+  if (images.length === 0) {
+    return;
+  }
   const events = new AbortController();
   const restore: (() => void)[] = [];
-  for (const image of pass.container.querySelectorAll<HTMLImageElement>(
-    "img.note-image[data-resource]",
-  )) {
+  for (const image of images) {
     const video = parseVideoUrl(image.dataset.resource ?? "");
     if (!video) {
       continue;

@@ -44,3 +44,8 @@ export function parseMarkdown(
   }
   return tree;
 }
+
+export function rememberParsedMarkdown(doc: Text, tree: Tree): Tree {
+  trees.set(doc, tree);
+  return tree;
+}

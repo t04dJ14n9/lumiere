@@ -1,6 +1,6 @@
 /* Mermaid diagrams, centred; failures use Obsidian is-guarded chrome. */
 pre[data-fence="mermaid"]:has(> svg) {
-  padding: 8px 0;
+  padding: 40px 0 8px;
   overflow-x: auto;
   text-align: center;
   background: none;

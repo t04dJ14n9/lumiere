@@ -39,6 +39,7 @@ const CHROME = 12;
 /** Mermaid node/edge layouts are much taller than source text lines. */
 const MERMAID_LINE = 72;
 const MERMAID_MIN = 320;
+const MERMAID_CHROME = 48;
 /** MathJax SVG row height for matrices / align / stacked fractions. */
 const MATH_LINE = 48;
 const MATH_MIN = 160;
@@ -243,7 +244,7 @@ function formulaHeight(source: string): number {
   }
   const lines = Math.max(1, source.split("\n").length);
   if (isMermaidFence(source)) {
-    return Math.max(MERMAID_MIN, CHROME + lines * MERMAID_LINE);
+    return Math.max(MERMAID_MIN, MERMAID_CHROME + lines * MERMAID_LINE);
   }
   if (isDisplayMath(source)) {
     return Math.max(MATH_MIN, CHROME + mathRows(source) * MATH_LINE);

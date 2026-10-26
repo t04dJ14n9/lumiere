@@ -138,10 +138,15 @@ export function fixture() {
   root.provide("rpc", rpc);
   root.effect(() => () => rpc.dispose());
   const handlers = new Map<string, () => boolean | Promise<boolean>>();
-  const registry = new ExtensionRegistry(pluginRank, (extensions) => {
-    view.dispatch({ effects: compartment.reconfigure(extensions) });
-  });
-  const contributions = new ViewContributions(view);
+  const registry = new ExtensionRegistry(
+    pluginRank,
+    (extensions, effects = []) => {
+      view.dispatch({
+        effects: [compartment.reconfigure(extensions), ...effects],
+      });
+    },
+  );
+  const contributions = new ViewContributions(view, () => registry.flush());
   const editor: EditorService & CallerBound<EditorService> = {
     [bindCaller](caller) {
       return {
@@ -171,6 +176,9 @@ export function fixture() {
     source: "note.md",
     viewState: contributions,
     focus() {},
+    batch: (fn) => registry.batch(fn),
+    flush: () => registry.flush(),
+    dispatchEffect: (effect) => registry.dispatchEffect(effect),
     clipboard: {
       async read() {
         return "";

@@ -22,7 +22,10 @@ export class ViewContributions implements ViewStateContributions {
       restore(value: unknown): void;
     }
   >();
-  constructor(private readonly view: EditorView) {}
+  constructor(
+    private readonly view: EditorView,
+    private readonly beforeRestore?: () => void,
+  ) {}
   restore(
     values: Record<string, unknown>,
     source: string,
@@ -64,6 +67,7 @@ export class ViewContributions implements ViewStateContributions {
     };
     this.active.set(key, entry);
     if (Object.hasOwn(this.values, key) || Object.hasOwn(this.legacy, key)) {
+      this.beforeRestore?.();
       entry.restore(
         Object.hasOwn(this.values, key) ? this.values[key] : this.legacy[key],
       );

@@ -215,5 +215,7 @@ function atHorizontalBoundary(
     vim && !vim.insertMode && !vim.visualMode && !extend
       ? findClusterBreak(doc.toString(), doc.length, false)
       : doc.length;
-  return view.state.selection.main.head === (column < 0 ? 0 : end);
+  return column < 0
+    ? view.state.selection.main.head <= 0
+    : view.state.selection.main.head >= end;
 }
