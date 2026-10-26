@@ -10,6 +10,7 @@ import {
   MARKDOWN_EDITOR,
   pluginRank,
   type ContributedSetting,
+  type HostServices,
   type HostSettings,
   type VaultCodeTrust,
 } from "@workshop/markdown/portable";
@@ -29,6 +30,7 @@ import {
 } from "./services";
 import { SETTINGS_FILE } from "./settings";
 import { TreeHub } from "./trees";
+import { uriName } from "./uris";
 import { createHostVaultSystem } from "./vault";
 import { STATE_FILE } from "./workspace";
 
@@ -81,6 +83,7 @@ export async function startHost(
     log,
     vaultCode: options.vaultCode ?? noVaultCode,
   });
+  reportSaveFailures(documents, host.dialogs);
   const vault = createHostVaultSystem({
     platform,
     documents,
@@ -124,4 +127,18 @@ async function readSaved(platform: HostPlatform) {
     platform.store.read(STATE_FILE),
   ]);
   return { settings, state };
+}
+
+/** Tell the reader when a note could not be written: its text stays open. */
+function reportSaveFailures(
+  documents: NoteDocuments,
+  dialogs: Pick<HostServices["dialogs"], "error">,
+): void {
+  documents.onSaveFailed((uri, error) =>
+    dialogs.error(
+      `Lumière could not save ${uriName(uri)}: ${
+        error instanceof Error ? error.message : String(error)
+      }. Your text is still open; copy it somewhere safe.`,
+    ),
+  );
 }

@@ -217,3 +217,28 @@ test("a note's files may be a class instance: its methods keep their object", as
   });
   assert.equal(await notes.readText("file:///n.md"), "read:file:///n.md");
 });
+
+test("a save after typing pauses that fails is reported, and the text stays", async (t) => {
+  const { uri, cleanup } = await note("start");
+  t.after(cleanup);
+  const documents = new NoteDocuments(
+    {
+      ...NODE_NOTES,
+      save: async () => {
+        throw new Error("The disk is full");
+      },
+    },
+    10,
+  );
+  const failed: [string, string][] = [];
+  documents.onSaveFailed((target, error) =>
+    failed.push([target, (error as Error).message]),
+  );
+  const document = await documents.open(uri);
+  await documents.apply(document, [{ from: 0, to: 5, insert: "typed" }]);
+  await until(() => failed.length > 0);
+  assert.deepEqual(failed, [[uri, "The disk is full"]]);
+  assert.equal(document.getText(), "typed");
+  assert.equal(document.isDirty, true);
+  await documents.dispose().catch(() => {});
+});

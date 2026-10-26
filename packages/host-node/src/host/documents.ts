@@ -115,6 +115,9 @@ export class NoteDocuments implements HostDocuments {
   private readonly saveListeners = new Set<(note: HostDocument) => void>();
   private readonly willSave = new Set<(note: HostDocument) => Promise<void>>();
   private readonly closeListeners = new Set<(uri: string) => void>();
+  private readonly saveFailedListeners = new Set<
+    (uri: string, error: unknown) => void
+  >();
   /** Saves that have reached disk. A reload captures this before it reads. */
   private readonly settledWrites = new Map<string, number>();
 
@@ -217,6 +220,14 @@ export class NoteDocuments implements HostDocuments {
   }
 
   /**
+   * A save no one waited for (one made after typing paused) failed: the
+   * note's text is still here, unsaved, and the reader must be told.
+   */
+  onSaveFailed(listener: (uri: string, error: unknown) => void): Disposer {
+    return subscribe(this.saveFailedListeners, listener);
+  }
+
+  /**
    * Write every note with unsaved text, then stop watching files. Watches
    * close even when a write fails: an open watch keeps the host process alive.
    */
@@ -268,7 +279,11 @@ export class NoteDocuments implements HostDocuments {
       note.uri,
       setTimeout(() => {
         this.timers.delete(note.uri);
-        void this.save(note);
+        this.save(note).catch((error: unknown) => {
+          for (const listener of this.saveFailedListeners) {
+            listener(note.uri, error);
+          }
+        });
       }, this.delay),
     );
   }
