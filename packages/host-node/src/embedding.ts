@@ -35,8 +35,29 @@ export interface ShownMessage {
 
 export const SHOWN: ShownMessage = { lumiere: "shown" };
 
-export type EmbedderMessage = ThemeMessage | ShownMessage;
-export type PageMessage = OpenMessage;
+/**
+ * A page whose host runs in its embedder's own window (host-web) has no
+ * socket: it asks the embedder for a channel to its panel.
+ */
+export interface ConnectMessage {
+  readonly lumiere: "connect";
+  readonly panel: string;
+}
+
+/** The embedder's answer: the channel's port is the event's first transferred port. */
+export interface PortMessage {
+  readonly lumiere: "port";
+  readonly panel: string;
+}
+
+/**
+ * `<meta name="lumiere-transport" content="channel">` in a page: it talks to
+ * its host over a channel its embedder gives it, not a socket.
+ */
+export const TRANSPORT_META = "lumiere-transport";
+
+export type EmbedderMessage = ThemeMessage | ShownMessage | PortMessage;
+export type PageMessage = OpenMessage | ConnectMessage;
 
 const VARIABLE = /^--vscode-[A-Za-z0-9-]+$/;
 const MAX_VALUE = 512;
@@ -79,6 +100,20 @@ export function parseOpenMessage(data: unknown): OpenMessage | undefined {
     return undefined;
   }
   return { lumiere: "open", path: data.path, fragment: data.fragment };
+}
+
+/** A page asking for its channel, or undefined when `data` is not one. */
+export function parseConnectMessage(data: unknown): ConnectMessage | undefined {
+  return isRecord(data) &&
+    data.lumiere === "connect" &&
+    typeof data.panel === "string"
+    ? { lumiere: "connect", panel: data.panel }
+    : undefined;
+}
+
+/** Whether `data` is the embedder's channel for this page's `panel`. */
+export function isPortMessage(data: unknown, panel: string): boolean {
+  return isRecord(data) && data.lumiere === "port" && data.panel === panel;
 }
 
 /** Whether `data` is the embedder saying it shows this page. */
