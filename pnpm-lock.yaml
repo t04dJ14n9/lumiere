@@ -67,6 +67,24 @@ importers:
         specifier: 2.12.4
         version: 2.12.4
 
+  apps/web:
+    dependencies:
+      '@workshop/app':
+        specifier: workspace:*
+        version: link:../../packages/app
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@workshop/host-node':
+        specifier: workspace:*
+        version: link:../../packages/host-node
+      '@workshop/host-web':
+        specifier: workspace:*
+        version: link:../../packages/host-web
+      '@workshop/markdown':
+        specifier: workspace:*
+        version: link:../../packages/markdown
+
   packages/agents: {}
 
   packages/app:

@@ -1,0 +1,18 @@
+{
+  "name": "@workshop/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lumière in a browser with no server: host-web and the desktop app's window, over the browser's storage and folders the reader picks. Installable and offline.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@workshop/app": "workspace:*",
+    "@workshop/core": "workspace:*",
+    "@workshop/host-node": "workspace:*",
+    "@workshop/host-web": "workspace:*",
+    "@workshop/markdown": "workspace:*"
+  }
+}

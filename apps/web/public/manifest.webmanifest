@@ -1,0 +1,11 @@
+{
+  "name": "Lumière",
+  "short_name": "Lumière",
+  "description": "Markdown notes and PDFs, in your browser, offline.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#1f1f1f",
+  "theme_color": "#1f1f1f",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
