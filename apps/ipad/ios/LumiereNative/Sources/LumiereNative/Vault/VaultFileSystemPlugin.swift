@@ -46,7 +46,8 @@ public class VaultFileSystemPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func list(_ call: CAPPluginCall) {
         run(call) {
             let skipping = Set(call.getArray("skipping", String.self) ?? [])
-            let entries = try self.files(call).list(call.getString("path") ?? "", skipping: skipping)
+            let entries = try self.files(call).list(
+                call.getString("path") ?? "", skipping: skipping, shallow: call.getBool("shallow") ?? false)
             return ["entries": entries.map(\.json)]
         }
     }

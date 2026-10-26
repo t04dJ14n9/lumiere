@@ -29,8 +29,9 @@ public final class VaultFiles {
     }
 
     /// Everything under `path`, folders included; `skipping` names folders
-    /// (like `.git`) whose contents are not listed.
-    public func list(_ path: String, skipping: Set<String> = []) throws -> [VaultEntry] {
+    /// (like `.git`) whose contents are not listed. `shallow` lists only what
+    /// is directly in `path`, as host-web asks, one folder at a time.
+    public func list(_ path: String, skipping: Set<String> = [], shallow: Bool = false) throws -> [VaultEntry] {
         let folder = try VaultPath.url(for: path, in: root)
         let keys: [URLResourceKey] = [.isDirectoryKey, .fileSizeKey, .contentModificationDateKey]
         var entries: [VaultEntry] = []
@@ -40,7 +41,7 @@ public final class VaultFiles {
             }
             for case let item as URL in walker {
                 guard let entry = self.entry(at: item) else { continue }
-                if entry.isFolder, skipping.contains(item.lastPathComponent) {
+                if entry.isFolder, shallow || skipping.contains(item.lastPathComponent) {
                     walker.skipDescendants()
                 }
                 entries.append(entry)
