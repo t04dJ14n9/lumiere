@@ -6,8 +6,9 @@
  * layout shifts, CodeMirror's scroll corrections, and how long diagrams stay
  * blank on screen. Run with `pnpm measure:scroll`; set SCROLL_SECTIONS,
  * SCROLL_THROTTLE (CPU slowdown), SCROLL_ONLY (scenario names), SCROLL_NOTE
- * (`mermaid` or `plain`), SCROLL_PROFILE=1 (CPU profile by module) and
- * SCROLL_OUT (a JSON file for the results).
+ * (`mermaid` or `plain`), SCROLL_PROFILE=1 (CPU profile by module),
+ * SCROLL_TRACE (a file for a Chrome trace of one scenario) and SCROLL_OUT (a
+ * JSON file for the results).
  */
 import { test, type CDPSession, type Page } from "@playwright/test";
 import { appendFileSync, writeFileSync } from "node:fs";
@@ -23,6 +24,7 @@ const ONLY = process.env.SCROLL_ONLY?.split(",");
 const NOTE = process.env.SCROLL_NOTE === "plain" ? "plain" : "mermaid";
 const PROFILE = process.env.SCROLL_PROFILE === "1";
 const OUT = process.env.SCROLL_OUT;
+const TRACE = process.env.SCROLL_TRACE;
 const BUNDLE = path.resolve("artifacts/fake-host.js");
 
 interface Driver {
@@ -222,12 +224,42 @@ async function startProfile(page: Page): Promise<CDPSession> {
   if (THROTTLE > 1) {
     await client.send("Emulation.setCPUThrottlingRate", { rate: THROTTLE });
   }
+  if (TRACE) {
+    await client.send("Tracing.start", {
+      categories:
+        "devtools.timeline,disabled-by-default-devtools.timeline,blink.user_timing",
+      transferMode: "ReturnAsStream",
+    });
+  }
   if (PROFILE) {
     await client.send("Profiler.enable");
     await client.send("Profiler.setSamplingInterval", { interval: 250 });
     await client.send("Profiler.start");
   }
   return client;
+}
+
+/** Save a Chrome trace (open it in the Performance panel). */
+async function stopTrace(client: CDPSession): Promise<void> {
+  if (!TRACE) {
+    return;
+  }
+  const done = new Promise<string>((resolve) =>
+    client.once("Tracing.tracingComplete", (event) =>
+      resolve(event.stream as string),
+    ),
+  );
+  await client.send("Tracing.end");
+  const handle = await done;
+  const chunks: string[] = [];
+  for (;;) {
+    const { data, eof } = await client.send("IO.read", { handle });
+    chunks.push(data);
+    if (eof) {
+      break;
+    }
+  }
+  writeFileSync(TRACE, chunks.join(""));
 }
 
 async function stopProfile(client: CDPSession) {
@@ -270,6 +302,7 @@ for (const [name, scenario] of Object.entries(scenarios)) {
       window.scrollRecorder.settled(10_000),
     );
     const cpu = await stopProfile(client);
+    await stopTrace(client);
     const result = {
       note: NOTE,
       sections: SECTIONS,
