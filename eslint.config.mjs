@@ -145,6 +145,8 @@ export default tseslint.config(
       // Throw-away measurement scripts (not part of the product).
       "packages/markdown/docs/obsidian-measurements/**",
       "**/dist/**",
+      // The web content cap sync copies into the iPad app's Xcode project.
+      "apps/ipad/ios/**",
       ".cache/**",
       "test-results/**",
       "playwright-report/**",
