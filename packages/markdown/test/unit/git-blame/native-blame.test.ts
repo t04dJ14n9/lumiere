@@ -225,6 +225,31 @@ test("production runner explicitly writes snapshot bytes and closes stdin", asyn
   assert.equal((await promise).stdout, porcelain());
 });
 
+test("production runner runs the git it is given, with its environment added", async () => {
+  const fake = fakeChild();
+  const seen: unknown[][] = [];
+  const launch = ((...args: unknown[]) => {
+    seen.push(args);
+    return fake.child;
+  }) as unknown as typeof spawn;
+  const plain = createSpawnBlameRunner(launch)({
+    args: ["status"],
+    cwd: "/",
+    timeoutMs: 5000,
+  });
+  const quiet = createSpawnBlameRunner(launch, {
+    program: "/opt/git/bin/git",
+    env: { GIT_TERMINAL_PROMPT: "0" },
+  })({ args: ["status"], cwd: "/", timeoutMs: 5000 });
+  emitProcessEvent(fake.child, "close", 0);
+  await Promise.all([plain, quiet]);
+  assert.deepEqual(seen[0], ["git", ["status"], { cwd: "/", stdio: "pipe" }]);
+  assert.equal(seen[1]?.[0], "/opt/git/bin/git");
+  const env = (seen[1]?.[2] as { env: Record<string, string | undefined> }).env;
+  assert.equal(env.GIT_TERMINAL_PROMPT, "0");
+  assert.equal(env.PATH, process.env.PATH);
+});
+
 test("production runner enforces timeout and kills the child", async () => {
   const fake = fakeChild();
   await assert.rejects(

@@ -8,11 +8,12 @@ import { pathToFileURL } from "node:url";
 import type {
   AgentHost,
   ContributedSetting,
+  GitAccess,
   HostCommands,
   HostServices,
 } from "@workshop/markdown/portable";
 import type { NoteDocuments } from "./documents";
-import { noDiffViews, noGit, noViews } from "./inert";
+import { noDiffViews, noViews } from "./inert";
 import { createNodeNavigation } from "./navigation";
 import type { PanelHub } from "./panels";
 import type { ContextKeys } from "./context-menu";
@@ -52,6 +53,8 @@ export interface NodeServicesOptions {
   readonly commands: HostCommands;
   /** The plugins' tree views, which the embedder shows (trees.ts). */
   readonly trees: TreeHub;
+  /** Blame and the change gutter, from the `git` command line (git.ts). */
+  readonly git: GitAccess;
 }
 
 export function createNodeHostServices(
@@ -76,7 +79,7 @@ export function createNodeHostServices(
     navigation: createNodeNavigation(panels, settings, options.identity),
     customEditors: panels,
     agentHost: createAgentHost(options.identity, data),
-    git: noGit,
+    git: options.git,
     diffViews: noDiffViews,
   };
 }
