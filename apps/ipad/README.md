@@ -34,16 +34,20 @@ xcrun devicectl device copy to --device <udid> --domain-type appDataContainer \
 - `src/main.ts`: mounts the vaults and starts host-web and the window.
 - `src/native-fs.ts`: a vault as host-web's `VaultFileSystem`, over the plugin.
 - `src/native/vault-files.ts`: the `LumiereVaultFiles` plugin, as JavaScript calls it.
-- `src/native/window-commands.ts`: the menu bar's, keys' and edit menu's commands, for the window.
+- `src/native/window-commands.ts`: the menu bar's, keys' and edit menu's commands, for the window,
+  and Insert Sketch from the edit menu.
+- `src/native/ink.ts`: the `LumiereInk` plugin (PencilKit) as the `ink` host service.
 - `src/welcome.ts`: the note the app's folder starts with.
 - `index.html`: the page and its content security policy.
 - `scripts/build.mjs`: the build (host-web's `buildBrowserApp`).
 - `ios/LumiereNative`: the native plugins (vault files, the window's commands,
-  the keyboard inset), a Swift package with its own tests:
+  the keyboard inset, the PencilKit canvas in `Ink/`), a Swift package with
+  its own tests:
   `xcodebuild test -scheme LumiereNative -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4)'`.
 - `ios/App`: the Xcode project.
 
 ## Limits
 
-See `docs/IPAD_PLAN.md`, section 6: images in notes and the Pencil are next;
+See `docs/IPAD_PLAN.md`, section 6. Sketches (P1) draw on PencilKit; how the
+Pencil feels against Notes is checked on a real iPad, not in the simulator.
 iCloud vaults (C1) and TestFlight (R1) wait on the Apple Developer Program.

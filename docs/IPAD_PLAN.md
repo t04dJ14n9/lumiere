@@ -237,7 +237,7 @@ any screen.
 | Piece | What it does | Provided by |
 | --- | --- | --- |
 | `ink` host service | Opens a canvas on an existing drawing (or a blank one) and returns the drawing when done; says what the device has (pressure, Pencil, tool picker). | iPad: `LumiereInk`, a Swift Capacitor plugin on PencilKit. Desktop and web: `webInk`, a Pointer Events canvas (pressure from pen tablets, `perfect-freehand`, MIT). VS Code: none at first. |
-| `sketch` plugin (Markdown) | Insert Sketch, also from a Pencil tap in the margin; shows sketches in notes; tap one to edit it. | `packages/ink` |
+| `sketch` plugin (Markdown) | Insert Sketch, also from a Pencil tap in the margin; shows sketches in notes; tap one to edit it. | `packages/markdown` (`plugins/sketch`), on `packages/ink`'s format: the Markdown plugin catalog, its settings and the editor page's bundle are built from `packages/markdown` |
 | `pdfSurface` host service | Shows a PDF with a PencilKit canvas on each page (PDFKit's page overlays, iPadOS 16+: the same markup as Files and Notes) and saves the ink. | iPad: `LumierePdf`, a Swift Capacitor plugin. Elsewhere: none (Lumière PDF's own viewer). |
 | `pdfInk` plugin (PDF) | Opens a PDF for markup on the iPad. Saves ink as standard PDF ink annotations. On the desktop, Lumière PDF shows them; editing them there comes with EmbedPDF's annotation plugin (MIT, the same 2.15 line Lumière PDF uses). | `packages/ink` and `packages/pdf` |
 
@@ -368,6 +368,49 @@ More… opens Lumière's menu; full screen, 375 pt and ⅔-width windows read
 well; notes with images, a video, embedded PDFs, tables, callouts and
 properties render, and a PDF opens in a tab.
 
+P1 runs on the iPad, in the simulator; the web canvas for the desktop and
+web apps is still to come:
+
+- **`ink` is a host service only some hosts have.** The iPad hands
+  `startLocalHost` its `LumiereInk` plugin (PencilKit, Swift); host-web and
+  host-node pass it to the plugins' bootstrap. Elsewhere the sketch plugin
+  waits: Insert Sketch stays out of the menus, and sketches show and select
+  as images.
+- **Insert Sketch** is in the iPad's edit menu beside More… (only when a
+  note's page has the focus) and in Lumière's right-click menu. It opens a
+  full-screen PencilKit canvas with the system tool picker; Done saves
+  `2026-10-26 17.34.sketch.svg` in Obsidian's attachment folder and embeds
+  it below the caret's line, in a paragraph of its own, linked as the
+  vault's link settings say. Cancel writes nothing, and asks before
+  dropping a drawing.
+- **A tap on a sketch** in Live Preview opens it again, exactly as drawn
+  (from PencilKit's own data); Done writes the new drawing over the file,
+  and the note shows it at once (`resources/changed`).
+- **The canvas:** the sketch's page (720 × 480 to start) fills the width
+  with its paper, scrolls with a finger, and grows downwards to hold what is
+  drawn below it. It is light, as sketches are stored drawn on light paper.
+  It has its own undo history (buttons, ⌘Z, three-finger swipes), and the
+  tool picker keeps the tools chosen last.
+- **The file:** each stored point is a `PKStrokePoint` placed by its
+  stroke's transform (the lasso), with force on a 0 to 1 scale and the
+  width and opacity the ink drew there; what the pixel eraser cut away is
+  left out. A sketch edited elsewhere is rebuilt from its strokes.
+- Fixed on the way: a rewritten image shows its new version; a Markdown
+  image whose path has spaces shows; a plugin can write a new file in
+  host-web's vaults; a shaded stroke's pieces meet without a notch.
+
+Checked in the simulator (iPad Air 11-inch (M4)), drawing with a finger:
+Insert Sketch from both menus, pen, marker and colours, the page growing,
+Done and Cancel, the file and its embed, a tap reopening the sketch as
+drawn, and the note showing the edit.
+
+Not checked with a real Pencil yet (Grok Bot, against Notes, section 5.1):
+the feel (latency, palm rejection), how pressure and tilt change width and
+shading and what force the file keeps (the simulator's finger gives 0),
+double-tap and squeeze, hover, a finger scrolling while the Pencil draws.
+Once in the simulator a dot appeared where a sketch was tapped to open it;
+it did not happen again, and is worth watching for on the iPad.
+
 Not done yet:
 
 - after a long-press selects a word in a note that was not focused, taps
@@ -377,7 +420,14 @@ Not done yet:
 - the editor's transparent caret (CodeMirror's drawn selection) makes
   WebKit hide its selection handles, so a selection cannot be dragged
   wider on the iPad.
-- the Pencil (P1): only the sketch format exists (`packages/ink`).
+- on the real iPad: whether the edit menu shows after a long-press (in the
+  simulator it shows on a tap on the selection); Split View widths;
+- the rest of P1: the web canvas (`webInk`) for the desktop and web apps;
+  a Pencil tap in the margin to start a sketch; resizing a sketch in the
+  note. A sketch embedded in the middle of a line opens on a tap but keeps
+  its old drawing until the line is drawn again, and an embed whose file
+  arrives later (from another device) says it is missing until the note
+  is reopened.
 
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript
@@ -445,5 +495,6 @@ Who does what:
    PDF, as standard ink annotations, as Files and Notes do. Every reader
    then shows them, at the cost of the PDF changing (and syncing) when
    marked up. The alternative is a sidecar file that only Lumière reads.
-4. **Where sketches go:** Obsidian's attachment folder (recommended), or a
+4. **Where sketches go:** built with the recommended option, Obsidian's
+   attachment folder; still open to change. The alternative is a
    fixed `Sketches/` folder.
