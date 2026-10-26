@@ -105,12 +105,7 @@ export async function startLumiere(
     addRoot: (item) => {
       roots.add(item.replace(/\/+$/, ""));
     },
-    async stop() {
-      stopMenus();
-      panels.dispose();
-      await root.dispose();
-      await documents.dispose();
-    },
+    stop: () => stopHost({ stopMenus, panels, root, documents }),
   };
 }
 
@@ -157,6 +152,19 @@ async function bootstrapPlugins({
   });
   await bootstrap(host, vault, root);
   return { settings: host.settings, root };
+}
+
+/** Pages and their menus first, then the plugins, then the notes. */
+async function stopHost(parts: {
+  readonly stopMenus: () => void;
+  readonly panels: PanelHub;
+  readonly root: RootContext;
+  readonly documents: NoteDocuments;
+}): Promise<void> {
+  parts.stopMenus();
+  parts.panels.dispose();
+  await parts.root.dispose();
+  await parts.documents.dispose();
 }
 
 /** Contributed settings from a `contributed.json` written at build time; none if missing. */
