@@ -24,6 +24,8 @@
   font-size: 14px;
   line-height: 1;
   overflow: hidden;
+  /* Instant, like Obsidian. A fade starts one animation per grip on hover. */
+  transition: none;
 }
 .table-handle[hidden],
 .table-drop-indicator[hidden] {
@@ -201,6 +203,7 @@
   justify-content: center;
   box-sizing: border-box;
   opacity: 0;
+  transition: none;
   /* No fade: a 0.1s transition left the strip hittable while still invisible,
      so an edge press could insert a row/column (whole-table rewrite / dirty
      buffer) before the + was visible. Opacity snaps on :hover instead. */
@@ -244,12 +247,18 @@
   height: auto;
   min-width: 40px;
 }
+.hybrid-table .cm-editor .cm-scroller {
+  overflow: hidden;
+}
 #app .hybrid-table .cm-editor .cm-scroller {
   /* CodeMirror's base theme is 100% high. In a table cell that participates
      in intrinsic row sizing instead of matching the rendered cell's content
-     box, so opening the projected editor can make only that row taller. */
+     box, so opening the projected editor can make only that row taller.
+     overflow stays hidden so this nested scroller is not a wheel target:
+     vertical wheel input must reach the note, matching Obsidian's
+     overflow-y hidden on `.cm-table-widget .cm-scroller`. */
   height: auto;
-  overflow: visible;
+  overflow: hidden;
   /* Same 1.3 as .hybrid-table table. Without this the nested editor inherits
      the note's --line-height (1.5 by default) and the cell grows when the
      caret enters, then shrinks when it leaves. */

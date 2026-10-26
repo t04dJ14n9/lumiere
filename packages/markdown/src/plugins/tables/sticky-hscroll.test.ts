@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  TableStickyHScroll,
   stickyHScrollTop,
   stickyHScrollVisible,
   stickyThumbMetrics,
@@ -112,4 +113,116 @@ test("thumb metrics scale with overflow and clamp a minimum width", () => {
   assert.equal(mid.thumbLeft, 200);
   const tiny = stickyThumbMetrics(800, 80000, 0);
   assert.equal(tiny.thumbWidth, 24);
+});
+
+test("note scrolling skips layout when the table does not overflow horizontally", () => {
+  const frames: FrameRequestCallback[] = [];
+  const previous = {
+    document: globalThis.document,
+    window: globalThis.window,
+    ResizeObserver: globalThis.ResizeObserver,
+    requestAnimationFrame: globalThis.requestAnimationFrame,
+  };
+  let rects = 0;
+  const listeners = new Map<string, Array<() => void>>();
+  const table = {
+    scrollWidth: 120,
+    clientWidth: 200,
+    clientHeight: 80,
+    offsetHeight: 94,
+    scrollLeft: 0,
+    isConnected: true,
+    firstElementChild: null,
+    addEventListener(type: string, fn: () => void) {
+      const list = listeners.get(type) ?? [];
+      list.push(fn);
+      listeners.set(type, list);
+    },
+    removeEventListener() {},
+    getBoundingClientRect() {
+      rects += 1;
+      return {
+        top: 0,
+        bottom: 400,
+        left: 0,
+        right: 200,
+        width: 200,
+        height: 400,
+      };
+    },
+  };
+  const note = {
+    ...table,
+    scrollWidth: 200,
+    clientWidth: 200,
+    getBoundingClientRect() {
+      rects += 1;
+      return {
+        top: 0,
+        bottom: 300,
+        left: 0,
+        right: 200,
+        width: 200,
+        height: 300,
+      };
+    },
+    dispatch(type: string) {
+      for (const fn of listeners.get(type) ?? []) {
+        fn();
+      }
+    },
+  };
+  globalThis.document = {
+    createElement() {
+      return {
+        className: "",
+        hidden: false,
+        style: {},
+        setAttribute() {},
+        append() {},
+        addEventListener() {},
+        removeEventListener() {},
+        remove() {},
+      };
+    },
+  } as unknown as Document;
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+  globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => {
+    frames.push(callback);
+    return frames.length;
+  };
+  globalThis.window = {
+    addEventListener() {},
+    removeEventListener() {},
+  } as unknown as Window & typeof globalThis;
+  try {
+    const bar = new TableStickyHScroll(
+      table as unknown as HTMLElement,
+      note as unknown as HTMLElement,
+    );
+    const queued = frames.splice(0);
+    for (const frame of queued) {
+      frame(0);
+    }
+    assert.equal(rects, 0);
+    note.dispatch("scroll");
+    assert.equal(frames.length, 0);
+    table.scrollWidth = 800;
+    bar.measure();
+    assert.ok(rects > 0);
+    const after = rects;
+    note.dispatch("scroll");
+    assert.equal(frames.length, 1);
+    frames[0]?.(0);
+    assert.ok(rects > after);
+    bar.destroy();
+  } finally {
+    globalThis.document = previous.document;
+    globalThis.window = previous.window;
+    globalThis.ResizeObserver = previous.ResizeObserver;
+    globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+  }
 });

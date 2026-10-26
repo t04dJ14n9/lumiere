@@ -3,7 +3,9 @@ import type { RenderBlock } from "../livePreview/api";
 import { TableController } from "./controller";
 import type { TableEnvironment } from "./environment";
 import { rememberTableHeight, tableEstimatedHeight } from "./estimated-height";
+import { resumeRetainedCell } from "./focus-lifetime";
 import { entersTable } from "./navigation";
+import { activeTables } from "./state";
 
 export {
   activeEditor,
@@ -157,6 +159,12 @@ export class TableWidget extends WidgetType {
       retained.source = this.block.source;
       retained.revision = this.revision;
       retained.controller.update(this.block, view, force);
+      resumeRetainedCell(
+        retained.root,
+        view,
+        retained.controller.editor,
+        activeTables.get(view) === retained.controller,
+      );
       watchTableRoot(retained.root, this.block.source);
       return retained.root;
     }
