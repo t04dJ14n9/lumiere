@@ -11,6 +11,7 @@ import { indexedDbFolder, MemoryFileSystem, Mounts } from "@workshop/host-web";
 import type { ContributedSetting } from "@workshop/markdown/portable";
 import { NativeFileSystem } from "./native-fs";
 import { vaultFiles, type NativeVault } from "./native/vault-files";
+import { appCommands } from "./native/window-commands";
 import { WELCOME } from "./welcome";
 
 const DATA = "/lumiere-data";
@@ -56,7 +57,10 @@ async function main(): Promise<void> {
       return path;
     },
   });
-  startWindow(document.getElementById("root")!, local.backend);
+  startWindow(document.getElementById("root")!, {
+    ...local.backend,
+    appCommands,
+  });
   const [last] = (await local.backend.vaults.list()).recent;
   await local.backend.vaults
     .add(last ?? appFolder)

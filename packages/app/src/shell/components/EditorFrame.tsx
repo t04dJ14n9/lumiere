@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
+  MENU_AT_SELECTION,
   parseConnectMessage,
   parseOpenMessage,
   SHOWN,
@@ -76,6 +77,16 @@ export function EditorFrame({ tab, visible, onOpen }: EditorFrameProps) {
       }}
     />
   ) : null;
+}
+
+/**
+ * Ask the shown note's page for its right-click menu at the selection
+ * (More… in the iPad's edit menu); with Settings shown there is none.
+ */
+export function openShownPageMenu(): void {
+  document
+    .querySelector<HTMLIFrameElement>("iframe.editor-frame:not([hidden])")
+    ?.contentWindow?.postMessage(MENU_AT_SELECTION, location.origin);
 }
 
 /** The tab's page, opened by the backend and disposed of when the tab goes. */

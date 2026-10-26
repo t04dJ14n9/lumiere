@@ -36,6 +36,16 @@ export interface ShownMessage {
 export const SHOWN: ShownMessage = { lumiere: "shown" };
 
 /**
+ * The embedder asks for the page's right-click menu at the selection, for a
+ * device without a right click: the iPad's edit menu offers More… for it.
+ */
+export interface MenuMessage {
+  readonly lumiere: "menu";
+}
+
+export const MENU_AT_SELECTION: MenuMessage = { lumiere: "menu" };
+
+/**
  * A page whose host runs in its embedder's own window (host-web) has no
  * socket: it asks the embedder for a channel to its panel.
  */
@@ -122,6 +132,10 @@ export function isShownMessage(data: unknown): data is ShownMessage {
 }
 
 /** Whether `data` is any embedding message, which the editor must not see. */
+export function isMenuMessage(data: unknown): data is MenuMessage {
+  return isRecord(data) && data.lumiere === "menu";
+}
+
 export function isEmbeddingMessage(data: unknown): boolean {
   return isRecord(data) && typeof data.lumiere === "string";
 }

@@ -34,6 +34,53 @@ export function reportContextMenus(send: Send): void {
   });
 }
 
+/**
+ * Open the right-click menu at the selection, for a device without a right
+ * click (the iPad's edit menu offers More…, embedding.ts). A `contextmenu`
+ * at the selection takes the path a right-click takes: the editor stamps
+ * what is selected, a table draws its own menu, or the page reports it.
+ */
+export function openMenuAtSelection(doc: Document): void {
+  const spot = menuSpot(doc.getSelection(), doc.activeElement ?? doc.body);
+  spot.target.dispatchEvent(
+    new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      clientX: spot.x,
+      clientY: spot.y,
+    }),
+  );
+}
+
+interface SpotSelection {
+  readonly rangeCount: number;
+  getRangeAt(index: number): {
+    readonly startContainer: Node;
+    getBoundingClientRect(): DOMRect;
+  };
+}
+
+/**
+ * Where a menu for the selection opens: under its start, on the element that
+ * holds it. A caret's rectangle can be empty, then the element's stands in.
+ */
+export function menuSpot(
+  selection: SpotSelection | null,
+  fallback: Element,
+): { readonly target: Element; readonly x: number; readonly y: number } {
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : undefined;
+  const node = range?.startContainer;
+  const target =
+    (node && node.nodeType === 1 ? (node as Element) : node?.parentElement) ??
+    fallback;
+  const rect = range?.getBoundingClientRect();
+  const box =
+    rect && (rect.width > 0 || rect.height > 0)
+      ? rect
+      : target.getBoundingClientRect();
+  return { target, x: box.left, y: box.bottom };
+}
+
 /** VS Code's webview context: the element's `data-vscode-context`, over its parents'. */
 export function contextOf(target: EventTarget | null): MenuContext {
   const layers: MenuContext[] = [];

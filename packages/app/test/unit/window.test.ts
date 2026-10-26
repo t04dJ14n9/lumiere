@@ -244,3 +244,12 @@ test("a narrow window floats one panel at a time and saves nothing", async () =>
     floating: undefined,
   });
 });
+
+test("a native menu's command is one the window knows, or nothing", async () => {
+  const { parseAppCommand } = await import("../../src/shell/backend");
+  assert.equal(parseAppCommand("toggle-outline"), "toggle-outline");
+  assert.equal(parseAppCommand("page-menu"), "page-menu");
+  for (const other of ["toggle-everything", "", 3, null, undefined]) {
+    assert.equal(parseAppCommand(other), undefined, String(other));
+  }
+});

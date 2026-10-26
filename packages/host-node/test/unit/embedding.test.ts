@@ -94,3 +94,19 @@ test("a channel is asked for and handed over only for the page's own panel", () 
   assert.equal(isPortMessage({ lumiere: "port", panel: "p2" }, "p1"), false);
   assert.equal(isEmbeddingMessage({ lumiere: "port", panel: "p1" }), true);
 });
+
+test("the menu message asks for the page's menu and nothing else", async () => {
+  const { isMenuMessage, isShownMessage, MENU_AT_SELECTION } =
+    await import("../../src/embedding");
+  assert.equal(isMenuMessage(MENU_AT_SELECTION), true);
+  assert.equal(isEmbeddingMessage(MENU_AT_SELECTION), true);
+  assert.equal(isShownMessage(MENU_AT_SELECTION), false);
+  for (const other of [
+    { lumiere: "shown" },
+    { lumiere: "theme" },
+    "menu",
+    null,
+  ]) {
+    assert.equal(isMenuMessage(other), false, JSON.stringify(other));
+  }
+});

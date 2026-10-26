@@ -7,7 +7,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "sync": "node scripts/build.mjs && cap sync ios",
-    "typecheck": "tsc -p src"
+    "typecheck": "tsc -p src && tsc -p test",
+    "test": "tsx --test \"test/unit/**/*.test.ts\""
   },
   "dependencies": {
     "@capacitor/core": "8.5.3",

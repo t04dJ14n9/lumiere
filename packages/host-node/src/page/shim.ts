@@ -8,6 +8,7 @@
  */
 import {
   isEmbeddingMessage,
+  isMenuMessage,
   isPortMessage,
   isShownMessage,
   parseThemeMessage,
@@ -16,7 +17,7 @@ import {
 } from "../embedding";
 import { parseHostFrame, type PageFrame } from "../protocol";
 import { applyTheme, followSystemTheme } from "./theme";
-import { reportContextMenus } from "./context-menu";
+import { openMenuAtSelection, reportContextMenus } from "./context-menu";
 import { createUi } from "./ui";
 
 interface VsCodeApi {
@@ -64,6 +65,8 @@ function listenToEmbedder(send: (frame: PageFrame) => void): void {
     } else if (isShownMessage(event.data)) {
       // Shown is active, as when the reader clicks in (reportFocus).
       send({ ch: "ui", data: { type: "focus" } });
+    } else if (isMenuMessage(event.data)) {
+      openMenuAtSelection(document);
     }
   });
 }

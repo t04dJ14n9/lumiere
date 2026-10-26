@@ -1,6 +1,6 @@
 // Unit tests of every package, each run from its own directory: the core,
 // the agent formats, then Lumière, Lumière PDF, the Node host, the web host,
-// DSH, the app and ink.
+// DSH, the app, ink and the iPad app.
 // Root scripts are tested too.
 import { readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -46,5 +46,6 @@ const failures = [
   run("packages/dsh", "pnpm", ["test"]),
   run("packages/app", "pnpm", ["test"]),
   run("packages/ink", "pnpm", ["test"]),
+  run("apps/ipad", "pnpm", ["test"]),
 ].filter((status) => status !== 0);
 process.exit(failures.length ? 1 : 0);
