@@ -8,11 +8,12 @@ import {
 } from "@codemirror/language";
 import type { EditorView } from "@codemirror/view";
 import { Compartment, type EditorState, type Text } from "@codemirror/state";
+import type { Tree } from "@lezer/common";
 import { foldedViewState } from "./view-state";
 import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import { documentTree } from "../livePreview/api";
+import { documentTree, markdownTree } from "../livePreview/api";
 import { headingFold } from "./heading-fold";
 import { config } from "./manifest";
 import {
@@ -34,6 +35,7 @@ const foldLess = (view: EditorView) =>
 
 interface CachedFoldRange {
   end: number;
+  tree: Tree | undefined;
   range: { from: number; to: number } | null;
 }
 const foldRanges = new WeakMap<
@@ -97,33 +99,36 @@ export function foldRange(
     cache = new Map();
     byKey.set(key, cache);
   }
+  // A large note's tree grows after the first paint; a heading's fold
+  // computed from its prefix holds only for that tree.
+  const tree = options.heading ? markdownTree(state) : undefined;
   const cached = cache.get(start);
-  if (cached?.end === end) {
+  if (cached?.end === end && cached.tree === tree) {
     return cached.range;
   }
   let range: { from: number; to: number } | null = null;
-  if (options.heading) {
-    range = headingFold(
-      state.doc,
-      start,
-      end,
-      state.field(documentTree, false),
-    );
+  if (tree) {
+    range = headingFold(state.doc, start, end, tree);
   }
   if (!range && options.indent) {
     range = indentFold(state.doc, start, end, state.tabSize);
   }
-  cache.set(start, { end, range });
+  cache.set(start, { end, tree, range });
   return range;
 }
-/** CodeMirror's gutter otherwise ignores fold-service and tab-width changes. */
+/**
+ * CodeMirror's gutter otherwise ignores fold-service and tab-width changes,
+ * and Live Preview's tree growing (it watches only its own language tree).
+ */
 export function foldingChanged(update: {
   startState: EditorState;
   state: EditorState;
 }): boolean {
   return (
     update.startState.facet(foldService) !== update.state.facet(foldService) ||
-    update.startState.tabSize !== update.state.tabSize
+    update.startState.tabSize !== update.state.tabSize ||
+    update.startState.field(documentTree, false) !==
+      update.state.field(documentTree, false)
   );
 }
 const configurations = new WeakMap<Context, Compartment>();

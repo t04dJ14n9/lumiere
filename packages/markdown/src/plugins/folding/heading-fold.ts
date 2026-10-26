@@ -8,6 +8,7 @@ interface FoldRange {
 }
 interface CachedFold {
   end: number;
+  tree: Tree;
   range: FoldRange | null;
 }
 const folds = new WeakMap<Text, Map<number, CachedFold>>();
@@ -26,14 +27,25 @@ function canStartHeading(doc: Text, start: number): boolean {
   );
 }
 
-/** The gutter asks about visible lines; it needs no labels or other metadata. */
+/**
+ * The gutter asks about visible lines; it needs no labels or other metadata.
+ *
+ * `syntax` may cover only a prefix of a large note that is still parsing:
+ * a line past it has no fold yet, and a section that runs to its end folds
+ * to its last parsed line for now. The gutter asks again when the tree
+ * grows, and the cache answers only for the tree it was computed from.
+ */
 export function headingFold(
   doc: Text,
   start: number,
   end: number,
-  tree?: Tree,
+  syntax?: Tree,
 ): FoldRange | null {
   if (!canStartHeading(doc, start)) {
+    return null;
+  }
+  const tree = syntax ?? parseMarkdown(doc);
+  if (end > tree.length) {
     return null;
   }
   let cache = folds.get(doc);
@@ -42,13 +54,11 @@ export function headingFold(
     folds.set(doc, cache);
   }
   const cached = cache.get(start);
-  if (cached?.end === end) {
+  if (cached?.end === end && cached.tree === tree) {
     return cached.range;
   }
-  const activeTree =
-    tree && tree.length >= doc.length ? tree : parseMarkdown(doc);
   let heading: SyntaxNode | undefined;
-  activeTree.iterate({
+  tree.iterate({
     from: start,
     to: end,
     enter(node) {
@@ -66,14 +76,17 @@ export function headingFold(
       return undefined;
     },
   });
-  const range = heading ? sectionFold(heading, doc.length) : null;
-  cache.set(start, { end, range });
+  // A prefix ends at the start of its first unparsed line; stop before
+  // that line break so the fold never pulls the next line up.
+  const limit = tree.length < doc.length ? tree.length - 1 : doc.length;
+  const range = heading ? sectionFold(heading, limit) : null;
+  cache.set(start, { end, tree, range });
   return range;
 }
 
-function sectionFold(heading: SyntaxNode, length: number): FoldRange | null {
+function sectionFold(heading: SyntaxNode, limit: number): FoldRange | null {
   const level = headingLevel(heading.name);
-  let to = heading.parent?.to ?? length;
+  let to = Math.min(heading.parent?.to ?? limit, limit);
   // The next heading of the same or a higher level ends the section.
   for (let next = heading.nextSibling; next; next = next.nextSibling) {
     const nextLevel = headingLevel(next.name);

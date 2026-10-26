@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { EditorState } from "@codemirror/state";
-import { parseMarkdown } from "../../markdown/dialect";
+import { cachedMarkdown, parseMarkdown } from "../../markdown/dialect";
 import { headings } from "../../markdown/metadata/headings";
-import { foldRange } from "./webview";
+import {
+  documentTree,
+  parseForFirstPaint,
+  replaceDocumentTree,
+} from "../livePreview/api";
+import { foldingChanged, foldRange } from "./webview";
 import { headingFold } from "./heading-fold";
 
 test("heading folds keep the metadata ranges for nested scopes and setext headings", () => {
@@ -131,4 +136,57 @@ test("plain paragraph lines fast-reject in O(1) without touching the syntax tree
   } finally {
     spy.mock.restore();
   }
+});
+
+/** A title over many sections: far longer than the first-paint parse. */
+const longNote =
+  "# Title\n\n" +
+  Array.from(
+    { length: 600 },
+    (_, index) =>
+      `## Section ${index}\n\n${"Words in a paragraph. ".repeat(12)}`,
+  ).join("\n\n") +
+  "\n";
+
+test("headings fold from a prefix tree without parsing the whole note", () => {
+  const state = EditorState.create({ doc: longNote });
+  const prefix = parseForFirstPaint(state.doc);
+  assert.ok(prefix.length < state.doc.length);
+  const title = state.doc.line(1);
+  const section = state.doc.line(3);
+  const beyond = state.doc.lineAt(prefix.length + 1000);
+  const next = longNote.indexOf("## Section 1\n");
+  assert.deepEqual(headingFold(state.doc, section.from, section.to, prefix), {
+    from: section.to,
+    to: next - 1,
+  });
+  // The title's section runs past the prefix: it folds to the prefix's
+  // last line until the rest is parsed.
+  assert.deepEqual(headingFold(state.doc, title.from, title.to, prefix), {
+    from: title.to,
+    to: state.doc.lineAt(prefix.length - 1).to,
+  });
+  assert.equal(headingFold(state.doc, beyond.from, beyond.to, prefix), null);
+  assert.equal(cachedMarkdown(state.doc), undefined, "no whole-note parse");
+});
+
+test("a fold found from a prefix is found again once the tree is complete", () => {
+  let state = EditorState.create({ doc: longNote, extensions: [documentTree] });
+  const options = { heading: true, indent: false };
+  const title = state.doc.line(1);
+  const prefix = state.field(documentTree);
+  assert.ok(prefix.length < state.doc.length);
+  assert.equal(
+    foldRange(state, title.from, title.to, options)?.to,
+    prefix.length - 1,
+  );
+  const startState = state;
+  state = state.update({
+    effects: replaceDocumentTree.of(parseMarkdown(state.doc)),
+  }).state;
+  assert.ok(foldingChanged({ startState, state }), "the gutter asks again");
+  assert.equal(
+    foldRange(state, title.from, title.to, options)?.to,
+    state.doc.length,
+  );
 });
