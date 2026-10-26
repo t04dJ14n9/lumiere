@@ -6,6 +6,7 @@
 import { startLocalHost } from "@workshop/app/local";
 import { startWindow } from "@workshop/app/shell";
 import { parseMenus } from "@workshop/host-node/core";
+import { webInk } from "@workshop/ink/canvas";
 import {
   indexedDbFolder,
   MemoryFileSystem,
@@ -27,6 +28,8 @@ import { fileUrl } from "./shared/routes";
 
 const DATA = "/lumiere-data";
 const DEMO_VAULT = "/vaults/Lumière Demo";
+/** The sketch plugin's command (packages/markdown/src/plugins/sketch). */
+const INSERT_SKETCH_COMMAND = "lumiere.markdown.insertSketch";
 
 async function main(): Promise<void> {
   const base = new URL(".", location.href);
@@ -49,6 +52,8 @@ async function main(): Promise<void> {
     workerUrl: (name) => new URL(`workers/${name}.web.js`, base).href,
     contributed,
     menus: parseMenus(menus),
+    // Sketches are drawn on the web canvas, over this window.
+    ink: webInk(),
     pages: {
       origin: location.origin,
       editor: new URL("markdown/", base).href,
@@ -77,7 +82,10 @@ async function main(): Promise<void> {
       }),
     });
   }
-  startWindow(document.getElementById("root")!, local.backend);
+  startWindow(document.getElementById("root")!, {
+    ...local.backend,
+    insertSketch: () => local.host.run(INSERT_SKETCH_COMMAND),
+  });
   // The last vault opened again; on a first visit, the demo vault.
   const [last] = (await local.backend.vaults.list()).recent;
   await local.backend.vaults

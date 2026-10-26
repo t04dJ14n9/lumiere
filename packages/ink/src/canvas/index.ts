@@ -8,12 +8,7 @@
 import type { InkService } from "../service/ink";
 import { openSketchCanvas } from "./sketch-canvas";
 
-export interface WebInkOptions {
-  /** Where the canvas goes while it is open; the document's body if not given. */
-  readonly parent?: () => HTMLElement;
-}
-
-export function webInk(options: WebInkOptions = {}): InkService {
+export function webInk(): InkService {
   let isOpen = false;
   return {
     capabilities: async () => ({
@@ -29,10 +24,7 @@ export function webInk(options: WebInkOptions = {}): InkService {
       }
       isOpen = true;
       try {
-        return await openSketchCanvas(
-          request,
-          options.parent?.() ?? document.body,
-        );
+        return await openSketchCanvas(request, document.body);
       } finally {
         isOpen = false;
       }

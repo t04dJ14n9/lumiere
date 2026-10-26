@@ -21,6 +21,7 @@
     "@workshop/core": "workspace:*",
     "@workshop/host-node": "workspace:*",
     "@workshop/host-web": "workspace:*",
+    "@workshop/ink": "workspace:*",
     "@workshop/markdown": "workspace:*",
     "react": "19.3.1",
     "react-dom": "19.3.1"

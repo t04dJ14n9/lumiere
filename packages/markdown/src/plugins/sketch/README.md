@@ -1,23 +1,24 @@
 # Sketches
 
-Draw in a note with Apple Pencil: Insert Sketch opens a canvas over the
-note, and Done saves the drawing beside the note and embeds it. Tapping a
-sketch opens it again. Obsidian has no equivalent of its own; its
-Excalidraw and Ink plugins are the nearest, and Apple Notes' drawings are
-the model for how it feels.
+Draw in a note with Apple Pencil, a pen tablet or a mouse: Insert Sketch
+opens a canvas over the note, and Done saves the drawing beside the note
+and embeds it. Tapping a sketch opens it again. Obsidian has no equivalent
+of its own; its Excalidraw and Ink plugins are the nearest, and Apple
+Notes' drawings are the model for how it feels.
 
 ## How it works
 
 A sketch is a `*.sketch.svg` file (`@workshop/ink/format`): an SVG every
 viewer shows, with the strokes and their pressure kept inside it. The host
 half needs a canvas, the `ink` host service, which only some hosts have
-(the iPad's PencilKit); elsewhere it waits, and sketches show as images.
+(the iPad's PencilKit; the desktop and web apps' web canvas,
+`@workshop/ink/canvas`); elsewhere it waits, and sketches show as images.
 
-- **Insert Sketch** (the right-click menu, and the iPad's edit menu) opens
-  the canvas, then writes the drawing to the attachment folder as
-  `2026-10-22 14.03.sketch.svg` and embeds it at the caret, in a paragraph
-  of its own so Live Preview shows it as a block. Nothing is written if the
-  canvas is cancelled.
+- **Insert Sketch** (the right-click menu, the window's pencil, and the
+  iPad's edit menu) opens the canvas, then writes the drawing to the
+  attachment folder as `2026-10-22 14.03.sketch.svg` and embeds it at the
+  caret, in a paragraph of its own so Live Preview shows it as a block.
+  Nothing is written if the canvas is cancelled.
 - **A tap on a sketch** in Live Preview: the page names the embed's link,
   the host resolves it from the note, opens the canvas on the drawing and
   writes the new one over the file. The page then emits
@@ -48,8 +49,8 @@ link form follow the Links plugin's `attachmentFolder`, `useWikilinks` and
 
 ## Limits
 
-- Only where the host has a canvas: the iPad. The desktop and web apps and
-  VS Code show sketches as images, without Insert Sketch.
+- Only where the host has a canvas: the iPad, and the desktop and web apps.
+  VS Code shows sketches as images, without Insert Sketch.
 - The canvas opens over the whole note, not in place (docs/IPAD_PLAN.md 5.5).
 - A sketch embedded in the middle of a line opens on a tap, but keeps showing
   its old drawing until the line is redrawn.
