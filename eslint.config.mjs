@@ -62,7 +62,8 @@ const boundaries = {
         : source;
       const pure =
         /\/src\/(kernel|shared|markdown)\//.test(file) ||
-        /\/packages\/(core|agents)\/src\//.test(file);
+        /\/packages\/(core|agents)\/src\//.test(file) ||
+        /\/packages\/ink\/src\/(format|service)\//.test(file);
       let invalid =
         pure &&
         (source === "vscode" ||
@@ -219,6 +220,8 @@ export default tseslint.config(
           "./packages/dsh/src/client/tsconfig.json",
           "./packages/app/src/server/tsconfig.json",
           "./packages/app/src/shell/tsconfig.json",
+          "./packages/ink/src/format/tsconfig.json",
+          "./packages/ink/src/service/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },

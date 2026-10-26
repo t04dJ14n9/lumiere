@@ -1,0 +1,18 @@
+{
+  "name": "@workshop/ink",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lumière's ink: the sketch file format, pressure-aware outlines, the ink host service and a web canvas.",
+  "type": "module",
+  "exports": {
+    "./format": "./src/format/index.ts",
+    "./service": "./src/service/ink.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p src/format && tsc -p src/service && tsc -p test",
+    "test": "tsx --test \"test/unit/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@workshop/core": "workspace:*"
+  }
+}
