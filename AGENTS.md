@@ -60,7 +60,9 @@ If the task is a user / third-party custom plugin, read
 - New automated coverage is unit tests unless the owner explicitly approves
   a browser/native regression. Keep the existing browser and native suites
   passing, including later owner-approved additions. See "Testing policy" in
-  packages/markdown/IMPLEMENTATION_PLAN.md.
+  packages/markdown/IMPLEMENTATION_PLAN.md. The quality checks
+  (`pnpm test:quality`, packages/markdown/test/quality) are owner-approved
+  (2026-10-27) and gate every merge; see "Merge gate".
 
 ## Code norms
 
@@ -124,14 +126,26 @@ Run before committing, in this order:
 ```sh
 pnpm check
 pnpm test:browser  # each product's Chromium suite
+pnpm test:quality  # scroll smoothness and opening speed budgets
 pnpm test:vscode   # both products in a real, isolated VS Code window
 ```
 
-`pnpm check:full` runs all three in that order. The real-VS Code specs
+`pnpm check:full` runs all four in that order. The real-VS Code specs
 (`test/vscode`, `packages/pdf/test/vscode`) do **not** run in GitHub Actions: they were
 flaky under load. They are a required local pre-push check, so run the full
 `pnpm check:full` before every push, on a headless Linux box as
 `xvfb-run -a pnpm check:full`.
+
+## Merge gate
+
+A pull request merges only when CI's `check`, `browser` and `quality` jobs
+pass. When GitHub Actions cannot run (a billing block), run `pnpm check`,
+`pnpm test:browser` and `pnpm test:quality` locally, one after another, and
+say so in the pull request. The quality checks hold scrolling smooth and
+notes quick to open (packages/markdown/test/quality/README.md); their budgets
+live in `budgets.ts`, and raising one needs the owner's approval and the
+measurement that shows why. A timing check that fails once and then passes
+is reported as flaky: rerun it before merging rather than raising a budget.
 
 Run suites sequentially, including across shared worktrees. Use a private
 display and the test harness's isolated profile, never the owner's or a demo
