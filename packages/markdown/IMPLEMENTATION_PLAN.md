@@ -6132,3 +6132,33 @@ switch and `configFolder` setting. The webview feature list goes back to
 `features` alone: no workbench feature has a webview surface. The
 marketplace command and setting leave `package.json`. Obsidian community
 plugins are listed as not implemented in `CAPABILITIES.md`.
+
+## Opening notes in a large vault — 2026-10-27
+
+The owner found opening notes slow on their CVM (Cursor over Remote-SSH).
+The CVM's Lumière logs showed the extension host not answering webviews
+for over 10 s: `ready`, `unresolved` (up to 503 timeouts in one minute),
+`knownNotes` and Git `baseline` timed out, and one open failed outright
+("Editor bootstrap failed"). The owner's vault is a code repository with
+notes in it: about 126,000 files in 19,900 folders, 4,041 notes, and a
+3.2 GB Git history.
+
+Measured in Cursor 3.27 with a disposable vault of the same shape
+(107,654 files, 4,003 notes, in Git) and a CPU profile of the extension
+host while three notes opened: the host was busy 22.2 s of about 24 s.
+Two listeners did work proportional to every file for every note the
+vault indexed (it changes once per indexed note):
+
+1. The community plugin PoC (#385, #387) sent each open note's webview
+   the whole file list on every vault change and read every note on each
+   open. The owner chose to remove the PoC and the marketplace; that is
+   its own change.
+2. OKF bundle detection re-read every file on each vault change. It now
+   follows changes once they settle (300 ms); the end of an indexing pass
+   still refreshes at once. Unit test: a burst of 500 changes reads the
+   file list once.
+
+With a fix for both, the same run kept the host busy 2.0 s.
+
+Measuring also showed that Cursor holds each new webview frame for 1 s
+while Playwright is attached over CDP; timings were taken without it.
