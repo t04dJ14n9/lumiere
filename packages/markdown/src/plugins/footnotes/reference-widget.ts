@@ -1,6 +1,10 @@
 import { WidgetType, type EditorView } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
+import {
+  destroyElement,
+  untilDestroyed,
+} from "../../webview/ui/element-lifetime";
 import { placePreview } from "../../webview/ui/popover-position";
 import { selectFootnoteDefinition } from "./select-definition";
 /**
@@ -154,7 +158,6 @@ class ReferenceControl {
 }
 
 export class FootnoteReference extends WidgetType {
-  private readonly cleanups = new WeakMap<HTMLElement, () => void>();
   constructor(
     readonly note: Footnote,
     private readonly render: RenderService,
@@ -173,7 +176,7 @@ export class FootnoteReference extends WidgetType {
   }
   override toDOM(view: EditorView): HTMLElement {
     const sup = document.createElement("sup");
-    this.cleanups.set(
+    untilDestroyed(
       sup,
       mountReference(sup, this.note, {
         render: this.render,
@@ -186,7 +189,6 @@ export class FootnoteReference extends WidgetType {
     return sup;
   }
   override destroy(sup: HTMLElement): void {
-    this.cleanups.get(sup)?.();
-    this.cleanups.delete(sup);
+    destroyElement(sup);
   }
 }

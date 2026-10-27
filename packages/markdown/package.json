@@ -16,7 +16,9 @@
     "test:browser": "node scripts/build.mjs && playwright test -c test/browser/playwright.config.ts",
     "sample": "node scripts/build-sample.mjs",
     "ledger": "node scripts/test-ledger.mjs",
-    "measure:vault": "node scripts/build.mjs && tsx scripts/measure-vault.ts"
+    "measure:vault": "node scripts/build.mjs && tsx scripts/measure-vault.ts",
+    "measure:scroll": "node scripts/build.mjs && playwright test -c test/perf/playwright.config.ts",
+    "scroll-vault": "tsx scripts/scroll-vault.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.3",

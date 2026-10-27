@@ -4,7 +4,6 @@
  * mode turns LP off. This marks full `[[…]]` / `[…](…)` / `![[…]]` spans for
  * unresolved targets; `links.css` paints them only under `.is-source-mode`.
  */
-import { syntaxTree } from "@codemirror/language";
 import { RangeSetBuilder, type Extension } from "@codemirror/state";
 import {
   Decoration,
@@ -13,11 +12,8 @@ import {
   type EditorView,
   type ViewUpdate,
 } from "@codemirror/view";
-import { documentTree } from "../livePreview/api";
+import { markdownTree } from "../livePreview/api";
 import { isUnresolved, unresolvedLinks } from "./api";
-
-const parseTree = (state: EditorView["state"]) =>
-  state.field(documentTree, false) ?? syntaxTree(state);
 
 const unresolvedMark = Decoration.mark({ class: "is-unresolved" });
 
@@ -33,7 +29,7 @@ export function sourceUnresolved(): Extension {
         const unresolvedChanged =
           update.startState.field(unresolvedLinks, false) !==
             update.state.field(unresolvedLinks, false) ||
-          parseTree(update.startState) !== parseTree(update.state);
+          markdownTree(update.startState) !== markdownTree(update.state);
         if (update.docChanged || update.viewportChanged || unresolvedChanged) {
           this.decorations = build(update.view);
         }
@@ -50,7 +46,7 @@ export function unresolvedSourceMarks(
   to: number,
 ): { from: number; to: number; href: string }[] {
   const found: { from: number; to: number; href: string }[] = [];
-  parseTree(state).iterate({
+  markdownTree(state).iterate({
     from,
     to,
     enter(node) {
@@ -66,7 +62,7 @@ export function unresolvedSourceMarks(
 function build(view: EditorView): DecorationSet {
   const { state } = view;
   const builder = new RangeSetBuilder<ReturnType<typeof Decoration.mark>>();
-  parseTree(state).iterate({
+  markdownTree(state).iterate({
     from: view.viewport.from,
     to: view.viewport.to,
     enter(node) {

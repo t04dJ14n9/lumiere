@@ -357,17 +357,18 @@ test("duplicate mouseup without release ownership does not clear mapped selectio
 
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../../src/plugins/livePreview/api";
-import type {
-  RenderPass,
-  RenderService,
+import {
+  RENDER_REMOUNT_EVENT,
+  type RenderPass,
+  type RenderService,
 } from "../../../src/plugins/render/api";
 import {
-  clearMarkdownBlockHtmlCache,
+  clearMarkdownBlockPool,
   MarkdownBlock,
 } from "../../../src/webview/ui/markdown-widget";
 
-test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is present and seeds cached HTML on async remount", async () => {
-  clearMarkdownBlockHtmlCache();
+test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is present", async () => {
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
   const prevIdle = (globalThis as Record<string, unknown>).requestIdleCallback;
 
@@ -458,7 +459,8 @@ test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is
     assert.equal(body.innerHTML, '<div class="callout">hi</div>');
     widget.destroy(shell as unknown as HTMLElement);
 
-    // Remount with an async RenderService: cached HTML seeds body immediately in 0ms.
+    // An asynchronous render leaves the body empty until it is done; the
+    // block's reserve holds its place meanwhile.
     let resolveAsync!: () => void;
     const asyncRender: RenderService = {
       trusted: true,
@@ -483,24 +485,20 @@ test("MarkdownBlock.toDOM renders synchronously even when requestIdleCallback is
     const remountWidget = new MarkdownBlock(block, asyncRender);
     const remountShell = remountWidget.toDOM(view) as unknown as StubElement;
     const remountBody = remountShell.children[1]!;
-    assert.equal(
-      remountBody.innerHTML,
-      '<div class="callout">hi</div>',
-      "cached HTML snapshot should populate body synchronously on remount",
-    );
+    assert.equal(remountBody.innerHTML, "");
     resolveAsync();
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(remountBody.innerHTML, '<div class="callout">updated</div>');
     remountWidget.destroy(remountShell as unknown as HTMLElement);
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
     (globalThis as Record<string, unknown>).requestIdleCallback = prevIdle;
   }
 });
 
 test("MarkdownBlock retains live shell DOM across destroy and toDOM when using the same RenderService", async () => {
-  clearMarkdownBlockHtmlCache();
+  clearMarkdownBlockPool();
   const prevDoc = globalThis.document;
 
   class StubElement {
@@ -605,7 +603,564 @@ test("MarkdownBlock retains live shell DOM across destroy and toDOM when using t
     assert.equal(renderCalls, 1);
     recreatedWidget.destroy(thirdShell);
   } finally {
-    clearMarkdownBlockHtmlCache();
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
+
+test("a block keeps its reserved height while a diagram inside still waits for its SVG", async () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = true;
+    /** Holds an element marked `data-render-pending`. */
+    hasPending = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector(selector: string) {
+      return selector === "[data-render-pending]" && this.hasPending
+        ? {}
+        : null;
+    }
+    getBoundingClientRect() {
+      return { height: 180 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "```mermaid\nflowchart TB\n  A --> B\n  B --> C\n```";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "diagram",
+      source,
+    };
+    // CodeMirror's measure cycle: reads, then writes, at the next frame.
+    let requests: {
+      read?: () => unknown;
+      write?: (value: unknown, view: EditorView) => void;
+    }[] = [];
+    const nextFrame = () => {
+      const due = requests;
+      requests = [];
+      const values = due.map((request) => request.read?.());
+      due.forEach((request, index) => request.write?.(values[index], view));
+    };
+    const view = {
+      contentDOM: { clientWidth: 640 },
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure(request?: (typeof requests)[number]) {
+        if (request) {
+          requests.push(request);
+        }
+      },
+    } as unknown as EditorView;
+    let measure = () => {};
+    const render: RenderService = {
+      trusted: true,
+      async into(container, _source, context) {
+        measure = context!.measure!;
+        container.innerHTML =
+          '<pre data-fence="mermaid" data-render-pending><code>flowchart TB</code></pre>';
+        (container as unknown as StubElement).hasPending = true;
+        return {
+          source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+    const widget = new MarkdownBlock(block, render);
+    const shell = widget.toDOM(view) as unknown as StubElement;
+    const body = shell.children[1]!;
+    const reserve = shell.style.minHeight;
+    assert.match(reserve ?? "", /^\d+px$/, "the diagram's height is reserved");
+
+    nextFrame();
+    assert.equal(shell.style.minHeight, reserve, "kept once mounted");
+
+    // The source's highlighting finishes first and asks for a measure.
+    measure();
+    nextFrame();
+    assert.equal(shell.style.minHeight, reserve, "kept while pending");
+
+    body.hasPending = false;
+    measure();
+    assert.equal(shell.style.minHeight, reserve, "no layout read at once");
+    nextFrame();
+    assert.equal(shell.style.minHeight, "", "released once the SVG is in");
+    widget.destroy(shell as unknown as HTMLElement);
+  } finally {
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
+
+test("mounting and unmounting a block reads no layout", async () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+  let layoutReads = 0;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    /** CodeMirror calls toDOM before it inserts the block. */
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    getBoundingClientRect() {
+      layoutReads++;
+      return { height: 120 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "> [!note] Title\n> Body";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "callout",
+      source,
+    };
+    const view = {
+      contentDOM: {
+        get clientWidth() {
+          layoutReads++;
+          return 640;
+        },
+      },
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure() {},
+    } as unknown as EditorView;
+    const render: RenderService = {
+      trusted: true,
+      async into(container, _source, context) {
+        container.innerHTML = '<div class="callout">Body</div>';
+        context?.measure?.();
+        return {
+          source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+    const widget = new MarkdownBlock(block, render);
+    const shell = widget.toDOM(view);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    widget.destroy(shell);
+    assert.equal(layoutReads, 0, "each read forces a layout mid-update");
+  } finally {
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
+
+test("a block mounted again tells its parts still rendering", async () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+  const pending = new EventTarget();
+  let remounts = 0;
+  pending.addEventListener(RENDER_REMOUNT_EVENT, () => remounts++);
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    querySelectorAll(selector: string) {
+      return selector === "[data-render-pending]" ? [pending] : [];
+    }
+    getBoundingClientRect() {
+      return { height: 300 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "```mermaid\nflowchart TB\n  A --> B\n```";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "diagram",
+      source,
+    };
+    const view = {
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure() {},
+    } as unknown as EditorView;
+    const render: RenderService = {
+      trusted: true,
+      async into(container) {
+        container.innerHTML = '<pre data-fence="mermaid"></pre>';
+        return {
+          source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+    const widget = new MarkdownBlock(block, render);
+    const shell = widget.toDOM(view);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(remounts, 0, "a first mount is not a remount");
+    widget.destroy(shell);
+    assert.equal(widget.toDOM(view), shell, "the retained shell comes back");
+    assert.equal(remounts, 1);
+  } finally {
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
+
+test("a block whose diagram drew while it was scrolled out drops its reserve when it comes back", async () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    hasPending = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      defaultView: { addEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = {
+      add() {},
+      contains() {
+        return false;
+      },
+    };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector(selector: string) {
+      return selector === "[data-render-pending]" && this.hasPending
+        ? {}
+        : null;
+    }
+    querySelectorAll() {
+      return [];
+    }
+    getBoundingClientRect() {
+      return { height: 300 };
+    }
+  }
+
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "```mermaid\nflowchart TB\n  A --> B --> C --> D\n```";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "diagram",
+      source,
+    };
+    const measures: {
+      read: () => unknown;
+      write?: (value: unknown, view: EditorView) => void;
+    }[] = [];
+    const view = {
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure(request?: (typeof measures)[number]) {
+        if (request) {
+          measures.push(request);
+        }
+      },
+    } as unknown as EditorView;
+    let measure = () => {};
+    const render: RenderService = {
+      trusted: true,
+      async into(container, _source, context) {
+        measure = context!.measure!;
+        (container as unknown as StubElement).hasPending = true;
+        return {
+          source,
+          container,
+          sourceLine: 0,
+          ancestry: [],
+          renderKey: source,
+          measure() {},
+          onDispose() {},
+          async dispose() {},
+        } as RenderPass;
+      },
+    };
+    const widget = new MarkdownBlock(block, render);
+    const shell = widget.toDOM(view) as unknown as StubElement;
+    const body = shell.children[1]!;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    widget.destroy(shell as unknown as HTMLElement);
+
+    // The SVG arrives while the block is out of the page.
+    body.hasPending = false;
+    measure();
+    assert.ok(shell.style.minHeight, "nothing to measure while away");
+
+    assert.equal(widget.toDOM(view), shell as unknown as HTMLElement);
+    shell.isConnected = true;
+    for (const request of measures.splice(0)) {
+      request.write?.(request.read(), view);
+    }
+    assert.equal(shell.style.minHeight, "", "released once back");
+  } finally {
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
+
+test("a block's cleanup runs when CodeMirror destroys it through an equal widget", async () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      removeEventListener() {},
+      defaultView: { addEventListener() {}, removeEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = { add() {}, contains: () => false };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    getBoundingClientRect() {
+      return { height: 40 };
+    }
+  }
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "> [!note]\n> a callout";
+    const block: RenderBlock = {
+      from: 40,
+      to: 40 + source.length,
+      kind: "blockquote",
+      source,
+    };
+    const view = {
+      state: { doc: { lineAt: () => ({ number: 3 }) } },
+      requestMeasure() {},
+    } as unknown as EditorView;
+    let finish = () => {};
+    let disposed = 0;
+    const render: RenderService = {
+      trusted: true,
+      into(container) {
+        return new Promise<RenderPass>((resolve) => {
+          finish = () =>
+            resolve({
+              source,
+              container,
+              sourceLine: 2,
+              ancestry: [],
+              renderKey: source,
+              measure() {},
+              onDispose() {},
+              async dispose() {
+                disposed++;
+              },
+            } as RenderPass);
+        });
+      },
+    };
+    const built = new MarkdownBlock(block, render);
+    const shell = built.toDOM(view);
+    // An edit above moves the block: CodeMirror keeps its DOM, swaps in the
+    // equal widget built for the new position, and later destroys through it.
+    const moved = new MarkdownBlock(
+      { ...block, from: 41, to: 41 + source.length },
+      render,
+    );
+    assert.ok(moved.eq(built));
+    moved.destroy(shell);
+    finish();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(disposed, 1, "the unfinished render is disposed");
+  } finally {
+    clearMarkdownBlockPool();
+    (globalThis as unknown as { document: unknown }).document = prevDoc;
+  }
+});
+
+test("a block rendered before it is in the page drops its reserve once mounted", () => {
+  clearMarkdownBlockPool();
+  const prevDoc = globalThis.document;
+  class StubElement {
+    className = "";
+    textContent = "";
+    innerHTML = "";
+    isConnected = false;
+    style: Record<string, string> = {};
+    ownerDocument = {
+      addEventListener() {},
+      removeEventListener() {},
+      defaultView: { addEventListener() {}, removeEventListener() {} },
+    };
+    children: StubElement[] = [];
+    classList = { add() {}, contains: () => false };
+    setAttribute() {}
+    addEventListener() {}
+    append(...nodes: StubElement[]) {
+      this.children.push(...nodes);
+    }
+    querySelector() {
+      return null;
+    }
+    getBoundingClientRect() {
+      return { height: this.isConnected ? 46 : 0 };
+    }
+  }
+  (globalThis as unknown as { document: unknown }).document = {
+    createElement: () => new StubElement(),
+  };
+  try {
+    const source = "$$a + b$$";
+    const block: RenderBlock = {
+      from: 0,
+      to: source.length,
+      kind: "math",
+      source,
+    };
+    let requests: {
+      read: () => unknown;
+      write?: (value: unknown, view: EditorView) => void;
+    }[] = [];
+    const view = {
+      state: { doc: { lineAt: () => ({ number: 1 }) } },
+      requestMeasure(request?: (typeof requests)[number]) {
+        if (request) {
+          requests.push(request);
+        }
+      },
+    } as unknown as EditorView;
+    const nextFrame = () => {
+      const due = requests;
+      requests = [];
+      const values = due.map((request) => request.read());
+      due.forEach((request, index) => request.write?.(values[index], view));
+    };
+    // The formula typesets at once, while CodeMirror builds the block.
+    const render: RenderService = {
+      trusted: true,
+      into(container, _source, context) {
+        container.innerHTML = "<mjx-container></mjx-container>";
+        context?.measure?.();
+        return new Promise<RenderPass>(() => {});
+      },
+    };
+    const shell = new MarkdownBlock(block, render).toDOM(
+      view,
+    ) as unknown as StubElement;
+    assert.match(shell.style.minHeight ?? "", /^\d+px$/, "reserved at first");
+
+    // CodeMirror puts it in the page, then measures.
+    shell.isConnected = true;
+    for (const child of shell.children) {
+      child.isConnected = true;
+    }
+    nextFrame();
+    assert.equal(shell.style.minHeight, "", "no gap left under the formula");
+  } finally {
+    clearMarkdownBlockPool();
     (globalThis as unknown as { document: unknown }).document = prevDoc;
   }
 });

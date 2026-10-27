@@ -13,11 +13,17 @@ clickable internal links that open the vault note matching the node's label text
 ## How it works
 
 The block renderer recognizes Mermaid fences and delegates display to the shared
-render service. A fence listener schedules Mermaid with idle ahead-of-time prefetch into an
-SVG cache, then paints after the fence stays near the viewport briefly
-(IntersectionObserver + settle). Flash-by diagrams from a superfast wheel do
-not start the engine; revisits paint from cache. Work stays serial because
-Mermaid mutates shared renderer state. Strict security; HTML labels off until Allow. Sanitized SVG replaces the original fence,
+render service. A fence listener queues the diagram, which renders as soon as
+CodeMirror mounts its widget (the viewport plus a margin of about a screen), as
+in Obsidian. So a reader usually meets diagrams already drawn, and their height
+changes off screen, where scroll anchoring hides it. Renders run one at a time,
+a frame apart, nearest the note's view first, because Mermaid keeps shared
+state; a diagram scrolled past before its turn waits until it is mounted again.
+While the reader scrolls, diagrams behind them wait until the scroll has been
+still for 150 ms: drawing one changes the height above the view, and holding
+the text still then moves the scroll position under a scroll in flight. An SVG
+cache paints a source rendered before at once. Strict security; HTML labels off
+until Allow. Sanitized SVG replaces the original fence,
 and any `.internal-link` SVG nodes are wired to the `links` protocol.
 Pass and plugin disposal restore the source and prevent late results from writing.
 
@@ -26,8 +32,8 @@ Pass and plugin disposal restore the source and prevent late results from writin
 - `manifest.ts`: feature metadata and default enablement.
 - `webview.ts`: language recognition, block and fence registrations, and link opening.
 - `renderer.ts`: Mermaid engine calls, `.internal-link` node wiring, per-render cancellation and cleanup.
-- `viewport-schedule.ts`: SVG cache, idle prefetch, and near-viewport settle so fast scroll does not thrash Mermaid.
-- `diagrams.test.ts` / `viewport-schedule.test.ts`: language recognition, editing, and scroll-settle coverage.
+- `mount-queue.ts`: the render queue (start on mount, one at a time, ahead of the reader and nearest first) and the SVG cache.
+- `diagrams.test.ts` / `mount-queue.test.ts`: language recognition, editing, and render-queue coverage.
 - `diagrams.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

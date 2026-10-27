@@ -13,17 +13,59 @@ type ScrollMeasurement = NonNullable<
   Parameters<EditorView["requestMeasure"]>[0]
 >;
 
-function restoredPanel(presentation: ReturnType<typeof createViewState>) {
+/**
+ * A scroller that, as a browser's, keeps its position between 0 and
+ * `maxScrollTop`, and records how it is listened to. Events dispatched on it
+ * land outside the text: in a margin, a gutter or on the scrollbar.
+ */
+class FakeScroller extends EventTarget {
+  scrollLeft = 0;
+  maxScrollTop = Infinity;
+  readonly listened: { type: string; options: unknown }[] = [];
+  #scrollTop: number;
+
+  constructor(scrollTop: number) {
+    super();
+    this.#scrollTop = scrollTop;
+  }
+
+  get scrollTop(): number {
+    return this.#scrollTop;
+  }
+
+  set scrollTop(value: number) {
+    this.#scrollTop = Math.min(Math.max(value, 0), this.maxScrollTop);
+  }
+
+  getBoundingClientRect() {
+    return { top: 0 };
+  }
+
+  override addEventListener(
+    type: string,
+    listener: EventListenerOrEventListenerObject | null,
+    options?: AddEventListenerOptions | boolean,
+  ): void {
+    this.listened.push({ type, options });
+    super.addEventListener(type, listener, options);
+  }
+}
+
+/**
+ * A panel restored to line 0 at the top, which starts at 720 px. With
+ * `codeMirrorAnchors`, its measurements end as CodeMirror's do: the line at
+ * the top of the view (the restored one) is held where it was on screen.
+ */
+function restoredPanel(
+  presentation: ReturnType<typeof createViewState>,
+  { codeMirrorAnchors = false } = {},
+) {
   let state = EditorState.create({
     doc: "note",
     extensions: presentation.restoreScrollPosition,
   });
   const geometry = { top: 720 };
-  const scrollDOM = {
-    scrollTop: 600,
-    scrollLeft: 0,
-    getBoundingClientRect: () => ({ top: 0 }),
-  };
+  const scrollDOM = new FakeScroller(600);
   const measures: ScrollMeasurement[] = [];
   const view = {
     get state() {
@@ -42,34 +84,49 @@ function restoredPanel(presentation: ReturnType<typeof createViewState>) {
       state = state.update(spec).state;
     },
   } as unknown as EditorView;
-  presentation.restoreViewState(
-    view,
-    viewState.parse({
-      anchor: 0,
-      head: 0,
-      scrollTop: 600,
-      scrollAnchor: { from: 0, offset: 0 },
-      mode: "livePreview",
-    }),
-  );
-  const handler = state.facet(EditorView.scrollHandler)[0]!;
-  assert.equal(
-    handler(view, EditorSelection.cursor(0), {
-      x: "nearest",
-      y: "start",
-      xMargin: 0,
-      yMargin: 0,
-    }),
-    true,
-  );
+  /** Restore, and let CodeMirror scroll to the restored line. */
+  const restore = () => {
+    presentation.restoreViewState(
+      view,
+      viewState.parse({
+        anchor: 0,
+        head: 0,
+        scrollTop: 600,
+        scrollAnchor: { from: 0, offset: 0 },
+        mode: "livePreview",
+      }),
+    );
+    const handler = state.facet(EditorView.scrollHandler)[0]!;
+    assert.equal(
+      handler(view, EditorSelection.cursor(0), {
+        x: "nearest",
+        y: "start",
+        xMargin: 0,
+        yMargin: 0,
+      }),
+      true,
+    );
+  };
+  restore();
+  let anchoredTop = geometry.top;
   return {
     view,
     geometry,
     scrollDOM,
-    flushMeasurements() {
+    restore,
+    /**
+     * Run CodeMirror's next measurement: the queued pin corrections, and
+     * then what is queued to run after it, before the frame is painted.
+     */
+    async flushMeasurements() {
       for (const request of measures) {
         request.write?.(request.read(view), view);
       }
+      if (codeMirrorAnchors) {
+        scrollDOM.scrollTop += geometry.top - anchoredTop;
+      }
+      anchoredTop = geometry.top;
+      await Promise.resolve();
     },
   };
 }
@@ -84,10 +141,77 @@ test("widget scroll input cancels applied restore and queued layout correction o
   root.emit("editor/scrollInput", first.view);
   first.geometry.top += 60;
   second.geometry.top += 60;
-  first.flushMeasurements();
-  second.flushMeasurements();
+  await first.flushMeasurements();
+  await second.flushMeasurements();
   assert.equal(first.scrollDOM.scrollTop, firstTop);
   assert.equal(second.scrollDOM.scrollTop, secondTop + 60);
+  await root.dispose();
+});
+
+test("scrolling away from a restored line keeps content growing above it from pulling the view back", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  // A wheel over a margin, a scrollbar drag, PageDown outside the text.
+  const scrolled = restoredPanel(presentation);
+  scrolled.scrollDOM.scrollTop += 300;
+  scrolled.scrollDOM.dispatchEvent(new Event("scroll"));
+  // CodeMirror measures before the scroll event arrives.
+  const measuredFirst = restoredPanel(presentation);
+  measuredFirst.scrollDOM.scrollTop += 300;
+  for (const panel of [scrolled, measuredFirst]) {
+    const readerTop = panel.scrollDOM.scrollTop;
+    panel.geometry.top += 60;
+    await panel.flushMeasurements();
+    panel.scrollDOM.dispatchEvent(new Event("scroll"));
+    panel.geometry.top += 60;
+    await panel.flushMeasurements();
+    assert.equal(panel.scrollDOM.scrollTop, readerTop);
+  }
+  await root.dispose();
+});
+
+test("the restored line stays pinned through its own corrections, even where the browser clamps them", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const panel = restoredPanel(presentation);
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  panel.geometry.top += 60;
+  await panel.flushMeasurements();
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  assert.equal(panel.scrollDOM.scrollTop, 780);
+
+  // The note below is not measured yet, so it cannot scroll as far as the pin asks.
+  panel.scrollDOM.maxScrollTop = 800;
+  panel.geometry.top += 40;
+  await panel.flushMeasurements();
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  assert.equal(panel.scrollDOM.scrollTop, 800);
+
+  panel.scrollDOM.maxScrollTop = Infinity;
+  panel.geometry.top += 10;
+  await panel.flushMeasurements();
+  assert.equal(panel.scrollDOM.scrollTop, 830);
+  await root.dispose();
+});
+
+test("reader input anywhere in the scroller ends the pin, and never makes scrolling wait", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const panel = restoredPanel(presentation);
+  for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
+    panel.restore();
+    const readerTop = panel.scrollDOM.scrollTop;
+    panel.scrollDOM.dispatchEvent(new Event(type));
+    panel.geometry.top += 60;
+    await panel.flushMeasurements();
+    assert.equal(panel.scrollDOM.scrollTop, readerTop, type);
+  }
+  const waitedFor = panel.scrollDOM.listened.filter(
+    ({ options }) =>
+      typeof options !== "object" ||
+      !(options as AddEventListenerOptions).passive,
+  );
+  assert.deepEqual(waitedFor, []);
   await root.dispose();
 });
 
@@ -98,11 +222,7 @@ function scrolledPanel(presentation: ReturnType<typeof createViewState>) {
     extensions: presentation.restoreScrollPosition,
   });
   const line = { from: 40, top: 590 };
-  const scrollDOM = {
-    scrollTop: 600,
-    scrollLeft: 0,
-    getBoundingClientRect: () => ({ top: 0 }),
-  };
+  const scrollDOM = new FakeScroller(600);
   const dispatched: TransactionSpec[] = [];
   const view = {
     get state() {
@@ -276,4 +396,21 @@ test("scroll events coalesce through debounced checkpoint and flush on dispose",
   await root.dispose();
   assert.equal(persisted.length, 1);
   assert.equal((persisted[0] as { scrollTop: number }).scrollTop, 240);
+});
+
+test("content growing above the restored line is undone once, CodeMirror's anchoring and the pin together", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const panel = restoredPanel(presentation, { codeMirrorAnchors: true });
+  const restoredTop = panel.scrollDOM.scrollTop;
+  // An image above the line loads, 882 px tall.
+  panel.geometry.top += 882;
+  await panel.flushMeasurements();
+  panel.scrollDOM.dispatchEvent(new Event("scroll"));
+  assert.equal(panel.scrollDOM.scrollTop, restoredTop + 882);
+  // Still pinned: a later change is still held.
+  panel.geometry.top += 40;
+  await panel.flushMeasurements();
+  assert.equal(panel.scrollDOM.scrollTop, restoredTop + 922);
+  await root.dispose();
 });

@@ -82,8 +82,11 @@ class JumpRecorder {
           () => {
             this.generation++;
           },
+          // Passive: a blocking wheel listener makes every scroll wait
+          // for the main thread.
           {
             capture: true,
+            passive: true,
             signal: controller.signal,
           },
         );

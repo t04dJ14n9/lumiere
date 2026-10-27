@@ -1,13 +1,19 @@
 import { WidgetType } from "@codemirror/view";
+import { RecentlyUsed } from "../../shared/recently-used";
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
+import { destroyElement, untilDestroyed } from "./element-lifetime";
 import { bindFenceClickGuard } from "./fence-click-guard";
 import {
+  announceRemount,
+  releaseReserveOnceMounted,
+} from "./markdown-block-reserve";
+import {
   markdownBlockEstimatedHeight,
-  rememberMarkdownBlockContentWidth,
-  rememberMarkdownBlockHeight,
+  unwatchMarkdownBlock,
+  watchMarkdownBlock,
 } from "./markdown-block-height";
 import { selectRenderedSource } from "./source-selection";
 
@@ -49,38 +55,6 @@ export const FENCED_PREVIEW: BlockEditing = {
   select: fenceBody,
 };
 
-const blockObservers = new WeakMap<HTMLElement, ResizeObserver>();
-
-function watchMarkdownBlock(dom: HTMLElement, source: string): void {
-  if (
-    !source ||
-    blockObservers.has(dom) ||
-    typeof ResizeObserver === "undefined"
-  ) {
-    return;
-  }
-  const observer = new ResizeObserver((entries) => {
-    const height = entries[0]?.contentRect.height ?? 0;
-    if (height > 0) {
-      rememberMarkdownBlockHeight(source, height);
-    }
-  });
-  observer.observe(dom);
-  blockObservers.set(dom, observer);
-}
-
-function unwatchMarkdownBlock(dom: HTMLElement, source: string): void {
-  blockObservers.get(dom)?.disconnect();
-  blockObservers.delete(dom);
-  if (typeof dom.getBoundingClientRect !== "function") {
-    return;
-  }
-  const height = dom.getBoundingClientRect().height;
-  if (height > 0) {
-    rememberMarkdownBlockHeight(source, height);
-  }
-}
-
 interface RetainedShell {
   readonly shell: HTMLElement;
   readonly edit: HTMLButtonElement;
@@ -93,7 +67,10 @@ interface RetainedShell {
 }
 
 const BLOCK_DOM_CACHE_LIMIT = 128;
-let blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+let blockDomPool = new WeakMap<
+  RenderService,
+  RecentlyUsed<string, RetainedShell>
+>();
 let renderGenerations = new WeakMap<RenderService, number>();
 
 function currentRenderGeneration(render: RenderService): number {
@@ -102,7 +79,6 @@ function currentRenderGeneration(render: RenderService): number {
 
 /** Evict pooled off-viewport block shells when render/changed invalidates rendered output. */
 export function evictMarkdownBlockDomPool(render: RenderService): void {
-  blockHtmlCache.clear();
   renderGenerations.set(render, currentRenderGeneration(render) + 1);
   const pool = blockDomPool.get(render);
   if (!pool) {
@@ -110,10 +86,7 @@ export function evictMarkdownBlockDomPool(render: RenderService): void {
   }
   blockDomPool.delete(render);
   for (const entry of pool.values()) {
-    if (!entry.shell.isConnected) {
-      entry.alive = false;
-      void entry.pass?.dispose();
-    }
+    retire(entry);
   }
 }
 
@@ -145,14 +118,16 @@ function takePooledShell(
   render: RenderService,
   key: string,
 ): RetainedShell | undefined {
-  const pool = blockDomPool.get(render);
-  const entry = pool?.get(key);
-  if (!entry || !isShellReusable(entry, render)) {
-    return undefined;
+  const entry = blockDomPool.get(render)?.get(key);
+  return isShellReusable(entry, render) ? entry : undefined;
+}
+
+/** A pooled block that leaves the pool while out of the page is done for. */
+function retire(entry: RetainedShell): void {
+  if (!entry.shell.isConnected) {
+    entry.alive = false;
+    void entry.pass?.dispose();
   }
-  pool!.delete(key);
-  pool!.set(key, entry);
-  return entry;
 }
 
 function rememberPooledShell(
@@ -162,34 +137,25 @@ function rememberPooledShell(
 ): void {
   let pool = blockDomPool.get(render);
   if (!pool) {
-    pool = new Map<string, RetainedShell>();
+    pool = new RecentlyUsed<string, RetainedShell>(
+      BLOCK_DOM_CACHE_LIMIT,
+      (_key, oldest) => retire(oldest),
+    );
     blockDomPool.set(render, pool);
   }
   const prev = pool.get(key);
-  if (prev && prev !== entry && !prev.shell.isConnected) {
-    prev.alive = false;
-    void prev.pass?.dispose();
-  }
-  pool.delete(key);
-  if (pool.size >= BLOCK_DOM_CACHE_LIMIT) {
-    const oldestKey = pool.keys().next().value;
-    if (oldestKey !== undefined) {
-      const oldest = pool.get(oldestKey);
-      pool.delete(oldestKey);
-      if (oldest && !oldest.shell.isConnected) {
-        oldest.alive = false;
-        void oldest.pass?.dispose();
-      }
-    }
+  if (prev && prev !== entry) {
+    retire(prev);
   }
   pool.set(key, entry);
 }
 
-/** Own a render pass and retain finished DOM across viewport exit/re-entry (`RW`). */
+/**
+ * A rendered Markdown block (callout, formula, diagram, embed, HTML). It owns
+ * its render pass, and a finished block goes to a pool when it scrolls out,
+ * so it comes back drawn instead of rendering again.
+ */
 export class MarkdownBlock extends WidgetType {
-  private readonly lifetimes = new WeakMap<HTMLElement, () => void>();
-  private retained: RetainedShell | undefined;
-
   constructor(
     readonly block: RenderBlock,
     private readonly render: RenderService,
@@ -204,16 +170,18 @@ export class MarkdownBlock extends WidgetType {
     );
   }
 
+  // The note's width comes from markdownBlockWidthTracker: reading it here
+  // forced a layout for every block CodeMirror mounted.
   override toDOM(view: EditorView): HTMLElement {
-    rememberMarkdownBlockContentWidth(view.contentDOM?.clientWidth ?? 0);
     const poolKey = `${this.block.kind}\0${this.editing.reveal}\0${this.editing.guardMargin ? 1 : 0}\0${this.editing.editSummary ? 1 : 0}\0${this.block.source}`;
-    const reusable = isShellReusable(this.retained, this.render)
-      ? this.retained!
-      : takePooledShell(this.render, poolKey);
+    // The pool alone keeps finished blocks, so its limit bounds what stays
+    // in memory; a widget holding its last block kept every diagram alive.
+    const reusable = takePooledShell(this.render, poolKey);
     if (reusable) {
-      this.retained = reusable;
       reusable.currentView = view;
       this.mountShell(view, reusable, poolKey);
+      announceRemount(reusable.body);
+      releaseReserveOnceMounted(view, reusable.shell, reusable.body);
       return reusable.shell;
     }
     const created = this.createShell(view);
@@ -224,11 +192,11 @@ export class MarkdownBlock extends WidgetType {
       render: this.render,
       onSettled: () => {
         if (isShellSettled(created, this.render)) {
-          this.retained = created;
           rememberPooledShell(this.render, poolKey, created);
         }
       },
     });
+    releaseReserveOnceMounted(view, created.shell, created.body);
     return created.shell;
   }
 
@@ -280,16 +248,12 @@ export class MarkdownBlock extends WidgetType {
     if (this.editing.guardMargin) {
       bindFenceClickGuard(view, entry.shell, this.block, events.signal);
     }
-    this.lifetimes.set(entry.shell, () => {
+    untilDestroyed(entry.shell, () => {
       events.abort();
       if (isShellSettled(entry, this.render)) {
-        this.retained = entry;
         rememberPooledShell(this.render, poolKey, entry);
       } else {
         entry.alive = false;
-        if (this.retained === entry) {
-          this.retained = undefined;
-        }
         blockDomPool.get(this.render)?.delete(poolKey);
         void entry.pass?.dispose();
       }
@@ -316,9 +280,8 @@ export class MarkdownBlock extends WidgetType {
   }
 
   override destroy(dom: HTMLElement): void {
-    unwatchMarkdownBlock(dom, this.block.source);
-    this.lifetimes.get(dom)?.();
-    this.lifetimes.delete(dom);
+    unwatchMarkdownBlock(dom);
+    destroyElement(dom);
   }
 
   override get estimatedHeight(): number {
@@ -326,41 +289,12 @@ export class MarkdownBlock extends WidgetType {
   }
 }
 
-const BLOCK_HTML_CACHE_LIMIT = 256;
-const blockHtmlCache = new Map<string, string>();
-
-function blockCacheKey(block: RenderBlock): string {
-  return `${block.kind}\0${block.source}`;
-}
-
-function getCachedBlockHtml(key: string): string | undefined {
-  const cached = blockHtmlCache.get(key);
-  if (cached !== undefined) {
-    blockHtmlCache.delete(key);
-    blockHtmlCache.set(key, cached);
-  }
-  return cached;
-}
-
-function setCachedBlockHtml(key: string, html: string): void {
-  if (!html) {
-    return;
-  }
-  if (blockHtmlCache.has(key)) {
-    blockHtmlCache.delete(key);
-  } else if (blockHtmlCache.size >= BLOCK_HTML_CACHE_LIMIT) {
-    const oldest = blockHtmlCache.keys().next().value;
-    if (oldest !== undefined) {
-      blockHtmlCache.delete(oldest);
-    }
-  }
-  blockHtmlCache.set(key, html);
-}
-
-/** Test helper: clear cached MarkdownBlock HTML snapshots and retained shells. */
-export function clearMarkdownBlockHtmlCache(): void {
-  blockHtmlCache.clear();
-  blockDomPool = new WeakMap<RenderService, Map<string, RetainedShell>>();
+/** Test helper: forget pooled block shells. */
+export function clearMarkdownBlockPool(): void {
+  blockDomPool = new WeakMap<
+    RenderService,
+    RecentlyUsed<string, RetainedShell>
+  >();
   renderGenerations = new WeakMap<RenderService, number>();
 }
 
@@ -372,19 +306,12 @@ function beginMarkdownBlockRender(options: {
 }): void {
   const { entry, block, render, onSettled } = options;
   const { shell, body } = entry;
-  const cacheKey = blockCacheKey(block);
-  const rememberHtml = () => {
-    if (!shell.classList.contains("render-error") && body.innerHTML) {
-      setCachedBlockHtml(cacheKey, body.innerHTML);
-    }
-  };
   void render
     .into(body, block.source, {
       sourceLine: entry.currentView.state.doc.lineAt(block.from).number - 1,
       measure: () => {
         if (entry.alive) {
-          rememberHtml();
-          releasePaintReserve(shell, body);
+          releaseReserveOnceMounted(entry.currentView, shell, body);
           if (shell.isConnected) {
             entry.currentView.requestMeasure();
           }
@@ -395,7 +322,6 @@ function beginMarkdownBlockRender(options: {
       entry.pass = result;
       if (entry.alive) {
         entry.settled = true;
-        rememberHtml();
         onSettled();
       } else {
         void result.dispose();
@@ -405,24 +331,10 @@ function beginMarkdownBlockRender(options: {
       if (entry.alive) {
         body.textContent = block.source;
         shell.classList.add("render-error");
+        releaseReserveOnceMounted(entry.currentView, shell, body);
         entry.currentView.requestMeasure();
       }
     });
-  if (!body.innerHTML) {
-    const cachedHtml = getCachedBlockHtml(cacheKey);
-    if (cachedHtml !== undefined) {
-      body.classList.add("markdown-rendered");
-      body.innerHTML = cachedHtml;
-    }
-  } else {
-    rememberHtml();
-  }
-}
-
-function releasePaintReserve(shell: HTMLElement, body: HTMLElement): void {
-  if (shell.style.minHeight && body.getBoundingClientRect().height > 0) {
-    shell.style.minHeight = "";
-  }
 }
 
 function sourceStart(
