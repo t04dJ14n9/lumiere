@@ -121,20 +121,27 @@ What the linter cannot check:
 
 ## Checks
 
-Run before committing, in this order:
+Before every push, in this order:
 
 ```sh
 pnpm check
 pnpm test:browser  # each product's Chromium suite
 pnpm test:quality  # scroll smoothness and opening speed budgets
+```
+
+Before merging a pull request, and before pushing a change to editor
+integration (anything that imports `vscode` or runs in the extension host,
+the webview's HTML and resource loading, and `package.json` contributions:
+activation, commands, keybindings, menus, settings), also:
+
+```sh
 pnpm test:vscode   # both products in a real, isolated VS Code window
 ```
 
-`pnpm check:full` runs all four in that order. The real-VS Code specs
-(`test/vscode`, `packages/pdf/test/vscode`) do **not** run in GitHub Actions: they were
-flaky under load. They are a required local pre-push check, so run the full
-`pnpm check:full` before every push, on a headless Linux box as
-`xvfb-run -a pnpm check:full`.
+`pnpm check:full` runs all four in that order; on a headless Linux box,
+`xvfb-run -a pnpm check:full`. The real-VS Code specs (`test/vscode`,
+`packages/pdf/test/vscode`) do **not** run in GitHub Actions: they were flaky
+under load, and Cursor cannot run there.
 
 ## Merge gate
 

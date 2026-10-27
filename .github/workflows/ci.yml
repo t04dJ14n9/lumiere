@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 # The real-VS Code specs (test/vscode, `pnpm test:vscode`) do not run here: they
-# are flaky under load. They are a required local pre-push check, see README.
+# are flaky under load. They run locally before merging, see AGENTS.md.
 
 jobs:
   check:

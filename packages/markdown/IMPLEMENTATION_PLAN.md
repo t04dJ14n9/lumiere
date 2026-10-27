@@ -6211,3 +6211,32 @@ text-holding fix of #410 switched off both fail; `main` before #413 and
 the community plugin removal fails the large-vault check (352 KB per change
 with 3,000 files, 3.9 MB with 30,000) and passes with them. The real-editor
 probes stay local: VS Code and Cursor cannot run in CI.
+
+## Real-VS Code tests before merging; the three that failed — 2026-10-27
+
+The owner found the test suites too long. `pnpm check:full`, with the
+real-VS Code specs (about 5 minutes), was required before every push; it
+now runs before merging, and before pushing a change to editor
+integration (AGENTS.md says what counts). Every push still runs
+`pnpm check` and `pnpm test:browser`.
+
+Three real-VS Code specs had failed on `main` since 20 October:
+
+1. `vim-caret` and `vim-caret-vscodevim` measured our caret against VS
+   Code's own, but #138 made the Obsidian fat caret the default and opted
+   only the browser versions of these specs into `caretStyle: "vscodevim"`.
+   The real-VS Code specs now choose it too.
+2. `font-size` expected Properties at the body size; #137 made them
+   0.875em, as Obsidian's, and the browser version already expects that.
+3. With that fixed, `font-size` found a real bug: after a live font size
+   change, every line number below the Properties sheet sat 32 px off its
+   line, at every size once the sheet's fixed reserve was gone. Two causes:
+   - the sheet's 2rem bottom margin collapsed through its wrapper, so the
+     height CodeMirror measured left it out (hidden until now by the
+     reserve: a box with a min-height does not collapse its child's
+     margin). The wrapper now keeps it (`display: flow-root`);
+   - the reserve (#100, #139) was never released, so the sheet stayed at
+     its estimated height whatever the font size: padded in smaller text,
+     and in larger text grown past a height map that no longer followed.
+     It is now released once CodeMirror has measured the sheet in the page.
+   Unit tests cover both; the three specs pass in VS Code.
