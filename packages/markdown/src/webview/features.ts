@@ -3,13 +3,8 @@ import type {} from "../plugins/render/api";
 import type { BaseContext, Infer, Plugin } from "@workshop/core";
 import type { featureSettings } from "../shared/features";
 import { PluginSwitch, type WantedPlugin } from "../shared/plugin-switch";
-import { features, workbenchFeatures } from "../plugins/catalog";
+import { features } from "../plugins/catalog";
 import type { Manifest } from "../shared/manifest";
-
-const ALL_WEBVIEW_MANIFESTS: readonly Manifest[] = [
-  ...features,
-  ...workbenchFeatures,
-];
 
 type FeatureSettings = Infer<typeof featureSettings>;
 
@@ -87,14 +82,6 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
     import("../plugins/tables/webview").then((m) => m.tablesWebview),
   tags: () => import("../plugins/tags/webview").then((m) => m.tagsWebview),
   tasks: () => import("../plugins/tasks/webview").then((m) => m.tasksWebview),
-  obsidianCompat: () =>
-    import("../plugins/obsidianCompat/webview").then(
-      (m) => m.obsidianCompatWebview,
-    ),
-  obsidianMarketplace: () =>
-    import("../plugins/obsidianMarketplace/webview").then(
-      (m) => m.obsidianMarketplaceWebview,
-    ),
   vim: () => import("../plugins/vim/webview").then((m) => m.vimWebview),
 };
 
@@ -152,9 +139,9 @@ async function loadWebviewPlugin(
   return plugin;
 }
 
-const WEBVIEW_FEATURE_IDS = ALL_WEBVIEW_MANIFESTS.filter((manifest) =>
-  manifest.surfaces.includes("webview"),
-).map((manifest) => manifest.id);
+const WEBVIEW_FEATURE_IDS = features
+  .filter((manifest) => manifest.surfaces.includes("webview"))
+  .map((manifest) => manifest.id);
 
 const CHROME_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
   CHROME_FEATURE_IDS.has(id),
@@ -182,7 +169,7 @@ export function preloadPaintFeatures(
   settings: FeatureSettings = {},
   defaults = true,
 ): Promise<void> {
-  const structure = ALL_WEBVIEW_MANIFESTS.filter(
+  const structure = features.filter(
     (manifest) =>
       PAINT_FEATURE_IDS.has(manifest.id) &&
       !CHROME_FEATURE_IDS.has(manifest.id) &&
@@ -250,7 +237,7 @@ function selectPhaseManifests(
   defaults: boolean,
   phase: FeaturePhase,
 ): Manifest[] {
-  return ALL_WEBVIEW_MANIFESTS.filter((manifest) => {
+  return features.filter((manifest) => {
     if (!manifest.surfaces.includes("webview")) {
       return false;
     }

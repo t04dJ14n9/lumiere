@@ -52,7 +52,7 @@ export function useOpening(
     (event: ServerEvent) => {
       if (event.type === "vaults") {
         report(reload().then(() => event.added && select(event.added)));
-      } else if (event.type === "open") {
+      } else {
         select(event.vault);
         dispatch({ type: "open", vault: event.vault, path: event.path });
       }

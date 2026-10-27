@@ -6110,3 +6110,25 @@ resource cache, and neither is invalidated when a file changes; publishing
 a new tree re-indexes the whole note; the note is parsed twice (Live
 Preview and CodeMirror's language); a far jump in a huge note before the
 background parse ends still parses to the viewport at once.
+
+## Remove the community plugin PoC — 2026-10-27
+
+The owner removed the Obsidian community plugin proof of concept (#385,
+#387), its marketplace (#388) and the prompt that asked whether a vault's
+plugins may run (2c3b3de2), after measuring what it cost:
+
+- It ran in every note's webview. In the owner's trusted vault each open
+  loaded 8.3 MB of plugin code (Excalidraw, Dataview, PDF++, obsidian-git)
+  and read all 4,041 notes for it, over SSH on their CVM.
+- Its panel host was in `CRITICAL_PANEL_HOSTS`, so a note's `ready` waited
+  for it before showing any text.
+- Its vault mirror sent each open note the whole file list on every vault
+  change. With OKF's rescans (fixed separately), this kept the extension
+  host busy 22.2 s of a 24 s run in a 107,654-file vault.
+
+The vault settings reader from #83 stays (`plugins/obsidianCompat`: the
+Obsidian config folder, property types and app settings), as does its
+switch and `configFolder` setting. The webview feature list goes back to
+`features` alone: no workbench feature has a webview surface. The
+marketplace command and setting leave `package.json`. Obsidian community
+plugins are listed as not implemented in `CAPABILITIES.md`.

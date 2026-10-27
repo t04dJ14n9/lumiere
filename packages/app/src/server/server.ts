@@ -22,7 +22,6 @@ import {
 import { createApi, type Api } from "./api";
 import { admit } from "./auth";
 import { UiStore } from "./ui-state";
-import { VaultTrust } from "./vault-trust";
 import { Vaults } from "./vaults";
 
 export interface ServerSetup {
@@ -47,8 +46,6 @@ export interface RunningServer {
 
 export async function startServer(setup: ServerSetup): Promise<RunningServer> {
   const markdown = path.join(setup.assets, "markdown");
-  const trust = new VaultTrust(path.join(setup.data, "trust.json"));
-  await trust.load();
   const lumiere = await startLumiere({
     identity: { appName: "Lumière", uriScheme: "lumiere" },
     markdown,
@@ -58,14 +55,12 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
     menus: await readMenus(path.join(setup.assets, "menus.json")),
     data: setup.data,
     logger: setup.logger,
-    vaultCode: trust,
   });
   const editor = createEditorRoutes(lumiere, {
     markdown,
     shim: path.join(setup.assets, "page", "shim.js"),
   });
-  const [vaults, ui] = await loadState(setup);
-  const api = createApi({ vaults, ui, trust, version: setup.version });
+  const api = createApi(...(await loadState(setup)), setup.version);
   const shell = path.join(setup.assets, "shell");
   let port = setup.port;
   const auth = () => ({ token: setup.token, port });

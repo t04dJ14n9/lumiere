@@ -99,11 +99,6 @@ function defaultHost(): HostServices {
     workspace: {
       folders: () => [],
       isTrusted: () => true,
-      vaultCode: {
-        answer: () => true,
-        request: async () => true,
-        onDidChange: none,
-      },
       read: async () => new Uint8Array(),
       stat: async () => ({ mtime: 0, symbolicLink: false }),
       watch: none,
