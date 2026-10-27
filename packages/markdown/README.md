@@ -98,15 +98,16 @@ for Markdown in This Workspace** writes a workspace editor association, which
 takes precedence over Cursor's editor for notes opened afterwards; reopen
 tabs that were already open.
 
-Cursor's **Markdown** button opens the note in the plain text editor and
-remembers that per file. `lumiere.markdown.editor.reclaimTextEditor`
-(`auto`, on only in Cursor) reopens such a note in Lumière and
-closes the text tab, for notes the workspace association routes here.
-It leaves diffs, Git views, untitled files and anything opened with **Open
-as Text** alone. Asking for the text editor a second time within 10 seconds
-keeps it (the tab hold also arms the Open-as-Text bypass so selection
-reclaim cannot steal that tab), which is how **Reopen Editor With… › Text
-Editor** still works.
+Tools also open notes in a new plain text tab: a Markdown link in a chat,
+or a review card's open arrow. `lumiere.markdown.editor.reclaimTextEditor`
+(`auto`, on only in Cursor) reopens such a note in Lumière and closes the
+text tab, for notes the workspace association routes here; it does the
+same for a note switched into Cursor's own Markdown editor. A note you put
+in the text editor stays there: **Reopen Editor With… › Text Editor**,
+Cursor's **Markdown** button, **Open as Text** and **Toggle Text Editor**
+keep it until its last text tab closes, including across a window reload,
+and a find or a jump inside it does not move it. Diffs, Git views and
+untitled files are left alone.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless

@@ -13,6 +13,7 @@ import {
 import type { TabKind, TabModel, TabSwap } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
+import { readerText } from "./reader-text";
 import { SourceCoordinates } from "../shared/document/coordinates";
 import type { NativeNavigation } from "./navigation";
 import type { NavigationIntent } from "../shared/host";
@@ -29,7 +30,7 @@ export const textBypass = new Bypass();
 export const handoffLease = new Lease();
 
 function hasNativeOptOut(uri: string): boolean {
-  return textBypass.has(uri) || handoffLease.has(uri);
+  return textBypass.has(uri) || handoffLease.has(uri) || readerText.has(uri);
 }
 
 interface ReclaimRequest {
@@ -107,16 +108,19 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
 }
 
 /**
- * `lumiere.markdown.editor.reclaimTextEditor`: Cursor's Preview | Markdown
- * switch opens notes in the text or Cursor Markdown editor; transfer back to
- * our CustomTextEditorProvider once the native document is ready.
+ * `lumiere.markdown.editor.reclaimTextEditor`: a note that Cursor shows in its
+ * own Markdown editor, or that a tool opens in a new text tab (a chat link, a
+ * review card), moves back to our CustomTextEditorProvider once the native
+ * document is ready. A note the reader put in the text editor stays there.
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
+  memory?: vscode.Memento,
 ): vscode.Disposable & { adoptOpenTabs(): void } {
   const recentTransfers = new Bypass();
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
+  readerText.restore(memory);
   const judge = ({ tab, swap }: { tab: vscode.Tab; swap: TabSwap }) => {
     // A Cursor Edit session keeps the note native. Switching its text tab
     // with Preview | Markdown ends the session only when that text tab
@@ -126,13 +130,15 @@ export function registerReclaim(
       return;
     }
     if (!shouldReclaim(swap, reclaimContext(swap.uri))) {
+      if (swap.after === "text" && isReclaimableNote(swap.uri)) {
+        readerText.keep(swap.uri);
+      }
       return;
     }
-    // Within 10s of a reclaim, a second Reopen With Text Editor (or Preview |
-    // Markdown) must keep the text tab. Promote to textBypass so command
-    // selection reclaim — which does not see recentTransfers — also honors
-    // the hold (Host GUI S6). Navigation hunks after reclaim still transfer:
-    // they never hit this tab-skip path.
+    // Within 10s of a reclaim, asking for the text editor again keeps it,
+    // also for command selection reclaim, which does not see
+    // recentTransfers (Host GUI S6). Navigation hunks after reclaim still
+    // transfer: they never hit this tab-skip path.
     if (
       shouldHoldNativeAfterReclaim({
         recentTransfer: recentTransfers.has(swap.uri),
@@ -140,6 +146,9 @@ export function registerReclaim(
       })
     ) {
       textBypass.allow(swap.uri);
+      if (swap.after === "text") {
+        readerText.keep(swap.uri);
+      }
       return;
     }
     transfer.open(tab, swap.uri);
@@ -152,6 +161,7 @@ export function registerReclaim(
         endedSessions.add(ended);
       }
     }
+    readerText.forgetClosed(event.closed);
     swaps.next(event, endedSessions).forEach(judge);
   });
   const stop = vscode.Disposable.from(
@@ -166,6 +176,8 @@ export function registerReclaim(
      * window restored, or that were opened before it started, as text.
      */
     adoptOpenTabs() {
+      // Kept notes whose text tab the last window closed are not kept now.
+      readerText.forgetClosed();
       swaps
         .adopt(vscode.window.tabGroups.all.flatMap((group) => group.tabs))
         .forEach(judge);

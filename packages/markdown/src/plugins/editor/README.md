@@ -160,13 +160,16 @@ like an Obsidian vault, where notes always open in the editor.
 
 `editor.reclaimTextEditor` (`auto`/`on`/`off`, auto meaning on in Cursor
 only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
-here that shows up in the plain text or Cursor Markdown editor, as Cursor's
-**Preview | Markdown** switch does, is warmed and reopened in this editor.
-Clean text tabs are closed; dirty text tabs keep their native document and undo.
+here that a tool opens in a new text tab (a chat link, a review card), or that
+switches into Cursor's own Markdown editor, is warmed and reopened in this
+editor. Clean text tabs are closed; dirty text tabs keep their native document
+and undo. A note the reader put in the text editor (a switch in place, Open as
+Text, asking twice) is kept there until its last text tab closes; the kept
+notes are saved in workspace state, so a reload keeps them too.
 **Toggle Text Editor** (Ctrl/Cmd+E) switches the active note between Lumière
 and the host's default text editor via `vscode.openWith` (`default` ↔
-`lumiere.markdown.editor`). Opening as text still sets the reclaim bypass so
-Cursor does not yank the note back for 10 s. After `openWith`, the previous
+`lumiere.markdown.editor`). Opening as text sets the reclaim bypass, and the
+text tab it opens is then kept as the reader's. After `openWith`, the previous
 view's tab for the same URI is closed in the active group (clean tabs only),
 so the toggle leaves one tab rather than Lumière + Text Editor side by side
 (BH-011 / BH-003). This is **not** Obsidian's Ctrl/Cmd+E (Live Preview ↔
@@ -174,7 +177,7 @@ Source); Source mode stays on the unbound **Toggle Live Preview/Source Mode**
 command. Selection and caret are not restored across the switch
 (`vscode.openWith` carries no range).
 
-**Open as Text** keeps the text editor for 10 s. A just-reclaimed note also
+**Open as Text** keeps the text editor. A just-reclaimed note also
 ignores repeated tab notifications for 10 s; an explicit native command jump
 can still navigate to the next hunk during that interval.
 

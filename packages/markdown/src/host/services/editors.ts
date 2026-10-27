@@ -15,6 +15,8 @@ export function createCustomEditors(options: {
   documents: NativeDocuments;
   navigation: NativeNavigation;
   panels: Map<string, PanelShell>;
+  /** Workspace state: notes the reader keeps as text outlive a reload. */
+  storage?: vscode.Memento;
 }): CustomEditors {
   return {
     register: (provider, open) =>
@@ -28,9 +30,10 @@ function registerTrackedEditor(options: {
   documents: NativeDocuments;
   navigation: NativeNavigation;
   panels: Map<string, PanelShell>;
+  storage?: vscode.Memento;
   open: (panel: PanelShell) => void;
 }) {
-  const { provider, panels, navigation, open } = options;
+  const { provider, panels, navigation, open, storage } = options;
   const stopEditor = registerEditor(provider, options, (panel) => {
     panels.set(panel.id, panel);
     panel.onDispose(() => panels.delete(panel.id));
@@ -39,7 +42,7 @@ function registerTrackedEditor(options: {
   // The native selection bridge belongs to the editor provider's lifecycle.
   const reclaim =
     provider.viewType === MARKDOWN_EDITOR.viewType
-      ? registerReclaim(navigation)
+      ? registerReclaim(navigation, storage)
       : undefined;
   reclaim?.adoptOpenTabs();
   return () => {

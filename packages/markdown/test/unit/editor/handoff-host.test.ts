@@ -439,6 +439,80 @@ test("a second native text request within the transfer cooldown keeps text", asy
   assert.ok(group.tabs.includes(second));
 });
 
+/** A workspace state that outlives one registration, as across a reload. */
+function memento() {
+  const values = new Map<string, unknown>();
+  return {
+    values,
+    get: <T>(key: string, fallback?: T) =>
+      (values.has(key) ? values.get(key) : fallback) as T,
+    update: async (key: string, value: unknown) => {
+      values.set(key, value);
+    },
+    keys: () => [...values.keys()],
+  };
+}
+
+/** Reopen Editor With… › Text Editor (or Cursor's Markdown button). */
+function switchToText(): Tab {
+  documents.push({ uri: Uri.parse(note), isDirty: false });
+  return switchInPlace(workshopTab(), new TabInputText(Uri.parse(note)));
+}
+
+test("a note switched to the text editor in place stays there", async (t) => {
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  switchToText();
+  await tick();
+  assert.deepEqual(warmed, []);
+  assert.deepEqual(commands, []);
+});
+
+test("a command selection in a text tab the reader keeps does not move it", async (t) => {
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const text = switchToText();
+  await tick();
+  // Find, go to line or an agent's jump, long after any bypass ran out.
+  const editor = nativeHunkEditor(text, 947);
+  selectionChanged.fire({ textEditor: editor, kind: 3 });
+  await tick();
+  assert.deepEqual(commands, []);
+  assert.ok(group.tabs.includes(text));
+});
+
+test("a note kept as text stays text after a window reload", async (t) => {
+  const state = memento();
+  const first = host.reclaim.registerReclaim(undefined, state as never);
+  switchToText();
+  await tick();
+  first.dispose();
+
+  const second = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => second.dispose());
+  second.adoptOpenTabs();
+  await tick();
+  assert.deepEqual(commands, []);
+});
+
+test("keeping a note as text ends with its last text tab", async (t) => {
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  const text = switchToText();
+  await tick();
+  group.tabs = group.tabs.filter((tab) => tab !== text);
+  tabsChanged.fire({ opened: [], changed: [], closed: [text] });
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);
+
+  // A chat link then opens the note as text in a new tab: back to Lumière.
+  const link = cursorTab();
+  link.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [link], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+});
+
 test("an input-less dirty Cursor tab awaits warming before the custom-editor handoff", async (t) => {
   const release = delayWarm();
   t.after(release);

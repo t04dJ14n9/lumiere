@@ -6162,3 +6162,24 @@ With a fix for both, the same run kept the host busy 2.0 s.
 
 Measuring also showed that Cursor holds each new webview frame for 1 s
 while Playwright is attached over CDP; timings were taken without it.
+
+## Keep the text editor the reader chose — 2026-10-27
+
+The owner reported that opening a note in the built-in text editor in
+Cursor switched it back to Lumière. Reclaim (`host/reclaim.ts`, on by
+default in Cursor) moved every associated note that landed in the text
+editor back, including a switch in place (**Reopen Editor With… › Text
+Editor**, Cursor's **Markdown** button). Only asking twice within 10 s
+stuck, and after those 10 s a command selection in that tab (a find, go
+to line, an agent's jump) moved it back too.
+
+Reclaim now moves only what a tool opens: a new text tab (a chat link, a
+review card) and a switch into Cursor's own Markdown editor. A text tab
+that arrives and is not reclaimed (a switch in place, Open as Text,
+asking twice) is the reader's: its note is kept as text until its last
+text tab closes, also against selection reclaim and across a window
+reload (workspace state). Unit tests cover the policy and the host.
+
+Not covered: **Open With… › Text Editor** from the explorer on a closed
+note opens a new text tab, which looks like a tool's and is reclaimed
+once; asking again within 10 s keeps it.
