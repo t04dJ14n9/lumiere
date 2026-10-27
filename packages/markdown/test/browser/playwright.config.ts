@@ -4,6 +4,8 @@ export default defineConfig({
   globalSetup: "./setup.ts",
   testMatch: "*.spec.ts",
   use: { headless: true },
-  workers: 2,
+  // Half the cores: 6 on a 12-core Mac (1.6 min instead of 3.6 with 2),
+  // 2 on a CI runner. `--workers=1` runs one at a time.
+  workers: "50%",
   reporter: "list",
 });
