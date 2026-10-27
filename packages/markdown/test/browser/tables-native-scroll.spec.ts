@@ -4,7 +4,6 @@
  * An open cell survives scrolling the table out of the viewport and back.
  */
 import { expect, test, type Page } from "@playwright/test";
-import type { EditorView } from "@codemirror/view";
 import { open } from "./harness";
 
 function note(rows = 8): string {
@@ -123,124 +122,6 @@ test("scrolling an open cell offscreen keeps it when the table returns", async (
   await expect(page.locator(".hybrid-table .cm-content")).toContainText(
     "cell-0-a",
   );
-});
-
-/**
- * An open cell keeps the note's caret in its source, so CodeMirror keeps the
- * table mounted however far the note scrolls. Stand in for any change that
- * moves the note's caret without going through the table.
- */
-async function moveNoteCaretOffTable(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const content = document.querySelector(
-      '[aria-label="Markdown content"]',
-    ) as (HTMLElement & { cmTile?: { view?: EditorView } }) | null;
-    content!.cmTile!.view!.dispatch({ selection: { anchor: 0 } });
-  });
-}
-
-/** Scroll until CodeMirror unmounts the table; the result scrolls it back. */
-async function scrollTableAway(page: Page): Promise<() => Promise<void>> {
-  const noteScroller = page.locator(".cm-scroller").first();
-  const tableScrollTop = await noteScroller.evaluate((el) => el.scrollTop);
-  await noteScroller.evaluate((el) => {
-    el.scrollTop = el.scrollHeight;
-  });
-  await expect(page.locator(".hybrid-table")).toHaveCount(0);
-  return async () => {
-    await noteScroller.evaluate((el, top) => {
-      el.scrollTop = top;
-    }, tableScrollTop);
-    await expect(page.locator(".hybrid-table")).toBeVisible();
-    // A retained cell resumes in a microtask after the widget mounts.
-    await page.evaluate(
-      () =>
-        new Promise((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(resolve)),
-        ),
-    );
-  };
-}
-
-async function openCell(page: Page): Promise<void> {
-  const cell = page.locator(".hybrid-table .table-cell-content").nth(2);
-  await expect(cell).toBeVisible();
-  const box = (await cell.boundingBox())!;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-  await expect(page.locator(".hybrid-table .cm-editor")).toHaveCount(1);
-}
-
-for (const state of ["a selected row", "an open cell"] as const) {
-  test(`clicking the note while ${state} is off screen leaves the table`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1000, height: 760 });
-    const source = note(6);
-    await open(page, source, "obsidian", {
-      features: { vim: { enabled: false, config: {} } },
-    });
-    await constrain(page);
-    await page.evaluate(() => window.harness.reveal(0));
-    const table = page.locator(".hybrid-table");
-    if (state === "a selected row") {
-      await table.hover();
-      await table.locator('.table-row-handle[data-index="1"]').click();
-      await expect(table).toBeFocused();
-    } else {
-      await openCell(page);
-      await moveNoteCaretOffTable(page);
-    }
-    const scrollBack = await scrollTableAway(page);
-
-    await page.locator(".cm-line", { hasText: "After 148 keeps" }).click();
-    const outer = page.getByRole("textbox", { name: "Markdown content" });
-    await expect(outer).toBeFocused();
-    // Table commands no longer reach the unmounted table.
-    expect(
-      await page.evaluate(() =>
-        window.harness.run("editor:table-insert-row-below"),
-      ),
-    ).toBe(false);
-    expect(await page.evaluate(() => window.harness.text)).toBe(source);
-
-    await scrollBack();
-    await expect(table.locator(".cm-editor")).toHaveCount(0);
-    await expect(table.locator(".table-cell-selected")).toHaveCount(0);
-    await expect(outer).toBeFocused();
-  });
-}
-
-test("an open cell returning on screen takes focus back only if nothing else has it", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1000, height: 760 });
-  const source = note(6);
-  await open(page, source, "obsidian", {
-    features: { vim: { enabled: false, config: {} } },
-  });
-  await constrain(page);
-  await page.evaluate(() => window.harness.reveal(0));
-  await page.keyboard.press("ControlOrMeta+f");
-  const find = page.getByRole("textbox", { name: "Find..." });
-  await expect(find).toBeFocused();
-  await openCell(page);
-  await moveNoteCaretOffTable(page);
-  const cellContent = page.locator(".hybrid-table .cm-content");
-
-  // Unmounting the table left focus on the body: the cell takes it back.
-  let scrollBack = await scrollTableAway(page);
-  await scrollBack();
-  await expect(cellContent).toBeFocused();
-
-  // The reader moved to the find bar meanwhile: it keeps focus.
-  scrollBack = await scrollTableAway(page);
-  await find.click();
-  await expect(find).toBeFocused();
-  await scrollBack();
-  await expect(find).toBeFocused();
-  await page.keyboard.type("cell");
-  await expect(find).toHaveValue("cell");
-  expect(await page.evaluate(() => window.harness.text)).toBe(source);
 });
 
 test("a selected table row leaves vertical wheel to the browser", async ({

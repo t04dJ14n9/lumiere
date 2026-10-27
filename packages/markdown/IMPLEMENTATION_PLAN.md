@@ -6040,13 +6040,14 @@ design problems fixed. Three reviews of #389/#396, #392/#401 and
 #398/#408, and one of #405, found the causes below; this branch takes in
 #405 and fixes them, each with a unit test.
 
-Measured in a real VS Code 1.142 and Cursor (`test/vscode/scroll-stability.spec.ts`):
-a 40-section note with a Mermaid diagram, a formula, a table, a callout,
-an image and code in each, flicked straight after opening, stepped down,
-flicked, jumped to 75% and read upward. It also lists the wheel and touch
-listeners between the editor's scroller and the window that are not
-passive (Chromium waits on the page for the first event of each gesture
-past one).
+Measured in a real VS Code 1.142 and Cursor with a Playwright probe
+(`test/vscode/scroll-stability.spec.ts`, left in #410's commits, not in
+the repo): a 40-section note with a Mermaid diagram, a formula, a table,
+a callout, an image and code in each, flicked straight after opening,
+stepped down, flicked, jumped to 75% and read upward. It also lists the
+wheel and touch listeners between the editor's scroller and the window
+that are not passive (Chromium waits on the page for the first event of
+each gesture past one).
 
 | | main (401a299c) | this branch |
 | --- | --- | --- |
@@ -6095,10 +6096,12 @@ Fixed, in the order of the commits:
 10. Comments citing Obsidian's minified names (`RW`) and internals were
     reworded; four caches share one least-recently-used map.
 
-New browser and real-VS Code tests (`block-reserve`, `straddling-block`,
-`restore-scroll-wheel`, `tables-cell-caret`, the 1 MB parse test, the
-table additions, and `scroll-stability` in VS Code) await the owner's
-approval under the testing policy; each fix also has a unit test.
+The owner chose to keep only unit tests: the new browser and real-VS Code
+tests written while fixing these (block reserve, straddling block, restore
+under a wheel, cell caret, the 1 MB parse, table focus, diagonal wheel and
+sticky bar, and the VS Code scroll probe) were dropped. Existing browser
+tests that pinned removed behaviour (the table wheel forwarder, heights
+that only grew) were updated.
 
 Left for later: rendering still runs inside CodeMirror's update when a
 block mounts (#392), and a listener returning a promise silently makes it

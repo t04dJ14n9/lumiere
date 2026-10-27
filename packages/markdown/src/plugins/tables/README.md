@@ -75,11 +75,11 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `diagonal-wheel.test.ts`: diagonal detection, room to pan, and adding the vertical part only after a pan.
 - `focus-lifetime.ts`: focus retention when a table unmounts off-viewport, and clearing when focus moves into the note, mounted or not.
 - `focus-lifetime.test.ts`: unmount does not count as leaving, focus in the note does even off screen; retained cell focus waits until the root is connected and nothing else has focus.
-- `tables-native-scroll.spec.ts` (browser): native wheel while hovering, editing or selecting; the open cell surviving a viewport exit; a click into the note leaving an off-screen table; a returning cell not taking focus from the find bar.
+- `tables-native-scroll.spec.ts` (browser): native wheel while hovering, editing or selecting, and the open cell surviving a viewport exit.
 - `scroll-input.ts`: passive report of vertical wheel over a table, which CodeMirror's own observers never see.
 - `sticky-hscroll.ts`: sticky custom horizontal scrollbar for tall wide tables (BH-016), shown by observers and positioned by CSS.
 - `sticky-hscroll.test.ts`: visibility and thumb-metric unit cases.
-- `tables-sticky-hscroll.spec.ts` (browser): sticky bar on the note's bottom edge at the header and while scrolling, pan sync, hide at foot, and showing only while the table overflows.
+- `tables-sticky-hscroll.spec.ts` (browser): sticky bar at header, pan sync, hide at foot.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
 - `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.
@@ -104,13 +104,12 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `webview.test.ts`: persistent widget, entry and insertion unit tests.
 - `test/unit/features/table-wheel.test.ts`: vertical table wheel cancels saved-view restore through plugin wiring; pans and zooms do not.
 - `tables-copy.spec.ts` (browser): handle, row, rectangle and single-cell TSV shortcuts.
-- `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim; a mostly vertical diagonal wheel over a wide table, hovered or selected.
+- `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim.
 - `tables-add-buttons.spec.ts` (browser): Obsidian-like 16px add strips; BH-019 horizontal pan on the add-row strip does not serialize/pad.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
 - `tables-selection-colors.spec.ts` (browser): selected inline code, bold, links and math colors in dark and light themes.
 - `tables-selection-chrome.spec.ts` (browser): active-cell and row-handle selection box visibility.
-- `tables-cell-caret.spec.ts` (browser): the caret at the end of a long cell stays whole and the cell's text does not scroll sideways, with and without Vim.
 - `tables.css`: grid, handles, selection and cell editor appearance, bundled through
   `src/webview/styles/index.css`.
 
