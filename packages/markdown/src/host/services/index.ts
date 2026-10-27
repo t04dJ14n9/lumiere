@@ -57,6 +57,7 @@ export function createHostServices(
       documents,
       navigation,
       panels,
+      storage,
     }),
     agentHost: createAgentHost(),
     git: createGitAccess(),
