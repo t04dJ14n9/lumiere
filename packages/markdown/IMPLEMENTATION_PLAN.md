@@ -6183,3 +6183,31 @@ reload (workspace state). Unit tests cover the policy and the host.
 Not covered: **Open With… › Text Editor** from the explorer on a closed
 note opens a new text tab, which looks like a tool's and is reclaimed
 once; asking again within 10 s keeps it.
+
+## Quality checks as a merge gate — 2026-10-27
+
+The owner asked for scroll smoothness and opening speed to become checks
+every pull request passes before it merges. `pnpm test:quality`
+(`test/quality`, README there) runs them; CI's `quality` job runs it, and
+AGENTS.md makes `check`, `browser` and `quality` the merge gate, with a
+local run when GitHub Actions cannot run.
+
+- Scrolling, in Chromium with the real webview: no wheel or touch listener
+  that is not passive anywhere in the page; text holds still while blocks
+  render, after a far jump and when a block across the top edge grows; a
+  flick straight after opening keeps frames short; a 1 MB note scrolls
+  without long tasks.
+- Opening: first paint and every feature loaded for a small note, a
+  16,000-block note and a note with diagrams; and on the real host with an
+  in-memory vault of 3,000 and 30,000 files, the bytes an open note receives
+  per vault change, host work per change (it must not grow with the vault)
+  and `ready` in the large vault.
+
+Counts, bytes and pixels are exact; timing budgets are for the reference
+machine and stretch with a measured speed factor (a fixed parse), so slower
+CI runners pass and fast machines are not given slack. Proven against the
+regressions they guard: a planted non-passive wheel listener and the
+text-holding fix of #410 switched off both fail; `main` before #413 and
+the community plugin removal fails the large-vault check (352 KB per change
+with 3,000 files, 3.9 MB with 30,000) and passes with them. The real-editor
+probes stay local: VS Code and Cursor cannot run in CI.
