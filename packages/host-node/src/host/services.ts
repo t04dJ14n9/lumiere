@@ -10,7 +10,6 @@ import type {
   ContributedSetting,
   HostCommands,
   HostServices,
-  VaultCodeTrust,
 } from "@workshop/markdown/portable";
 import type { NoteDocuments } from "./documents";
 import { noDiffViews, noGit, noViews } from "./inert";
@@ -53,8 +52,6 @@ export interface NodeServicesOptions {
   readonly commands: HostCommands;
   /** The plugins' tree views, which the embedder shows (trees.ts). */
   readonly trees: TreeHub;
-  /** Whether a vault's own code (Obsidian community plugins) may run. */
-  readonly vaultCode: VaultCodeTrust;
 }
 
 export function createNodeHostServices(
@@ -73,7 +70,7 @@ export function createNodeHostServices(
     views: nodeViews(options.trees, noViews),
     activeEditor: createActiveEditor(panels),
     settings,
-    workspace: createHostWorkspace(roots, options.vaultCode),
+    workspace: createHostWorkspace(roots),
     storage: createWorkspaceStorage(path.join(data, "state.json")),
     extensions: createExtensions(options.markdownDist),
     navigation: createNodeNavigation(panels, settings, options.identity),
