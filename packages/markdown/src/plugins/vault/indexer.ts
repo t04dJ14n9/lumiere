@@ -24,6 +24,11 @@ const SAVE_DELAY_MS = 2_000;
  * looking resolved. 50 ms still coalesces keystrokes without the lag.
  */
 export const OVERLAY_DELAY_MS = 50;
+/**
+ * Maximum time `ready` waits for a cold vault file-system scan before letting
+ * the editor open while indexing continues in the background.
+ */
+export const INITIAL_READY_BUDGET_MS = 500;
 /** Long start-up work runs in slices of about this long, between other events. */
 const SLICE_MS = 8;
 
@@ -38,7 +43,7 @@ export interface IndexerOptions {
   onResolved?: () => void;
   onPartial?: () => void;
   onError?: (message: string, error: unknown) => void;
-  delays?: { save: number; overlay: number };
+  delays?: { save: number; overlay: number; ready?: number };
 }
 
 /**
@@ -55,6 +60,7 @@ export class VaultIndexer {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private stopWatching?: Disposer;
   private disposed = false;
+  private reconciling = false;
   private isExcluded: (path: string) => boolean;
   /** The first comparison with the file system, which may run after `ready`. */
   private reconciled: Promise<void> = Promise.resolve();
@@ -80,8 +86,33 @@ export class VaultIndexer {
     await this.queue.drained();
   }
 
+  /** Ensure an open note is indexed while the initial vault scan is still running. */
+  seedFile(uri: string, path: string): void {
+    if (
+      !this.reconciling ||
+      this.disposed ||
+      isIgnoredPath(path) ||
+      this.index.file(path)
+    ) {
+      return;
+    }
+    this.index.addFiles([this.entry({ uri, path, mtime: 0, size: 0 })]);
+    this.queue.enqueue(path);
+  }
+
   /** The unsaved text of an open note, indexed after a short pause. */
-  setOverlay(path: string, text: string): void {
+  setOverlay(path: string, text: string, uri?: string): void {
+    if (
+      this.reconciling &&
+      !this.disposed &&
+      !isIgnoredPath(path) &&
+      !this.index.file(path)
+    ) {
+      const fallbackUri = `${this.options.root.replace(/\/+$/, "")}/${encodeURI(path)}`;
+      this.index.addFiles([
+        this.entry({ uri: uri ?? fallbackUri, path, mtime: 0, size: 0 }),
+      ]);
+    }
     this.debounce(`overlay:${path}`, this.delays.overlay, () =>
       this.queue.setOverlay(path, text),
     );
@@ -138,13 +169,16 @@ export class VaultIndexer {
     const hasCachedFiles = Object.keys(this.snapshot.files).length > 0;
     if (hasCachedFiles) {
       await this.loadCached();
-      this.reconciled = this.reconcile().catch((error) =>
-        this.options.onError?.("Could not list the vault", error),
-      );
-      return;
     }
-    this.reconciled = this.reconcile();
-    await this.reconciled;
+    this.reconciled = this.reconcile().catch((error) =>
+      this.options.onError?.("Could not list the vault", error),
+    );
+    if (!hasCachedFiles) {
+      await waitUpTo(
+        this.reconciled,
+        this.options.delays?.ready ?? INITIAL_READY_BUDGET_MS,
+      );
+    }
   }
 
   /**
@@ -170,28 +204,39 @@ export class VaultIndexer {
 
   /** Compare the file system with the index; parse only what changed. */
   private async reconcile(): Promise<void> {
-    const listing = await this.options.fs.list(this.options.root, FILE_LIMIT);
-    if (this.disposed) {
-      return;
-    }
-    if (listing.partial) {
-      this.options.onPartial?.();
-    }
-    this.stopWatching = this.options.fs.watch(this.options.root, (event) =>
-      this.onFileEvent(event),
-    );
-    const files = listing.files.filter((file) => !isIgnoredPath(file.path));
-    const present = new Set(files.map((file) => file.path));
-    this.index.removeFilesExcept(present);
-    this.forgetMissing(present);
-    await inSlices(files, (file) => {
-      this.index.addFiles([this.entry(file)]);
-      if (this.needsParse(file)) {
-        this.queue.enqueue(file.path);
+    this.reconciling = true;
+    try {
+      const listing = await this.options.fs.list(this.options.root, FILE_LIMIT);
+      if (this.disposed) {
+        return;
       }
-    });
-    if (this.queue.isIdle) {
-      this.drained();
+      if (listing.partial) {
+        this.options.onPartial?.();
+      }
+      this.stopWatching = this.options.fs.watch(this.options.root, (event) =>
+        this.onFileEvent(event),
+      );
+      const files = listing.files.filter((file) => !isIgnoredPath(file.path));
+      const present = new Set(files.map((file) => file.path));
+      for (const path of this.queue.overlayPaths()) {
+        present.add(path);
+      }
+      this.index.removeFilesExcept(present);
+      this.forgetMissing(present);
+      await inSlices(files, (file) => {
+        if (this.disposed) {
+          return;
+        }
+        this.index.addFiles([this.entry(file)]);
+        if (this.needsParse(file)) {
+          this.queue.enqueue(file.path);
+        }
+      });
+      if (!this.disposed && this.queue.isIdle) {
+        this.drained();
+      }
+    } finally {
+      this.reconciling = false;
     }
   }
 
@@ -201,22 +246,45 @@ export class VaultIndexer {
    */
   private needsParse(file: ListedFile): boolean {
     const cached = this.snapshot.files[file.path];
-    const isSame = cached?.mtime === file.mtime && cached.size === file.size;
     if (!isMarkdownPath(file.path)) {
-      if (!isSame) {
-        this.snapshot.setFile(file.path, { ...file });
-        this.scheduleSave();
-      }
-      return false;
+      return this.recordAttachment(file, cached);
     }
-    const metadata = cached?.hash && this.snapshot.metadata[cached.hash];
-    if (!isSame || !metadata) {
+    const hash = this.reusableHash(file, cached);
+    const metadata = hash ? this.snapshot.metadata[hash] : undefined;
+    if (!hash || !metadata) {
       return true;
+    }
+    if (cached?.mtime === 0 && cached.size === 0) {
+      this.snapshot.setFile(file.path, { ...file, hash });
+      this.scheduleSave();
     }
     if (!this.index.metadata(file.path)) {
       this.index.setMetadata(file.path, metadata);
     }
     return false;
+  }
+
+  private recordAttachment(
+    file: ListedFile,
+    cached: Snapshot["files"][string] | undefined,
+  ): boolean {
+    if (cached?.mtime !== file.mtime || cached.size !== file.size) {
+      this.snapshot.setFile(file.path, { ...file });
+      this.scheduleSave();
+    }
+    return false;
+  }
+
+  private reusableHash(
+    file: ListedFile,
+    cached: Snapshot["files"][string] | undefined,
+  ): string | undefined {
+    if (!cached?.hash) {
+      return undefined;
+    }
+    const isSeeded = cached.mtime === 0 && cached.size === 0;
+    const isSame = cached.mtime === file.mtime && cached.size === file.size;
+    return isSeeded || isSame ? cached.hash : undefined;
   }
 
   private forgetMissing(present: Set<string>): void {
@@ -301,10 +369,6 @@ export class VaultIndexer {
 
   private save(): Promise<void> {
     this.cancel("save");
-    // One save at a time. The store writes each file beside it and renames it
-    // into place, so two saves of one file collide on that temporary file; a
-    // slow file system (a remote workspace) let the next debounced save start
-    // before the last had finished.
     this.saving = this.saving.then(() => this.writeSnapshot());
     return this.saving;
   }
@@ -336,6 +400,20 @@ export class VaultIndexer {
     clearTimeout(this.timers.get(key));
     this.timers.delete(key);
   }
+}
+
+/** Wait for `work` up to `budgetMs`, then let it continue in the background. */
+export function waitUpTo(work: Promise<void>, budgetMs: number): Promise<void> {
+  if (budgetMs <= 0) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, budgetMs);
+    void work.finally(() => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
 }
 
 /** Run `step` over items, yielding to other events every few milliseconds. */
