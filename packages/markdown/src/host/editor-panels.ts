@@ -1,8 +1,14 @@
-import { randomUUID } from "node:crypto";
 import * as vscode from "vscode";
 import type { EditorProvider } from "../shared/editor-provider";
 import type { PanelShell } from "../shared/host";
 import { panelIsActive } from "./active-panel";
+import {
+  bindShellState,
+  bindingForPanel,
+  createCustomEditorNavigation,
+  enableCustomTextEditorProposals,
+} from "./custom-editor-navigation";
+import type { NativeNavigation } from "./navigation";
 import type { NativeDocuments } from "./services/native-documents";
 
 /**
@@ -12,8 +18,10 @@ import type { NativeDocuments } from "./services/native-documents";
  * the editor plugin's business.
  */
 interface EditorHost {
+  extension?: unknown;
   extensionUri: vscode.Uri;
   documents: NativeDocuments;
+  navigation?: NativeNavigation;
 }
 
 function panelTransport(panel: vscode.WebviewPanel): PanelShell["transport"] {
@@ -67,7 +75,7 @@ function createPanelShell(
   panel: vscode.WebviewPanel,
   { extensionUri, documents }: EditorHost,
 ): PanelShell {
-  const id = randomUUID();
+  const binding = bindingForPanel(panel, document);
   const root =
     vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
     vscode.Uri.joinPath(document.uri, "..");
@@ -80,7 +88,7 @@ function createPanelShell(
   };
 
   return {
-    id,
+    id: binding.id,
     get column() {
       return panel.viewColumn;
     },
@@ -88,7 +96,7 @@ function createPanelShell(
     cspSource: panel.webview.cspSource,
     trusted: vscode.workspace.isTrusted,
     transport: panelTransport(panel),
-    active: () => isActivePanel(provider.viewType, document, panel),
+    active: () => isActivePanel(provider.viewType, binding.document, panel),
     reveal() {
       panel.reveal();
     },
@@ -109,11 +117,44 @@ function createPanelShell(
         .toString();
     },
     onDispose(listener) {
-      const stop = panel.onDidDispose(listener);
-      return () => stop.dispose();
+      binding.shellDisposeListeners.add(listener);
+      return () => {
+        binding.shellDisposeListeners.delete(listener);
+      };
     },
     onState: (listener) => panelState(panel, listener),
+    ...bindShellState(binding),
   };
+}
+async function movePanelToDocument(
+  provider: EditorProvider,
+  newDocument: vscode.TextDocument,
+  panel: vscode.WebviewPanel,
+  options: {
+    host: EditorHost;
+    open: (panel: PanelShell) => void;
+    token?: vscode.CancellationToken;
+  },
+): Promise<void> {
+  const { host, open, token } = options;
+  if (token?.isCancellationRequested) {
+    return;
+  }
+  const binding = bindingForPanel(panel);
+  let snapshot: unknown;
+  try {
+    snapshot = await binding.viewState?.capture();
+  } catch {
+    snapshot = undefined;
+  }
+  for (const listener of [...binding.shellDisposeListeners]) {
+    listener();
+  }
+  binding.shellDisposeListeners.clear();
+  binding.viewState = undefined;
+  binding.document = newDocument;
+  binding.pendingRestore = snapshot;
+  open(createPanelShell(provider, newDocument, panel, host));
 }
 /** Register `provider` as a custom editor; each panel it opens goes to `open`. */
 export function registerEditor(
@@ -121,13 +162,31 @@ export function registerEditor(
   host: EditorHost,
   open: (panel: PanelShell) => void,
 ) {
+  enableCustomTextEditorProposals(host.extension);
   const registration = vscode.window.registerCustomEditorProvider(
     provider.viewType,
     {
       resolveCustomTextEditor(document, panel) {
         open(createPanelShell(provider, document, panel, host));
       },
-    },
+      resolveCustomTextEditorNavigation(
+        document: vscode.TextDocument,
+        panel: vscode.WebviewPanel,
+      ) {
+        return createCustomEditorNavigation(document, panel, host.navigation);
+      },
+      async moveCustomTextEditor(
+        newDocument: vscode.TextDocument,
+        panel: vscode.WebviewPanel,
+        token?: vscode.CancellationToken,
+      ) {
+        await movePanelToDocument(provider, newDocument, panel, {
+          host,
+          open,
+          ...(token ? { token } : {}),
+        });
+      },
+    } as vscode.CustomTextEditorProvider,
     {
       webviewOptions: {
         retainContextWhenHidden: provider.retainContextWhenHidden,

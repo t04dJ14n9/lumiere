@@ -251,10 +251,15 @@ function reportSelection(ctx: Context) {
   const rpc = ctx.rpc;
   return EditorView.updateListener.of((update) => {
     if (update.selectionSet || update.focusChanged) {
+      const { main } = update.state.selection;
       rpc.notify(
         protocol,
         "selectionChanged",
-        { hasSelection: !update.state.selection.main.empty },
+        {
+          hasSelection: !main.empty,
+          anchor: main.anchor,
+          head: main.head,
+        },
         { coalesce: true },
       );
     }
