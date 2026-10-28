@@ -4,6 +4,7 @@ import { defineProtocol } from "../../shared/rpc/protocol";
 export const navigationTarget = Schema.object({
   fragment: Schema.string().max(8192),
   at: offset.optional(),
+  to: offset.optional(),
 });
 export const request = Schema.object({
   at: offset.optional(),
@@ -35,6 +36,7 @@ export const protocol = defineProtocol("links", {
         session: Schema.string().max(100),
         fragment: Schema.string().max(8192),
         at: offset.optional(),
+        to: offset.optional(),
         requestId: offset,
       }),
       result: Schema.boolean(),

@@ -7,6 +7,7 @@ import type * as HostCommands from "../../../src/host/services/commands";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
 import type * as CursorHandoff from "../../../src/host/cursor-handoff";
 import type * as HostNavigation from "../../../src/host/navigation";
+import type * as EditorPanels from "../../../src/host/editor-panels";
 import type { PanelShell, RevealPanel } from "../../../src/shared/host";
 import type { Uri as NativeUri } from "vscode";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
@@ -19,6 +20,9 @@ const { viewType } = MARKDOWN_EDITOR;
 class Uri {
   static parse(value: string) {
     return new Uri(value);
+  }
+  static joinPath(base: Uri, ...parts: string[]) {
+    return new Uri([base.toString(), ...parts].join("/"));
   }
   constructor(private readonly value: string) {}
   get scheme() {
@@ -111,6 +115,11 @@ const visibleRangesChanged = new Emitter<{ textEditor: TextEditor }>();
 const warmed: string[] = [];
 const commands: unknown[][] = [];
 const scopes: { section: string; uri: string | undefined }[] = [];
+const registeredProviders: {
+  viewType: string;
+  provider: unknown;
+  options?: unknown;
+}[] = [];
 const settings = new Map<string, unknown>();
 let beforeOpen: (() => Promise<void>) | undefined;
 let afterCommand: (() => void | Promise<void>) | undefined;
@@ -135,6 +144,8 @@ const vscode = {
   extensions: { getExtension: () => undefined },
   workspace: {
     textDocuments: documents,
+    isTrusted: true,
+    getWorkspaceFolder: () => undefined,
     getConfiguration(section: string, uri?: Uri) {
       scopes.push({ section, uri: uri?.toString() });
       return {
@@ -185,11 +196,24 @@ const vscode = {
     tabGroups: {
       all: [group],
       activeTabGroup: group,
+      onDidChangeTabGroups: () => ({ dispose() {} }),
       onDidChangeTabs: tabsChanged.event,
       async close(tab: Tab) {
         assert.equal(tab.isDirty, false, "dirty tabs must survive the handoff");
         group.tabs = group.tabs.filter((candidate) => candidate !== tab);
       },
+    },
+    registerCustomEditorProvider(
+      registeredViewType: string,
+      provider: unknown,
+      options?: unknown,
+    ) {
+      registeredProviders.push({
+        viewType: registeredViewType,
+        provider,
+        options,
+      });
+      return { dispose() {} };
     },
   },
   languages: {
@@ -229,6 +253,8 @@ function loadHost() {
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
       cursorHandoff:
         require("../../../src/host/cursor-handoff.ts") as typeof CursorHandoff,
+      editorPanels:
+        require("../../../src/host/editor-panels.ts") as typeof EditorPanels,
     };
   } finally {
     loader._load = originalLoad;
@@ -243,6 +269,7 @@ beforeEach(() => {
   commands.length = 0;
   documents.length = 0;
   scopes.length = 0;
+  registeredProviders.length = 0;
   group.tabs = [];
   group.activeTab = undefined;
   vscode.window.tabGroups.all = [group];
@@ -1544,6 +1571,7 @@ function nativeHunkEditor(tab: Tab, line = 929, eol = "\n"): TextEditor {
 
 function hunkDestination(tab: Tab, reused = false) {
   const calls: number[] = [];
+  const ranges: { at: number; to?: number }[] = [];
   const shell = {
     id: "destination",
     column: 1,
@@ -1560,6 +1588,10 @@ function hunkDestination(tab: Tab, reused = false) {
     async reveal(target, token) {
       if (!token.cancelled) {
         calls.push(target.at!);
+        ranges.push({
+          at: target.at!,
+          ...(target.to !== undefined ? { to: target.to } : {}),
+        });
       }
       return !token.cancelled;
     },
@@ -1578,7 +1610,12 @@ function hunkDestination(tab: Tab, reused = false) {
       panels.push(shell);
     }
   };
-  return { navigation, calls, ready: () => navigation.registerReveal(reveal) };
+  return {
+    navigation,
+    calls,
+    ranges,
+    ready: () => navigation.registerReveal(reveal),
+  };
 }
 
 for (const reused of [false, true]) {
@@ -2024,3 +2061,172 @@ for (const ignored of [
     assert.deepEqual(destination.calls, []);
   });
 }
+
+test("hunk and search transfers preserve both start and end selection offsets [at, to]", async (t) => {
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  const editor = nativeHunkEditor(tab, 929, "\r\n");
+  t.after(() => stop.dispose());
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  const normalized = editor.document.getText().replaceAll("\r\n", "\n");
+  const expectedAt = normalized.indexOf("Line 930\n");
+  const expectedTo = normalized.indexOf("Line 932\n") + 4;
+  assert.deepEqual(destination.ranges, [{ at: expectedAt, to: expectedTo }]);
+});
+
+test("repeated search jumps opening text tabs with a selection within 10s still reclaim and jump", async (t) => {
+  const first = cursorTab();
+  const destination = hunkDestination(first, true);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  destination.ready();
+  const firstEditor = nativeHunkEditor(first, 100);
+  tabsChanged.fire({ opened: [first], changed: [], closed: [] });
+  await tick();
+  assert.equal(destination.ranges.length, 1);
+
+  const second = cursorTab();
+  const secondEditor = nativeHunkEditor(second, 250);
+  tabsChanged.fire({ opened: [second], changed: [], closed: [] });
+  await tick();
+  assert.equal(destination.ranges.length, 2);
+  assert.equal(
+    destination.ranges[1]?.at,
+    secondEditor.document.getText().indexOf("Line 251\n"),
+  );
+  assert.equal(
+    destination.ranges[1]?.to,
+    secondEditor.document.getText().indexOf("Line 253\n") + 4,
+  );
+  assert.equal(
+    destination.ranges[0]?.at,
+    firstEditor.document.getText().indexOf("Line 101\n"),
+  );
+});
+
+test("registerEditor enables customTextEditorNavigation and revealRange delivers [at, to] to the panel", async (t) => {
+  const extension = {
+    id: "lumiere.markdown",
+    extensionUri: Uri.parse("file:///ext"),
+    packageJSON: { name: "lumiere", enabledApiProposals: [] as string[] },
+  };
+  let openedShell: PanelShell | undefined;
+  const panels: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => panels);
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extension,
+      extensionUri: extension.extensionUri as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShell = shell;
+      panels.push(shell);
+    },
+  );
+  t.after(stop);
+
+  assert.equal(
+    extension.packageJSON.enabledApiProposals.includes(
+      "customTextEditorNavigation",
+    ),
+    true,
+  );
+  assert.equal(registeredProviders.length, 1);
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+    resolveCustomTextEditorNavigation(
+      doc: unknown,
+      panel: unknown,
+    ): {
+      revealRange(
+        range: Range,
+        options?: unknown,
+        token?: { isCancellationRequested: boolean },
+      ): Promise<void>;
+    };
+  };
+  assert.equal(typeof provider.resolveCustomTextEditorNavigation, "function");
+
+  const lines = ["Alpha line", "Target match token here", "Omega line"];
+  const rawText = lines.join("\r\n");
+  const doc = {
+    uri: Uri.parse(note),
+    getText: () => rawText,
+    offsetAt(pos: Position) {
+      return (
+        lines
+          .slice(0, pos.line)
+          .reduce((sum, line) => sum + line.length + 2, 0) + pos.character
+      );
+    },
+  };
+  const fakePanel = {
+    viewColumn: 1,
+    active: true,
+    webview: {
+      options: {},
+      cspSource: "vscode-webview:",
+      html: "",
+      postMessage: async () => true,
+      onDidReceiveMessage: () => ({ dispose() {} }),
+      asWebviewUri: (u: Uri) => u,
+    },
+    reveal() {},
+    dispose() {},
+    onDidDispose: () => ({ dispose() {} }),
+    onDidChangeViewState: () => ({ dispose() {} }),
+  };
+
+  // Resolve navigation controller before resolveCustomTextEditor completes to
+  // verify both share the same panel identity and await panel reveal readiness.
+  const navController = provider.resolveCustomTextEditorNavigation(
+    doc,
+    fakePanel,
+  );
+  provider.resolveCustomTextEditor(doc, fakePanel);
+  assert.ok(openedShell);
+
+  const delivered: { fragment: string; at?: number; to?: number }[] = [];
+  const unregister = navigation.registerReveal({
+    id: openedShell.id,
+    uri: note,
+    active: () => true,
+    async reveal(target) {
+      delivered.push({
+        fragment: target.fragment,
+        ...(target.at !== undefined ? { at: target.at } : {}),
+        ...(target.to !== undefined ? { to: target.to } : {}),
+      });
+      return true;
+    },
+  });
+  t.after(unregister);
+
+  const matchCol = lines[1]!.indexOf("match token");
+  await navController.revealRange(
+    new Range(
+      new Position(1, matchCol),
+      new Position(1, matchCol + "match token".length),
+    ),
+  );
+
+  const lfText = lines.join("\n");
+  const expectedAt = lfText.indexOf("match token");
+  const expectedTo = expectedAt + "match token".length;
+  assert.deepEqual(delivered, [
+    {
+      fragment: "",
+      at: expectedAt,
+      to: expectedTo,
+    },
+  ]);
+});

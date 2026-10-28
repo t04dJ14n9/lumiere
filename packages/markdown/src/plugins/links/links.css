@@ -19,3 +19,11 @@
     opacity: 1;
   }
 }
+
+.cm-editor .is-flashing {
+  transition: all 0.25s ease;
+  background-color: var(--text-highlight-bg);
+  color: var(--text-normal);
+  mix-blend-mode: var(--highlight-mix-blend-mode);
+  border-radius: 2px;
+}

@@ -93,6 +93,43 @@ async function containedVirtualPath(
   }
 }
 
+function toOffsetTarget(
+  target: number | { at: number; to?: number },
+): NavigationTarget {
+  const at = typeof target === "number" ? target : target.at;
+  const to = typeof target === "number" ? undefined : target.to;
+  return {
+    fragment: "",
+    at,
+    ...(to !== undefined && to > at ? { to } : {}),
+  };
+}
+
+async function deliverToOpenedPanel(
+  panels: () => readonly PanelShell[],
+  reveals: RevealRouter,
+  target: {
+    uri: string;
+    column: number;
+    offset: number | { at: number; to?: number };
+    intent: NavigationIntent;
+  },
+): Promise<void> {
+  const current = panels();
+  const panel = chooseRevealPanel(
+    current,
+    new Set(current.map((candidate) => candidate.id)),
+    { uri: target.uri, side: false, column: target.column },
+  );
+  if (panel) {
+    await reveals.deliver(
+      target.intent,
+      panel.id,
+      toOffsetTarget(target.offset),
+    );
+  }
+}
+
 export function createNavigation(
   panels: () => readonly PanelShell[],
   configuration: Configuration = createConfiguration(),
@@ -101,17 +138,10 @@ export function createNavigation(
   const navigation: NativeNavigation = {
     begin: () => reveals.begin(),
     registerReveal: (panel) => reveals.register(panel),
-    async revealOpened(uri, column, at, intent) {
-      const current = panels();
-      const panel = chooseRevealPanel(
-        current,
-        new Set(current.map((panel) => panel.id)),
-        { uri, side: false, column },
-      );
-      if (panel) {
-        await reveals.deliver(intent, panel.id, { fragment: "", at });
-      }
-    },
+    revealOpened: (uri, column, offset, intent) =>
+      deliverToOpenedPanel(panels, reveals, { uri, column, offset, intent }),
+    revealPanel: (panelId, offset, intent = reveals.begin()) =>
+      reveals.deliver(intent, panelId, toOffsetTarget(offset)),
     scheme: vscode.env.uriScheme,
     external: async (href) => vscode.env.openExternal(vscode.Uri.parse(href)),
     confirm: async (message) =>
@@ -158,9 +188,14 @@ export interface NativeNavigation extends Navigation {
   revealOpened(
     uri: string,
     column: number,
-    at: number,
+    at: number | { at: number; to?: number },
     intent: NavigationIntent,
   ): Promise<void>;
+  revealPanel?(
+    panelId: string,
+    target: number | { at: number; to?: number },
+    intent?: NavigationIntent,
+  ): Promise<boolean | void>;
 }
 
 async function resolveNavigation({
