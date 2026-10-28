@@ -185,11 +185,15 @@ export class PropertyField {
     edit.addEventListener("click", openEditor);
     if (display.classList.contains("property-complex") && this.editor) {
       display.addEventListener("click", (event) => {
+        const interactive =
+          event.target instanceof Element
+            ? event.target.closest(
+                "a, button, input, textarea, [contenteditable='true'], summary, [role=button]",
+              )
+            : null;
         if (
           !(event.target instanceof Element) ||
-          event.target.closest(
-            "a, button, input, textarea, [contenteditable='true'], summary, [role=button]",
-          ) ||
+          (interactive && display.contains(interactive)) ||
           this.input.ownerDocument?.getSelection?.()?.isCollapsed === false
         ) {
           return;

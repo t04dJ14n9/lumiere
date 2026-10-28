@@ -65,6 +65,8 @@ test("images (standalone and inside tables) and Mermaid diagrams open in larger 
     "",
     `![Standalone|160](${PNG})`,
     "",
+    `- List item with inline image ![InlineImage](${PNG})`,
+    "",
     "| Col A | Col B |",
     "| --- | --- |",
     `| cell | ![TableImage](${PNG}) |`,
@@ -84,6 +86,19 @@ test("images (standalone and inside tables) and Mermaid diagrams open in larger 
   const dialog = page.locator("dialog.image-inspector[open]");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator(".media-area img")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+
+  const inlineImg = page.locator('img[alt="InlineImage"]');
+  await expect(inlineImg).toBeVisible();
+  await inlineImg.click();
+  await expect(inlineImg).toHaveClass(/md-image-selected/);
+  const lineHasEmbedClass = await inlineImg.evaluate(
+    (el) => el.closest(".cm-line")?.classList.contains("image-embed") ?? false,
+  );
+  expect(lineHasEmbedClass).toBe(false);
+  await inlineImg.dblclick();
+  await expect(dialog).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 

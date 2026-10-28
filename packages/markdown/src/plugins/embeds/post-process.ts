@@ -236,6 +236,18 @@ class EmbedPass {
       image.replaceWith(host);
       host.append(image);
     }
+    const syncCompact = () => {
+      const width = image.width || image.naturalWidth;
+      const height = image.height || image.naturalHeight;
+      host.classList.toggle?.(
+        "image-embed-compact",
+        (width > 0 && width < 72) || (height > 0 && height < 72),
+      );
+    };
+    syncCompact();
+    image.addEventListener("load", syncCompact, {
+      signal: this.events.signal,
+    });
     const inspect = document.createElement("button");
     inspect.type = "button";
     inspect.className = "inspect-image";

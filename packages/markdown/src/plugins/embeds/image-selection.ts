@@ -16,7 +16,10 @@ import {
   withWidth,
   writtenWidth,
 } from "./image-size";
-import { setImageSelectedChrome } from "./image-resize-corner";
+import {
+  isSelectableImage,
+  setImageSelectedChrome,
+} from "./image-resize-corner";
 import { imageKeyFromEvent } from "./image-selection-keys";
 
 export { imageKeyFromEvent } from "./image-selection-keys";
@@ -114,10 +117,10 @@ function embedAt(state: EditorState, at: number): Range | undefined {
  * The rendered images of the selected embed: those drawn at its source (a
  * block's image may report its block's start or end).
  */
-function imagesOf(view: EditorView, range: Range): HTMLImageElement[] {
+export function imagesOf(view: EditorView, range: Range): HTMLImageElement[] {
   return [...view.contentDOM.querySelectorAll("img")].filter((image) => {
     try {
-      const at = view.posAtDOM(image);
+      const at = isSelectableImage(image) ? view.posAtDOM(image) : -1;
       return at >= range.from && at <= range.to;
     } catch {
       return false;
@@ -131,6 +134,7 @@ function selectOnClick(view: EditorView, event: MouseEvent): void {
     event.target instanceof HTMLImageElement ? event.target : undefined;
   if (
     !image ||
+    !isSelectableImage(image) ||
     event.button !== 0 ||
     event.shiftKey ||
     event.metaKey ||
@@ -460,25 +464,12 @@ export function imageSelection(): Extension {
     selectedClass,
     Prec.highest(
       keymap.of(
-        (
-          [
-            "+",
-            "=",
-            "-",
-            "0",
-            "Space",
-            "Enter",
-            "Tab",
-            "Backspace",
-            "Delete",
-            "Escape",
-            "ArrowRight",
-            "ArrowLeft",
-          ] as const
-        ).map((key) => ({
-          key,
-          run: (view: EditorView) => runSelectedImageKey(view, key),
-        })),
+        "+ = - 0 Space Enter Tab Backspace Delete Escape ArrowRight ArrowLeft"
+          .split(" ")
+          .map((key) => ({
+            key,
+            run: (view: EditorView) => runSelectedImageKey(view, key),
+          })),
       ),
     ),
   ];
