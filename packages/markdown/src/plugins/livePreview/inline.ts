@@ -239,9 +239,11 @@ class InlineDecorations implements InlineContext {
         )?.link;
 
     // Rendered labels: plain click reveals source; Mod-click follows (BH-020).
+    // When revealed, mark the full [label](url) span with data-href so Mod-click
+    // and Mod-hover preview work anywhere on the link syntax.
     this.mark(
-      from + 1,
-      closingLabel?.from ?? to,
+      isRendered ? from + 1 : from,
+      isRendered ? (closingLabel?.from ?? to) : to,
       linkClass(
         isRendered,
         href ?? "",
