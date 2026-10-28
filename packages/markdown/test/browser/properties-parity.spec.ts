@@ -173,3 +173,47 @@ test("cssclasses frontmatter applies classes onto editor DOM and custom callouts
     "alert-circle",
   );
 });
+
+test("OKF sources property opens YAML editor on click or edit button and commits changes", async ({
+  page,
+}) => {
+  const doc = [
+    "---",
+    "title: Sources Note",
+    "sources:",
+    "  - id: src-1",
+    "    resource: https://example.com/a",
+    "    title: Original Source",
+    "    usage: Initial usage",
+    "---",
+    "",
+    "# Body",
+  ].join("\n");
+  await open(page, doc);
+  const sourcesRow = page.locator('[data-property-row="sources"]');
+  await expect(sourcesRow.locator(".source-title")).toHaveText(
+    "Original Source",
+  );
+  const textarea = sourcesRow.locator(
+    'textarea[data-property-input="sources"]',
+  );
+  await expect(textarea).toBeHidden();
+
+  await sourcesRow.locator(".source-title").click();
+  await expect(textarea).toBeVisible();
+  await expect(textarea).toBeFocused();
+  await textarea.fill(
+    "- id: src-1\n  resource: https://example.com/a\n  title: Updated Source Title\n  usage: Updated usage",
+  );
+  await page.locator("h1, .cm-line").last().click();
+
+  await expect(sourcesRow.locator(".source-title")).toHaveText(
+    "Updated Source Title",
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("title: Updated Source Title");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("title: Sources Note");
+});

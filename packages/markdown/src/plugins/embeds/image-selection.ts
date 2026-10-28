@@ -136,7 +136,9 @@ function selectOnClick(view: EditorView, event: MouseEvent): void {
     event.metaKey ||
     event.ctrlKey ||
     event.altKey ||
-    image.closest("a, button")
+    image.closest(
+      "a, button, .hybrid-Callout, .hybrid-Blockquote, .hybrid-BulletList, .hybrid-OrderedList, .cm-table-widget",
+    )
   ) {
     return;
   }

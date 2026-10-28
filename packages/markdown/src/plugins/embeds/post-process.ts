@@ -220,13 +220,19 @@ class EmbedPass {
     if (image !== node) {
       node.replaceChildren(image);
     }
+    this.mountImageInspect(node, image, target, wiki);
+  }
+
+  private mountImageInspect(
+    node: HTMLElement,
+    image: HTMLImageElement,
+    target: string,
+    wiki: boolean,
+  ): void {
     // Markdown <img data-resource> has no embed span; wrap so .image-embed
     // chrome never tags the line/paragraph (that split selection into bands).
-    let host: HTMLElement;
-    if (image !== node) {
-      host = node;
-    } else {
-      host = document.createElement("span");
+    const host = image !== node ? node : document.createElement("span");
+    if (host !== node) {
       image.replaceWith(host);
       host.append(image);
     }
@@ -236,9 +242,23 @@ class EmbedPass {
     inspect.textContent = "⤢";
     inspect.setAttribute("aria-label", `Inspect image: ${image.alt}`);
     const actions = mountImageEmbedActions(image, host, inspect);
+    image.addEventListener(
+      "dblclick",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        inspect.click();
+      },
+      { signal: this.events.signal },
+    );
     this.disposers.push(
-      () => actions.remove(),
-      inspectImage(inspect, resource.url, image.alt, () =>
+      () => {
+        actions.remove();
+        if (host !== node && host.parentNode) {
+          host.replaceWith(image);
+        }
+      },
+      inspectImage(inspect, image.src, image.alt, () =>
         this.options.open(target, wiki),
       ),
     );

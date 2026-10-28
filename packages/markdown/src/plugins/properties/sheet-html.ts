@@ -94,8 +94,11 @@ function propertyBody(
   value: unknown,
   options: PropertyRowOptions,
 ): string {
-  // OKF Sources (and other custom renderers): typed stacked UI only — no YAML.
+  // OKF Sources (and other custom renderers): typed stacked UI with an on-demand YAML editor when draftable.
   if (options.custom) {
+    if (options.draft !== undefined) {
+      return `<div class="property-complex" data-property-display>${options.custom}<button type="button" tabindex="-1" class="metadata-property-link-flair property-complex-edit" data-property-edit${attr("aria-label", `Edit ${key}`)}>${propertyFlairIcon("pencil")}</button></div>${editableYaml(key, options.draft).replace("<textarea ", "<textarea hidden ")}`;
+    }
     return `<div class="property-complex">${options.custom}</div>`;
   }
   if (options.editable) {
