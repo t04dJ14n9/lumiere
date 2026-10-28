@@ -302,6 +302,19 @@ class InlineDecorations implements InlineContext {
         : this.revealed(parent.from, parent.to)
     ) {
       this.mark(from, to, "md-syntax-mark");
+      if (
+        name === "HeaderMark" &&
+        parent.name.startsWith("ATXHeading") &&
+        from === parent.from
+      ) {
+        let spaceEnd = to;
+        while (this.state.sliceDoc(spaceEnd, spaceEnd + 1) === " ") {
+          spaceEnd++;
+        }
+        if (spaceEnd > to) {
+          this.mark(to, spaceEnd, "md-header-space");
+        }
+      }
       return;
     }
     // A setext underline is its own line; Obsidian keeps it, faint.

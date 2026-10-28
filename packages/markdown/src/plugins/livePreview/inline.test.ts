@@ -405,3 +405,26 @@ test("decoratePersistentOffViewport caches persistent nodes per Tree and skips f
   );
   assert.ok(offViewportClasses.includes("persist-embed"));
 });
+
+test("revealed ATX heading marks its trailing separator spaces with md-header-space so # never wraps onto its own line", () => {
+  const doc = "#  Heading title\n\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: 3 },
+    extensions: [documentTree],
+  });
+  const marks: Array<{ cls: string; text: string }> = [];
+  inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+    0,
+    doc.length,
+    (from, to, value) => {
+      if (from < to && typeof value.spec.class === "string") {
+        marks.push({ cls: value.spec.class, text: doc.slice(from, to) });
+      }
+    },
+  );
+  assert.deepEqual(marks, [
+    { cls: "md-syntax-mark", text: "#" },
+    { cls: "md-header-space", text: "  " },
+  ]);
+});
