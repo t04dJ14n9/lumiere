@@ -23,6 +23,7 @@ pub const MENU_EVENT: &str = "lumiere://menu";
 const PAGE_COMMANDS: &[&str] = &[
     "open-vault",
     "open-settings",
+    "command-palette",
     "close-tab",
     "next-tab",
     "previous-tab",
@@ -124,6 +125,13 @@ fn add_view_items<R: Runtime>(app: &AppHandle<R>, menu: &Menu<R>) -> tauri::Resu
         "toggle-sidebar",
         "Toggle Sidebar",
         "CmdOrCtrl+B",
+    )?)?;
+    view.prepend(&PredefinedMenuItem::separator(app)?)?;
+    view.prepend(&item(
+        app,
+        "command-palette",
+        "Command Palette…",
+        "CmdOrCtrl+Shift+P",
     )?)?;
     Ok(())
 }

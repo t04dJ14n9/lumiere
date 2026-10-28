@@ -14,6 +14,11 @@ import {
   type HostSettings,
 } from "@workshop/markdown/portable";
 import {
+  createCommandPalette,
+  type CommandContribution,
+  type CommandPalette,
+} from "./command-palette";
+import {
   ContextKeys,
   registerContextMenus,
   type MenuContribution,
@@ -24,6 +29,7 @@ import {
   createHostCommands,
   createNodeHostServices,
   type HostIdentity,
+  type NodeHostCommands,
 } from "./services";
 import { TreeHub } from "./trees";
 import { createNodeVaultSystem } from "./vault";
@@ -36,6 +42,8 @@ export interface StartOptions {
   readonly contributed: readonly ContributedSetting[];
   /** Lumière's right-click menu items (`menus.json`, written at build time). */
   readonly menus?: readonly MenuContribution[];
+  /** Lumière's Command Palette items (`commands.json`, written at build time). */
+  readonly commands?: readonly CommandContribution[];
   /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
   readonly logger: Logger;
@@ -47,6 +55,8 @@ export interface LumiereHost {
   readonly trees: TreeHub;
   /** Lumière's settings, for the embedder's settings page. */
   readonly settings: HostSettings;
+  /** Lumière's Command Palette commands, filtered by active editor and settings. */
+  readonly commands?: CommandPalette;
   /** A workspace a note was opened from; vaults are found inside these. */
   addRoot(root: string): void;
   stop(): Promise<void>;
@@ -58,36 +68,19 @@ export async function startLumiere(
   const roots = new Set<string>();
   const documents = new NoteDocuments();
   const panels = new PanelHub(documents);
-  const markdownDist = options.markdown;
   const log = (message: string) => options.logger.warn(message);
   const keys = new ContextKeys();
   const commands = createHostCommands(log, keys);
   const trees = new TreeHub(commands);
-  const host = createNodeHostServices({
-    commands,
-    trees,
-    identity: options.identity,
+  const { settings, root } = await bootstrapPlugins({
+    options,
     documents,
     panels,
+    trees,
+    commands,
     roots: () => [...roots],
-    contributed: options.contributed,
-    markdownDist,
-    data: options.data,
     log,
   });
-  const vault = createNodeVaultSystem({
-    documents,
-    settings: host.settings,
-    roots: () => [...roots],
-    storage: options.data,
-    parserWorker: path.join(markdownDist, "workers", "vault.cjs"),
-    warn: log,
-  });
-  const root: RootContext = createRoot({
-    rank: pluginRank,
-    logger: options.logger,
-  });
-  await bootstrap(host, vault, root);
   const stopMenus = registerContextMenus({
     panels,
     contributions: options.menus ?? [],
@@ -99,7 +92,16 @@ export async function startLumiere(
   return {
     panels,
     trees,
-    settings: host.settings,
+    settings,
+    commands: createCommandPalette({
+      contributions: options.commands ?? [],
+      keys,
+      settings,
+      panels,
+      commands,
+      viewType: MARKDOWN_EDITOR.viewType,
+      log,
+    }),
     addRoot: (item) => {
       roots.add(item.replace(/\/+$/, ""));
     },
@@ -110,6 +112,51 @@ export async function startLumiere(
       await documents.dispose();
     },
   };
+}
+
+async function bootstrapPlugins({
+  options,
+  documents,
+  panels,
+  trees,
+  commands,
+  roots,
+  log,
+}: {
+  readonly options: StartOptions;
+  readonly documents: NoteDocuments;
+  readonly panels: PanelHub;
+  readonly trees: TreeHub;
+  readonly commands: NodeHostCommands;
+  readonly roots: () => readonly string[];
+  readonly log: (message: string) => void;
+}): Promise<{ readonly settings: HostSettings; readonly root: RootContext }> {
+  const host = createNodeHostServices({
+    commands,
+    trees,
+    identity: options.identity,
+    documents,
+    panels,
+    roots,
+    contributed: options.contributed,
+    markdownDist: options.markdown,
+    data: options.data,
+    log,
+  });
+  const vault = createNodeVaultSystem({
+    documents,
+    settings: host.settings,
+    roots,
+    storage: options.data,
+    parserWorker: path.join(options.markdown, "workers", "vault.cjs"),
+    warn: log,
+  });
+  const root: RootContext = createRoot({
+    rank: pluginRank,
+    logger: options.logger,
+  });
+  await bootstrap(host, vault, root);
+  return { settings: host.settings, root };
 }
 
 /** Contributed settings from a `contributed.json` written at build time; none if missing. */
@@ -132,6 +179,24 @@ export async function readMenus(
     return Array.isArray(value)
       ? value.filter(
           (item): item is MenuContribution =>
+            typeof item?.command === "string" &&
+            typeof item?.title === "string",
+        )
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Command Palette items from a `commands.json` written at build time; none if missing. */
+export async function readCommands(
+  file: string,
+): Promise<readonly CommandContribution[]> {
+  try {
+    const value: unknown = JSON.parse(await readFile(file, "utf8"));
+    return Array.isArray(value)
+      ? value.filter(
+          (item): item is CommandContribution =>
             typeof item?.command === "string" &&
             typeof item?.title === "string",
         )
