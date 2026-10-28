@@ -65,6 +65,14 @@ export class Vaults {
     return vault;
   }
 
+  /** Close an open vault; it stays in the recent list. */
+  async close(folder: string): Promise<void> {
+    const vault = (await realPath(folder)) ?? path.resolve(folder);
+    if (this.open.delete(vault) || this.open.delete(folder)) {
+      this.emit({ type: "vaults", open: [...this.open] });
+    }
+  }
+
   /**
    * Show a note or folder: a folder opens as a vault; a file opens in the
    * open vault that holds it, or with its own folder as a new vault.
@@ -74,6 +82,9 @@ export class Vaults {
     if (await isDirectory(resolved)) {
       await this.add(resolved);
       return;
+    }
+    if (kindOf(resolved) !== "note") {
+      throw new Error(`Not a note: ${target}`);
     }
     const vault =
       this.holding(resolved) ?? (await this.add(path.dirname(resolved)));

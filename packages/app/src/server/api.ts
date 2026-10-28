@@ -54,6 +54,9 @@ export function createApi(vaults: Vaults, ui: UiStore, version: string): Api {
           return json(res, 200, {
             vault: await vaults.add(await pathBody(req)),
           });
+        case "DELETE /api/vaults":
+          await vaults.close(await pathBody(req, url));
+          return json(res, 200, vaults.list());
         case "POST /api/open":
           await vaults.show(await pathBody(req));
           return json(res, 200, { ok: true });
@@ -103,8 +106,12 @@ async function jsonBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
 }
 
-/** `{"path": "/absolute/path"}` from the request body. */
-async function pathBody(req: IncomingMessage): Promise<string> {
+/** `{"path": "/absolute/path"}` from the query string or request body. */
+async function pathBody(req: IncomingMessage, url?: URL): Promise<string> {
+  const query = url?.searchParams.get("path");
+  if (query) {
+    return query;
+  }
   const body = await jsonBody(req);
   const value = (body as { path?: unknown } | null)?.path;
   if (typeof value !== "string" || value === "") {

@@ -89,3 +89,13 @@ test("a revealed node opens the folders above it and nothing else", async () => 
     "the plugin's choice by default",
   );
 });
+
+test("only Markdown note paths (.md and .markdown) open as note tabs", async () => {
+  const { isNotePath } = await import("../../src/shell/api");
+  assert.equal(isNotePath("/vault/daily/today.md"), true);
+  assert.equal(isNotePath("/vault/guide.markdown"), true);
+  assert.equal(isNotePath("/vault/UPPER.MD"), true);
+  assert.equal(isNotePath("/vault/paper.pdf"), false);
+  assert.equal(isNotePath("/vault/image.png"), false);
+  assert.equal(isNotePath("/vault/data.csv"), false);
+});
