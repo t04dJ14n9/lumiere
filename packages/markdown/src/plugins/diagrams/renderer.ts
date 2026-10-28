@@ -8,6 +8,7 @@ import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";
 import { createMermaidTrust, type MermaidTrust } from "./trust";
 import { MermaidQueue } from "./mount-queue";
+import { bindDiagramInspector } from "./diagram-dialog";
 
 export interface MermaidLinkPlace {
   side: boolean;
@@ -84,6 +85,7 @@ export class DiagramRenderer {
             events.signal,
           );
         }
+        bindDiagramInspector(fence.element, events.signal);
         pass.measure();
       },
       onError: (error) => {

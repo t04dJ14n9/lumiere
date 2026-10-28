@@ -385,7 +385,7 @@
   margin: 0;
 }
 .properties [hidden] {
-  display: none;
+  display: none !important;
 }
 .source-rows {
   display: flex;
@@ -421,11 +421,21 @@
   font-size: 0.85em;
 }
 
+.source-rows:empty::before {
+  content: "Empty";
+  color: var(--muted);
+}
 .property-complex {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
+}
+.property-complex-edit {
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 4px;
 }
 .metadata-input-yaml {
   max-height: 240px;
