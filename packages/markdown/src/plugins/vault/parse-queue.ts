@@ -54,6 +54,10 @@ export class ParseQueue {
     }
   }
 
+  overlayPaths(): Iterable<string> {
+    return this.overlays.keys();
+  }
+
   /** Resolves when nothing is queued or running. */
   drained(): Promise<void> {
     if (this.isIdle) {
@@ -112,7 +116,9 @@ export class ParseQueue {
       }
       index.setMetadata(path, metadata);
     } catch (error) {
-      this.options.onError(path, error);
+      if (file.mtime !== 0 || file.size !== 0 || this.overlays.has(path)) {
+        this.options.onError(path, error);
+      }
     }
   }
 
