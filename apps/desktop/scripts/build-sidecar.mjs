@@ -22,7 +22,7 @@ import {
 import path from "node:path";
 
 /** The Node.js the app ships; keep it on a release line that is supported. */
-const NODE_VERSION = "26.5.0";
+const NODE_VERSION = process.env.LUMIERE_NODE_VERSION ?? "22.14.0";
 
 const desktop = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const root = path.resolve(desktop, "../..");

@@ -4,6 +4,8 @@ import type { Cancellation } from "../rpc/lifecycle";
 export interface NavigationTarget {
   fragment: string;
   at?: number;
+  to?: number;
+  preserveFocus?: boolean;
 }
 
 export interface RevealPanel {

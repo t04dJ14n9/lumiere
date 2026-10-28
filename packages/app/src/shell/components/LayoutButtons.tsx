@@ -1,18 +1,34 @@
 /**
  * The buttons at the end of the tab strip, as VS Code puts them in its title
- * bar: show or hide the files sidebar and the outline, and open Settings.
+ * bar: show or hide the files sidebar and the outline, open the Command
+ * Palette, and open Settings.
  */
 import type { UiStateHandle } from "../ui-state";
 
 export interface LayoutButtonsProps {
   readonly ui: UiStateHandle;
   readonly onSettings: () => void;
+  readonly onCommandPalette?: (() => void) | undefined;
 }
 
-export function LayoutButtons({ ui, onSettings }: LayoutButtonsProps) {
+export function LayoutButtons({
+  ui,
+  onSettings,
+  onCommandPalette,
+}: LayoutButtonsProps) {
   const { sidebar, outline } = ui.state;
   return (
     <div className="layout-buttons">
+      {onCommandPalette && (
+        <button
+          type="button"
+          title="Command Palette (⇧⌘P)"
+          aria-label="Command Palette"
+          onClick={onCommandPalette}
+        >
+          <CommandIcon />
+        </button>
+      )}
       <button
         type="button"
         title="Toggle Sidebar (⌘B)"
@@ -40,6 +56,20 @@ export function LayoutButtons({ ui, onSettings }: LayoutButtonsProps) {
         <GearIcon />
       </button>
     </div>
+  );
+}
+
+function CommandIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M3 4.5l3.5 3.5L3 11.5M8 11.5h5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

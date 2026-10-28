@@ -85,12 +85,19 @@ export function createNodeHostServices(
  * Commands the plugins register run here. VS Code's own commands
  * (`setContext`, `workbench.*`) have no meaning here and do nothing.
  */
+export interface NodeHostCommands extends HostCommands {
+  has(id: string): boolean;
+}
+
 export function createHostCommands(
   log: (message: string) => void,
   keys: ContextKeys,
-): HostCommands {
+): NodeHostCommands {
   const commands = new Map<string, (...args: unknown[]) => unknown>();
   return {
+    has(id) {
+      return commands.has(id);
+    },
     register(id, run) {
       commands.set(id, run);
       return () => {

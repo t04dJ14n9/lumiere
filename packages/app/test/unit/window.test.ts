@@ -198,3 +198,74 @@ test("a description's `code` is told apart from its text", () => {
     { code: false, text: " for notes." },
   ]);
 });
+
+test("Command Palette shortcuts (⇧⌘P, Ctrl+Shift+P, F1) and filtering", async () => {
+  assert.equal(
+    shortcutCommand(press("KeyP", { meta: true, shift: true }), true),
+    "command-palette",
+  );
+  assert.equal(
+    shortcutCommand(press("KeyP", { ctrl: true, shift: true }), false),
+    "command-palette",
+  );
+  assert.equal(shortcutCommand(press("F1"), true), "command-palette");
+  assert.equal(shortcutCommand(press("F1"), false), "command-palette");
+
+  const { filterPaletteItems } =
+    await import("../../src/shell/components/CommandPalette");
+  const items = [
+    { id: "1", title: "Toggle Bold", category: "Lumière" },
+    { id: "2", title: "Open Settings", category: "Preferences" },
+    { id: "3", title: "Color Theme: Dark", category: "Preferences" },
+  ];
+  assert.deepEqual(
+    filterPaletteItems(items, "lum bold").map((item) => item.id),
+    ["1"],
+  );
+  assert.deepEqual(
+    filterPaletteItems(items, "pref dark").map((item) => item.id),
+    ["3"],
+  );
+  assert.deepEqual(filterPaletteItems(items, "   ").length, 3);
+});
+
+test("forwardFrameKeydown forwards unhandled iframe shortcuts and leaves editor-handled ones alone", async () => {
+  const { forwardFrameKeydown } = await import("../../src/shell/commands");
+  const dispatched: KeyboardEvent[] = [];
+  const fakeWindow = {
+    dispatchEvent(event: Event): boolean {
+      const kb = event as KeyboardEvent;
+      dispatched.push(kb);
+      if (kb.code === "Comma" && kb.metaKey) {
+        kb.preventDefault();
+      }
+      return !kb.defaultPrevented;
+    },
+  };
+
+  const makeKeydown = (
+    key: string,
+    code: string,
+    metaKey = true,
+  ): KeyboardEvent =>
+    Object.assign(new Event("keydown", { cancelable: true }), {
+      key,
+      code,
+      metaKey,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+    }) as unknown as KeyboardEvent;
+
+  // An unhandled shell shortcut inside the iframe is forwarded and prevented.
+  const unhandled = makeKeydown(",", "Comma");
+  assert.equal(forwardFrameKeydown(unhandled, fakeWindow), true);
+  assert.equal(unhandled.defaultPrevented, true);
+  assert.equal(dispatched.length, 1);
+
+  // A key already handled by the editor (e.g. ⌘B Bold) is not forwarded.
+  const handledByEditor = makeKeydown("b", "KeyB");
+  handledByEditor.preventDefault();
+  assert.equal(forwardFrameKeydown(handledByEditor, fakeWindow), false);
+  assert.equal(dispatched.length, 1);
+});

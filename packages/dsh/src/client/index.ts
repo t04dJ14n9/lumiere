@@ -5,7 +5,13 @@
  * against DSH's plugin module format: React comes from DSH's module table.
  */
 import { parseOpenMessage, SHOWN } from "@workshop/host-node/embedding";
-import { insideWorkspace, sessionAddress, workspaceRoot } from "./address";
+import {
+  addressFragment,
+  insideWorkspace,
+  parentFolder,
+  sessionAddress,
+  workspaceRoot,
+} from "./address";
 import { onDshThemeChange, readDshTheme } from "./theme";
 
 const ID = "@lumiere/dsh";
@@ -18,7 +24,7 @@ interface ReactLike {
 }
 
 /** What DSH hands a document body (`sidebar.right.tab.document`). */
-interface BodyProps {
+export interface BodyProps {
   readonly resourceAddress: string;
   readonly sessionId?: string;
   readonly content: {
@@ -50,7 +56,7 @@ interface ClientContext {
 
 declare global {
   interface Window {
-    __ModuleLoader__: {
+    __ModuleLoader__?: {
       load(module: {
         id: string;
         factory(require: (name: string) => unknown): unknown;
@@ -59,69 +65,109 @@ declare global {
   }
 }
 
-window.__ModuleLoader__.load({
-  id: ID,
-  factory(require) {
-    const React = require("react") as ReactLike;
-    return {
-      inject: ["documentPreviews", "slots", "sidebarRight"],
-      apply(ctx: ClientContext) {
-        ctx.effect(() =>
-          ctx.documentPreviews.register({
-            id: BODY_ID,
-            extensions: ["md", "markdown"],
-            priority: "extension",
-            title: () => "Lumière",
-            loading: "renderer",
-          }),
-        );
-        const body = noteBody(React, (address) =>
-          ctx.sidebarRight.openResource(address),
-        );
-        ctx.effect(() =>
-          ctx.slots.inject("sidebar.right.tab.document", () =>
-            ctx.slots.register(
-              { name: "sidebar.right.tab.document", key: BODY_ID },
-              body,
-            ),
-          ),
-        );
-      },
-    };
-  },
-});
+/** Whether an iframe's document is a rendered Lumière editor page rather than an HTTP error body. */
+export function isEditorDocument(
+  doc: { querySelector?: (selector: string) => unknown } | null | undefined,
+): boolean {
+  if (!doc || typeof doc.querySelector !== "function") {
+    return false;
+  }
+  return Boolean(doc.querySelector('meta[name="lumiere-panel"]'));
+}
 
-function noteBody(React: ReactLike, open: (address: string) => void) {
+if (typeof window !== "undefined" && window.__ModuleLoader__) {
+  window.__ModuleLoader__.load({
+    id: ID,
+    factory(require) {
+      const React = require("react") as ReactLike;
+      return {
+        inject: ["documentPreviews", "slots", "sidebarRight"],
+        apply(ctx: ClientContext) {
+          ctx.effect(() =>
+            ctx.documentPreviews.register({
+              id: BODY_ID,
+              extensions: ["md", "markdown"],
+              priority: "extension",
+              title: () => "Lumière",
+              loading: "renderer",
+            }),
+          );
+          const body = noteBody(React, (address) =>
+            ctx.sidebarRight.openResource(address),
+          );
+          ctx.effect(() =>
+            ctx.slots.inject("sidebar.right.tab.document", () =>
+              ctx.slots.register(
+                { name: "sidebar.right.tab.document", key: BODY_ID },
+                body,
+              ),
+            ),
+          );
+        },
+      };
+    },
+  });
+}
+
+function resolveEditorTarget(
+  resourceAddress: string,
+  absolute: string | undefined,
+) {
+  const isMarkdown = Boolean(absolute && /\.(?:md|markdown)$/i.test(absolute));
+  const root =
+    absolute && isMarkdown
+      ? workspaceRoot(resourceAddress, absolute)
+      : undefined;
+  const containmentRoot =
+    root ?? (absolute && isMarkdown ? parentFolder(absolute) : undefined);
+  const query =
+    absolute && isMarkdown
+      ? new URLSearchParams({
+          path: absolute,
+          ...(containmentRoot ? { root: containmentRoot } : {}),
+        })
+      : undefined;
+  const src = query
+    ? `/lumiere/editor?${query.toString()}${addressFragment(resourceAddress)}`
+    : undefined;
+  return { isMarkdown, root, containmentRoot, src };
+}
+
+export function noteBody(React: ReactLike, open: (address: string) => void) {
   return function LumiereNote(props: BodyProps): unknown {
     const frame = React.useRef<HTMLIFrameElement | null>(null);
     const hasLoaded = React.useRef(false);
     const file = props.useResource(props.resourceAddress)?.value;
     const absolute = file?.absolutePath;
-    const root = absolute
-      ? workspaceRoot(props.resourceAddress, absolute)
-      : undefined;
+    const { isMarkdown, root, containmentRoot, src } = resolveEditorTarget(
+      props.resourceAddress,
+      absolute,
+    );
+    React.useEffect(() => {
+      hasLoaded.current = false;
+      if (absolute && !isMarkdown) {
+        props.content.failed?.();
+      }
+    }, [src, absolute, isMarkdown]);
     React.useEffect(
-      () => followOpens(frame, { sessionId: props.sessionId, root, open }),
-      [props.sessionId, root],
+      () =>
+        followOpens(frame, {
+          sessionId: props.sessionId,
+          root,
+          containmentRoot,
+          open,
+        }),
+      [props.sessionId, root, containmentRoot],
     );
     React.useEffect(() => onDshThemeChange(() => sendTheme(frame.current)), []);
-    // DSH starts a new revision whenever the file changes, including Lumière's
-    // own saves. The editor already follows the file, so it stays put and only
-    // tells DSH the revision is shown; reloading would lose caret and scroll.
     React.useEffect(() => {
       if (hasLoaded.current) {
         props.content.loaded?.(file?.version ?? "lumiere");
       }
     }, [props.content.revision]);
-    // DSH shows its loading state until the file's path is known.
-    if (!absolute) {
+    if (!absolute || !src) {
       return null;
     }
-    const query = new URLSearchParams({
-      path: absolute,
-      ...(root ? { root } : {}),
-    });
-    const src = `/lumiere/editor?${query.toString()}`;
     return React.createElement("iframe", {
       key: src,
       ref: (element: HTMLIFrameElement | null) => {
@@ -131,17 +177,29 @@ function noteBody(React: ReactLike, open: (address: string) => void) {
       src,
       title: "Lumière",
       allow: "clipboard-read; clipboard-write",
-      onLoad: () => {
-        hasLoaded.current = true;
-        sendTheme(frame.current);
-        // The note in front is the active one (embedding.ts, ShownMessage).
-        frame.current?.contentWindow?.postMessage(SHOWN, location.origin);
-        props.content.loaded?.(file?.version ?? "lumiere");
-      },
+      onLoad: () =>
+        handleFrameLoad(frame.current, hasLoaded, props, file?.version),
       onError: () => props.content.failed?.(),
       style: { border: 0, width: "100%", height: "100%", display: "block" },
     });
   };
+}
+
+function handleFrameLoad(
+  element: HTMLIFrameElement | null,
+  hasLoaded: { current: boolean },
+  props: BodyProps,
+  version: string | undefined,
+): void {
+  if (!isEditorDocument(element?.contentDocument)) {
+    hasLoaded.current = false;
+    props.content.failed?.();
+    return;
+  }
+  hasLoaded.current = true;
+  sendTheme(element);
+  element?.contentWindow?.postMessage(SHOWN, location.origin);
+  props.content.loaded?.(version ?? "lumiere");
 }
 
 /** The page takes DSH's theme from a theme message (embedding.ts). */
@@ -150,11 +208,12 @@ function sendTheme(frame: HTMLIFrameElement | null): void {
 }
 
 /** The page asks to open another note (a link to it): open it in a DSH tab. */
-function followOpens(
+export function followOpens(
   frame: { current: HTMLIFrameElement | null },
   target: {
     sessionId: string | undefined;
     root: string | undefined;
+    containmentRoot?: string | undefined;
     open(address: string): void;
   },
 ): () => void {
@@ -164,13 +223,21 @@ function followOpens(
       event.source === frame.current?.contentWindow
         ? parseOpenMessage(event.data)
         : undefined;
+    const allowedRoot = target.containmentRoot ?? target.root;
     if (
       request &&
       target.sessionId &&
-      // A page may only open notes in its own workspace.
-      (target.root === undefined || insideWorkspace(target.root, request.path))
+      // A page may only open notes in its own workspace (never when root is unknown).
+      insideWorkspace(allowedRoot, request.path)
     ) {
-      target.open(sessionAddress(target.sessionId, target.root, request.path));
+      target.open(
+        sessionAddress(
+          target.sessionId,
+          target.root,
+          request.path,
+          request.fragment,
+        ),
+      );
     }
   };
   window.addEventListener("message", listener);

@@ -175,6 +175,15 @@ test("a tab landing during the post-reclaim hold stays native", () => {
     }),
     false,
   );
+  assert.equal(
+    shouldHoldNativeAfterReclaim({
+      recentTransfer: true,
+      reclaimable: true,
+      hasSelectionTarget: true,
+    }),
+    false,
+    "a search or reference jump carrying a selection target must still reclaim within the cooldown",
+  );
 });
 
 test("a pending handoff lease suppresses reclaim until released", () => {

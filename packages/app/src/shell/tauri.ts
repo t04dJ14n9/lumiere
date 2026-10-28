@@ -11,6 +11,7 @@
 export const MENU_COMMANDS = [
   "open-vault",
   "open-settings",
+  "command-palette",
   "close-tab",
   "next-tab",
   "previous-tab",
