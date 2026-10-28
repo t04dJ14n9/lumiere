@@ -4,7 +4,13 @@ import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import { isInside, listVault, watchVault } from "../../src/host/vault";
+import { NoteDocuments } from "../../src/host/documents";
+import {
+  isInside,
+  listVault,
+  createNodeVaultSystem,
+  watchVault,
+} from "../../src/host/vault";
 import type { FileEvent } from "@workshop/markdown/portable";
 
 async function vault(t: test.TestContext) {
@@ -90,3 +96,38 @@ async function waitFor(check: () => boolean): Promise<void> {
   }
   assert.fail("the expected event never came");
 }
+
+test("createNodeVaultSystem forwards document changes for both .md and .markdown notes", async (t) => {
+  const { dir, root } = await vault(t);
+  const mdFile = path.join(dir, "Alt.markdown");
+  await writeFile(mdFile, "# Alt Heading\n");
+  const mdUri = pathToFileURL(mdFile).toString();
+
+  const documents = new NoteDocuments(60_000);
+  const storageDir = await mkdtemp(path.join(tmpdir(), "lumiere-vault-store-"));
+  const system = createNodeVaultSystem({
+    documents,
+    settings: {
+      get: (_key: string, fallback: unknown) => fallback,
+      onChange: () => () => {},
+    } as never,
+    roots: () => [root],
+    storage: storageDir,
+    parserWorker: "/none",
+    warn: () => {},
+  });
+  t.after(() => rm(storageDir, { recursive: true, force: true }));
+
+  const changes: Array<{ uri: string; text: string }> = [];
+  const stop = system.onDocumentChanged((uri, text) => {
+    changes.push({ uri, text });
+  });
+
+  const doc = await documents.open(mdUri);
+  await documents.apply(doc, [
+    { from: 0, to: doc.getText().length, insert: "# Updated Heading\n" },
+  ]);
+  assert.deepEqual(changes, [{ uri: mdUri, text: "# Updated Heading\n" }]);
+  stop();
+  await documents.dispose();
+});

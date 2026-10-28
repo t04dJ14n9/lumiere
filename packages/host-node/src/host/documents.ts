@@ -175,6 +175,9 @@ export class NoteDocuments implements HostDocuments {
     if (note?.isDirty) {
       await this.save(note);
     }
+    if ((this.users.get(uri) ?? 0) > 0) {
+      return;
+    }
     this.close(uri);
   }
 

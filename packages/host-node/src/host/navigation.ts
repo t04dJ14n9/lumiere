@@ -119,7 +119,7 @@ async function createNote(options: {
         : path.join(base, folder);
     target = path.join(parent, link);
   }
-  if (!/\.md$/i.test(target)) {
+  if (!/\.(?:md|markdown)$/i.test(target)) {
     target += ".md";
   }
   const uri = pathToFileURL(target).toString();
@@ -156,13 +156,15 @@ async function openTarget(options: OpenTarget): Promise<void> {
     destination.fragment !== "" || destination.at !== undefined;
   const shown = panels.all().find((panel) => panel.document.uri === uri);
   if (shown) {
-    if (hasDestination) {
-      await reveals.deliver(intent, shown.id, destination);
-    }
-    // The note is already open in another DSH tab: focus it. Revealing only
-    // scrolls the hidden editor, which looks like the link did nothing.
+    // The note is already open in another tab: tell the presenting tab to
+    // switch before revealing, because revealing focuses the target editor
+    // and would otherwise make `shown` look like it was already presenting.
     if (shown !== presentingPanel(panels)) {
       tellOpen(panels, uri, destination.fragment);
+      panels.activate(shown.id);
+    }
+    if (hasDestination) {
+      await reveals.deliver(intent, shown.id, destination);
     }
     return;
   }
@@ -170,6 +172,7 @@ async function openTarget(options: OpenTarget): Promise<void> {
   tellOpen(panels, uri, destination.fragment);
   const panel = await opened;
   if (panel && hasDestination && !intent.token.cancelled) {
+    panels.activate(panel.id);
     await reveals.deliver(intent, panel.id, destination);
   }
 }

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 import { WebSocket } from "ws";
 import { createEditorRoutes, SOCKET_PATH } from "../../src/host/routes";
 import type { LumiereHost } from "../../src/host/start";
@@ -139,4 +143,51 @@ test("tree views are served as snapshots, clicks and visibility", async (t) => {
   );
   assert.deepEqual(heard, [true]);
   assert.equal((await fetch(`${base}/unknown.view`)).status, 404);
+});
+
+test("serving an editor page registers the workspace root before opening the panel", async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), "lumiere-route-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const notePath = path.join(dir, "First.md");
+  await writeFile(notePath, "# First");
+
+  const order: string[] = [];
+  const host = {
+    panels: {
+      open: async () => {
+        order.push("open");
+        return {
+          id: "p1",
+          html: '<!doctype html><html><head><meta charset="UTF-8"></head><body><script type="module" nonce="abc123" src="/e.js"></script></body></html>',
+        };
+      },
+      get: () => undefined,
+      attach: () => false,
+    },
+    trees: new TreeHub({ execute: async () => undefined }),
+    addRoot: (uri: string) => {
+      order.push(`addRoot:${uri}`);
+    },
+    stop: async () => {},
+  } as unknown as LumiereHost;
+
+  const routes = createEditorRoutes(host, { markdown: "/none", shim: "/none" });
+  const server = createServer((req, res) => {
+    void routes.handle(req, res).then((handled) => {
+      if (!handled) {
+        res.writeHead(404).end();
+      }
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => {
+    routes.close();
+    server.close();
+  });
+  const { port } = server.address() as { port: number };
+  const response = await fetch(
+    `http://127.0.0.1:${port}/lumiere/editor?path=${encodeURIComponent(notePath)}&root=${encodeURIComponent(dir)}`,
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(order, [`addRoot:${pathToFileURL(dir).toString()}`, "open"]);
 });

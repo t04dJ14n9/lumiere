@@ -70,7 +70,7 @@ export function createNodeVaultSystem(options: NodeVaultOptions): VaultSystem {
     onSettingsChanged: (listener) => settings.onChange(listener),
     onDocumentChanged: (listener) =>
       documents.onChange((document) => {
-        if (/\.md$/i.test(document.uri)) {
+        if (/\.(?:md|markdown)$/i.test(document.uri)) {
           listener(document.uri, document.getText());
         }
       }),
