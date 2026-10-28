@@ -169,12 +169,12 @@ async function servePage({
     return;
   }
   const rootUri = pathToFileURL(resolved.root).toString();
+  // Register the workspace root before opening so the first note indexes the vault.
+  host.addRoot(rootUri);
   const { id, html } = await host.panels.open({
     uri: pathToFileURL(resolved.note).toString(),
     urls: (panelId) => panelUrls(panelId, req.headers.host ?? ""),
   });
-  // Only a note that actually opened widens what the vault may list.
-  host.addRoot(rootUri);
   roots.set(id, rootUri);
   host.panels.get(id)?.shell.onDispose(() => roots.delete(id));
   res.writeHead(200, {

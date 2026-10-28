@@ -31,6 +31,7 @@ interface LiveTree {
 
 export class TreeHub {
   private readonly trees = new Map<string, LiveTree>();
+  private readonly visibility = new Map<string, boolean>();
   private readonly listeners = new Set<(event: TreeEvent) => void>();
 
   constructor(private readonly commands: Pick<HostCommands, "execute">) {}
@@ -40,7 +41,7 @@ export class TreeHub {
     const tree: LiveTree = {
       source,
       message: undefined,
-      visible: false,
+      visible: this.visibility.get(viewId) ?? false,
       visibility: new Set(),
       nodes: new Map(),
     };
@@ -89,6 +90,7 @@ export class TreeHub {
 
   /** The embedder shows or hides a tree (its sidebar tab, say). */
   setVisible(viewId: string, visible: boolean): void {
+    this.visibility.set(viewId, visible);
     const tree = this.trees.get(viewId);
     if (!tree || tree.visible === visible) {
       return;
