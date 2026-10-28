@@ -5,6 +5,7 @@ export interface NavigationTarget {
   fragment: string;
   at?: number;
   to?: number;
+  preserveFocus?: boolean;
 }
 
 export interface RevealPanel {

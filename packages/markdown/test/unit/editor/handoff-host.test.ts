@@ -50,6 +50,14 @@ class Range {
     readonly end: Position,
   ) {}
 }
+class Selection extends Range {
+  constructor(
+    readonly anchor: Position,
+    readonly active: Position,
+  ) {
+    super(anchor, active);
+  }
+}
 class TabInputCustom {
   constructor(
     readonly uri: Uri,
@@ -131,6 +139,7 @@ const vscode = {
   TabInputCustom,
   Position,
   Range,
+  Selection,
   TextEditorSelectionChangeKind: { Keyboard: 1, Mouse: 2, Command: 3 },
   ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
   DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 },
@@ -2107,7 +2116,65 @@ test("repeated search jumps opening text tabs with a selection within 10s still 
   );
 });
 
-test("registerEditor enables customTextEditorNavigation and revealRange delivers [at, to] to the panel", async (t) => {
+function createFakeDoc(uriStr: string, lines: readonly string[]) {
+  const rawText = lines.join("\r\n");
+  return {
+    uri: Uri.parse(uriStr),
+    getText: () => rawText,
+    offsetAt(pos: Position) {
+      return (
+        lines
+          .slice(0, pos.line)
+          .reduce((sum, line) => sum + line.length + 2, 0) + pos.character
+      );
+    },
+    positionAt(offset: number) {
+      let remaining = offset;
+      for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const lineLen = lines[lineIdx]!.length;
+        if (remaining <= lineLen) {
+          return new Position(lineIdx, remaining);
+        }
+        remaining -= lineLen + 2;
+      }
+      return new Position(lines.length - 1, lines.at(-1)?.length ?? 0);
+    },
+  };
+}
+
+function createFakeWebviewPanel() {
+  const disposeListeners = new Set<() => void>();
+  let disposed = false;
+  return {
+    viewColumn: 1,
+    active: true,
+    get disposed() {
+      return disposed;
+    },
+    webview: {
+      options: {},
+      cspSource: "vscode-webview:",
+      html: "",
+      postMessage: async () => true,
+      onDidReceiveMessage: () => ({ dispose() {} }),
+      asWebviewUri: (u: Uri) => u,
+    },
+    reveal() {},
+    dispose() {
+      disposed = true;
+      for (const listener of [...disposeListeners]) {
+        listener();
+      }
+    },
+    onDidDispose: (listener: () => void) => {
+      disposeListeners.add(listener);
+      return { dispose: () => disposeListeners.delete(listener) };
+    },
+    onDidChangeViewState: () => ({ dispose() {} }),
+  };
+}
+
+test("registerEditor enables customTextEditorNavigation and revealRange respects options.selection and preserveFocus", async (t) => {
   const extension = {
     id: "lumiere.markdown",
     extensionUri: Uri.parse("file:///ext"),
@@ -2140,7 +2207,10 @@ test("registerEditor enables customTextEditorNavigation and revealRange delivers
     ),
     true,
   );
-  assert.equal(registeredProviders.length, 1);
+  assert.equal(
+    extension.packageJSON.enabledApiProposals.includes("customEditorMove"),
+    true,
+  );
   const provider = registeredProviders[0]?.provider as {
     resolveCustomTextEditor(doc: unknown, panel: unknown): void;
     resolveCustomTextEditorNavigation(
@@ -2149,45 +2219,19 @@ test("registerEditor enables customTextEditorNavigation and revealRange delivers
     ): {
       revealRange(
         range: Range,
-        options?: unknown,
+        options?: {
+          selection?: Range | undefined;
+          preserveFocus?: boolean | undefined;
+        },
         token?: { isCancellationRequested: boolean },
       ): Promise<void>;
     };
   };
-  assert.equal(typeof provider.resolveCustomTextEditorNavigation, "function");
 
-  const lines = ["Alpha line", "Target match token here", "Omega line"];
-  const rawText = lines.join("\r\n");
-  const doc = {
-    uri: Uri.parse(note),
-    getText: () => rawText,
-    offsetAt(pos: Position) {
-      return (
-        lines
-          .slice(0, pos.line)
-          .reduce((sum, line) => sum + line.length + 2, 0) + pos.character
-      );
-    },
-  };
-  const fakePanel = {
-    viewColumn: 1,
-    active: true,
-    webview: {
-      options: {},
-      cspSource: "vscode-webview:",
-      html: "",
-      postMessage: async () => true,
-      onDidReceiveMessage: () => ({ dispose() {} }),
-      asWebviewUri: (u: Uri) => u,
-    },
-    reveal() {},
-    dispose() {},
-    onDidDispose: () => ({ dispose() {} }),
-    onDidChangeViewState: () => ({ dispose() {} }),
-  };
+  const lines = ["# Section Heading", "Target match token here", "Omega line"];
+  const doc = createFakeDoc(note, lines);
+  const fakePanel = createFakeWebviewPanel();
 
-  // Resolve navigation controller before resolveCustomTextEditor completes to
-  // verify both share the same panel identity and await panel reveal readiness.
   const navController = provider.resolveCustomTextEditorNavigation(
     doc,
     fakePanel,
@@ -2195,7 +2239,12 @@ test("registerEditor enables customTextEditorNavigation and revealRange delivers
   provider.resolveCustomTextEditor(doc, fakePanel);
   assert.ok(openedShell);
 
-  const delivered: { fragment: string; at?: number; to?: number }[] = [];
+  const delivered: {
+    fragment: string;
+    at?: number;
+    to?: number;
+    preserveFocus?: boolean;
+  }[] = [];
   const unregister = navigation.registerReveal({
     id: openedShell.id,
     uri: note,
@@ -2205,19 +2254,37 @@ test("registerEditor enables customTextEditorNavigation and revealRange delivers
         fragment: target.fragment,
         ...(target.at !== undefined ? { at: target.at } : {}),
         ...(target.to !== undefined ? { to: target.to } : {}),
+        ...(target.preserveFocus ? { preserveFocus: true } : {}),
       });
       return true;
     },
   });
   t.after(unregister);
 
+  // 1. Search match click: options.selection spans [start, end]
   const matchCol = lines[1]!.indexOf("match token");
-  await navController.revealRange(
-    new Range(
-      new Position(1, matchCol),
-      new Position(1, matchCol + "match token".length),
-    ),
+  const matchRange = new Range(
+    new Position(1, matchCol),
+    new Position(1, matchCol + "match token".length),
   );
+  await navController.revealRange(matchRange, {
+    selection: matchRange,
+    preserveFocus: false,
+  });
+
+  // 2. Outline / Breadcrumbs single-click: range spans full section, options.selection is collapsed at heading start
+  const sectionRange = new Range(new Position(0, 0), new Position(2, 10));
+  const collapsedHeading = new Range(new Position(0, 0), new Position(0, 0));
+  await navController.revealRange(sectionRange, {
+    selection: collapsedHeading,
+    preserveFocus: false,
+  });
+
+  // 3. Cmd+Shift+O preview: options.selection is undefined, preserveFocus is true
+  await navController.revealRange(sectionRange, {
+    selection: undefined,
+    preserveFocus: true,
+  });
 
   const lfText = lines.join("\n");
   const expectedAt = lfText.indexOf("match token");
@@ -2227,6 +2294,208 @@ test("registerEditor enables customTextEditorNavigation and revealRange delivers
       fragment: "",
       at: expectedAt,
       to: expectedTo,
+    },
+    {
+      fragment: "",
+      at: 0,
+    },
+    {
+      fragment: "",
+      at: 0,
+      preserveFocus: true,
+    },
+  ]);
+});
+
+test("CustomTextEditorNavigation tracks selection, fires onDidChangeSelection, and round-trips viewState", async (t) => {
+  const panels: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => panels);
+  let openedShell: PanelShell | undefined;
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extensionUri: Uri.parse("file:///ext") as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShell = shell;
+      panels.push(shell);
+    },
+  );
+  t.after(stop);
+
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+    resolveCustomTextEditorNavigation(
+      doc: unknown,
+      panel: unknown,
+    ): {
+      readonly selection: Selection | undefined;
+      onDidChangeSelection(listener: (sel: Selection | undefined) => void): {
+        dispose(): void;
+      };
+      captureViewState(): Promise<unknown>;
+      restoreViewState(state: unknown): Promise<void>;
+    };
+  };
+
+  const lines = ["Alpha line", "Second line target"];
+  const doc = createFakeDoc(note, lines);
+  const fakePanel = createFakeWebviewPanel();
+  const navController = provider.resolveCustomTextEditorNavigation(
+    doc,
+    fakePanel,
+  );
+  provider.resolveCustomTextEditor(doc, fakePanel);
+  assert.ok(openedShell);
+
+  const events: (Selection | undefined)[] = [];
+  const sub = navController.onDidChangeSelection((sel) => events.push(sel));
+  t.after(() => sub.dispose());
+
+  const lfText = lines.join("\n");
+  const anchorEditor = lfText.indexOf("Second");
+  const headEditor = anchorEditor + "Second".length;
+  openedShell.reportSelection?.({ anchor: anchorEditor, head: headEditor });
+  // Duplicate report does not fire twice
+  openedShell.reportSelection?.({ anchor: anchorEditor, head: headEditor });
+
+  assert.equal(events.length, 1);
+  assert.deepEqual(navController.selection?.start, new Position(1, 0));
+  assert.deepEqual(navController.selection?.end, new Position(1, 6));
+
+  const storedState: unknown = {
+    scrollTop: 120,
+    anchor: anchorEditor,
+    head: headEditor,
+  };
+  let restoredState: unknown;
+  openedShell.bindViewState?.({
+    capture: async () => storedState,
+    restore: async (state) => {
+      restoredState = state;
+    },
+  });
+
+  const captured = await navController.captureViewState();
+  assert.deepEqual(captured, storedState);
+  await navController.restoreViewState({ scrollTop: 240 });
+  assert.deepEqual(restoredState, { scrollTop: 240 });
+});
+
+test("moveCustomTextEditor rebinds existing WebviewPanel to newDocument without disposing panel and restores viewState", async (t) => {
+  const openedShells: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => openedShells);
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extensionUri: Uri.parse("file:///ext") as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShells.push(shell);
+    },
+  );
+  t.after(stop);
+
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+    resolveCustomTextEditorNavigation(
+      doc: unknown,
+      panel: unknown,
+    ): {
+      readonly selection: Selection | undefined;
+      revealRange(
+        range: Range,
+        options?: { selection?: Range; preserveFocus?: boolean },
+      ): Promise<void>;
+    };
+    moveCustomTextEditor(newDocument: unknown, panel: unknown): Promise<void>;
+  };
+
+  const oldDoc = createFakeDoc(note, ["Old header", "Target line"]);
+  const fakePanel = createFakeWebviewPanel();
+  const navController = provider.resolveCustomTextEditorNavigation(
+    oldDoc,
+    fakePanel,
+  );
+  provider.resolveCustomTextEditor(oldDoc, fakePanel);
+  assert.equal(openedShells.length, 1);
+  const firstShell = openedShells[0]!;
+
+  let firstShellDisposed = 0;
+  firstShell.onDispose(() => {
+    firstShellDisposed++;
+  });
+  firstShell.bindViewState?.({
+    capture: async () => ({ savedFrom: note, scrollTop: 88 }),
+    restore: async () => {},
+  });
+
+  const renamedUri = "file:///vault/Renamed.md";
+  const newDoc = createFakeDoc(renamedUri, [
+    "Renamed header line",
+    "Moved target phrase here",
+  ]);
+  await provider.moveCustomTextEditor(newDoc, fakePanel);
+
+  assert.equal(
+    fakePanel.disposed,
+    false,
+    "underlying WebviewPanel stays alive",
+  );
+  assert.equal(firstShellDisposed, 1, "old PanelShell binding is cleaned up");
+  assert.equal(openedShells.length, 2);
+  const secondShell = openedShells[1]!;
+  assert.equal(secondShell.id, firstShell.id);
+  assert.equal(secondShell.document.uri, renamedUri);
+
+  let restoredOnNewShell: unknown;
+  secondShell.bindViewState?.({
+    capture: async () => undefined,
+    restore: async (state) => {
+      restoredOnNewShell = state;
+    },
+  });
+  await tick();
+  assert.deepEqual(restoredOnNewShell, { savedFrom: note, scrollTop: 88 });
+
+  // Navigation controller now uses newDocument coordinates
+  const delivered: { at?: number; to?: number }[] = [];
+  const unregister = navigation.registerReveal({
+    id: secondShell.id,
+    uri: renamedUri,
+    active: () => true,
+    async reveal(target) {
+      delivered.push({
+        ...(target.at !== undefined ? { at: target.at } : {}),
+        ...(target.to !== undefined ? { to: target.to } : {}),
+      });
+      return true;
+    },
+  });
+  t.after(unregister);
+
+  const col = "Moved ".length;
+  const selRange = new Range(
+    new Position(1, col),
+    new Position(1, col + "target phrase".length),
+  );
+  await navController.revealRange(selRange, { selection: selRange });
+  const newLf = ["Renamed header line", "Moved target phrase here"].join("\n");
+  const expectedAt = newLf.indexOf("target phrase");
+  assert.deepEqual(delivered, [
+    {
+      at: expectedAt,
+      to: expectedAt + "target phrase".length,
     },
   ]);
 });

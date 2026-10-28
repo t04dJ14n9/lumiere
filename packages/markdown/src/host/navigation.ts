@@ -93,15 +93,19 @@ async function containedVirtualPath(
   }
 }
 
-function toOffsetTarget(
-  target: number | { at: number; to?: number },
-): NavigationTarget {
+export type OffsetRevealTarget =
+  number | { at: number; to?: number; preserveFocus?: boolean };
+
+function toOffsetTarget(target: OffsetRevealTarget): NavigationTarget {
   const at = typeof target === "number" ? target : target.at;
   const to = typeof target === "number" ? undefined : target.to;
+  const preserveFocus =
+    typeof target === "number" ? undefined : target.preserveFocus;
   return {
     fragment: "",
     at,
     ...(to !== undefined && to > at ? { to } : {}),
+    ...(preserveFocus ? { preserveFocus: true } : {}),
   };
 }
 
@@ -111,7 +115,7 @@ async function deliverToOpenedPanel(
   target: {
     uri: string;
     column: number;
-    offset: number | { at: number; to?: number };
+    offset: OffsetRevealTarget;
     intent: NavigationIntent;
   },
 ): Promise<void> {
@@ -188,12 +192,12 @@ export interface NativeNavigation extends Navigation {
   revealOpened(
     uri: string,
     column: number,
-    at: number | { at: number; to?: number },
+    at: OffsetRevealTarget,
     intent: NavigationIntent,
   ): Promise<void>;
   revealPanel?(
     panelId: string,
-    target: number | { at: number; to?: number },
+    target: OffsetRevealTarget,
     intent?: NavigationIntent,
   ): Promise<boolean | void>;
 }

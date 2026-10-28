@@ -65,6 +65,7 @@ type Navigate = (target: {
   fragment: string;
   at?: number;
   to?: number;
+  preserveFocus?: boolean;
 }) => boolean;
 
 function navigator(ctx: Context): Navigate {
@@ -73,10 +74,12 @@ function navigator(ctx: Context): Navigate {
     fragment,
     at,
     to,
+    preserveFocus,
   }: {
     fragment: string;
     at?: number;
     to?: number;
+    preserveFocus?: boolean;
   }) => {
     const target = resolveNavigationTarget(view.state, fragment, at, to);
     if (!target) {
@@ -89,7 +92,9 @@ function navigator(ctx: Context): Navigate {
     }
     ctx.editor.navigate(() => {
       // Focusing after measured scrolling can restore the previous viewport.
-      view.focus();
+      if (!preserveFocus) {
+        view.focus();
+      }
       view.dispatch({
         selection: {
           anchor: target.from,
