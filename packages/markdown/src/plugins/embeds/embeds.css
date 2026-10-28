@@ -52,11 +52,21 @@
   padding: 12px 24px;
   text-align: center;
 }
+.image-inspector .media-area:not(.actual-size) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .image-inspector img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   vertical-align: top;
+}
+.image-inspector svg {
+  max-width: none;
+  max-height: none;
+  flex-shrink: 0;
 }
 .image-inspector .actual-size {
   text-align: left;
@@ -90,6 +100,7 @@
   gap: 2px;
   padding: 2px;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 70ms ease-out;
   border-radius: 6px;
   color: var(--vscode-editor-foreground, inherit);
@@ -118,6 +129,7 @@
 @media (hover: hover) {
   .image-embed:hover .embed-actions {
     opacity: 1;
+    pointer-events: auto;
   }
   .image-embed .embed-action:hover {
     background-color: var(--vscode-toolbar-hoverBackground, var(--hover));
@@ -127,6 +139,16 @@
 .image-embed .embed-action:focus-visible,
 .markdown-rendered .image-embed:hover .embed-actions {
   opacity: 1;
+  pointer-events: auto;
+}
+.image-embed.image-embed-compact .embed-actions {
+  top: 2px;
+  inset-inline-end: 2px;
+  padding: 0;
+}
+.image-embed.image-embed-compact .embed-action {
+  padding: 1px 2px;
+  font-size: 0.7em;
 }
 .image-embed .embed-action:focus-visible {
   outline: 2px solid var(--vscode-focusBorder, #7799ff);

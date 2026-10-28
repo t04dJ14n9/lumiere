@@ -1,6 +1,6 @@
 /** Controls inside a rendered block keep their own click behaviour. */
 const interactive =
-  "a, button, input, select, textarea, summary, label, [contenteditable='true'], [data-href], .internal-link, .external-link";
+  "a, button, input, select, textarea, summary, label, [contenteditable='true'], [data-href], .internal-link, .external-link, img, .image-embed, .embed-actions";
 
 /** Movement beyond this cancels click-to-edit for the active press. */
 export const CLICK_DRAG_PX = 3;

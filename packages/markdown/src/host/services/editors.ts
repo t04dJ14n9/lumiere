@@ -11,6 +11,7 @@ import type { NativeDocuments } from "./native-documents";
 
 /** The custom editor registry; open panels are tracked for navigation. */
 export function createCustomEditors(options: {
+  extension?: unknown;
   extensionUri: vscode.Uri;
   documents: NativeDocuments;
   navigation: NativeNavigation;
@@ -26,6 +27,7 @@ export function createCustomEditors(options: {
 
 function registerTrackedEditor(options: {
   provider: EditorProvider;
+  extension?: unknown;
   extensionUri: vscode.Uri;
   documents: NativeDocuments;
   navigation: NativeNavigation;

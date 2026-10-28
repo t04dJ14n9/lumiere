@@ -68,6 +68,22 @@ export async function buildHostAssets({ out, production }) {
       title: titles.get(item.command) ?? item.command,
     }));
   await writeFile(path.join(out, "menus.json"), JSON.stringify(menus));
+  const paletteWhen = new Map(
+    (manifest.contributes.menus?.commandPalette ?? [])
+      .filter((item) => typeof item.command === "string")
+      .map((item) => [item.command, item.when]),
+  );
+  const commands = (manifest.contributes.commands ?? [])
+    .filter((item) => item.command.startsWith("lumiere.markdown."))
+    .map((item) => ({
+      command: item.command,
+      title: item.title,
+      ...(item.category ? { category: item.category } : {}),
+      ...(paletteWhen.has(item.command)
+        ? { when: paletteWhen.get(item.command) }
+        : {}),
+    }));
+  await writeFile(path.join(out, "commands.json"), JSON.stringify(commands));
   return { version: manifest.version, repository: manifest.repository };
 }
 

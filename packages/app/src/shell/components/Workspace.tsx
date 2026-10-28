@@ -24,10 +24,11 @@ export interface WorkspaceProps {
   readonly opening: Opening;
   readonly ui: UiStateHandle;
   readonly report: (work: Promise<unknown>) => void;
+  readonly onCommandPalette?: (() => void) | undefined;
 }
 
 export function Workspace(props: WorkspaceProps) {
-  const { tabs, dispatch, opening, ui, report } = props;
+  const { tabs, dispatch, opening, ui, report, onCommandPalette } = props;
   const { sidebar, outline } = ui.state;
   const columns = [sidebar && "260px", "minmax(0, 1fr)", outline && "240px"]
     .filter(Boolean)
@@ -45,6 +46,7 @@ export function Workspace(props: WorkspaceProps) {
             <LayoutButtons
               ui={ui}
               onSettings={() => dispatch({ type: "openSettings" })}
+              onCommandPalette={onCommandPalette}
             />
           }
         />
@@ -147,6 +149,14 @@ function VaultBar({
         onClick={() => opening.openVault()}
       >
         +
+      </button>
+      <button
+        type="button"
+        title="Close vault"
+        aria-label="Close vault"
+        onClick={() => opening.closeVault(vault)}
+      >
+        ×
       </button>
     </header>
   );

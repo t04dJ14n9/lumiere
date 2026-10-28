@@ -11,7 +11,7 @@
     "build": "node scripts/build.mjs",
     "start": "node dist/app/server.js",
     "typecheck": "tsc -p src/server && tsc -p src/shell && tsc -p test",
-    "test": "tsx --test \"test/unit/**/*.test.ts\""
+    "test": "tsx --test test/unit/*.test.ts"
   },
   "dependencies": {
     "@workshop/core": "workspace:*",

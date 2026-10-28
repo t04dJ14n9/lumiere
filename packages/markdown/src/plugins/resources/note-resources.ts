@@ -61,7 +61,10 @@ export class NoteResources implements Resources {
     return {
       kind,
       source: file.uri,
-      url: resourceUrl(file.uri) + `?v=${stat.mtime}`,
+      url: (() => {
+        const base = resourceUrl(file.uri);
+        return `${base}${base.includes("?") ? "&" : "?"}v=${stat.mtime}`;
+      })(),
       ...(text === undefined ? {} : { text }),
       ...(baseSnapshot ?? {}),
     };

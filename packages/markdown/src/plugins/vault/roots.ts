@@ -11,12 +11,9 @@ export async function findVaultRoot(
   folders: readonly string[],
   hasMarker: (folder: string) => Promise<boolean>,
 ): Promise<string | undefined> {
-  for (const folder of folders) {
-    if (await hasMarker(folder)) {
-      return folder;
-    }
-  }
-  return folders.at(-1);
+  const results = await Promise.all(folders.map((folder) => hasMarker(folder)));
+  const index = results.indexOf(true);
+  return index >= 0 ? folders[index] : folders.at(-1);
 }
 
 /** The folders between a note and its workspace folder, nearest first. */

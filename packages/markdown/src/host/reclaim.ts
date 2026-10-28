@@ -40,6 +40,7 @@ interface ReclaimRequest {
   kind: TabKind;
   intent: NavigationIntent | undefined;
   at: number | undefined;
+  to: number | undefined;
   /** Once reveal delivery has started, later same-tab jumps must supersede. */
   delivering?: boolean;
   /**
@@ -143,6 +144,9 @@ export function registerReclaim(
       shouldHoldNativeAfterReclaim({
         recentTransfer: recentTransfers.has(swap.uri),
         reclaimable: true,
+        hasSelectionTarget: hasSelectionTarget(
+          nativeSelectionRange(tab, swap.uri),
+        ),
       })
     ) {
       textBypass.allow(swap.uri);
@@ -154,15 +158,11 @@ export function registerReclaim(
     transfer.open(tab, swap.uri);
   };
   const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
-    const endedSessions = new Set<string>();
-    for (const tab of [...event.closed, ...event.opened, ...event.changed]) {
-      const ended = releaseLeaseWithoutTextTab(tab);
-      if (ended) {
-        endedSessions.add(ended);
-      }
-    }
+    const ended = [...event.closed, ...event.opened, ...event.changed]
+      .map(releaseLeaseWithoutTextTab)
+      .filter((uri): uri is string => uri !== undefined);
     readerText.forgetClosed(event.closed);
-    swaps.next(event, endedSessions).forEach(judge);
+    swaps.next(event, new Set(ended)).forEach(judge);
   });
   const stop = vscode.Disposable.from(
     tabs,
@@ -193,7 +193,7 @@ function createReclaimTransfer(
   const capture = (tab: vscode.Tab, uri: string) => {
     const request = pending.get(tab);
     if (request?.uri === uri && !request.intent?.token.cancelled) {
-      request.at = nativeSelectionStart(tab, uri) ?? request.at;
+      refreshRequestSelection(tab, uri, request);
     }
   };
   return {
@@ -213,12 +213,14 @@ function createReclaimTransfer(
         request.intent?.token.cancel();
       }
       recentTransfers.allow(uri);
+      const selection = nativeSelectionRange(tab, uri);
       const next: ReclaimRequest = {
         uri,
         column: tab.group.viewColumn,
         kind: kindOf(tab),
         intent: navigation?.begin(),
-        at: nativeSelectionStart(tab, uri),
+        at: selection?.at,
+        to: selection?.to,
       };
       pending.set(tab, next);
       void reopen(uri, next, navigation)
@@ -255,7 +257,7 @@ function registerSelectionReclaim(
     const uri = event.textEditor.document.uri.toString();
     if (
       !tab ||
-      nativeSelectionStart(tab, uri) === undefined ||
+      nativeSelectionRange(tab, uri) === undefined ||
       !shouldReclaim(
         { uri, before: "none", after: kindOf(tab) },
         reclaimContext(uri),
@@ -278,10 +280,10 @@ function registerSelectionReclaim(
   return vscode.Disposable.from(selections, activation);
 }
 
-function nativeSelectionStart(
+function nativeSelectionRange(
   tab: vscode.Tab,
   uri: string,
-): number | undefined {
+): { at: number; to?: number } | undefined {
   const editor = vscode.window.activeTextEditor;
   if (
     !editor ||
@@ -292,9 +294,14 @@ function nativeSelectionStart(
     return undefined;
   }
   const document = editor.document;
-  return new SourceCoordinates(document.getText()).toEditor(
-    document.offsetAt(editor.selection.start),
-  );
+  const coordinates = new SourceCoordinates(document.getText());
+  const at = coordinates.toEditor(document.offsetAt(editor.selection.start));
+  const to = coordinates.toEditor(document.offsetAt(editor.selection.end));
+  return to > at ? { at, to } : { at };
+}
+
+function hasSelectionTarget(s?: { at: number; to?: number }): boolean {
+  return s !== undefined && (s.at > 0 || (s.to !== undefined && s.to > s.at));
 }
 
 function reclaimContext(uri: string) {
@@ -319,6 +326,18 @@ function reclaimContext(uri: string) {
   };
 }
 
+function refreshRequestSelection(
+  tab: vscode.Tab,
+  uri: string,
+  request: ReclaimRequest,
+): void {
+  const selection = nativeSelectionRange(tab, uri);
+  if (selection) {
+    request.at = selection.at;
+    request.to = selection.to;
+  }
+}
+
 /** Transfer when ready, keeping any dirty text tab and its native undo. */
 async function reopen(
   uri: string,
@@ -339,16 +358,24 @@ async function reopen(
     return;
   }
   const { column } = request;
-  request.at = nativeSelectionStart(native, uri) ?? request.at;
+  refreshRequestSelection(native, uri, request);
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
     viewColumn: column,
     preview: native.isPreview,
   });
   if (navigation && request.intent && request.at !== undefined) {
     request.delivering = true;
-    request.at = nativeSelectionStart(native, uri) ?? request.at;
+    refreshRequestSelection(native, uri, request);
     await revealOpenedWatchingOptOut(uri, request, () =>
-      navigation.revealOpened(uri, column, request.at!, request.intent!),
+      navigation.revealOpened(
+        uri,
+        column,
+        {
+          at: request.at!,
+          ...(request.to !== undefined ? { to: request.to } : {}),
+        },
+        request.intent!,
+      ),
     );
   }
   // Opt-outs or a superseding jump may land during the reveal wait. Do not
