@@ -82,3 +82,23 @@ test("revealed ATX heading marker stays on the first visual row with the heading
   expect(Math.abs(metrics.h2.glyphTop - metrics.h2.markTop)).toBeLessThan(8);
   expect(metrics.h2.glyphLeft).toBeGreaterThanOrEqual(metrics.h2.markRight);
 });
+
+test("empty ATX heading line keeps its # marker visible when unrevealed (Obsidian parity)", async ({
+  page,
+}) => {
+  await open(page, "# \n\nBody paragraph");
+  await page.evaluate(() => {
+    const view = [...window.harness.views[0]!.plugins].find(
+      (fiber) => fiber.definition.name === "livePreview",
+    )!.context!.editor.view;
+    view.focus();
+    const last = view.state.doc.length;
+    view.dispatch({ selection: { anchor: last, head: last } });
+  });
+  const firstHeadingMark = page
+    .locator(".cm-line.md-heading")
+    .first()
+    .locator(".md-syntax-mark");
+  await expect(firstHeadingMark).toBeVisible();
+  await expect(firstHeadingMark).toHaveText("#");
+});

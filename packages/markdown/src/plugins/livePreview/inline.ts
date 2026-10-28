@@ -296,24 +296,25 @@ class InlineDecorations implements InlineContext {
       return;
     }
     // Revealed syntax stays faint, as in Obsidian, so the text reads first.
+    const emptyAtxHeading =
+      name === "HeaderMark" &&
+      parent.name.startsWith("ATXHeading") &&
+      this.state.doc.lineAt(from).text.trim() ===
+        this.state.sliceDoc(from, to).trim();
     if (
       ["QuoteMark", "HeaderMark"].includes(name)
-        ? this.lineRevealed(from)
+        ? this.lineRevealed(from) || emptyAtxHeading
         : this.revealed(parent.from, parent.to)
     ) {
       this.mark(from, to, "md-syntax-mark");
+      // Obsidian atxHeaderRE = /^(#+)(?: |$)/ includes at most one delimiter space.
       if (
         name === "HeaderMark" &&
         parent.name.startsWith("ATXHeading") &&
-        from === parent.from
+        from === parent.from &&
+        this.state.sliceDoc(to, to + 1) === " "
       ) {
-        let spaceEnd = to;
-        while (this.state.sliceDoc(spaceEnd, spaceEnd + 1) === " ") {
-          spaceEnd++;
-        }
-        if (spaceEnd > to) {
-          this.mark(to, spaceEnd, "md-header-space");
-        }
+        this.mark(to, to + 1, "md-header-space");
       }
       return;
     }

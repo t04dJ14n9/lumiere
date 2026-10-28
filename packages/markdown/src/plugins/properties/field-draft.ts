@@ -175,15 +175,17 @@ export class PropertyField {
       return;
     }
     edit.hidden = !this.editor;
+    const selection =
+      this.input.dataset.propertyKind === "yaml" ? "end" : "all";
     const openEditor = (event: Event) => {
       event.preventDefault();
       event.stopPropagation();
       display.hidden = true;
       this.input.hidden = false;
-      focusInput(this.input, "all");
+      focusInput(this.input, selection);
     };
     edit.addEventListener("click", openEditor);
-    if (display.classList.contains("property-complex") && this.editor) {
+    if (this.editor) {
       display.addEventListener("click", (event) => {
         const interactive =
           event.target instanceof Element

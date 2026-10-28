@@ -339,7 +339,8 @@ function unknownPropertyValue(value: unknown): string {
 
 function editableYaml(key: string, text: string): string {
   // textarea keeps Enter as real newlines (contenteditable textContent does not).
-  return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
+  const rows = Math.min(12, Math.max(3, text.split("\n").length));
+  return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="${rows}" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
 }
 
 function complexFallback(draft: string | undefined): string {
