@@ -47,6 +47,10 @@ function inlineReplacements(source: string): Replacement[] {
       if (node.name === "Entity") {
         return replace(decodeMarkdownText(raw));
       }
+      if (node.name === "WikiLink") {
+        replacements.push(...wikiLinkDelimiters(source, from, to));
+        return false;
+      }
       if (node.name === "Link") {
         const marks = node.node.getChildren("LinkMark");
         const closing = marks[1];
@@ -109,14 +113,21 @@ export function renderedPosition(
     return undefined;
   }
   const projection = inlineSourceMap(source);
+  // markdown-it wraps cell paragraphs in `<p>...</p>\n`, so strip trailing
+  // block newlines before comparing against the inline projection.
+  const domText = (element.textContent ?? "").replace(/\n+$/, "");
   // Embedded media/math have their own DOM. Do not guess offsets through it.
-  if (projection.text !== element.textContent) {
+  if (projection.text !== domText) {
     return undefined;
   }
   const before = document.createRange();
   before.selectNodeContents(element);
   before.setEnd(caret.startContainer, caret.startOffset);
-  return projection.positions[before.toString().length];
+  const index = Math.min(
+    before.toString().length,
+    projection.positions.length - 1,
+  );
+  return projection.positions[index];
 }
 
 function mappedOffset({
@@ -136,6 +147,36 @@ function mappedOffset({
   return index === length - 1 ? to : from;
 }
 
+function wikiLinkDelimiters(
+  source: string,
+  from: number,
+  to: number,
+): Replacement[] {
+  const inner = source.slice(from + 2, to - 2);
+  let separator = -1;
+  for (let i = 0; i < inner.length; i++) {
+    if (inner[i] === "\\" && inner[i + 1] === "|") {
+      i++;
+      continue;
+    }
+    if (inner[i] === "|") {
+      separator = i;
+      break;
+    }
+  }
+  const labelStart = separator < 0 ? from + 2 : from + 2 + separator + 1;
+  const labelEnd = to - 2;
+  const result: Replacement[] = [{ from, to: labelStart, text: "" }];
+  for (let pos = labelStart; pos < labelEnd - 1; pos++) {
+    if (source.slice(pos, pos + 2) === "\\|") {
+      result.push({ from: pos, to: pos + 1, text: "" });
+      pos++;
+    }
+  }
+  result.push({ from: labelEnd, to, text: "" });
+  return result;
+}
+
 function codeDelimiters(source: string, node: SyntaxNodeRef): Replacement[] {
   const from = node.from - 2;
   const to = node.to - 2;
@@ -147,8 +188,14 @@ function codeDelimiters(source: string, node: SyntaxNodeRef): Replacement[] {
     start++;
     end--;
   }
-  return [
-    { from, to: start, text: "" },
-    { from: end, to, text: "" },
-  ];
+  const result: Replacement[] = [{ from, to: start, text: "" }];
+  // GFM table cells unescape `\|` inside inline code before rendering.
+  for (let pos = start; pos < end - 1; pos++) {
+    if (source.slice(pos, pos + 2) === "\\|") {
+      result.push({ from: pos, to: pos + 1, text: "" });
+      pos++;
+    }
+  }
+  result.push({ from: end, to, text: "" });
+  return result;
 }

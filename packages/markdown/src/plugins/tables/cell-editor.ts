@@ -18,11 +18,13 @@ import { cellNavKey, cellNavigation, type CellStep } from "./navigation";
 import { installCellWordNavigation } from "./word-navigation";
 import type { WordMotion } from "./word-motion";
 
+export type CellSelection = number | "all" | { anchor: number; head: number };
+
 interface CellEditorOptions {
   parent: HTMLElement;
   cell: Cell;
   position: CellPosition;
-  selection?: number | "all";
+  selection?: CellSelection;
   environment: TableEnvironment;
   vim: boolean;
   outer: EditorView;
@@ -297,9 +299,22 @@ function isNormalVimMode(
 
 export function initialCellSelection(
   text: string,
-  selection: number | "all" | undefined,
+  selection: CellSelection | undefined,
   normalVim: boolean,
 ): { anchor: number; head: number } {
+  if (typeof selection === "object") {
+    const anchor = Math.max(0, Math.min(selection.anchor, text.length));
+    const head = Math.max(0, Math.min(selection.head, text.length));
+    if (normalVim && anchor === head) {
+      if (text.length === 0) {
+        return { anchor: 0, head: 0 };
+      }
+      const fallback = findClusterBreak(text, text.length, false);
+      const clamped = Math.min(head, fallback);
+      return { anchor: clamped, head: clamped };
+    }
+    return { anchor, head };
+  }
   if (normalVim) {
     if (selection === "all" || text.length === 0) {
       return { anchor: 0, head: 0 };
