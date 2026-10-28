@@ -43,7 +43,7 @@ export function linkClickHandlers(
         return true;
       }
       // BH-020: only Mod-click follows; preventDefault so CM does not also move.
-      if (allowsLinkClick(event)) {
+      if (allowsLinkClick(event, link)) {
         event.preventDefault();
         event.stopPropagation();
         return true;
@@ -62,7 +62,7 @@ export function linkClickHandlers(
       }
       const selection = view.dom.ownerDocument.getSelection();
       if (
-        !allowsLinkClick(event) ||
+        !allowsLinkClick(event, link) ||
         (selection &&
           !selection.isCollapsed &&
           (link.contains(selection.anchorNode) ||
@@ -176,9 +176,13 @@ export function holds(
   return x >= box.left && x < box.right && y >= box.top && y < box.bottom;
 }
 
-/** Follow only when Ctrl (Linux) or Cmd (macOS) is held. */
+/**
+ * Follow when Ctrl (Linux) or Cmd (macOS) is held, or on a plain click inside
+ * a rendered HTML `<a>` link (table cells, callouts, note embeds, page preview).
+ */
 export function allowsLinkClick(
   event: Pick<MouseEvent, "metaKey" | "ctrlKey">,
+  link?: { tagName?: string },
 ): boolean {
-  return event.metaKey || event.ctrlKey;
+  return event.metaKey || event.ctrlKey || link?.tagName === "A";
 }
