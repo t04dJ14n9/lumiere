@@ -39,10 +39,13 @@ export function dshPalette(
 /** DSH's current theme as a theme message. */
 export function readDshTheme(): ThemeMessage {
   const style = getComputedStyle(document.body);
+  const dark =
+    document.body.hasAttribute("data-ds-dark-theme") ||
+    document.documentElement.hasAttribute("data-ds-dark-theme");
   return themeMessage(
     dshPalette(
       (name) => style.getPropertyValue(`--dsw-alias-${name}`).trim(),
-      document.body.hasAttribute("data-ds-dark-theme"),
+      dark,
       style.fontFamily || "system-ui, sans-serif",
     ),
   );
