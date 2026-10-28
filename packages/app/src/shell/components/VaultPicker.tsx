@@ -9,9 +9,11 @@ export interface VaultPickerProps {
   readonly recent: readonly string[];
   /** A folder path, or undefined to ask with the native picker. */
   readonly onOpen: (folder?: string) => void;
+  /** Dismiss the picker when a workspace is already open. */
+  readonly onCancel?: (() => void) | undefined;
 }
 
-export function VaultPicker({ recent, onOpen }: VaultPickerProps) {
+export function VaultPicker({ recent, onOpen, onCancel }: VaultPickerProps) {
   const [typed, setTyped] = useState("");
   return (
     <section className="vault-picker" aria-label="Open a vault">
@@ -35,10 +37,21 @@ export function VaultPicker({ recent, onOpen }: VaultPickerProps) {
             placeholder="/path/to/notes"
             value={typed}
             onChange={(event) => setTyped(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && onCancel) {
+                event.preventDefault();
+                onCancel();
+              }
+            }}
           />
           <button type="submit" className="primary">
             Open
           </button>
+          {onCancel && (
+            <button type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
         </form>
       )}
       {recent.length > 0 && (

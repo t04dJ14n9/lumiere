@@ -37,8 +37,14 @@ export const linksWebview: Plugin = {
     return true;
   },
   apply(ctx) {
+    const flashing = bindFlashingLifecycle(ctx.editor.view);
+    ctx.effect(() => () => flashing.dispose());
     ctx.effect(() =>
-      ctx.editor.extend([sourceUnresolved(), flashingHighlights]),
+      ctx.editor.extend([
+        sourceUnresolved(),
+        flashingHighlights(),
+        flashing.extension,
+      ]),
     );
     ctx.on("suggest/trigger", linkSuggestion);
     const navigate = navigator(ctx);
@@ -55,13 +61,27 @@ export const linksWebview: Plugin = {
   },
 };
 
-type Navigate = (target: { fragment: string; at?: number }) => boolean;
+type Navigate = (target: {
+  fragment: string;
+  at?: number;
+  to?: number;
+  preserveFocus?: boolean;
+}) => boolean;
 
 function navigator(ctx: Context): Navigate {
   const view = ctx.editor.view;
-  const flashing = bindFlashingLifecycle(ctx);
-  return ({ fragment, at }: { fragment: string; at?: number }) => {
-    const target = resolveNavigationTarget(view.state, fragment, at);
+  return ({
+    fragment,
+    at,
+    to,
+    preserveFocus,
+  }: {
+    fragment: string;
+    at?: number;
+    to?: number;
+    preserveFocus?: boolean;
+  }) => {
+    const target = resolveNavigationTarget(view.state, fragment, at, to);
     if (!target) {
       void ctx.rpc
         .call(protocol, "missing", { fragment })
@@ -70,27 +90,25 @@ function navigator(ctx: Context): Navigate {
         );
       return false;
     }
-    const shouldFlash =
-      (Boolean(fragment) || at !== undefined) && target.to > target.from;
     ctx.editor.navigate(() => {
       // Focusing after measured scrolling can restore the previous viewport.
-      view.focus();
+      if (!preserveFocus) {
+        view.focus();
+      }
       view.dispatch({
-        selection: { anchor: target.from },
+        selection: {
+          anchor: target.from,
+          head: target.selectTo ?? target.from,
+        },
+        // Centre the target as VS Code's Outline and Obsidian's do. The browser
+        // clamps the scroll at both ends, so a heading near the start or end
+        // of the note lands as close to the centre as the note allows.
         effects: [
-          ...unfoldTargetEffects(
-            view.state,
-            target.from,
-            Math.max(target.from + 1, target.to),
-          ),
-          setFlashing.of(shouldFlash ? target : null),
-          // Centre the target as VS Code's Outline and Obsidian's do. The browser
-          // clamps the scroll at both ends, so a heading near the start or end
-          // of the note lands as close to the centre as the note allows.
+          ...unfoldTargetEffects(view.state, target.from, target.to),
+          setFlashing.of({ from: target.from, to: target.to }),
           EditorView.scrollIntoView(target.from, { y: "center" }),
         ],
       });
-      flashing.flash(target, shouldFlash);
     });
     return true;
   };

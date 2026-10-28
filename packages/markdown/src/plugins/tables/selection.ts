@@ -160,8 +160,8 @@ export class TableSelection {
       this.projection.inner?.dom.contains(event.target);
     if (
       event.target instanceof Element &&
-      event.target.closest("button, a, input, select") &&
-      !insideCellEditor
+      (event.target.closest("button, a, input, select, .embed-actions") ||
+        (!insideCellEditor && event.target.closest("img, .image-embed")))
     ) {
       return;
     }

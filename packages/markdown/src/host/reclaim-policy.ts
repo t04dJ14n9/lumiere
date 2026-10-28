@@ -208,8 +208,9 @@ export class TabSwaps<Tab extends object> {
 export function shouldHoldNativeAfterReclaim(input: {
   recentTransfer: boolean;
   reclaimable: boolean;
+  hasSelectionTarget?: boolean;
 }): boolean {
-  return input.reclaimable && input.recentTransfer;
+  return input.reclaimable && input.recentTransfer && !input.hasSelectionTarget;
 }
 
 /** Cursor Markdown still needs the transfer warm even with a loaded document. */

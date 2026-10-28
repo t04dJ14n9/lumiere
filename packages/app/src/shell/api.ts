@@ -13,6 +13,12 @@ export interface FileEntry {
   readonly kind: "note" | "pdf" | "image" | "other";
 }
 
+export interface PaletteCommand {
+  readonly command: string;
+  readonly title: string;
+  readonly category?: string;
+}
+
 export type ServerEvent =
   | {
       readonly type: "vaults";
@@ -40,6 +46,12 @@ const post = (url: string, body: unknown) =>
 export const api = {
   vaults: () => request<VaultList>("/api/vaults"),
   addVault: (path: string) => post("/api/vaults", { path }),
+  closeVault: (path: string) =>
+    request<VaultList>("/api/vaults", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path }),
+    }),
   files: async (vault: string) =>
     (
       await request<{ files: FileEntry[] }>(
@@ -48,6 +60,11 @@ export const api = {
     ).files,
   /** A note or folder from outside the shell (a menu, a dropped path). */
   open: (path: string) => post("/api/open", { path }),
+  /** Lumière's contributed commands currently available in the Command Palette. */
+  commands: async () =>
+    (await request<{ commands: PaletteCommand[] }>("/lumiere/commands"))
+      .commands,
+  runCommand: (command: string) => post("/lumiere/commands", { command }),
   events(listener: (event: ServerEvent) => void): () => void {
     const source = new EventSource("/api/events");
     source.onmessage = (message: MessageEvent<string>) =>
@@ -55,6 +72,11 @@ export const api = {
     return () => source.close();
   },
 };
+
+/** Whether a path names a Markdown note that `/lumiere/editor` can open. */
+export function isNotePath(path: string): boolean {
+  return /\.(?:md|markdown)$/i.test(path);
+}
 
 /** The editor page for a vault file (host-node's `/lumiere/editor`). */
 export function editorUrl(vault: string, path: string): string {

@@ -33,6 +33,15 @@ export function parseSessionAddress(
   }
 }
 
+/** The `#heading` or `#^block` fragment on a resource address, or `""`. */
+export function addressFragment(address: string): string {
+  const hash = address.indexOf("#");
+  if (hash < 0 || hash === address.length - 1) {
+    return "";
+  }
+  return address.slice(hash);
+}
+
 /**
  * The session's workspace root: the absolute path minus the workspace-relative
  * path the address names. Undefined when the address is absolute already.
@@ -49,6 +58,21 @@ export function workspaceRoot(
   return absolute.endsWith(suffix)
     ? absolute.slice(0, -suffix.length) || "/"
     : undefined;
+}
+
+/**
+ * The folder containing `absolute`, used as the containment root when the
+ * session address already carries an absolute path (`workspaceRoot` is
+ * undefined). Returns undefined for a filesystem root.
+ */
+export function parentFolder(absolute: string): string | undefined {
+  const clean = absolute.replace(/[\\/]+$/, "");
+  const slash = Math.max(clean.lastIndexOf("/"), clean.lastIndexOf("\\"));
+  if (slash <= 0) {
+    return undefined;
+  }
+  const parent = clean.slice(0, slash);
+  return /^[A-Za-z]:$/.test(parent) ? undefined : parent;
 }
 
 /**
@@ -77,11 +101,19 @@ export function insideWorkspace(
   );
 }
 
+function normalizeFragment(fragment: string): string {
+  if (!fragment) {
+    return "";
+  }
+  return fragment.startsWith("#") ? fragment : `#${fragment}`;
+}
+
 /** The address of another file of the session, from its absolute path. */
 export function sessionAddress(
   sessionId: string,
   root: string | undefined,
   absolute: string,
+  fragment = "",
 ): string {
   const base = root?.replace(/\/+$/, "");
   const path =
@@ -91,5 +123,5 @@ export function sessionAddress(
   return `${PREFIX}session/${encodeSegment(sessionId)}/${path
     .split("/")
     .map(encodeSegment)
-    .join("/")}`;
+    .join("/")}${normalizeFragment(fragment)}`;
 }

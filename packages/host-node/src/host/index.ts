@@ -5,12 +5,20 @@
  * DSH or the app; the boundaries lint rule enforces it.
  */
 export {
+  readCommands,
   readContributed,
   readMenus,
   startLumiere,
   type LumiereHost,
   type StartOptions,
 } from "./start";
+export {
+  createCommandPalette,
+  paletteCommands,
+  type CommandContribution,
+  type CommandPalette,
+  type PaletteCommand,
+} from "./command-palette";
 export {
   BASE,
   SOCKET_PATH,

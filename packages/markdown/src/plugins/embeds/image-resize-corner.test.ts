@@ -167,3 +167,39 @@ test("select is idempotent: a second mark does not add another corner", () => {
     restore();
   }
 });
+
+test("setImageSelectedChrome ignores cm-widgetBuffer and never mutates .cm-line or .cm-content", () => {
+  const lineKids: Stub[] = [];
+  const cmLine = el(["cm-line"], {});
+  Object.defineProperty(cmLine, "children", { get: () => lineKids });
+  cmLine.querySelector = () => null;
+
+  const widgetBuffer = el(["cm-widgetBuffer"], {
+    parentElement: cmLine,
+    after(node: Stub) {
+      lineKids.push(node);
+    },
+  });
+  const bareInlineImg = el([], {
+    parentElement: cmLine,
+    after(node: Stub) {
+      lineKids.push(node);
+    },
+  });
+
+  const restore = installDocument(() => {
+    assert.fail(
+      "must not create a resize corner on cm-widgetBuffer or .cm-line",
+    );
+  });
+  try {
+    setImageSelectedChrome(widgetBuffer as unknown as HTMLImageElement, true);
+    setImageSelectedChrome(bareInlineImg as unknown as HTMLImageElement, true);
+    assert.ok(!widgetBuffer.classList.contains("md-image-selected"));
+    assert.ok(!bareInlineImg.classList.contains("md-image-selected"));
+    assert.ok(!cmLine.classList.contains("image-embed"));
+    assert.equal(lineKids.length, 0);
+  } finally {
+    restore();
+  }
+});

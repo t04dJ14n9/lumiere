@@ -20,16 +20,10 @@
   }
 }
 
-/* Target section/block highlight when jumping to a link (`is-flashing`,
-   REA app.css ~3307). */
-.is-flashing {
-  transition:
-    color 0.25s ease,
-    background-color 0.25s ease;
-  background-color: var(
-    --highlight-background,
-    var(--vscode-editor-findMatchHighlightBackground, rgba(255, 208, 0, 0.4))
-  ) !important;
-  color: var(--vscode-editor-foreground, inherit);
-  border-radius: 4px;
+.cm-editor .is-flashing {
+  transition: all 0.25s ease;
+  background-color: var(--text-highlight-bg);
+  color: var(--text-normal);
+  mix-blend-mode: var(--highlight-mix-blend-mode);
+  border-radius: 2px;
 }

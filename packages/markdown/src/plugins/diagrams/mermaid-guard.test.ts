@@ -370,3 +370,19 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
     renderer.dispose();
   }
 });
+
+test("svgDimensions reads viewBox dimensions and falls back to bounding box", async () => {
+  const { svgDimensions } = await import("./diagram-dialog");
+  const withViewBox = el("svg");
+  withViewBox.setAttribute("viewBox", "0 0 640 360");
+  assert.deepEqual(svgDimensions(withViewBox as unknown as Element), {
+    width: 640,
+    height: 360,
+  });
+
+  const withoutViewBox = el("svg");
+  assert.deepEqual(svgDimensions(withoutViewBox as unknown as Element), {
+    width: 800,
+    height: 600,
+  });
+});

@@ -13,8 +13,8 @@ import { isIgnoredPath } from "../plugins/vault/exclusion";
 import { createVaultParser } from "./vault-parser";
 import { workerPath } from "./running-extension";
 
-/** Stats run this many at a time while listing a vault. */
-const STAT_CONCURRENCY = 32;
+/** Directory reads and stats run this many at a time while listing a vault. */
+export const STAT_CONCURRENCY = 32;
 
 /** The VS Code side of the vault plugin (DESIGN §12). */
 export function createVaultSystem(
@@ -120,23 +120,53 @@ async function collectFiles(
   const files: vscode.Uri[] = [];
   const folders = [base];
   while (folders.length > 0 && files.length < limit) {
-    const folder = folders.shift()!;
-    for (const [name, type] of await readDirectory(folder)) {
-      if (name.startsWith(".") || name === "node_modules") {
-        continue;
-      }
-      const uri = vscode.Uri.joinPath(folder, name);
-      const isLink = Boolean(type & vscode.FileType.SymbolicLink);
-      if (type & vscode.FileType.Directory) {
-        if (!shallow && !isLink) {
-          folders.push(uri);
-        }
-      } else if (type & vscode.FileType.File) {
-        files.push(uri);
-      }
+    const batch = folders.splice(0, STAT_CONCURRENCY);
+    const listings = await Promise.all(batch.map(readDirectory));
+    for (let i = 0; i < batch.length && files.length < limit; i++) {
+      appendFolderEntries(base, batch[i]!, listings[i]!, {
+        shallow,
+        limit,
+        files,
+        folders,
+      });
     }
   }
   return files;
+}
+
+function appendFolderEntries(
+  base: vscode.Uri,
+  folder: vscode.Uri,
+  entries: readonly [string, vscode.FileType][],
+  state: {
+    shallow: boolean;
+    limit: number;
+    files: vscode.Uri[];
+    folders: vscode.Uri[];
+  },
+): void {
+  for (const [name, type] of entries) {
+    if (state.files.length >= state.limit) {
+      return;
+    }
+    const uri = vscode.Uri.joinPath(folder, name);
+    const relPath = relativePath(base, uri);
+    if (
+      name.startsWith(".") ||
+      name === "node_modules" ||
+      (relPath !== undefined && isIgnoredPath(relPath))
+    ) {
+      continue;
+    }
+    const isLink = Boolean(type & vscode.FileType.SymbolicLink);
+    if (type & vscode.FileType.Directory) {
+      if (!state.shallow && !isLink) {
+        state.folders.push(uri);
+      }
+    } else if (type & vscode.FileType.File) {
+      state.files.push(uri);
+    }
+  }
 }
 
 async function readDirectory(

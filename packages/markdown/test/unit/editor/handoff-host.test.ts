@@ -7,6 +7,7 @@ import type * as HostCommands from "../../../src/host/services/commands";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
 import type * as CursorHandoff from "../../../src/host/cursor-handoff";
 import type * as HostNavigation from "../../../src/host/navigation";
+import type * as EditorPanels from "../../../src/host/editor-panels";
 import type { PanelShell, RevealPanel } from "../../../src/shared/host";
 import type { Uri as NativeUri } from "vscode";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
@@ -19,6 +20,9 @@ const { viewType } = MARKDOWN_EDITOR;
 class Uri {
   static parse(value: string) {
     return new Uri(value);
+  }
+  static joinPath(base: Uri, ...parts: string[]) {
+    return new Uri([base.toString(), ...parts].join("/"));
   }
   constructor(private readonly value: string) {}
   get scheme() {
@@ -45,6 +49,14 @@ class Range {
     readonly start: Position,
     readonly end: Position,
   ) {}
+}
+class Selection extends Range {
+  constructor(
+    readonly anchor: Position,
+    readonly active: Position,
+  ) {
+    super(anchor, active);
+  }
 }
 class TabInputCustom {
   constructor(
@@ -111,6 +123,11 @@ const visibleRangesChanged = new Emitter<{ textEditor: TextEditor }>();
 const warmed: string[] = [];
 const commands: unknown[][] = [];
 const scopes: { section: string; uri: string | undefined }[] = [];
+const registeredProviders: {
+  viewType: string;
+  provider: unknown;
+  options?: unknown;
+}[] = [];
 const settings = new Map<string, unknown>();
 let beforeOpen: (() => Promise<void>) | undefined;
 let afterCommand: (() => void | Promise<void>) | undefined;
@@ -122,6 +139,7 @@ const vscode = {
   TabInputCustom,
   Position,
   Range,
+  Selection,
   TextEditorSelectionChangeKind: { Keyboard: 1, Mouse: 2, Command: 3 },
   ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
   DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 },
@@ -135,6 +153,8 @@ const vscode = {
   extensions: { getExtension: () => undefined },
   workspace: {
     textDocuments: documents,
+    isTrusted: true,
+    getWorkspaceFolder: () => undefined,
     getConfiguration(section: string, uri?: Uri) {
       scopes.push({ section, uri: uri?.toString() });
       return {
@@ -185,11 +205,24 @@ const vscode = {
     tabGroups: {
       all: [group],
       activeTabGroup: group,
+      onDidChangeTabGroups: () => ({ dispose() {} }),
       onDidChangeTabs: tabsChanged.event,
       async close(tab: Tab) {
         assert.equal(tab.isDirty, false, "dirty tabs must survive the handoff");
         group.tabs = group.tabs.filter((candidate) => candidate !== tab);
       },
+    },
+    registerCustomEditorProvider(
+      registeredViewType: string,
+      provider: unknown,
+      options?: unknown,
+    ) {
+      registeredProviders.push({
+        viewType: registeredViewType,
+        provider,
+        options,
+      });
+      return { dispose() {} };
     },
   },
   languages: {
@@ -229,6 +262,8 @@ function loadHost() {
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
       cursorHandoff:
         require("../../../src/host/cursor-handoff.ts") as typeof CursorHandoff,
+      editorPanels:
+        require("../../../src/host/editor-panels.ts") as typeof EditorPanels,
     };
   } finally {
     loader._load = originalLoad;
@@ -243,6 +278,7 @@ beforeEach(() => {
   commands.length = 0;
   documents.length = 0;
   scopes.length = 0;
+  registeredProviders.length = 0;
   group.tabs = [];
   group.activeTab = undefined;
   vscode.window.tabGroups.all = [group];
@@ -1544,6 +1580,7 @@ function nativeHunkEditor(tab: Tab, line = 929, eol = "\n"): TextEditor {
 
 function hunkDestination(tab: Tab, reused = false) {
   const calls: number[] = [];
+  const ranges: { at: number; to?: number }[] = [];
   const shell = {
     id: "destination",
     column: 1,
@@ -1560,6 +1597,10 @@ function hunkDestination(tab: Tab, reused = false) {
     async reveal(target, token) {
       if (!token.cancelled) {
         calls.push(target.at!);
+        ranges.push({
+          at: target.at!,
+          ...(target.to !== undefined ? { to: target.to } : {}),
+        });
       }
       return !token.cancelled;
     },
@@ -1578,7 +1619,12 @@ function hunkDestination(tab: Tab, reused = false) {
       panels.push(shell);
     }
   };
-  return { navigation, calls, ready: () => navigation.registerReveal(reveal) };
+  return {
+    navigation,
+    calls,
+    ranges,
+    ready: () => navigation.registerReveal(reveal),
+  };
 }
 
 for (const reused of [false, true]) {
@@ -2024,3 +2070,432 @@ for (const ignored of [
     assert.deepEqual(destination.calls, []);
   });
 }
+
+test("hunk and search transfers preserve both start and end selection offsets [at, to]", async (t) => {
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  const editor = nativeHunkEditor(tab, 929, "\r\n");
+  t.after(() => stop.dispose());
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  const normalized = editor.document.getText().replaceAll("\r\n", "\n");
+  const expectedAt = normalized.indexOf("Line 930\n");
+  const expectedTo = normalized.indexOf("Line 932\n") + 4;
+  assert.deepEqual(destination.ranges, [{ at: expectedAt, to: expectedTo }]);
+});
+
+test("repeated search jumps opening text tabs with a selection within 10s still reclaim and jump", async (t) => {
+  const first = cursorTab();
+  const destination = hunkDestination(first, true);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  destination.ready();
+  const firstEditor = nativeHunkEditor(first, 100);
+  tabsChanged.fire({ opened: [first], changed: [], closed: [] });
+  await tick();
+  assert.equal(destination.ranges.length, 1);
+
+  const second = cursorTab();
+  const secondEditor = nativeHunkEditor(second, 250);
+  tabsChanged.fire({ opened: [second], changed: [], closed: [] });
+  await tick();
+  assert.equal(destination.ranges.length, 2);
+  assert.equal(
+    destination.ranges[1]?.at,
+    secondEditor.document.getText().indexOf("Line 251\n"),
+  );
+  assert.equal(
+    destination.ranges[1]?.to,
+    secondEditor.document.getText().indexOf("Line 253\n") + 4,
+  );
+  assert.equal(
+    destination.ranges[0]?.at,
+    firstEditor.document.getText().indexOf("Line 101\n"),
+  );
+});
+
+function createFakeDoc(uriStr: string, lines: readonly string[]) {
+  const rawText = lines.join("\r\n");
+  return {
+    uri: Uri.parse(uriStr),
+    getText: () => rawText,
+    offsetAt(pos: Position) {
+      return (
+        lines
+          .slice(0, pos.line)
+          .reduce((sum, line) => sum + line.length + 2, 0) + pos.character
+      );
+    },
+    positionAt(offset: number) {
+      let remaining = offset;
+      for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const lineLen = lines[lineIdx]!.length;
+        if (remaining <= lineLen) {
+          return new Position(lineIdx, remaining);
+        }
+        remaining -= lineLen + 2;
+      }
+      return new Position(lines.length - 1, lines.at(-1)?.length ?? 0);
+    },
+  };
+}
+
+function createFakeWebviewPanel() {
+  const disposeListeners = new Set<() => void>();
+  let disposed = false;
+  return {
+    viewColumn: 1,
+    active: true,
+    get disposed() {
+      return disposed;
+    },
+    webview: {
+      options: {},
+      cspSource: "vscode-webview:",
+      html: "",
+      postMessage: async () => true,
+      onDidReceiveMessage: () => ({ dispose() {} }),
+      asWebviewUri: (u: Uri) => u,
+    },
+    reveal() {},
+    dispose() {
+      disposed = true;
+      for (const listener of [...disposeListeners]) {
+        listener();
+      }
+    },
+    onDidDispose: (listener: () => void) => {
+      disposeListeners.add(listener);
+      return { dispose: () => disposeListeners.delete(listener) };
+    },
+    onDidChangeViewState: () => ({ dispose() {} }),
+  };
+}
+
+test("registerEditor enables customTextEditorNavigation and revealRange respects options.selection and preserveFocus", async (t) => {
+  const extension = {
+    id: "lumiere.markdown",
+    extensionUri: Uri.parse("file:///ext"),
+    packageJSON: { name: "lumiere", enabledApiProposals: [] as string[] },
+  };
+  let openedShell: PanelShell | undefined;
+  const panels: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => panels);
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extension,
+      extensionUri: extension.extensionUri as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShell = shell;
+      panels.push(shell);
+    },
+  );
+  t.after(stop);
+
+  assert.equal(
+    extension.packageJSON.enabledApiProposals.includes(
+      "customTextEditorNavigation",
+    ),
+    true,
+  );
+  assert.equal(
+    extension.packageJSON.enabledApiProposals.includes("customEditorMove"),
+    true,
+  );
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+    resolveCustomTextEditorNavigation(
+      doc: unknown,
+      panel: unknown,
+    ): {
+      revealRange(
+        range: Range,
+        options?: {
+          selection?: Range | undefined;
+          preserveFocus?: boolean | undefined;
+        },
+        token?: { isCancellationRequested: boolean },
+      ): Promise<void>;
+    };
+  };
+
+  const lines = ["# Section Heading", "Target match token here", "Omega line"];
+  const doc = createFakeDoc(note, lines);
+  const fakePanel = createFakeWebviewPanel();
+
+  const navController = provider.resolveCustomTextEditorNavigation(
+    doc,
+    fakePanel,
+  );
+  provider.resolveCustomTextEditor(doc, fakePanel);
+  assert.ok(openedShell);
+
+  const delivered: {
+    fragment: string;
+    at?: number;
+    to?: number;
+    preserveFocus?: boolean;
+  }[] = [];
+  const unregister = navigation.registerReveal({
+    id: openedShell.id,
+    uri: note,
+    active: () => true,
+    async reveal(target) {
+      delivered.push({
+        fragment: target.fragment,
+        ...(target.at !== undefined ? { at: target.at } : {}),
+        ...(target.to !== undefined ? { to: target.to } : {}),
+        ...(target.preserveFocus ? { preserveFocus: true } : {}),
+      });
+      return true;
+    },
+  });
+  t.after(unregister);
+
+  // 1. Search match click: options.selection spans [start, end]
+  const matchCol = lines[1]!.indexOf("match token");
+  const matchRange = new Range(
+    new Position(1, matchCol),
+    new Position(1, matchCol + "match token".length),
+  );
+  await navController.revealRange(matchRange, {
+    selection: matchRange,
+    preserveFocus: false,
+  });
+
+  // 2. Outline / Breadcrumbs single-click: range spans full section, options.selection is collapsed at heading start
+  const sectionRange = new Range(new Position(0, 0), new Position(2, 10));
+  const collapsedHeading = new Range(new Position(0, 0), new Position(0, 0));
+  await navController.revealRange(sectionRange, {
+    selection: collapsedHeading,
+    preserveFocus: false,
+  });
+
+  // 3. Cmd+Shift+O preview: options.selection is undefined, preserveFocus is true
+  await navController.revealRange(sectionRange, {
+    selection: undefined,
+    preserveFocus: true,
+  });
+
+  const lfText = lines.join("\n");
+  const expectedAt = lfText.indexOf("match token");
+  const expectedTo = expectedAt + "match token".length;
+  assert.deepEqual(delivered, [
+    {
+      fragment: "",
+      at: expectedAt,
+      to: expectedTo,
+    },
+    {
+      fragment: "",
+      at: 0,
+    },
+    {
+      fragment: "",
+      at: 0,
+      preserveFocus: true,
+    },
+  ]);
+});
+
+test("CustomTextEditorNavigation tracks selection, fires onDidChangeSelection, and round-trips viewState", async (t) => {
+  const panels: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => panels);
+  let openedShell: PanelShell | undefined;
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extensionUri: Uri.parse("file:///ext") as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShell = shell;
+      panels.push(shell);
+    },
+  );
+  t.after(stop);
+
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+    resolveCustomTextEditorNavigation(
+      doc: unknown,
+      panel: unknown,
+    ): {
+      readonly selection: Selection | undefined;
+      onDidChangeSelection(listener: (sel: Selection | undefined) => void): {
+        dispose(): void;
+      };
+      captureViewState(): Promise<unknown>;
+      restoreViewState(state: unknown): Promise<void>;
+    };
+  };
+
+  const lines = ["Alpha line", "Second line target"];
+  const doc = createFakeDoc(note, lines);
+  const fakePanel = createFakeWebviewPanel();
+  const navController = provider.resolveCustomTextEditorNavigation(
+    doc,
+    fakePanel,
+  );
+  provider.resolveCustomTextEditor(doc, fakePanel);
+  assert.ok(openedShell);
+
+  const events: (Selection | undefined)[] = [];
+  const sub = navController.onDidChangeSelection((sel) => events.push(sel));
+  t.after(() => sub.dispose());
+
+  const lfText = lines.join("\n");
+  const anchorEditor = lfText.indexOf("Second");
+  const headEditor = anchorEditor + "Second".length;
+  openedShell.reportSelection?.({ anchor: anchorEditor, head: headEditor });
+  // Duplicate report does not fire twice
+  openedShell.reportSelection?.({ anchor: anchorEditor, head: headEditor });
+
+  assert.equal(events.length, 1);
+  assert.deepEqual(navController.selection?.start, new Position(1, 0));
+  assert.deepEqual(navController.selection?.end, new Position(1, 6));
+
+  const storedState: unknown = {
+    scrollTop: 120,
+    anchor: anchorEditor,
+    head: headEditor,
+  };
+  let restoredState: unknown;
+  openedShell.bindViewState?.({
+    capture: async () => storedState,
+    restore: async (state) => {
+      restoredState = state;
+    },
+  });
+
+  const captured = await navController.captureViewState();
+  assert.deepEqual(captured, storedState);
+  await navController.restoreViewState({ scrollTop: 240 });
+  assert.deepEqual(restoredState, { scrollTop: 240 });
+});
+
+test("moveCustomTextEditor rebinds existing WebviewPanel to newDocument without disposing panel and restores viewState", async (t) => {
+  const openedShells: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => openedShells);
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extensionUri: Uri.parse("file:///ext") as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShells.push(shell);
+    },
+  );
+  t.after(stop);
+
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+    resolveCustomTextEditorNavigation(
+      doc: unknown,
+      panel: unknown,
+    ): {
+      readonly selection: Selection | undefined;
+      revealRange(
+        range: Range,
+        options?: { selection?: Range; preserveFocus?: boolean },
+      ): Promise<void>;
+    };
+    moveCustomTextEditor(newDocument: unknown, panel: unknown): Promise<void>;
+  };
+
+  const oldDoc = createFakeDoc(note, ["Old header", "Target line"]);
+  const fakePanel = createFakeWebviewPanel();
+  const navController = provider.resolveCustomTextEditorNavigation(
+    oldDoc,
+    fakePanel,
+  );
+  provider.resolveCustomTextEditor(oldDoc, fakePanel);
+  assert.equal(openedShells.length, 1);
+  const firstShell = openedShells[0]!;
+
+  let firstShellDisposed = 0;
+  firstShell.onDispose(() => {
+    firstShellDisposed++;
+  });
+  firstShell.bindViewState?.({
+    capture: async () => ({ savedFrom: note, scrollTop: 88 }),
+    restore: async () => {},
+  });
+
+  const renamedUri = "file:///vault/Renamed.md";
+  const newDoc = createFakeDoc(renamedUri, [
+    "Renamed header line",
+    "Moved target phrase here",
+  ]);
+  await provider.moveCustomTextEditor(newDoc, fakePanel);
+
+  assert.equal(
+    fakePanel.disposed,
+    false,
+    "underlying WebviewPanel stays alive",
+  );
+  assert.equal(firstShellDisposed, 1, "old PanelShell binding is cleaned up");
+  assert.equal(openedShells.length, 2);
+  const secondShell = openedShells[1]!;
+  assert.equal(secondShell.id, firstShell.id);
+  assert.equal(secondShell.document.uri, renamedUri);
+
+  let restoredOnNewShell: unknown;
+  secondShell.bindViewState?.({
+    capture: async () => undefined,
+    restore: async (state) => {
+      restoredOnNewShell = state;
+    },
+  });
+  await tick();
+  assert.deepEqual(restoredOnNewShell, { savedFrom: note, scrollTop: 88 });
+
+  // Navigation controller now uses newDocument coordinates
+  const delivered: { at?: number; to?: number }[] = [];
+  const unregister = navigation.registerReveal({
+    id: secondShell.id,
+    uri: renamedUri,
+    active: () => true,
+    async reveal(target) {
+      delivered.push({
+        ...(target.at !== undefined ? { at: target.at } : {}),
+        ...(target.to !== undefined ? { to: target.to } : {}),
+      });
+      return true;
+    },
+  });
+  t.after(unregister);
+
+  const col = "Moved ".length;
+  const selRange = new Range(
+    new Position(1, col),
+    new Position(1, col + "target phrase".length),
+  );
+  await navController.revealRange(selRange, { selection: selRange });
+  const newLf = ["Renamed header line", "Moved target phrase here"].join("\n");
+  const expectedAt = newLf.indexOf("target phrase");
+  assert.deepEqual(delivered, [
+    {
+      at: expectedAt,
+      to: expectedAt + "target phrase".length,
+    },
+  ]);
+});

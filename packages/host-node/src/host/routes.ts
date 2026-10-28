@@ -19,6 +19,7 @@ import type { PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
 import type { LumiereHost } from "./start";
 import { serveFile, serveStatic } from "./static";
+import { createCommandRoutes } from "./command-palette";
 import { createSettingsRoutes } from "./settings-routes";
 import { createViewRoutes } from "./view-routes";
 
@@ -56,6 +57,9 @@ export function createEditorRoutes(
     pluginTitles(),
     settingsUnavailableIn(NODE_HOST_OFFERS),
   );
+  const commands = host.commands
+    ? createCommandRoutes(host.commands)
+    : undefined;
   return {
     async handle(req, res) {
       const url = new URL(req.url ?? "/", "http://host");
@@ -74,6 +78,8 @@ export function createEditorRoutes(
         return views.handle(req, res, rest.slice("/views".length));
       } else if (rest === "/settings") {
         return settings.handle(req, res, "");
+      } else if (rest === "/commands" && commands) {
+        return commands.handle(req, res, "");
       } else {
         return false;
       }
