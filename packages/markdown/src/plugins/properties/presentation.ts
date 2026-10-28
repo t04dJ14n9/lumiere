@@ -23,7 +23,7 @@ export class PropertyPresentation {
 
   /** The properties block is a widget (not source text, not hidden). */
   get isWidget(): boolean {
-    return this.display === "visible";
+    return this.display === "visible" && this.preview.mode !== "source";
   }
 
   configure(display: Display): void {

@@ -406,15 +406,15 @@ test("decoratePersistentOffViewport caches persistent nodes per Tree and skips f
   assert.ok(offViewportClasses.includes("persist-embed"));
 });
 
-test("revealed ATX heading marks its trailing separator spaces with md-header-space so # never wraps onto its own line", () => {
-  const doc = "#  Heading title\n\nafter";
-  const state = EditorState.create({
+test("ATX heading matches Obsidian formatting-header: single delimiter space and visible empty heading when unrevealed", () => {
+  const doc = "#  Heading title\n\n# \n\nafter";
+  const revealed = EditorState.create({
     doc,
     selection: { anchor: 3 },
     extensions: [documentTree],
   });
   const marks: Array<{ cls: string; text: string }> = [];
-  inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+  inlineDecorations(revealed, [{ from: 0, to: doc.length }]).between(
     0,
     doc.length,
     (from, to, value) => {
@@ -425,6 +425,8 @@ test("revealed ATX heading marks its trailing separator spaces with md-header-sp
   );
   assert.deepEqual(marks, [
     { cls: "md-syntax-mark", text: "#" },
-    { cls: "md-header-space", text: "  " },
+    { cls: "md-header-space", text: " " },
+    { cls: "md-syntax-mark", text: "#" },
+    { cls: "md-header-space", text: " " },
   ]);
 });

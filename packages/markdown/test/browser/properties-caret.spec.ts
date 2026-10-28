@@ -189,4 +189,52 @@ test.describe("the caret stays out of the Properties block", () => {
       .poll(() => page.evaluate(() => window.harness.text))
       .toContain("title: Changed");
   });
+
+  test("toggling Source mode makes raw frontmatter YAML directly editable", async ({
+    page,
+  }) => {
+    await start(page, 5, 0);
+    await page.evaluate(() => window.harness.mode());
+    await page.evaluate(() => {
+      const view = [...window.harness.views[0]!.plugins].find(
+        (fiber) => fiber.definition.name === "livePreview",
+      )!.context!.editor.view;
+      view.focus();
+      const line2 = view.state.doc.line(2);
+      view.dispatch({
+        selection: { anchor: line2.to, head: line2.to },
+        changes: { from: line2.from, to: line2.to, insert: "title: SourceEdited" },
+      });
+    });
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toContain("title: SourceEdited");
+  });
+
+  test("clicking a sources card opens the YAML textarea and commits edits", async ({
+    page,
+  }) => {
+    const note = [
+      "---",
+      "sources:",
+      "  - title: Original Source",
+      "    resource: ../raw/original.md",
+      "    id: src-1",
+      "---",
+      "Body text",
+    ].join("\n");
+    await start(page, 6, 0, note);
+    const row = page.locator('[data-property-key="sources"]');
+    await row.locator(".source-title").click();
+    const textarea = row.locator("textarea.metadata-input-yaml");
+    await expect(textarea).toBeVisible();
+    await expect(textarea).toBeFocused();
+    await textarea.fill(
+      "- title: Updated Source\n  resource: ../raw/updated.md\n  id: src-1",
+    );
+    await textarea.press("ControlOrMeta+Enter");
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toContain("Updated Source");
+  });
 });

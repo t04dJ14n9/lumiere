@@ -431,6 +431,7 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  cursor: text;
 }
 .property-complex-edit {
   position: absolute;
