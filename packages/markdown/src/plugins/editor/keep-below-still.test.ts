@@ -1,81 +1,160 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { BlockType } from "@codemirror/view";
-import type { BlockInfo } from "@codemirror/view";
+import { strict as assert } from "node:assert";
+import { describe, it } from "node:test";
+import { BlockType, type BlockInfo } from "@codemirror/view";
 import { holdBelow, type MeasuredView } from "./keep-below-still";
 
 interface Block {
   from: number;
+  to?: number;
   height: number;
-  type: BlockType;
+  type: BlockType | readonly BlockInfo[];
 }
 
-/**
- * A note of blocks stacked from the document's top, in a 600 px scroller
- * scrolled to `scrollTop`.
- */
-function note(blocks: Block[], scrollTop: number): MeasuredView {
-  const placed = () => {
-    let top = 0;
-    return blocks.map((block) => {
-      const info = { ...block, top, bottom: top + block.height };
-      top += block.height;
-      return info as unknown as BlockInfo;
-    });
-  };
+function note(
+  blocks: readonly Block[],
+  scrollTop: number,
+  clientHeight = 800,
+  scaleY = 1,
+): MeasuredView {
+  let top = 0;
+  const laid = blocks.map((block) => {
+    const info = {
+      from: block.from,
+      to: block.to ?? block.from + 1,
+      top,
+      height: block.height,
+      type: block.type,
+    } as unknown as BlockInfo;
+    top += block.height;
+    return info;
+  });
   return {
+    documentTop: -scrollTop * scaleY,
+    scaleY,
     scrollDOM: {
-      clientHeight: 600,
-      getBoundingClientRect: () => ({ top: 0 }),
-    } as unknown as HTMLElement,
-    documentTop: -scrollTop,
+      clientHeight,
+      getBoundingClientRect: () => ({ top: 0 }) as DOMRect,
+    } as HTMLElement,
     lineBlockAt: (pos) =>
-      [...placed()].reverse().find((block) => block.from <= pos) ??
-      placed()[0]!,
+      laid.find((block) => block.from <= pos && pos <= block.to) ?? laid[0]!,
     lineBlockAtHeight: (height) =>
-      placed().find((block) => block.top + block.height > height) ??
-      placed().at(-1)!,
+      laid.find((block) => block.top + block.height >= height) ??
+      laid[laid.length - 1]!,
   };
 }
 
-const text = (from: number, height = 24): Block => ({
+const text = (from: number, height: number, to?: number): Block => ({
   from,
+  ...(to === undefined ? {} : { to }),
   height,
   type: BlockType.Text,
 });
-const diagram = (from: number, height: number): Block => ({
+const diagram = (from: number, height: number, to?: number): Block => ({
   from,
+  ...(to === undefined ? {} : { to }),
   height,
   type: BlockType.WidgetRange,
 });
 
-test("a rendered block across the top edge is held by its bottom as it resizes", () => {
-  // Starts 300 px above the view, ends 600 px into it.
-  const blocks = [text(0, 900), diagram(10, 900), text(20), text(30)];
-  const first = holdBelow(note(blocks, 1200), undefined);
-  assert.deepEqual(first, { scroll: 0, now: { from: 10, height: 900 } });
+describe("holdBelow", () => {
+  it("scrolls by the delta when a rendered block straddling the top edge changes height", () => {
+    const before = note([text(0, 100), diagram(10, 900), text(20, 400)], 500);
+    const first = holdBelow(before, undefined);
+    assert.deepEqual(first, {
+      scroll: 0,
+      now: { from: 10, to: 11, height: 900 },
+    });
 
-  blocks[1] = diagram(10, 700);
-  const shrunk = holdBelow(note(blocks, 1200), first.now);
-  assert.equal(shrunk.scroll, -200, "the text below stays where it was");
-  assert.deepEqual(shrunk.now, { from: 10, height: 700 });
-});
+    const after = note([text(0, 100), diagram(10, 620), text(20, 400)], 500);
+    const second = holdBelow(after, first.now);
+    assert.deepEqual(second, {
+      scroll: -280,
+      now: { from: 10, to: 11, height: 620 },
+    });
+  });
 
-test("a block that shrinks out of view above is still held by its bottom", () => {
-  const blocks = [text(0, 900), diagram(10, 900), text(20), text(30)];
-  const first = holdBelow(note(blocks, 1200), undefined);
-  blocks[1] = diagram(10, 200);
-  assert.equal(holdBelow(note(blocks, 1200), first.now).scroll, -700);
-});
+  it("leaves plain text and blocks taller than the pane to CodeMirror", () => {
+    const plain = note([text(0, 900), text(10, 400)], 500);
+    assert.equal(holdBelow(plain, undefined).now, undefined);
 
-test("a line of text across the edge, or a block covering the view, is left to CodeMirror", () => {
-  const wrapped = [text(0, 900), text(10, 900), text(20)];
-  assert.equal(holdBelow(note(wrapped, 1200), undefined).now, undefined);
-  const covering = [text(0, 900), diagram(10, 2000), text(20)];
-  assert.equal(holdBelow(note(covering, 1200), undefined).now, undefined);
-});
+    const tallerThanPane = note([diagram(0, 1500), text(10, 400)], 200, 800);
+    assert.equal(holdBelow(tallerThanPane, undefined).now, undefined);
+  });
 
-test("a block fully in view is left to CodeMirror", () => {
-  const blocks = [text(0, 900), diagram(10, 300), text(20)];
-  assert.equal(holdBelow(note(blocks, 850), undefined).now, undefined);
+  it("does not jump upward when a top-straddling rendered block unfolds into source lines", () => {
+    const before = note(
+      [text(0, 100, 9), diagram(10, 900, 50), text(51, 400, 80)],
+      500,
+    );
+    const first = holdBelow(before, undefined);
+    assert.deepEqual(first, {
+      scroll: 0,
+      now: { from: 10, to: 50, height: 900 },
+    });
+
+    // Unfolding replaces the single WidgetRange [10..50] with individual text lines.
+    const unfolded = note(
+      [
+        text(0, 100, 9),
+        text(10, 24, 20),
+        text(21, 24, 30),
+        text(31, 24, 50),
+        text(51, 400, 80),
+      ],
+      500,
+    );
+    const second = holdBelow(unfolded, first.now);
+    assert.equal(second.scroll, 0);
+    assert.equal(second.now, undefined);
+  });
+
+  it("does not jump when a rendered block's span changes or becomes a composite block", () => {
+    const before = note(
+      [text(0, 100, 9), diagram(10, 900, 50), text(51, 400, 80)],
+      500,
+    );
+    const first = holdBelow(before, undefined);
+
+    const differentSpan = note(
+      [text(0, 100, 9), diagram(10, 24, 20), text(51, 400, 80)],
+      500,
+    );
+    assert.equal(holdBelow(differentSpan, first.now).scroll, 0);
+
+    const composite = note(
+      [
+        text(0, 100, 9),
+        { from: 10, to: 50, height: 24, type: [] },
+        text(51, 400, 80),
+      ],
+      500,
+    );
+    assert.equal(holdBelow(composite, first.now).scroll, 0);
+  });
+
+  it("divides the top-edge offset by view.scaleY when the editor is scaled", () => {
+    const scaledBefore = note(
+      [text(0, 100, 9), diagram(10, 900, 50), text(51, 400, 80)],
+      500,
+      800,
+      2,
+    );
+    const first = holdBelow(scaledBefore, undefined);
+    assert.deepEqual(first, {
+      scroll: 0,
+      now: { from: 10, to: 50, height: 900 },
+    });
+
+    const scaledAfter = note(
+      [text(0, 100, 9), diagram(10, 620, 50), text(51, 400, 80)],
+      500,
+      800,
+      2,
+    );
+    const second = holdBelow(scaledAfter, first.now);
+    assert.deepEqual(second, {
+      scroll: -280,
+      now: { from: 10, to: 50, height: 620 },
+    });
+  });
 });

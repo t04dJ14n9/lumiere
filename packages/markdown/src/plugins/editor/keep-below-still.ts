@@ -1,69 +1,70 @@
+/**
+ * When a tall rendered block (an async Mermaid diagram, an image loading, a
+ * math block) is partly above the top of the pane and its bottom is on
+ * screen, CodeMirror's scroll anchor is that block's top: a height change
+ * moves its bottom and the text below it. This plugin scrolls by the same
+ * delta when that happens, so the text below stays where the reader's eyes are.
+ */
 import {
   BlockType,
   ViewPlugin,
+  type BlockInfo,
   type EditorView,
   type ViewUpdate,
 } from "@codemirror/view";
 
-/**
- * Keeps the text below the top edge still when the block straddling that
- * edge changes height.
- *
- * CodeMirror holds the scroll position by the top of the block at the top
- * edge. When that block starts above the view and ends inside it, and it
- * changes height (a diagram drawn shorter or taller than its reserve, an
- * image loading, a formula typeset), holding its top, which is off screen,
- * moves all the text below it, which is what the reader sees. This holds
- * the block's bottom instead. A block that covers the whole view keeps
- * CodeMirror's way: the reader sees only the block.
- *
- * Only rendered blocks count. A line of text changes height when CodeMirror
- * first measures it, in place of its guess, as when it scrolls a heading
- * into view after a jump, and CodeMirror places that scroll itself.
- *
- * It stands aside while a restored reading position is pinned (see
- * view-state.ts): the pin then places the view, and two corrections for
- * one change would scroll twice.
- */
 export interface TopEdge {
-  /** The straddling block, by where it starts. */
+  /** The straddling block, by where it starts and ends. */
   readonly from: number;
+  readonly to?: number;
   readonly height: number;
 }
 
-/** The parts of the editor this reads, all of them measured layout. */
 export type MeasuredView = Pick<
   EditorView,
   "scrollDOM" | "documentTop" | "lineBlockAt" | "lineBlockAtHeight"
->;
+> & {
+  readonly scaleY?: number;
+};
+
+function isRenderedBlock(block: Pick<BlockInfo, "type">): boolean {
+  return block.type !== BlockType.Text && !Array.isArray(block.type);
+}
 
 /**
- * The block across the top edge, when its bottom is in view; `scrolled` is
- * a scroll about to be made.
+ * The rendered block straddling the pane's top edge with its bottom on
+ * screen, after adding `scrolled` to where the pane's top was read. Plain
+ * text is left to CodeMirror's own anchor; a block taller than the pane has
+ * no text below it on screen to keep still.
  */
 function straddlingBlock(
   view: MeasuredView,
   scrolled = 0,
 ): TopEdge | undefined {
   const scroller = view.scrollDOM;
+  const scaleY = view.scaleY || 1;
   // The top edge, in the document's coordinates, as CodeMirror's height map
   // has them; CodeMirror's own anchor looks 8 px below it too.
   const edge =
-    scroller.getBoundingClientRect().top - view.documentTop + scrolled;
+    (scroller.getBoundingClientRect().top - view.documentTop) / scaleY +
+    scrolled;
   if (edge <= 0) {
     return undefined;
   }
   const block = view.lineBlockAtHeight(edge + 8);
   const bottom = block.top + block.height;
   if (
-    block.type === BlockType.Text ||
-    Array.isArray(block.type) ||
+    !isRenderedBlock(block) ||
     block.top >= edge ||
     bottom > edge + scroller.clientHeight
   ) {
     return undefined;
   }
-  return { from: block.from, height: block.height };
+  return {
+    from: block.from,
+    ...(block.to === undefined ? {} : { to: block.to }),
+    height: block.height,
+  };
 }
 
 /**
@@ -77,8 +78,15 @@ export function holdBelow(
   last: TopEdge | undefined,
 ): { scroll: number; now: TopEdge | undefined } {
   const block = last && view.lineBlockAt(last.from);
+  const sameRenderedBlock = Boolean(
+    last &&
+    block &&
+    isRenderedBlock(block) &&
+    block.from === last.from &&
+    (last.to === undefined || block.to === undefined || block.to === last.to),
+  );
   const grown =
-    last && block && block.from === last.from ? block.height - last.height : 0;
+    sameRenderedBlock && block && last ? block.height - last.height : 0;
   const scroll = Math.abs(grown) > 1 ? grown : 0;
   return { scroll, now: straddlingBlock(view, scroll) };
 }
