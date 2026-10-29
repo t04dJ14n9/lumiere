@@ -9,6 +9,8 @@ import {
   rememberHtmlBlockHeight,
   rememberMarkdownBlockContentWidth,
   rememberMarkdownBlockHeight,
+  unwatchMarkdownBlock,
+  watchMarkdownBlock,
   wrappedVisualRows,
 } from "./markdown-block-height";
 
@@ -171,6 +173,17 @@ test("remembered MarkdownBlock height beats the formula on remount", () => {
   assert.equal(markdownBlockEstimatedHeight(source), floor);
 });
 
+test("a drawn Mermaid diagram's height is its estimate, even when the formula guesses taller", () => {
+  clearMarkdownBlockHeights();
+  const lines = Array.from({ length: 12 }, (_, n) => `  N${n} --> N${n + 1}`);
+  const source = ["```mermaid", "flowchart TB", ...lines, "```"].join("\n");
+  const formula = markdownBlockEstimatedHeight(source);
+  rememberMarkdownBlockHeight(source, 220);
+  assert.ok(formula > 600, `formula ${formula}`);
+  assert.equal(markdownBlockEstimatedHeight(source), 220);
+  clearMarkdownBlockHeights();
+});
+
 test("wrapping callout lines reserve multiple visual rows per source line", () => {
   const longLine =
     "> Callout body line 0 with a very long run of words that should wrap on a narrow pane and inflate the painted height beyond line times twenty four.";
@@ -209,4 +222,61 @@ test("live content width tightens charsPerLine vs fixed-40 fallback", () => {
   const wideH = markdownBlockEstimatedHeight(source);
   assert.ok(wideH <= wideFloor, `wide ${wideH} vs fallback ${wideFloor}`);
   clearMarkdownBlockContentWidth();
+});
+
+test("a block's remembered height follows its latest measure, down as well as up", () => {
+  clearMarkdownBlockHeights();
+  const callout = "> [!note] Wrap\n> " + "word ".repeat(80);
+  rememberMarkdownBlockHeight(callout, 900);
+  // The pane got wider, so the callout wraps less.
+  rememberMarkdownBlockHeight(callout, 420);
+  assert.equal(markdownBlockEstimatedHeight(callout), 420);
+  clearMarkdownBlockHeights();
+});
+
+test("a measured formula's height wins over the guess for a formula", () => {
+  clearMarkdownBlockHeights();
+  const formula = "$$a + b$$";
+  assert.ok(markdownBlockEstimatedHeight(formula) > 100, "the guess is tall");
+  rememberMarkdownBlockHeight(formula, 46);
+  assert.equal(markdownBlockEstimatedHeight(formula), 46);
+  clearMarkdownBlockHeights();
+});
+
+test("a block holding its reserved height records no height", () => {
+  clearMarkdownBlockHeights();
+  const previous = globalThis.ResizeObserver;
+  let report: ResizeObserverCallback = () => {};
+  globalThis.ResizeObserver = class {
+    constructor(callback: ResizeObserverCallback) {
+      report = callback;
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  try {
+    const formula = "$$c + d$$";
+    const guess = markdownBlockEstimatedHeight(formula);
+    const shell = {
+      style: { minHeight: `${guess}px` },
+      querySelector: () => null,
+    } as unknown as HTMLElement;
+    watchMarkdownBlock(shell, formula);
+    const resized = (height: number) =>
+      report(
+        [{ contentRect: { height } } as ResizeObserverEntry],
+        {} as ResizeObserver,
+      );
+    // The box is the reserve, not the formula.
+    resized(guess);
+    assert.equal(markdownBlockEstimatedHeight(formula), guess);
+    shell.style.minHeight = "";
+    resized(46);
+    assert.equal(markdownBlockEstimatedHeight(formula), 46);
+    unwatchMarkdownBlock(shell);
+  } finally {
+    globalThis.ResizeObserver = previous;
+    clearMarkdownBlockHeights();
+  }
 });

@@ -13,7 +13,6 @@ import {
 import { silentLogger, type Logger } from "@workshop/core";
 import type {
   ContributedSetting,
-  VaultCodeTrust,
   WorkerLauncher,
   WorkerName,
 } from "@workshop/markdown/portable";
@@ -30,6 +29,7 @@ export {
   openPdfPage,
   type EditorPage,
   type EditorPageUrls,
+  type ServedPage,
 } from "./pages";
 export { createWebPlatform } from "./platform";
 export { sha256 } from "./sha256";
@@ -51,8 +51,6 @@ export interface HostWebOptions {
   readonly menus?: readonly MenuContribution[];
   readonly identity?: HostIdentity;
   readonly logger?: Logger;
-  /** Asks the owner whether a vault's own code may run; without it, none runs. */
-  readonly vaultCode?: VaultCodeTrust;
 }
 
 export function startHostWeb(options: HostWebOptions): Promise<LumiereHost> {
@@ -66,6 +64,5 @@ export function startHostWeb(options: HostWebOptions): Promise<LumiereHost> {
     contributed: options.contributed,
     ...(options.menus ? { menus: options.menus } : {}),
     logger: options.logger ?? silentLogger,
-    ...(options.vaultCode ? { vaultCode: options.vaultCode } : {}),
   });
 }

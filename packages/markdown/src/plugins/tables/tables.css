@@ -24,6 +24,8 @@
   font-size: 14px;
   line-height: 1;
   overflow: hidden;
+  /* Grips appear at once: a fade would start one animation per grip on hover. */
+  transition: none;
 }
 .table-handle[hidden],
 .table-drop-indicator[hidden] {
@@ -72,18 +74,28 @@
   background: var(--accent);
   pointer-events: none;
 }
-/* BH-016: sticky custom horizontal scrollbar for tall wide tables. First child
- * of `.hybrid-table`; sticky `top` is set in JS to the note scrollport bottom.
- * Negative margin collapses layout so the table does not shift. Hidden when the
- * native bar is already on screen (or the table is off-screen / narrow). */
+/* BH-016: sticky custom horizontal scrollbar for tall wide tables, right after
+ * `.table-scroll`. Its own place is over the native bar; `bottom: 0` keeps it
+ * on the note scrollport's bottom edge while that place is below it, and the
+ * table (its containing block) takes it away once the table leaves the
+ * viewport. The foot covers the same strip, and while the foot is on screen
+ * the mirror is hidden. Negative margins keep both out of the table's height. */
+.table-hscroll-foot,
+.table-hscroll-sticky {
+  box-sizing: border-box;
+  height: 14px;
+  margin-top: -14px;
+}
+.table-hscroll-foot {
+  visibility: hidden;
+  pointer-events: none;
+}
 .table-hscroll-sticky {
   contain: inline-size;
   position: sticky;
+  bottom: 0;
   z-index: 5;
-  box-sizing: border-box;
   width: 100%;
-  height: 14px;
-  margin: 0 0 -14px;
   pointer-events: auto;
   background: color-mix(
     in srgb,
@@ -121,7 +133,7 @@
   overflow-x: auto;
   /* overflow-x: auto would otherwise compute overflow-y: auto and let
      Chromium keep vertical wheel in this nested scrollport. Hide Y so the
-     note scroller (or our instant forwarder) owns vertical motion. */
+     note scroller owns vertical motion. */
   overflow-y: hidden;
 }
 .table-wrapper {
@@ -208,6 +220,7 @@
   justify-content: center;
   box-sizing: border-box;
   opacity: 0;
+  transition: none;
   /* No fade: a 0.1s transition left the strip hittable while still invisible,
      so an edge press could insert a row/column (whole-table rewrite / dirty
      buffer) before the + was visible. Opacity snaps on :hover instead. */
@@ -260,6 +273,11 @@
      in intrinsic row sizing instead of matching the rendered cell's content
      box, so opening the projected editor can make only that row taller. */
   height: auto;
+  /* The cell grows with its text, so this scroller never needs to scroll.
+     Visible makes it no scroll container at all: a wheel over the cell goes
+     to the table and the note. Hidden would still be one, just a few pixels
+     narrower than a caret at the end of the line, which it then clips while
+     the editor scrolls the cell's text sideways to reveal it. */
   overflow: visible;
   /* Same 1.3 as .hybrid-table table. Without this the nested editor inherits
      the note's --line-height (1.5 by default) and the cell grows when the

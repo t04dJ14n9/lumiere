@@ -103,7 +103,11 @@ export const protocol = defineProtocol("editor", {
     initialized: Schema.object({}),
     configure: featureSettings,
     configureEditor: editorConfig,
-    selectionChanged: Schema.object({ hasSelection: Schema.boolean() }),
+    selectionChanged: Schema.object({
+      hasSelection: Schema.boolean(),
+      anchor: offset.optional(),
+      head: offset.optional(),
+    }),
     focusChanged: Schema.object({ hasFocus: Schema.boolean() }),
   },
 });

@@ -6,6 +6,16 @@ import {
 } from "../../webview/ui/edge-scroll";
 import { cellAtPoint, cellUnderPoint } from "./hit-test";
 
+export interface GestureFinish {
+  origin: CellPosition;
+  offset?: number;
+  selected: boolean;
+  nativeText: boolean;
+  detail: number;
+  startPoint: PointerPoint;
+  endPoint: PointerPoint;
+}
+
 interface Gesture {
   pointer: number;
   origin: CellPosition;
@@ -13,16 +23,14 @@ interface Gesture {
   nativeText: boolean;
   selected: boolean;
   head: CellPosition;
+  detail: number;
+  startPoint: PointerPoint;
   point: PointerPoint;
 }
 
 interface SelectionActions {
   select(anchor: CellPosition, head: CellPosition): void;
-  finish(
-    origin: CellPosition,
-    offset: number | undefined,
-    selected: boolean,
-  ): void;
+  finish(gesture: GestureFinish): void;
 }
 
 /** Pointer lifecycle for rectangular selection, separate from cell editing. */
@@ -55,9 +63,18 @@ export class TableSelectionDrag {
         if (!gesture || gesture.pointer !== event.pointerId) {
           return;
         }
-        this.update({ x: event.clientX, y: event.clientY }, false);
+        const endPoint = { x: event.clientX, y: event.clientY };
+        this.update(endPoint, false);
         this.cancel();
-        this.actions.finish(gesture.origin, gesture.offset, gesture.selected);
+        this.actions.finish({
+          origin: gesture.origin,
+          ...(gesture.offset === undefined ? {} : { offset: gesture.offset }),
+          selected: gesture.selected,
+          nativeText: gesture.nativeText,
+          detail: gesture.detail,
+          startPoint: gesture.startPoint,
+          endPoint,
+        });
       },
       { signal: this.events.signal },
     );
@@ -123,6 +140,7 @@ export class TableSelectionDrag {
     nativeText: boolean,
   ): void {
     this.cancel();
+    const startPoint = { x: event.clientX, y: event.clientY };
     this.gesture = {
       pointer: event.pointerId,
       origin,
@@ -130,7 +148,9 @@ export class TableSelectionDrag {
       nativeText,
       selected: false,
       head: origin,
-      point: { x: event.clientX, y: event.clientY },
+      detail: event.detail || 1,
+      startPoint,
+      point: startPoint,
     };
     if (!nativeText) {
       this.root.setPointerCapture(event.pointerId);

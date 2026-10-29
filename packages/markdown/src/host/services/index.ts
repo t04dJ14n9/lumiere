@@ -53,10 +53,12 @@ export function createHostServices(
     extensions: createExtensions(extensionUri),
     navigation,
     customEditors: createCustomEditors({
+      extension,
       extensionUri,
       documents,
       navigation,
       panels,
+      storage,
     }),
     agentHost: createAgentHost(),
     git: createGitAccess(),

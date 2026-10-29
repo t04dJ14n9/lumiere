@@ -2,6 +2,7 @@ import { Facet } from "@codemirror/state";
 import { Direction, EditorView, ViewPlugin } from "@codemirror/view";
 import type { ViewUpdate } from "@codemirror/view";
 import type { Heading } from "../../markdown/metadata/heading-extract";
+import { chromeInsetTop } from "../../webview/ui/chrome-inset";
 import { headingIndex, stickyHeadings } from "./model";
 
 export const stickyMaxLines = Facet.define<number, number>({
@@ -76,7 +77,11 @@ export class StickyScrollView {
     const scroll = view.scrollDOM.getBoundingClientRect();
     const content = view.contentDOM.getBoundingClientRect();
     const rowHeight = view.defaultLineHeight;
-    const top = scroll.top + view.scrollDOM.clientTop;
+    // Below the embedder's controls, where they float over the page.
+    const top =
+      scroll.top +
+      view.scrollDOM.clientTop +
+      chromeInsetTop(view.dom.ownerDocument);
     const limit = Math.min(
       view.state.facet(stickyMaxLines),
       Math.floor(view.scrollDOM.clientHeight / (3 * rowHeight)),
@@ -250,7 +255,9 @@ export function stickyScrollExtension(navigate: (position: number) => void) {
     headingIndex,
     chrome,
     EditorView.scrollMargins.of((view) => ({
-      top: view.plugin(chrome)?.height ?? 0,
+      top:
+        chromeInsetTop(view.dom.ownerDocument) +
+        (view.plugin(chrome)?.height ?? 0),
     })),
   ];
 }

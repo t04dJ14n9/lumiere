@@ -1,4 +1,46 @@
-/* Rendered code blocks: Prism colours and a copy button shown on hover. */
+/* Rendered code blocks: Lezer + Prism syntax colours and a copy button shown on hover. */
+:root {
+  --code-comment: #7f848e;
+  --code-keyword: #c678dd;
+  --code-type: #e5c07b;
+  --code-function: #61afef;
+  --code-property: #e06c75;
+  --code-constant: #d19a66;
+  --code-number: #d19a66;
+  --code-string: #98c379;
+  --code-tag: #e06c75;
+  --code-attr: #d19a66;
+  --code-builtin: #56b6c2;
+  --code-variable: #abb2bf;
+  --code-namespace: #56b6c2;
+  --code-operator: #56b6c2;
+  --code-punctuation: var(--muted, #8a8a96);
+  --code-deleted: var(
+    --vscode-gitDecoration-deletedResourceForeground,
+    #e06c75
+  );
+  --code-inserted: var(--vscode-gitDecoration-addedResourceForeground, #98c379);
+}
+
+body.vscode-light,
+body.vscode-high-contrast-light {
+  --code-comment: #6a737d;
+  --code-keyword: #cf222e;
+  --code-type: #953800;
+  --code-function: #8250df;
+  --code-property: #0550ae;
+  --code-constant: #0550ae;
+  --code-number: #0550ae;
+  --code-string: #0a3069;
+  --code-tag: #116329;
+  --code-attr: #953800;
+  --code-builtin: #0550ae;
+  --code-variable: #24292f;
+  --code-namespace: #953800;
+  --code-operator: #cf222e;
+  --code-punctuation: var(--muted, #57606a);
+}
+
 .copy-code {
   position: absolute;
   z-index: 2;
@@ -76,49 +118,66 @@
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: var(--vscode-editorCodeLens-foreground, var(--muted));
+  color: var(--code-comment);
   font-style: italic;
 }
 .token.keyword,
 .token.selector,
 .token.important,
 .token.atrule {
-  color: var(--vscode-symbolIcon-keywordForeground, #c678dd);
+  color: var(--code-keyword);
 }
 .token.string,
 .token.char,
 .token.attr-value,
 .token.regex,
 .token.template-string {
-  color: var(--vscode-debugTokenExpression-string, #98c379);
+  color: var(--code-string);
 }
-.token.function,
+.token.function {
+  color: var(--code-function);
+}
+.token.type,
 .token.class-name {
-  color: var(--vscode-symbolIcon-functionForeground, #61afef);
+  color: var(--code-type);
 }
-.token.number,
+.token.number {
+  color: var(--code-number);
+}
 .token.boolean,
 .token.constant,
 .token.symbol {
-  color: var(--vscode-debugTokenExpression-number, #d19a66);
+  color: var(--code-constant);
 }
-/* HTML, as Obsidian colours it: red tag names, yellow attribute names. */
+/* HTML, as Obsidian colours it: red tag names, warm attribute names. */
 .token.tag {
-  color: var(--vscode-gitDecoration-deletedResourceForeground, #e06c75);
+  color: var(--code-tag);
 }
-.token.attr-name,
-.token.builtin,
+.token.attr-name {
+  color: var(--code-attr);
+}
 .token.property {
-  color: var(--vscode-symbolIcon-propertyForeground, #e5c07b);
+  color: var(--code-property);
 }
-.token.operator,
+.token.builtin {
+  color: var(--code-builtin);
+}
+.token.variable {
+  color: var(--code-variable);
+}
+.token.namespace {
+  color: var(--code-namespace);
+}
+.token.operator {
+  color: var(--code-operator);
+}
 .token.punctuation,
 .token.interpolation-punctuation {
-  color: var(--muted);
+  color: var(--code-punctuation);
 }
 .token.deleted {
-  color: var(--vscode-gitDecoration-deletedResourceForeground, #e06c75);
+  color: var(--code-deleted);
 }
 .token.inserted {
-  color: var(--vscode-gitDecoration-addedResourceForeground, #98c379);
+  color: var(--code-inserted);
 }

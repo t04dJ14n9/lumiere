@@ -184,7 +184,7 @@ export class TableKeyboard {
     const wrapped = wrapCell(target, this.grid.model.alignments.length);
     const cell = this.grid.model.rows[wrapped.row]?.[wrapped.column];
     if (cell) {
-      this.projection.open(wrapped, step.column < 0 ? cell.text.length : 0);
+      this.projection.open(wrapped, step.column < 0 ? undefined : 0);
     } else {
       this.leave(wrapped.row < 0 ? -1 : 1);
     }

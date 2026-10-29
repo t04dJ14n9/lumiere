@@ -13,6 +13,7 @@ export interface VimMode {
 export interface VimService {
   extension(): Extension;
   mode(view: EditorView): VimMode | undefined;
+  cm?(view: EditorView): unknown;
   watchMode?(view: EditorView, changed: () => void): () => void;
   sync(from: EditorView, to: EditorView): void;
   /** Route remaining mapped/replayed keys until the source adapter is destroyed. */

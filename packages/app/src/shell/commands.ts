@@ -29,6 +29,8 @@ interface Binding {
 
 export const KEYS: readonly Binding[] = [
   { code: "Comma", mods: ["mod"], command: "open-settings" },
+  { code: "KeyP", mods: ["mod", "shift"], command: "command-palette" },
+  { code: "F1", mods: [], command: "command-palette" },
   { code: "KeyO", mods: ["mod"], command: "open-vault" },
   { code: "KeyW", mods: ["mod"], command: "close-tab" },
   { code: "KeyB", mods: ["mod"], command: "toggle-sidebar" },
@@ -68,7 +70,59 @@ export function shortcutCommand(
   })?.command;
 }
 
-/** Keys pressed in the window itself (not inside an editor page) run commands. */
+/**
+ * Forward a keydown event that an editor iframe left unhandled to the shell
+ * window so window shortcuts work while focus is inside the note editor.
+ */
+export function forwardFrameKeydown(
+  event: KeyboardEvent,
+  targetWindow: Pick<Window, "dispatchEvent"> = window,
+): boolean {
+  if (event.defaultPrevented) {
+    return false;
+  }
+  const init = {
+    key: event.key,
+    code: event.code,
+    metaKey: event.metaKey,
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+    shiftKey: event.shiftKey,
+  };
+  const forwarded =
+    typeof KeyboardEvent === "function"
+      ? new KeyboardEvent("keydown", {
+          ...init,
+          bubbles: true,
+          cancelable: true,
+        })
+      : (Object.assign(
+          new Event("keydown", { bubbles: true, cancelable: true }),
+          init,
+        ) as unknown as KeyboardEvent);
+  targetWindow.dispatchEvent(forwarded);
+  if (forwarded.defaultPrevented) {
+    event.preventDefault();
+    return true;
+  }
+  return false;
+}
+
+/** Listen for unhandled shortcuts in an editor iframe and forward them to `window`. */
+export function forwardFrameShortcuts(
+  frameWindow: Window | null | undefined,
+): () => void {
+  if (!frameWindow) {
+    return () => {};
+  }
+  const listener = (event: KeyboardEvent) => {
+    forwardFrameKeydown(event);
+  };
+  frameWindow.addEventListener("keydown", listener);
+  return () => frameWindow.removeEventListener("keydown", listener);
+}
+
+/** Keys pressed in the window itself (or forwarded from an editor page) run commands. */
 export function useShortcuts(handlers: CommandHandlers): void {
   const latest = useRef(handlers);
   latest.current = handlers;

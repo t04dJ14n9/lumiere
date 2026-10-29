@@ -1,6 +1,7 @@
 import { mathjax } from "@mathjax/src/cjs/mathjax.js";
 import { TeX } from "@mathjax/src/cjs/input/tex.js";
 import { SVG } from "@mathjax/src/cjs/output/svg.js";
+import { RecentlyUsed } from "../../shared/recently-used";
 import { loadDynamicFont } from "./fonts";
 import { macrosEqual, normalizeMacros, type MathMacro } from "./macros";
 import { TEX_PACKAGES } from "./tex-packages";
@@ -10,7 +11,7 @@ import { TEX_PACKAGES } from "./tex-packages";
 mathjax.asyncLoad = loadDynamicFont;
 
 const MATH_CACHE_LIMIT = 256;
-const mathCache = new Map<string, string>();
+const mathCache = new RecentlyUsed<string, string>(MATH_CACHE_LIMIT);
 
 let userMacros: Record<string, MathMacro> = {};
 let macrosKey = "{}";
@@ -24,23 +25,10 @@ function cacheKey(expression: string, display: boolean): string {
 }
 
 function getCachedMath(key: string): string | undefined {
-  const cached = mathCache.get(key);
-  if (cached !== undefined) {
-    mathCache.delete(key);
-    mathCache.set(key, cached);
-  }
-  return cached;
+  return mathCache.get(key);
 }
 
 function setCachedMath(key: string, html: string): void {
-  if (mathCache.has(key)) {
-    mathCache.delete(key);
-  } else if (mathCache.size >= MATH_CACHE_LIMIT) {
-    const oldest = mathCache.keys().next().value;
-    if (oldest !== undefined) {
-      mathCache.delete(oldest);
-    }
-  }
   mathCache.set(key, html);
 }
 

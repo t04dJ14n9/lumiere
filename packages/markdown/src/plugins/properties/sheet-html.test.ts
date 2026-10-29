@@ -125,7 +125,7 @@ test("property rendering bounds recursive aliases and leaves absent frontmatter 
   assert.match(empty, /data-placeholder="Empty"/);
 });
 
-test("empty sources keeps custom stacked UI without YAML draft", () => {
+test("empty sources keeps custom stacked UI with hidden YAML draft for editing", () => {
   const html = renderProperties(
     "---\nsources: []\n---\n",
     {},
@@ -138,7 +138,8 @@ test("empty sources keeps custom stacked UI without YAML draft", () => {
   );
   assert.match(html, /data-sources/);
   assert.match(html, /data-property-type="sources"/);
-  assert.doesNotMatch(html, /data-property-kind="yaml"/);
+  assert.match(html, /data-property-edit/);
+  assert.match(html, /<textarea hidden[^>]*data-property-kind="yaml"/);
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });
 

@@ -1,1 +1,1 @@
-export { IDE_CONTEXT_COMMAND_IDS } from "../pdf/registered-commands";
+export { IDE_CONTEXT_COMMAND_IDS } from "../../../shared/command-ids";

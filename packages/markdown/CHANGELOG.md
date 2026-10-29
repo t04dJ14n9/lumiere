@@ -2,6 +2,14 @@
 
 ## 0.1.0 (unreleased)
 
+- Smoother scrolling through Mermaid diagrams in Live Preview: a diagram
+  draws as it comes within a screen of view, as in Obsidian, instead of
+  showing its source until you stop scrolling, and the text around it moves
+  far less when it draws (its height is guessed from the diagram's shape
+  first). Wheel and trackpad scrolling no longer waits for the editor to
+  start, and blocks scrolling in and out no longer lay the page out once
+  each.
+
 - Ctrl+G Go to Line works in Live Preview / Source again: the chord no longer
   shows VS Code's "Open a text editor first…" on the custom editor (Host GUI
   BH-033).

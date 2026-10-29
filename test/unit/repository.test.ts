@@ -36,7 +36,7 @@ test("no two tracked paths differ only by letter case", () => {
 
 test("Lumière opens PDF links with Lumière PDF's Open Location command", async () => {
   const { OPEN_LOCATION_COMMAND_ID } =
-    await import("../../packages/pdf/src/extension/plugins/pdf/registered-commands");
+    await import("../../packages/pdf/src/shared/command-ids");
   const navigation = readFileSync(
     "packages/markdown/src/host/navigation.ts",
     "utf8",

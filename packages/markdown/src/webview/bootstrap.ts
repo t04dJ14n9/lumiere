@@ -64,7 +64,7 @@ export async function bootstrap(
     init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
   const startPaint =
     init.preset === "obsidian"
-      ? preloadPaintFeatures
+      ? () => preloadPaintFeatures(init.features, true)
       : (): Promise<void> => Promise.resolve();
   await root.settled();
   const failed = [...root.plugins].find((fiber) => fiber.state === "failed");

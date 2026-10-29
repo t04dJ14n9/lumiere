@@ -118,9 +118,16 @@ test("the saved layout keeps only known fields of the right type", () => {
     sidebar: true,
     outline: false,
     theme: "dark",
+    folders: {},
   });
   assert.deepEqual(parseUiChange({ sidebar: "no", theme: "purple" }), {});
   assert.deepEqual(parseUiChange([true]), {});
+  assert.deepEqual(
+    parseUiChange({ folders: { "/v": ["a", 2, "a/b"], "/w": "a" } }),
+    { folders: { "/v": ["a", "a/b"] } },
+    "each vault's folder paths; anything else is dropped",
+  );
+  assert.deepEqual(parseUiChange({ folders: ["a"] }), {});
 });
 
 test("Color Theme: the system's, or always light, or always dark", () => {
@@ -213,6 +220,54 @@ test("the window keeps clear of the iPad's status bar, home indicator and keyboa
   assert.match(rules, /box-sizing:\s*border-box/);
 });
 
+test("a long-press on a file, a heading or a tab selects no text", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const unselectable = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter(([, , body]) => /(^|[\s;])user-select:\s*none/.test(body!))
+    .flatMap(([, selectors]) =>
+      selectors!
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .split(",")
+        .map((selector) => selector.trim()),
+    );
+  for (const chrome of [".sidebar", ".side-panel", ".tab-strip"]) {
+    assert.ok(unselectable.includes(chrome), chrome);
+  }
+  assert.ok(
+    !unselectable.some((selector) => /settings|editor-frame/.test(selector)),
+  );
+});
+
+test("the bar in the top-left corner starts after iPadOS's window controls", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find(([, , body]) =>
+    body!.includes("var(--window-controls-inset"),
+  );
+  assert.ok(rule, "the window controls' rule");
+  const selectors = rule[1]!
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split(",")
+    .map((selector) => selector.trim());
+  // Whichever column comes first holds the corner: the notes' tab strip
+  // (a narrow window, or the files hidden) or the files' vault bar.
+  assert.deepEqual(selectors.sort(), [
+    ".app > .editors:first-child > .tab-strip",
+    ".app > .sidebar:first-child > .vault-bar",
+  ]);
+  assert.match(
+    rule[2]!,
+    /padding-left:\s*calc\(8px \+ var\(--window-controls-inset, 0px\)\)/,
+  );
+});
+
 test("a wide window shows the panels it saved, as columns", async () => {
   const { shownPanels, togglePanel } = await import("../../src/shell/panels");
   const saved = { sidebar: true, outline: false };
@@ -245,6 +300,15 @@ test("a narrow window floats one panel at a time and saves nothing", async () =>
   });
 });
 
+test("with no note open, Choose a Note… shows only while the files are put away", async () => {
+  const { emptyNotePrompt } = await import("../../src/shell/panels");
+  // A narrow window starts with its files floating: a button beside them
+  // would only put them away, as the layer under the card takes the tap.
+  assert.equal(emptyNotePrompt(true, true), "none");
+  assert.equal(emptyNotePrompt(true, false), "button");
+  assert.equal(emptyNotePrompt(false, true), "hint");
+});
+
 test("a native menu's command is one the window knows, or nothing", async () => {
   const { parseAppCommand } = await import("../../src/shell/backend");
   assert.equal(parseAppCommand("toggle-outline"), "toggle-outline");
@@ -265,4 +329,105 @@ test("a floating card's long list scrolls inside the card", async () => {
   // A flex item keeps its content's height unless it may shrink below it.
   assert.match(rule, /min-height:\s*0/);
   assert.match(rule, /flex:\s*0 1 auto/);
+});
+
+test("the glass reaches over the notes by the bar's overlap, with room below it", async () => {
+  const { insetFor } = await import("../../src/shell/chrome-inset");
+  // The bar floats over bodies that run to the top: line 1 sits below it.
+  assert.equal(insetFor(76.4, 0), 82);
+  // The bar sits above the bodies, as on the desktop: nothing over the note.
+  assert.equal(insetFor(40, 40), 0);
+  assert.equal(insetFor(40, 48), 0);
+});
+
+test("with Liquid Glass the note runs up behind the status bar, and the glass keeps clear of it", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = (selector: string) => {
+    const start = css.indexOf(`${selector} {`);
+    assert.ok(start >= 0, `${selector} is styled`);
+    return css.slice(start, css.indexOf("}", start));
+  };
+  assert.match(rule(".liquid-glass #root"), /padding-top:\s*0/);
+  assert.match(
+    rule(".liquid-glass .tab-strip"),
+    /top:\s*calc\(env\(safe-area-inset-top\)/,
+  );
+  assert.match(rule(".liquid-glass .tab-bodies"), /inset:\s*0/);
+  // Only the capsules take taps; the note between them stays reachable.
+  assert.match(rule(".liquid-glass .tab-strip"), /pointer-events:\s*none/);
+});
+
+test("Command Palette shortcuts (⇧⌘P, Ctrl+Shift+P, F1) and filtering", async () => {
+  assert.equal(
+    shortcutCommand(press("KeyP", { meta: true, shift: true }), true),
+    "command-palette",
+  );
+  assert.equal(
+    shortcutCommand(press("KeyP", { ctrl: true, shift: true }), false),
+    "command-palette",
+  );
+  assert.equal(shortcutCommand(press("F1"), true), "command-palette");
+  assert.equal(shortcutCommand(press("F1"), false), "command-palette");
+
+  const { filterPaletteItems } =
+    await import("../../src/shell/components/CommandPalette");
+  const items = [
+    { id: "1", title: "Toggle Bold", category: "Lumière" },
+    { id: "2", title: "Open Settings", category: "Preferences" },
+    { id: "3", title: "Color Theme: Dark", category: "Preferences" },
+  ];
+  assert.deepEqual(
+    filterPaletteItems(items, "lum bold").map((item) => item.id),
+    ["1"],
+  );
+  assert.deepEqual(
+    filterPaletteItems(items, "pref dark").map((item) => item.id),
+    ["3"],
+  );
+  assert.deepEqual(filterPaletteItems(items, "   ").length, 3);
+});
+
+test("forwardFrameKeydown forwards unhandled iframe shortcuts and leaves editor-handled ones alone", async () => {
+  const { forwardFrameKeydown } = await import("../../src/shell/commands");
+  const dispatched: KeyboardEvent[] = [];
+  const fakeWindow = {
+    dispatchEvent(event: Event): boolean {
+      const kb = event as KeyboardEvent;
+      dispatched.push(kb);
+      if (kb.code === "Comma" && kb.metaKey) {
+        kb.preventDefault();
+      }
+      return !kb.defaultPrevented;
+    },
+  };
+
+  const makeKeydown = (
+    key: string,
+    code: string,
+    metaKey = true,
+  ): KeyboardEvent =>
+    Object.assign(new Event("keydown", { cancelable: true }), {
+      key,
+      code,
+      metaKey,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+    }) as unknown as KeyboardEvent;
+
+  // An unhandled shell shortcut inside the iframe is forwarded and prevented.
+  const unhandled = makeKeydown(",", "Comma");
+  assert.equal(forwardFrameKeydown(unhandled, fakeWindow), true);
+  assert.equal(unhandled.defaultPrevented, true);
+  assert.equal(dispatched.length, 1);
+
+  // A key already handled by the editor (e.g. ⌘B Bold) is not forwarded.
+  const handledByEditor = makeKeydown("b", "KeyB");
+  handledByEditor.preventDefault();
+  assert.equal(forwardFrameKeydown(handledByEditor, fakeWindow), false);
+  assert.equal(dispatched.length, 1);
 });

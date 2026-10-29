@@ -380,8 +380,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: lumiere.markdown.plugins.obsidianMarketplace.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: lumiere.markdown.obsidianMarketplace.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.foldMore | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
 | Command: lumiere.markdown.foldLess | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |

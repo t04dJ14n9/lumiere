@@ -1,7 +1,8 @@
 import { Decoration } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import type { EditorState, Line, Range } from "@codemirror/state";
-import { parseMarkdown } from "../../markdown/dialect";
+import type { Tree } from "@lezer/common";
+import { markdownTree } from "../livePreview/api";
 
 export function indentation(text: string, tabSize: number): number {
   let width = 0;
@@ -38,7 +39,7 @@ function listDepth(item: { name?: string; parent: unknown }): number {
 
 export function activeListGuideColumn(state: EditorState): number | undefined {
   const head = state.selection.main.head;
-  const tree = parseMarkdown(state.doc);
+  const tree = markdownTree(state);
   let item = null;
   for (
     let node: ReturnType<typeof tree.resolveInner> | null = tree.resolveInner(
@@ -63,6 +64,8 @@ export function activeListGuideColumn(state: EditorState): number | undefined {
   return depth >= 1 ? depth - 1 : undefined;
 }
 
+const activeDepthByDom = new WeakMap<HTMLElement, number | undefined>();
+
 /** Apply / clear `--list-active-depth` on the editor root for LP list guides. */
 export function syncListActiveGuide(
   dom: HTMLElement,
@@ -70,6 +73,14 @@ export function syncListActiveGuide(
   isLivePreview: boolean,
 ): void {
   const column = isLivePreview ? activeListGuideColumn(state) : undefined;
+  if (
+    activeDepthByDom.has(dom) &&
+    activeDepthByDom.get(dom) === column &&
+    dom.classList.contains("mw-list-active-guide") === (column !== undefined)
+  ) {
+    return;
+  }
+  activeDepthByDom.set(dom, column);
   if (column === undefined) {
     dom.style.removeProperty("--list-active-depth");
     dom.classList.remove("mw-list-active-guide");
@@ -80,9 +91,8 @@ export function syncListActiveGuide(
 }
 
 /** List chrome replaces source whitespace; code and quotes keep their own layout. */
-function usesListLayout(state: EditorState, line: Line): boolean {
+function usesListLayout(tree: Tree, line: Line): boolean {
   const leading = /^[ \t]*/.exec(line.text)![0];
-  const tree = parseMarkdown(state.doc);
   let isList = false;
   for (
     let node = tree.resolveInner(line.from + leading.length, 1);
@@ -103,11 +113,12 @@ export function guideDecorations(
   isLivePreview: boolean,
 ): DecorationSet {
   const ranges: Range<Decoration>[] = [];
+  const tree = isLivePreview ? markdownTree(state) : undefined;
   for (const visible of visibleRanges) {
     for (let at = visible.from; at <= visible.to;) {
       const line = state.doc.lineAt(at);
       const width = indentation(line.text, state.tabSize);
-      if (width && !(isLivePreview && usesListLayout(state, line))) {
+      if (width && !(tree && usesListLayout(tree, line))) {
         ranges.push(
           Decoration.line({
             attributes: {

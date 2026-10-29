@@ -13,6 +13,7 @@ import {
 import type { TabKind, TabModel, TabSwap } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
+import { readerText } from "./reader-text";
 import { SourceCoordinates } from "../shared/document/coordinates";
 import type { NativeNavigation } from "./navigation";
 import type { NavigationIntent } from "../shared/host";
@@ -29,7 +30,7 @@ export const textBypass = new Bypass();
 export const handoffLease = new Lease();
 
 function hasNativeOptOut(uri: string): boolean {
-  return textBypass.has(uri) || handoffLease.has(uri);
+  return textBypass.has(uri) || handoffLease.has(uri) || readerText.has(uri);
 }
 
 interface ReclaimRequest {
@@ -39,6 +40,7 @@ interface ReclaimRequest {
   kind: TabKind;
   intent: NavigationIntent | undefined;
   at: number | undefined;
+  to: number | undefined;
   /** Once reveal delivery has started, later same-tab jumps must supersede. */
   delivering?: boolean;
   /**
@@ -107,16 +109,19 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
 }
 
 /**
- * `lumiere.markdown.editor.reclaimTextEditor`: Cursor's Preview | Markdown
- * switch opens notes in the text or Cursor Markdown editor; transfer back to
- * our CustomTextEditorProvider once the native document is ready.
+ * `lumiere.markdown.editor.reclaimTextEditor`: a note that Cursor shows in its
+ * own Markdown editor, or that a tool opens in a new text tab (a chat link, a
+ * review card), moves back to our CustomTextEditorProvider once the native
+ * document is ready. A note the reader put in the text editor stays there.
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
+  memory?: vscode.Memento,
 ): vscode.Disposable & { adoptOpenTabs(): void } {
   const recentTransfers = new Bypass();
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
+  readerText.restore(memory);
   const judge = ({ tab, swap }: { tab: vscode.Tab; swap: TabSwap }) => {
     // A Cursor Edit session keeps the note native. Switching its text tab
     // with Preview | Markdown ends the session only when that text tab
@@ -126,33 +131,38 @@ export function registerReclaim(
       return;
     }
     if (!shouldReclaim(swap, reclaimContext(swap.uri))) {
+      if (swap.after === "text" && isReclaimableNote(swap.uri)) {
+        readerText.keep(swap.uri);
+      }
       return;
     }
-    // Within 10s of a reclaim, a second Reopen With Text Editor (or Preview |
-    // Markdown) must keep the text tab. Promote to textBypass so command
-    // selection reclaim — which does not see recentTransfers — also honors
-    // the hold (Host GUI S6). Navigation hunks after reclaim still transfer:
-    // they never hit this tab-skip path.
+    // Within 10s of a reclaim, asking for the text editor again keeps it,
+    // also for command selection reclaim, which does not see
+    // recentTransfers (Host GUI S6). Navigation hunks after reclaim still
+    // transfer: they never hit this tab-skip path.
     if (
       shouldHoldNativeAfterReclaim({
         recentTransfer: recentTransfers.has(swap.uri),
         reclaimable: true,
+        hasSelectionTarget: hasSelectionTarget(
+          nativeSelectionRange(tab, swap.uri),
+        ),
       })
     ) {
       textBypass.allow(swap.uri);
+      if (swap.after === "text") {
+        readerText.keep(swap.uri);
+      }
       return;
     }
     transfer.open(tab, swap.uri);
   };
   const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
-    const endedSessions = new Set<string>();
-    for (const tab of [...event.closed, ...event.opened, ...event.changed]) {
-      const ended = releaseLeaseWithoutTextTab(tab);
-      if (ended) {
-        endedSessions.add(ended);
-      }
-    }
-    swaps.next(event, endedSessions).forEach(judge);
+    const ended = [...event.closed, ...event.opened, ...event.changed]
+      .map(releaseLeaseWithoutTextTab)
+      .filter((uri): uri is string => uri !== undefined);
+    readerText.forgetClosed(event.closed);
+    swaps.next(event, new Set(ended)).forEach(judge);
   });
   const stop = vscode.Disposable.from(
     tabs,
@@ -166,6 +176,8 @@ export function registerReclaim(
      * window restored, or that were opened before it started, as text.
      */
     adoptOpenTabs() {
+      // Kept notes whose text tab the last window closed are not kept now.
+      readerText.forgetClosed();
       swaps
         .adopt(vscode.window.tabGroups.all.flatMap((group) => group.tabs))
         .forEach(judge);
@@ -181,7 +193,7 @@ function createReclaimTransfer(
   const capture = (tab: vscode.Tab, uri: string) => {
     const request = pending.get(tab);
     if (request?.uri === uri && !request.intent?.token.cancelled) {
-      request.at = nativeSelectionStart(tab, uri) ?? request.at;
+      refreshRequestSelection(tab, uri, request);
     }
   };
   return {
@@ -201,12 +213,14 @@ function createReclaimTransfer(
         request.intent?.token.cancel();
       }
       recentTransfers.allow(uri);
+      const selection = nativeSelectionRange(tab, uri);
       const next: ReclaimRequest = {
         uri,
         column: tab.group.viewColumn,
         kind: kindOf(tab),
         intent: navigation?.begin(),
-        at: nativeSelectionStart(tab, uri),
+        at: selection?.at,
+        to: selection?.to,
       };
       pending.set(tab, next);
       void reopen(uri, next, navigation)
@@ -243,7 +257,7 @@ function registerSelectionReclaim(
     const uri = event.textEditor.document.uri.toString();
     if (
       !tab ||
-      nativeSelectionStart(tab, uri) === undefined ||
+      nativeSelectionRange(tab, uri) === undefined ||
       !shouldReclaim(
         { uri, before: "none", after: kindOf(tab) },
         reclaimContext(uri),
@@ -266,10 +280,10 @@ function registerSelectionReclaim(
   return vscode.Disposable.from(selections, activation);
 }
 
-function nativeSelectionStart(
+function nativeSelectionRange(
   tab: vscode.Tab,
   uri: string,
-): number | undefined {
+): { at: number; to?: number } | undefined {
   const editor = vscode.window.activeTextEditor;
   if (
     !editor ||
@@ -280,9 +294,14 @@ function nativeSelectionStart(
     return undefined;
   }
   const document = editor.document;
-  return new SourceCoordinates(document.getText()).toEditor(
-    document.offsetAt(editor.selection.start),
-  );
+  const coordinates = new SourceCoordinates(document.getText());
+  const at = coordinates.toEditor(document.offsetAt(editor.selection.start));
+  const to = coordinates.toEditor(document.offsetAt(editor.selection.end));
+  return to > at ? { at, to } : { at };
+}
+
+function hasSelectionTarget(s?: { at: number; to?: number }): boolean {
+  return s !== undefined && (s.at > 0 || (s.to !== undefined && s.to > s.at));
 }
 
 function reclaimContext(uri: string) {
@@ -307,6 +326,18 @@ function reclaimContext(uri: string) {
   };
 }
 
+function refreshRequestSelection(
+  tab: vscode.Tab,
+  uri: string,
+  request: ReclaimRequest,
+): void {
+  const selection = nativeSelectionRange(tab, uri);
+  if (selection) {
+    request.at = selection.at;
+    request.to = selection.to;
+  }
+}
+
 /** Transfer when ready, keeping any dirty text tab and its native undo. */
 async function reopen(
   uri: string,
@@ -327,16 +358,24 @@ async function reopen(
     return;
   }
   const { column } = request;
-  request.at = nativeSelectionStart(native, uri) ?? request.at;
+  refreshRequestSelection(native, uri, request);
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
     viewColumn: column,
     preview: native.isPreview,
   });
   if (navigation && request.intent && request.at !== undefined) {
     request.delivering = true;
-    request.at = nativeSelectionStart(native, uri) ?? request.at;
+    refreshRequestSelection(native, uri, request);
     await revealOpenedWatchingOptOut(uri, request, () =>
-      navigation.revealOpened(uri, column, request.at!, request.intent!),
+      navigation.revealOpened(
+        uri,
+        column,
+        {
+          at: request.at!,
+          ...(request.to !== undefined ? { to: request.to } : {}),
+        },
+        request.intent!,
+      ),
     );
   }
   // Opt-outs or a superseding jump may land during the reveal wait. Do not

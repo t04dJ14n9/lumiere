@@ -11,17 +11,23 @@ import type { InlineContext } from "./api";
 export function decorateCodeLines(
   node: SyntaxNodeRef,
   context: Pick<InlineContext, "state" | "line" | "hide" | "revealed">,
+  visible?: { from: number; to: number },
 ): void {
   const { state } = context;
   if (node.name === "CodeBlock") {
     // An indented block's node starts after the first line's indentation.
+    const start = visible ? Math.max(node.from, visible.from) : node.from;
+    const end = visible ? Math.min(node.to, visible.to) : node.to;
+    if (start > end) {
+      return;
+    }
     for (
-      let line = state.doc.lineAt(node.from);
+      let line = state.doc.lineAt(start);
       ;
       line = state.doc.line(line.number + 1)
     ) {
       context.line(line.from, "md-code-line md-code-indented");
-      if (line.to >= node.to || line.number === state.doc.lines) {
+      if (line.to >= end || line.number === state.doc.lines) {
         break;
       }
     }

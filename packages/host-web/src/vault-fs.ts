@@ -15,6 +15,12 @@ export interface VaultFileInfo {
 export interface VaultFileSystem {
   /** Rejects with `FileNotFound` (vault-fs.ts `notFound`) when missing. */
   read(path: string): Promise<Uint8Array>;
+  /**
+   * A file as a Blob that is read only as far as it is used (a folder
+   * handle's File), so a video's byte ranges need not read it all. Without
+   * it, `Mounts.readBlob` reads the whole file.
+   */
+  readBlob?(path: string): Promise<Blob>;
   /** "replace" writes an existing file; "create" a new one, leaving one there as it is. */
   write(
     path: string,

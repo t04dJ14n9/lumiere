@@ -1,7 +1,17 @@
-import type { Extension, EditorState } from "@codemirror/state";
-import type { SyntaxNodeRef } from "@lezer/common";
+import {
+  StateEffect,
+  StateField,
+  type EditorState,
+  type Extension,
+  type Text,
+  type Transaction,
+} from "@codemirror/state";
+import type { SyntaxNodeRef, Tree } from "@lezer/common";
+import { language, syntaxTree } from "@codemirror/language";
 import type { EditorView, WidgetType } from "@codemirror/view";
 import type { Disposer } from "@workshop/core";
+import { parseMarkdown } from "../../markdown/dialect/parser";
+import { DocumentParse } from "./document-parse";
 export interface RenderBlock {
   from: number;
   to: number;
@@ -81,4 +91,78 @@ declare module "@workshop/core" {
   interface Services {
     livePreview: LivePreview;
   }
+}
+
+/**
+ * How much of a large note we parse before the first paint: the opening
+ * viewport and a margin, so its decorations do not wait on the whole note.
+ * `documentTreeParser` parses further as the viewport moves and finishes the
+ * rest in idle slices.
+ */
+export const FIRST_PAINT_PARSE_CHARS = 10000;
+
+/** Swap in a further-parsed (or rebuilt) tree of the same document. */
+export const replaceDocumentTree = StateEffect.define<Tree>();
+
+/** The opening band of a large note (whole blocks); all of a small one. */
+export function parseForFirstPaint(
+  doc: Text,
+  budget = FIRST_PAINT_PARSE_CHARS,
+): Tree {
+  if (doc.length <= budget) {
+    return parseMarkdown(doc);
+  }
+  return new DocumentParse(doc).coverTo(budget);
+}
+
+/**
+ * Parse again only what the edit touched. A complete tree stays complete; a
+ * prefix stays the same prefix, so typing in a large note that is still
+ * parsing never parses the rest of it.
+ */
+function updateDocumentTree(tree: Tree, transaction: Transaction): Tree {
+  const { changes, newDoc } = transaction;
+  const startDoc = transaction.startState.doc;
+  const fragments = DocumentParse.from(startDoc, tree).fragmentsAfter(
+    changes,
+    newDoc,
+  );
+  const upto =
+    tree.length >= startDoc.length
+      ? newDoc.length
+      : changes.mapPos(tree.length, 1);
+  return new DocumentParse(newDoc, fragments).coverTo(upto);
+}
+
+/**
+ * Live Preview's syntax tree: the whole note, or while a large note is still
+ * parsing, a prefix that covers at least the viewport. Reuses unchanged
+ * syntax across edits without making distant headings or footnotes
+ * viewport-dependent once complete.
+ */
+export const documentTree = StateField.define<Tree>({
+  create: (state) => parseForFirstPaint(state.doc),
+  update(tree, transaction) {
+    for (const effect of transaction.effects) {
+      if (effect.is(replaceDocumentTree)) {
+        return effect.value;
+      }
+    }
+    return transaction.docChanged
+      ? updateDocumentTree(tree, transaction)
+      : tree;
+  },
+});
+
+/**
+ * The Markdown syntax tree of an editor state: Live Preview's while it is
+ * on, else CodeMirror's language tree. Either may cover only a prefix of a
+ * large note that is still parsing. A state with neither (a bare test
+ * state) gets a full parse.
+ */
+export function markdownTree(state: EditorState): Tree {
+  return (
+    state.field(documentTree, false) ??
+    (state.facet(language) ? syntaxTree(state) : parseMarkdown(state.doc))
+  );
 }

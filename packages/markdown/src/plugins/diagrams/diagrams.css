@@ -1,6 +1,6 @@
 /* Mermaid diagrams, centred; failures use Obsidian is-guarded chrome. */
 pre[data-fence="mermaid"]:has(> svg) {
-  padding: 8px 0;
+  padding: 40px 0 8px;
   overflow-x: auto;
   text-align: center;
   background: none;
@@ -111,4 +111,34 @@ pre[data-fence="mermaid"] svg .internal-link tspan {
     --vscode-button-secondaryHoverBackground,
     var(--vscode-button-hoverBackground, #8885)
   );
+}
+
+.inspect-diagram {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 104px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--vscode-editor-background, transparent);
+  font: inherit;
+  font-size: 0.6875em;
+  line-height: 1.6;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.inspect-diagram:focus-visible {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .hybrid-block:hover .inspect-diagram {
+    opacity: 1;
+  }
+}
+.inspect-diagram:hover {
+  color: var(--vscode-editor-foreground);
+  background: var(--hover);
 }

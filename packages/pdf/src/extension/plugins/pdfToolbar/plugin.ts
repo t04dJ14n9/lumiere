@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { titleActionsInMenu } from "../../../shared/toolbar-settings";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { TOOLBAR_COMMAND_IDS } from "../pdf/registered-commands";
+import { TOOLBAR_COMMAND_IDS } from "../../../shared/command-ids";
 import manifest from "./manifest";
 import { selectToolbarMode } from "./mode-picker";
 import { ToolbarPreferences } from "./preferences";

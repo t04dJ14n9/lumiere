@@ -3,6 +3,7 @@ import {
   isMarkdownPath,
   nameOf,
   relativeVaultPath,
+  withoutNoteExtension,
 } from "../../shared/vault-path";
 
 /** `index.md` and `log.md` at any depth are navigation files, not concepts. */
@@ -55,13 +56,17 @@ export function okfLinkText(
   }
   const relative =
     bundleRoot === "" ? targetPath : targetPath.slice(bundleRoot.length + 1);
-  const text = isMarkdownPath(relative) ? relative.slice(0, -3) : relative;
+  const text = isMarkdownPath(relative)
+    ? withoutNoteExtension(relative)
+    : relative;
   return `/${text}`;
 }
 
 function explicitRelative(sourcePath: string, targetPath: string): string {
   const relative = relativeVaultPath(folderOf(sourcePath), targetPath);
-  const text = isMarkdownPath(targetPath) ? relative.slice(0, -3) : relative;
+  const text = isMarkdownPath(targetPath)
+    ? withoutNoteExtension(relative)
+    : relative;
   if (text.startsWith("/") || text.startsWith("./") || text.startsWith("../")) {
     return text;
   }

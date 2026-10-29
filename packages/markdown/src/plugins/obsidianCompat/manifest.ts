@@ -15,7 +15,7 @@ export default defineManifest({
   description: "Use Obsidian property types and vault settings in Lumière.",
   kind: "feature",
   defaultEnabled: true,
-  surfaces: ["host", "webview"],
+  surfaces: ["host"],
   capabilities: ["resourceLoading"],
   config,
 } as const);

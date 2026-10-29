@@ -85,13 +85,10 @@ function watchNoteEmbed(dom: HTMLElement, source: string): void {
   noteObservers.set(dom, observer);
 }
 
-function unwatchNoteEmbed(dom: HTMLElement, source: string): void {
+/** The observer has the last height; reading it here forced a layout per unmount. */
+function unwatchNoteEmbed(dom: HTMLElement): void {
   noteObservers.get(dom)?.disconnect();
   noteObservers.delete(dom);
-  const height = dom.getBoundingClientRect().height;
-  if (height > 0) {
-    rememberNoteEmbedHeight(source, height);
-  }
 }
 
 /** MarkdownBlock with a height reserve so off-viewport remounts stay tall. */
@@ -102,7 +99,7 @@ class EmbedBlock extends MarkdownBlock {
     return dom;
   }
   override destroy(dom: HTMLElement): void {
-    unwatchNoteEmbed(dom, this.block.source);
+    unwatchNoteEmbed(dom);
     super.destroy(dom);
   }
   override get estimatedHeight(): number {
@@ -198,13 +195,19 @@ class EmbedInline extends MarkdownInline {
     return node;
   }
   override destroy(dom: HTMLElement): void {
-    unwatchNoteEmbed(dom, this.source);
+    unwatchNoteEmbed(dom);
     super.destroy(dom);
   }
 }
 
 function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
   ctx.on("render/postProcess", (pass) => {
+    if (
+      pass.container.querySelectorAll<HTMLElement>("[data-resource]").length ===
+      0
+    ) {
+      return;
+    }
     const stop = enhanceEmbeds({
       pass,
       render: ctx.render,
@@ -222,6 +225,9 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
           .catch((error) => ctx.logger.warn("Open embed failed", error));
       },
     });
+    if (!stop) {
+      return;
+    }
     const cleanup = () => {
       stop();
       cleanups.delete(cleanup);

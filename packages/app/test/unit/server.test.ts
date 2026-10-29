@@ -36,7 +36,13 @@ function send(
         port,
         path: pathname,
         method: options.method ?? "GET",
-        headers: { host: `127.0.0.1:${port}`, ...options.headers },
+        headers: {
+          host: `127.0.0.1:${port}`,
+          ...(options.body !== undefined
+            ? { "content-length": String(Buffer.byteLength(options.body)) }
+            : {}),
+          ...options.headers,
+        },
       },
       (res) => {
         let body = "";
@@ -328,42 +334,70 @@ test("the window's layout and theme are kept, and only valid changes apply", asy
       sidebar: true,
       outline: true,
       theme: "system",
+      folders: {},
     },
   );
   const changed = await send(server.port, "/api/ui", {
     method: "POST",
     headers,
-    body: JSON.stringify({ outline: false, theme: "dark", sidebar: "maybe" }),
+    body: JSON.stringify({
+      outline: false,
+      theme: "dark",
+      sidebar: "maybe",
+      folders: { "/v": ["a", "a/b"] },
+    }),
   });
-  assert.deepEqual(JSON.parse(changed.body), {
+  const kept = {
     sidebar: true,
     outline: false,
     theme: "dark",
-  });
+    folders: { "/v": ["a", "a/b"] },
+  };
+  assert.deepEqual(JSON.parse(changed.body), kept);
   assert.deepEqual(
     JSON.parse(
       (await send(server.port, "/api/ui", { headers: { cookie } })).body,
     ),
-    {
-      sidebar: true,
-      outline: false,
-      theme: "dark",
-    },
+    kept,
   );
 });
 
-test("no request can trust a vault that did not ask", async (t) => {
+test("the API closes open vaults, refuses non-note opens, and serves the command palette", async (t) => {
   const { server, vault, cookie } = await fixture(t);
-  const questions = await send(server.port, "/api/trust", {
+  const headers = { cookie, "content-type": "application/json" };
+  await writeFile(path.join(vault, "doc.pdf"), "");
+  await writeFile(path.join(vault, "image.png"), "");
+
+  const pdfOpen = await send(server.port, "/api/open", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ path: path.join(vault, "doc.pdf") }),
+  });
+  assert.equal(pdfOpen.status, 200);
+
+  const nonNote = await send(server.port, "/api/open", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ path: path.join(vault, "image.png") }),
+  });
+  assert.equal(nonNote.status, 400);
+
+  const commands = await send(server.port, "/lumiere/commands", {
     headers: { cookie },
   });
-  assert.deepEqual(JSON.parse(questions.body), []);
-  const granted = await send(server.port, "/api/trust", {
-    method: "POST",
-    headers: { cookie, "content-type": "application/json" },
-    body: JSON.stringify({ vault, allowed: true }),
+  assert.equal(commands.status, 200);
+  assert.ok(
+    Array.isArray(
+      (JSON.parse(commands.body) as { commands: unknown }).commands,
+    ),
+  );
+  assert.equal((await send(server.port, "/lumiere/commands")).status, 401);
+
+  const closed = await send(server.port, "/api/vaults", {
+    method: "DELETE",
+    headers,
+    body: JSON.stringify({ path: vault }),
   });
-  assert.equal(granted.status, 400);
-  const unauthenticated = await send(server.port, "/api/trust");
-  assert.equal(unauthenticated.status, 401);
+  assert.equal(closed.status, 200);
+  assert.deepEqual((JSON.parse(closed.body) as { open: string[] }).open, []);
 });

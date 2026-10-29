@@ -82,6 +82,16 @@ export class Mounts implements HostFiles {
     return fs.read(path);
   }
 
+  /** A file as a Blob: read as it is used where its folder can, else whole. */
+  async readBlob(uri: string): Promise<Blob> {
+    const { fs, path } = this.resolve(uri);
+    if (fs.readBlob) {
+      return fs.readBlob(path);
+    }
+    // read() gives a copy of its own, on a plain ArrayBuffer.
+    return new Blob([(await fs.read(path)) as Uint8Array<ArrayBuffer>]);
+  }
+
   async save(uri: string, text: string): Promise<void> {
     const { fs, path, full } = this.resolve(uri);
     await fs.write(path, new TextEncoder().encode(text), "replace");

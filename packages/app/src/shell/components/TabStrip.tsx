@@ -1,5 +1,5 @@
 /** The open tabs: click shows one, × or a middle click closes it. */
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { tabTitle, type Tab } from "../tabs";
 
 export interface TabStripProps {
@@ -9,6 +9,7 @@ export interface TabStripProps {
   readonly onClose: (id: string) => void;
   /** Shown at the end of the strip (the layout buttons). */
   readonly trailing?: ReactNode;
+  readonly ref?: Ref<HTMLDivElement>;
 }
 
 export function TabStrip({
@@ -17,9 +18,10 @@ export function TabStrip({
   onActivate,
   onClose,
   trailing,
+  ref,
 }: TabStripProps) {
   return (
-    <div className="tab-strip">
+    <div className="tab-strip" ref={ref}>
       <div className="tabs" role="tablist">
         {tabs.map((tab) => (
           <div

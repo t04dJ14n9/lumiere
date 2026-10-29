@@ -1,7 +1,6 @@
 import { Compartment } from "@codemirror/state";
 import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
-import { headingGutterClasses } from "./headings";
 import { lineNumberGutter } from "./gutter";
 import { config } from "./manifest";
 const compartments = new WeakMap<Context, Compartment>();
@@ -26,10 +25,7 @@ export const lineNumbersWebview: Plugin<Infer<typeof config>> = {
       compartments.delete(ctx);
     });
     ctx.effect(() =>
-      ctx.editor.extend([
-        compartment.of(lineNumberGutter(options.style)),
-        headingGutterClasses,
-      ]),
+      ctx.editor.extend([compartment.of(lineNumberGutter(options.style))]),
     );
   },
 };

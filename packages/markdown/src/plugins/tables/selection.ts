@@ -8,7 +8,8 @@ import { tableSelectionChanges } from "./state";
 import type { TableGrid } from "./grid";
 import type { CellProjection } from "./projection";
 import type { TableEnvironment } from "./environment";
-import { TableSelectionDrag } from "./selection-drag";
+import { TableSelectionDrag, type GestureFinish } from "./selection-drag";
+import { wordRangeAtOffset } from "./cell-pointer";
 
 interface SelectionActions {
   activate(): void;
@@ -17,7 +18,7 @@ interface SelectionActions {
 
 /** Grid selection and pointer gestures; cell-text selection stays in CodeMirror. */
 export class TableSelection {
-  range?: CellRange;
+  range?: CellRange | undefined;
   gridCursor?: number;
   readonly drag: TableSelectionDrag;
 
@@ -37,14 +38,50 @@ export class TableSelection {
           window.getSelection()?.removeAllRanges();
           grid.root.focus({ preventScroll: true });
         },
-        finish: (origin, offset, selected) => {
-          if (selected) {
-            grid.root.focus({ preventScroll: true });
-          } else {
-            projection.open(origin, offset);
-          }
+        finish: (gesture) => {
+          this.finishGesture(gesture);
         },
       },
+    );
+  }
+
+  private finishGesture(gesture: GestureFinish): void {
+    if (gesture.selected) {
+      this.grid.root.focus({ preventScroll: true });
+      return;
+    }
+    if (gesture.nativeText) {
+      this.projection.open(gesture.origin, gesture.offset);
+      return;
+    }
+    const cell =
+      this.grid.model.rows[gesture.origin.row]?.[gesture.origin.column];
+    const element = this.grid.contentElement(gesture.origin);
+    const text = cell?.text ?? "";
+    const anchor = gesture.offset ?? text.length;
+    if (gesture.detail >= 3) {
+      this.projection.open(gesture.origin, "all");
+      return;
+    }
+    if (gesture.detail === 2) {
+      this.projection.open(gesture.origin, wordRangeAtOffset(text, anchor));
+      return;
+    }
+    const dragged =
+      Math.hypot(
+        gesture.endPoint.x - gesture.startPoint.x,
+        gesture.endPoint.y - gesture.startPoint.y,
+      ) >= 3;
+    const head =
+      dragged && element
+        ? (this.positionInText(text, element, {
+            clientX: gesture.endPoint.x,
+            clientY: gesture.endPoint.y,
+          }) ?? anchor)
+        : anchor;
+    this.projection.open(
+      gesture.origin,
+      head === anchor ? anchor : { anchor, head },
     );
   }
 
@@ -123,8 +160,8 @@ export class TableSelection {
       this.projection.inner?.dom.contains(event.target);
     if (
       event.target instanceof Element &&
-      event.target.closest("button, a, input, select") &&
-      !insideCellEditor
+      (event.target.closest("button, a, input, select, .embed-actions") ||
+        (!insideCellEditor && event.target.closest("img, .image-embed")))
     ) {
       return;
     }

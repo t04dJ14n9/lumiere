@@ -5,6 +5,7 @@ import {
   type CellPosition,
   type CellRange,
 } from "../../markdown/tables/model";
+import { initialCellSelection } from "./cell-editor";
 import { TableKeyboard } from "./keyboard";
 import type { TableGrid } from "./grid";
 import type { CellProjection } from "./projection";
@@ -86,4 +87,27 @@ test("returning to a forward-collapsed anchor opens at the shorter cell's end", 
   fixture.keyboard.arrow({ row: 0, column: -1 }, true);
   fixture.keyboard.arrow({ row: 0, column: 1 }, true);
   assert.deepEqual(fixture.opened, [{ position: right, offset: 1 }]);
+});
+
+test("initialCellSelection keeps normal-mode Vim carets collapsed and on the last cluster", () => {
+  assert.deepEqual(initialCellSelection("alpha", "all", true), {
+    anchor: 0,
+    head: 0,
+  });
+  assert.deepEqual(initialCellSelection("alpha", "all", false), {
+    anchor: 0,
+    head: 5,
+  });
+  assert.deepEqual(initialCellSelection("区域", undefined, true), {
+    anchor: 1,
+    head: 1,
+  });
+  assert.deepEqual(initialCellSelection("A", undefined, true), {
+    anchor: 0,
+    head: 0,
+  });
+  assert.deepEqual(initialCellSelection("😀", undefined, true), {
+    anchor: 0,
+    head: 0,
+  });
 });

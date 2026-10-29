@@ -60,6 +60,16 @@ test("creating a note stays inside the workspace and does not follow a symlink o
   await writeFile(path.join(dir, "Made.md"), "keep");
   await resolveLink(nodeFiles, { ...request, path: "Made.md" });
   assert.equal(await readFile(path.join(dir, "Made.md"), "utf8"), "keep");
+
+  const createdMarkdown = await resolveLink(nodeFiles, {
+    ...request,
+    path: "NoteTwo.markdown",
+  });
+  assert.equal(
+    createdMarkdown,
+    pathToFileURL(path.join(dir, "NoteTwo.markdown")).toString(),
+  );
+  assert.equal(await readFile(path.join(dir, "NoteTwo.markdown"), "utf8"), "");
 });
 
 test("a link to a note open in another tab asks that tab to come forward", async (t) => {
@@ -133,3 +143,67 @@ function socket() {
   };
   return { socket: endpoint, sent, receive: (text: string) => receive(text) };
 }
+
+test("revealing in a hidden tab that focuses itself still tells the presenting tab to switch", async (t) => {
+  const { dir, root } = await vault(t);
+  const other = path.join(dir, "Other.md");
+  await writeFile(other, "# Heading\nthere");
+  const firstUri = pathToFileURL(path.join(dir, "Note.md")).toString();
+  const otherUri = pathToFileURL(other).toString();
+  const documents = new NoteDocuments(
+    noteFiles(createNodePlatform({ data: tmpdir(), workers: "" })),
+    60_000,
+  );
+  const hub = new PanelHub(documents);
+  hub.register(MARKDOWN_EDITOR, (shell) => {
+    shell.setHTML("<html></html>");
+  });
+  t.after(async () => {
+    hub.dispose();
+    await documents.dispose();
+  });
+  const urls = () => ({
+    cspSource: "'self'",
+    asset: (relative: string) => relative,
+    resource: (uri: string) => uri,
+  });
+  const first = await hub.open({ uri: firstUri, urls });
+  const second = await hub.open({ uri: otherUri, urls });
+  const page = socket();
+  const hidden = socket();
+  hub.attach(first.id, page.socket);
+  hub.attach(second.id, hidden.socket);
+  page.receive('{"ch":"ui","data":{"type":"focus"}}');
+
+  const nav = createHostNavigation(nodeFiles, hub, settings, {
+    appName: "DeepSeek Harness",
+    uriScheme: "dsh",
+  });
+  nav.registerReveal({
+    id: second.id,
+    uri: otherUri,
+    active: () => hub.active()?.id === second.id,
+    reveal: async () => {
+      // Simulate CodeMirror view.focus() firing inside the hidden iframe during reveal.
+      hidden.receive('{"ch":"ui","data":{"type":"focus"}}');
+      return true;
+    },
+  });
+
+  await nav.open(root, otherUri, "Heading", "here");
+  const opens = page.sent.filter(
+    (frame) =>
+      typeof frame === "object" &&
+      frame !== null &&
+      (frame as { ch?: string }).ch === "ui",
+  );
+  assert.deepEqual(opens.at(-1), {
+    ch: "ui",
+    data: {
+      type: "open",
+      path: other,
+      fragment: "Heading",
+    },
+  });
+  assert.equal(hub.active()?.id, second.id);
+});

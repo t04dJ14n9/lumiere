@@ -73,6 +73,7 @@ function registerVimService(ctx: Context): void {
       return source && target ? routing.handoff(source, target) : () => {};
     },
     mode: (view) => getCM(view)?.state.vim ?? undefined,
+    cm: (view) => getCM(view) ?? undefined,
     watchMode(view, changed) {
       const cm = getCM(view);
       cm?.on("vim-mode-change", changed);

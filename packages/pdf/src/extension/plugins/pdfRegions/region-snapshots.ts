@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type { PdfPanel } from "../pdf/panel";
-import type { SelectionSnapshot } from "../pdf/selection";
+import type { SelectionSnapshot } from "../../../host/viewer/selection";
 import { RegionTooLargeError, type RegionImages } from "./region-images";
 
 /**

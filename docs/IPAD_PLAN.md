@@ -321,11 +321,15 @@ to its file. The touch work in section 3 is in:
   one at a time, only as tall as their content (`panels.ts`); buttons and
   rows grow on a touchscreen;
 - opening a note, or a heading from the outline, leaves the on-screen
-  keyboard down until the note is tapped;
+  keyboard down until the note is tapped, a paired Pencil included
+  (WebKit counts it as a fine pointer that hovers);
 - the edit menu (Cut, Copy, Paste) has More…, which opens Lumière's
   right-click menu at the selection, since a long-press belongs to the
   cursor; the menu bar's and keys' commands reach the window
-  (`appCommands` on the window's backend). The menu's rows are 44 points
+  (`appCommands` on the window's backend). A long-press on a word shows
+  the menu: WebKit keeps its own down when the editor writes the
+  selection back during the press, so the app shows one over the
+  selection (`LongPressEditMenu.swift`). The menu's rows are 44 points
   tall on a touchscreen, and formatting sits in Format, Highlight and
   Insert submenus that a tap opens beside their rows.
 - PDFs open in a tab in Lumière's own viewer (EmbedPDF, as in VS Code),
@@ -340,16 +344,39 @@ to its file. The touch work in section 3 is in:
 - a note's images, videos and embedded PDFs load: the app's router
   (`VaultRouter.swift`) serves vault files at `/_lumiere/vault/<id>/<path>`
   through Capacitor's file handler, with their types and byte ranges.
+- in the web app too: its service worker serves a note's page and the files
+  it shows (`lumiere/file?panel=&uri=`, with byte ranges), asking the window
+  for them, which reads only from the note's vault. Chromium puts no blob:
+  page under the worker, so the worker serves the page itself; that also
+  lets a note open offline in Chromium. Checked in headless Chromium and
+  WebKit.
+- the first note opened in a vault finds the vault's files: host-web makes
+  the vault a root before the note's panel opens. From IndexedDB (Safari,
+  Firefox) the first note found nothing in a subfolder.
 - one tap is enough: the editor's controls that only hovering revealed
   (Edit on a block, Copy on code, table handles) no longer take the first
-  tap, which WebKit spends on a hover that reveals something.
+  tap, which WebKit spends on a hover that reveals something; with no note
+  open, Choose a Note… shows only while the files are put away.
+- in a window rather than full screen, the bar in the top-left corner
+  starts after iPadOS's window controls (`WindowControlsInset.swift`);
+  the files, outline and tabs take no text selection.
+
+Checked on the real iPad (iPad Pro 12.9-inch, 5th generation, a Pencil
+paired), driven by a UI test runner over USB: the first tap after launch
+opens a note; a long-press on a word shows Cut, Copy, Paste and More…;
+More… opens Lumière's menu; full screen, 375 pt and ⅔-width windows read
+well; notes with images, a video, embedded PDFs, tables, callouts and
+properties render, and a PDF opens in a tab.
 
 Not done yet:
 
-- on the real iPad: whether the edit menu shows after a long-press (in the
-  simulator it shows on a tap on the selection); Split View widths;
-- images and PDFs embedded in notes in the web app (their `lumiere/file`
-  URLs need an answer there: its service worker);
+- after a long-press selects a word in a note that was not focused, taps
+  in the note no longer move the caret (a double-tap selection is fine).
+  A plain editable page, in an iframe or with a transparent caret, does
+  not do this, so it is the editor's; not found yet.
+- the editor's transparent caret (CodeMirror's drawn selection) makes
+  WebKit hide its selection handles, so a selection cannot be dragged
+  wider on the iPad.
 - the Pencil (P1): only the sketch format exists (`packages/ink`).
 
 Who does what:

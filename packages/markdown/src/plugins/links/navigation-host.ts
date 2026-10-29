@@ -78,20 +78,8 @@ class PanelNavigation {
     // inactive once ready means the user left during load — still cancel.
     // An already-ready pane that is merely unfocused (Outline / sidebar) must
     // still navigate; requiring active() made Outline clicks a silent no-op.
-    const waitedForReady = !this.ready;
-    if (!this.ready && !(await waitUntilReady(this.waiters, token))) {
+    if (!(await this.prepareReveal(request, token, target.preserveFocus))) {
       return false;
-    }
-    if (
-      !this.live ||
-      token.cancelled ||
-      request !== this.latest ||
-      (waitedForReady && !this.panel.active())
-    ) {
-      return false;
-    }
-    if (!this.panel.active()) {
-      this.panel.reveal();
     }
     this.delivery?.cancel();
     const local = new CancelToken();
@@ -118,6 +106,29 @@ class PanelNavigation {
     } finally {
       void stop();
     }
+  }
+
+  private async prepareReveal(
+    request: number,
+    token: Cancellation,
+    preserveFocus?: boolean,
+  ): Promise<boolean> {
+    const waitedForReady = !this.ready;
+    if (!this.ready && !(await waitUntilReady(this.waiters, token))) {
+      return false;
+    }
+    if (
+      !this.live ||
+      token.cancelled ||
+      request !== this.latest ||
+      (waitedForReady && !this.panel.active())
+    ) {
+      return false;
+    }
+    if (!this.panel.active() && !preserveFocus) {
+      this.panel.reveal();
+    }
+    return true;
   }
 
   dispose(): void {
