@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, type SpawnOptionsWithoutStdio } from "node:child_process";
 import { MAX_DIFF_CHARS } from "../shared/diff";
 import { parseBlamePorcelain } from "../shared/git-blame";
 import type { GitBlameLineResult, GitBlameSnapshot } from "../shared/git-blame";
@@ -15,12 +15,20 @@ export type GitBlameRunner = (options: {
   maxBuffer?: number;
 }) => Promise<{ stdout: string; stderr: string }>;
 
+export interface SpawnGitOptions {
+  /** The `git` to run; by default the one on the PATH. */
+  readonly program?: string;
+  /** Added to the process's own environment for every `git` it runs. */
+  readonly env?: Readonly<Record<string, string>>;
+}
+
 export function createSpawnBlameRunner(
   launch: typeof spawn = spawn,
+  { program = "git", env }: SpawnGitOptions = {},
 ): GitBlameRunner {
   return ({ args, cwd, stdin, timeoutMs, maxBuffer = 2_000_000 }) =>
     new Promise((resolve, reject) => {
-      const child = launch("git", [...args], { cwd, stdio: "pipe" });
+      const child = launch(program, [...args], spawnOptions(cwd, env));
       let stdout = "";
       let stderr = "";
       let bytes = 0;
@@ -71,6 +79,15 @@ export function createSpawnBlameRunner(
       }
       child.stdin.end();
     });
+}
+
+function spawnOptions(
+  cwd: string,
+  env: Readonly<Record<string, string>> | undefined,
+): SpawnOptionsWithoutStdio {
+  return env
+    ? { cwd, stdio: "pipe", env: { ...process.env, ...env } }
+    : { cwd, stdio: "pipe" };
 }
 
 /** Resolve the work tree when vscode.git has not opened the repository yet. */

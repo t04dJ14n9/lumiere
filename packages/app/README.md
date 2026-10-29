@@ -108,3 +108,9 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 
 - Markdown only: PDFs are listed but do not open yet.
 - One window per server.
+- Git blame and the change gutter start off in the app (`src/server/defaults.ts`):
+  git runs with the repository's own configuration, which can name programs
+  to run, so the owner turns them on in Settings for their own repositories.
+- Git blame and the change gutter use the `git` on the server's PATH. The
+  desktop app started from Finder sees only the system's PATH, so on macOS
+  that is Xcode's git, and Git is off without the command-line tools.

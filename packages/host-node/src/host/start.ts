@@ -24,6 +24,7 @@ import {
   type MenuContribution,
 } from "./context-menu";
 import { NoteDocuments } from "./documents";
+import { NodeGitAccess } from "./git";
 import { PanelHub } from "./panels";
 import {
   createHostCommands,
@@ -72,8 +73,10 @@ export async function startLumiere(
   const keys = new ContextKeys();
   const commands = createHostCommands(log, keys);
   const trees = new TreeHub(commands);
+  const git = new NodeGitAccess({ roots: () => [...roots] });
   const { settings, root } = await bootstrapPlugins({
     options,
+    git,
     documents,
     panels,
     trees,
@@ -105,17 +108,13 @@ export async function startLumiere(
     addRoot: (item) => {
       roots.add(item.replace(/\/+$/, ""));
     },
-    async stop() {
-      stopMenus();
-      panels.dispose();
-      await root.dispose();
-      await documents.dispose();
-    },
+    stop: () => stopHost({ stopMenus, panels, root, git, documents }),
   };
 }
 
 async function bootstrapPlugins({
   options,
+  git,
   documents,
   panels,
   trees,
@@ -124,6 +123,7 @@ async function bootstrapPlugins({
   log,
 }: {
   readonly options: StartOptions;
+  readonly git: NodeGitAccess;
   readonly documents: NoteDocuments;
   readonly panels: PanelHub;
   readonly trees: TreeHub;
@@ -132,6 +132,7 @@ async function bootstrapPlugins({
   readonly log: (message: string) => void;
 }): Promise<{ readonly settings: HostSettings; readonly root: RootContext }> {
   const host = createNodeHostServices({
+    git,
     commands,
     trees,
     identity: options.identity,
@@ -157,6 +158,22 @@ async function bootstrapPlugins({
   });
   await bootstrap(host, vault, root);
   return { settings: host.settings, root };
+}
+
+/** Pages and their menus first, then the plugins, then the notes. */
+async function stopHost(parts: {
+  readonly stopMenus: () => void;
+  readonly panels: PanelHub;
+  readonly root: RootContext;
+  readonly git: NodeGitAccess;
+  readonly documents: NoteDocuments;
+}): Promise<void> {
+  parts.stopMenus();
+  parts.panels.dispose();
+  await parts.root.dispose();
+  // After the plugins, which stop listening first.
+  parts.git.dispose();
+  await parts.documents.dispose();
 }
 
 /** Contributed settings from a `contributed.json` written at build time; none if missing. */

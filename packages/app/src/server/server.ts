@@ -23,6 +23,7 @@ import {
   type LumiereHost,
 } from "@workshop/host-node";
 import { createApi, type Api } from "./api";
+import { withAppDefaults } from "./defaults";
 import { admit } from "./auth";
 import { UiStore } from "./ui-state";
 import { Vaults } from "./vaults";
@@ -52,8 +53,8 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
   const lumiere = await startLumiere({
     identity: { appName: "Lumière", uriScheme: "lumiere" },
     markdown,
-    contributed: await readContributed(
-      path.join(setup.assets, "contributed.json"),
+    contributed: withAppDefaults(
+      await readContributed(path.join(setup.assets, "contributed.json")),
     ),
     menus: await readMenus(path.join(setup.assets, "menus.json")),
     commands: await readCommands(path.join(setup.assets, "commands.json")),

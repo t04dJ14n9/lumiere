@@ -199,8 +199,12 @@ push. `pnpm check:desktop` also passes when `apps/desktop` changed.
   - `FileTree` stops disabling `.pdf`, and a PDF tab is an `EditorFrame`
     on that route;
   - DSH registers it for `.pdf`.
-- **M6, Git outside VS Code (Claude):** `GitAccess` over the `git` CLI, for
-  blame and the change gutter in DSH and the app.
+- **M6, Git outside VS Code (Claude, done):** `GitAccess` over the `git`
+  CLI, for blame and the change gutter in DSH and the app
+  (`packages/host-node/src/host/git.ts`, built from the VS Code adapter's
+  command-line half). host-node now offers "git", so those plugins'
+  settings show. Still VS Code's only: the rendered diff editor, which also
+  needs the window. Section 6, step 12, checks it by hand.
 - **M7, releases (Grok Bot, with the owner's credentials):**
   - macOS signing and notarisation (hardened runtime with `allow-jit` for
     Node), and Windows signing;
@@ -290,6 +294,31 @@ The pass, in the Tauri window:
 9. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
 10. **Errors.** Rename the vault folder while it is open, or start with a
    broken `LUMIERE_SERVER`: a message appears, never a blank window.
+12. **Git (M6).** In a throwaway repository, never the owner's notes:
+
+    ```bash
+    v=/tmp/lumiere-git-vault; mkdir -p "$v" && cd "$v" && git init -q
+    git config user.name Test && git config user.email test@example.com
+    printf '# One\n\nfirst line\nsecond line\n' > One.md
+    git add One.md && git commit -qm "First"
+    ```
+
+    - In the desktop app, Git is off at first: no authorship text or change
+      bars. Turn on Git Blame and Git Gutter in Settings (⌘,), then go on.
+      DSH starts with them on.
+    - Open `One.md` in the desktop app and in DSH. With the caret on "first
+      line", quiet text after the line names Test, the time and "First";
+      hovering it shows the commit.
+    - Type a new line: a change bar marks it added. Change "second line":
+      its bar marks it modified. The new line's authorship says it is not
+      committed yet.
+    - Run `git commit -qam Second` in a terminal: within a second the bars
+      go and the changed line names "Second", without reopening the note.
+    - Settings lists Current-line authorship, Git change bars and Inline git
+      changes, but not Rendered git diff.
+    - On a Mac without Xcode's command-line tools (`xcode-select -p`
+      fails), opening the note shows no "install the tools" dialog; there
+      is just no authorship and no bars.
 
 Report each problem as an issue or a PR. For each fix:
 
