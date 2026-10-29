@@ -431,6 +431,19 @@ for (const mode of ["hidden", "below", "above"] as const) {
     const definition = `[^n]: ${"A long definition that wraps over several rows. ".repeat(14)}`;
     const doc = `${filler}before[^n] after\nnext\n\n${definition}\n`;
     await open(page, doc);
+    // Harness mounts in a content-sized .panel; constrain it like the real
+    // webview so .cm-scroller scrolls (needed for the "above" flip).
+    await page.addStyleTag({
+      content:
+        ".panel { height: 100%; min-height: 0; display: flex; flex-direction: column; }",
+    });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.querySelector(".cm-scroller")!.clientHeight,
+        ),
+      )
+      .toBeLessThanOrEqual(480);
     const at = filler.length;
     await page.evaluate((pos) => window.harness.reveal(pos), at);
     const target = page.locator(".cm-content > .cm-line", {
