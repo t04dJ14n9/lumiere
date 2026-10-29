@@ -84,10 +84,12 @@
   margin: 8px 16px;
 }
 /* Obsidian image-embed host + embed-actions frosted bar (REA app.css). */
+/* Wide-block: natural img size; host scrolls (overflow-x), no max-width clamp. */
 .image-embed {
   position: relative;
   display: inline-block;
-  max-width: 100%;
+  max-width: none;
+  overflow-x: auto;
   width: fit-content;
   vertical-align: bottom;
 }
@@ -236,10 +238,12 @@ img.md-image-selected {
 
 /* Obsidian image-embed host + resize-corner chevron (app.css ~11969–12070).
    VS Code theme tokens; pointer-events none — resize stays on +/− keys. */
+/* Wide-block: natural img size; host scrolls (overflow-x), no max-width clamp. */
 .image-embed {
   position: relative;
   display: inline-block;
-  max-width: 100%;
+  max-width: none;
+  overflow-x: auto;
   width: fit-content;
   vertical-align: bottom;
 }
