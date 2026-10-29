@@ -43,7 +43,7 @@ commits. Identity is resolved through Git config for the “You” label.
 - `blameWidget.ts`: identity state, the caret line's ghost, its placement, and the layer that draws it.
 - `blameTooltip.ts`: the full-message tooltip, shown by hit-testing the pointer (the ghost lets clicks through).
 - `paintable.ts`: hide the ghost inside unrevealed Live Preview replaces.
-- `gitBlame.css`: `git.blame.editorDecorationForeground`, fixed small UI type, nowrap + ellipsis, click-through layer, hover tooltip, Source-mode hiding.
+- `gitBlame.css`: GitLens trailing-line color (`#99999959` when that token is absent), fixed small UI type, nowrap + ellipsis, click-through layer, hover tooltip, Source-mode hiding.
 
 ## Services, events and settings
 
