@@ -84,14 +84,20 @@
   margin: 8px 16px;
 }
 /* Obsidian image-embed host + embed-actions frosted bar (REA app.css). */
-/* Wide-block: natural img size; host scrolls (overflow-x), no max-width clamp. */
+/* Wide-block: pane-constrained host (like .table-scroll); overflow-x scrolls. */
 .image-embed {
   position: relative;
-  display: inline-block;
-  max-width: none;
+  display: block;
+  contain: inline-size;
   overflow-x: auto;
-  width: fit-content;
+  overflow-y: hidden;
+  max-width: none;
+  width: 100%;
   vertical-align: bottom;
+}
+.image-embed img {
+  max-width: none;
+  height: auto;
 }
 .image-embed .embed-actions {
   position: absolute;
@@ -238,13 +244,15 @@ img.md-image-selected {
 
 /* Obsidian image-embed host + resize-corner chevron (app.css ~11969–12070).
    VS Code theme tokens; pointer-events none — resize stays on +/− keys. */
-/* Wide-block: natural img size; host scrolls (overflow-x), no max-width clamp. */
+/* Wide-block: pane-constrained host (like .table-scroll); overflow-x scrolls. */
 .image-embed {
   position: relative;
-  display: inline-block;
-  max-width: none;
+  display: block;
+  contain: inline-size;
   overflow-x: auto;
-  width: fit-content;
+  overflow-y: hidden;
+  max-width: none;
+  width: 100%;
   vertical-align: bottom;
 }
 .image-embed .image-resize-corner {
