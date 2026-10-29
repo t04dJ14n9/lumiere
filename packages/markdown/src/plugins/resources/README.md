@@ -10,6 +10,10 @@ Targets resolve through the injected vault index; URI and realpath containment
 are checked before reads. Notes use open-document text when available, preserving
 unsaved edits. Successfully loaded notes become authorized sources for nested
 requests. Webview URLs include modification time for cache invalidation.
+A link whose file the vault does not have is remembered; when the index lists
+it later (a file created or renamed into place, or found while the index
+catches up), the host tells the page, so its embed shows the file as in
+Obsidian instead of saying it could not be found until the note is reopened.
 
 ## Files
 
@@ -18,7 +22,7 @@ requests. Webview URLs include modification time for cache invalidation.
 - `protocol.ts`: load request/result schemas.
 - `host.ts`: service and RPC registration.
 - `diff-resources.ts`: independent diff-side resolution and Git revision selection.
-- `note-resources.ts`: known-source authorization, target containment, contained reads and kind selection.
+- `note-resources.ts`: known-source authorization, target containment, contained reads, kind selection and missing links.
 - `containment.ts`: URI/realpath and virtual-symlink checks.
 - `webview.ts`: validated resource RPC client.
 - `note-resources.test.ts`: kind precedence and fallback units.
@@ -28,7 +32,10 @@ requests. Webview URLs include modification time for cache invalidation.
 Host injects `rpc`, the host services `hostDocuments`, `workspace` and `git`, plus `vault`; webview injects `rpc`. Provides
 `resources` on both surfaces. Declares `resources/changed` (files a note shows
 were rewritten): the webview drops its resolved URLs, whose `?v=` is the old
-mtime. No commands or direct user settings.
+mtime. Declares `resources/found`, which the webview emits when the host's
+`found` notice says a missing link resolves now; the host listens to the
+index's `onDidChange` (create, rename) and `onDidResolve` for it. No commands
+or direct user settings.
 Vault configuration determines roots and resolution. The window service
 `diffResources` injects `vaults` and the host services `hostDocuments`, `workspace` and `git`, plus provides contained image
 resolution for standalone diff panels.

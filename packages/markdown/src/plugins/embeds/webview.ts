@@ -15,7 +15,8 @@ import type { EditorView } from "@codemirror/view";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
-import { enhanceEmbeds, forgetEmbedResources } from "./post-process";
+import { enhanceEmbeds, type PassEmbeds } from "./post-process";
+import { forgetEmbedResources } from "./resource-cache";
 import {
   embedEditing,
   embedsImage,
@@ -201,7 +202,15 @@ class EmbedInline extends MarkdownInline {
 }
 
 function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
+  const passes = new Set<PassEmbeds>();
   ctx.on("resources/changed", () => forgetEmbedResources(ctx.resources));
+  // Every pass, nested note embeds included: inline embeds keep their DOM
+  // when the page renders again, so `render/changed` would not reach them.
+  ctx.on("resources/found", () => {
+    for (const embeds of [...passes]) {
+      embeds.retryMissing();
+    }
+  });
   ctx.on("render/postProcess", (pass) => {
     if (
       pass.container.querySelectorAll<HTMLElement>("[data-resource]").length ===
@@ -209,7 +218,7 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
     ) {
       return;
     }
-    const stop = enhanceEmbeds({
+    const embeds = enhanceEmbeds({
       pass,
       render: ctx.render,
       resources: ctx.resources,
@@ -226,11 +235,10 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
           .catch((error) => ctx.logger.warn("Open embed failed", error));
       },
     });
-    if (!stop) {
-      return;
-    }
+    passes.add(embeds);
     const cleanup = () => {
-      stop();
+      embeds.dispose();
+      passes.delete(embeds);
       cleanups.delete(cleanup);
     };
     cleanups.add(cleanup);

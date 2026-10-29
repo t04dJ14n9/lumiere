@@ -7,6 +7,10 @@ import { mountImageEmbedActions } from "./embed-actions";
 import { embeddedNote, MissingSection } from "./note";
 import { renderBaseEmbed } from "./base-embed";
 import { mountPdfEmbed } from "./pdf-embed";
+import {
+  getCachedEmbedResource,
+  setCachedEmbedResource,
+} from "./resource-cache";
 
 interface EmbedOptions {
   pass: RenderPass;
@@ -20,52 +24,48 @@ export function embedIsWiki(node: { dataset: { wiki?: string } }): boolean {
   return node.dataset.wiki === "true";
 }
 
-/** Resolve placeholders with pass-owned cancellation and native source identity. */
-export function enhanceEmbeds(options: EmbedOptions): (() => void) | undefined {
-  const nodes =
-    options.pass.container.querySelectorAll<HTMLElement>("[data-resource]");
-  if (nodes.length === 0) {
-    return undefined;
-  }
-  const embeds = new EmbedPass(options);
-  embeds.start(nodes);
-  return () => embeds.dispose();
+/** A render pass's embeds, as the plugin keeps them. */
+export interface PassEmbeds {
+  /** Load again the embeds whose file could not be loaded: it may be there now. */
+  retryMissing(): void;
+  dispose(): void;
 }
 
-class EmbedPass {
+/** Resolve placeholders with pass-owned cancellation and native source identity. */
+export function enhanceEmbeds(options: EmbedOptions): PassEmbeds {
+  const embeds = new EmbedPass(options);
+  embeds.start();
+  return embeds;
+}
+
+class EmbedPass implements PassEmbeds {
   private readonly events = new AbortController();
   private readonly disposers: (() => void)[] = [];
   private readonly restore: (() => void)[] = [];
+  /** Embeds whose file could not be loaded. */
+  private readonly missing = new Set<HTMLElement>();
+  /** The title an embed had before an error replaced it. */
+  private readonly ownTitles = new Map<HTMLElement, string>();
   private isActive = true;
   constructor(private readonly options: EmbedOptions) {}
 
-  start(nodes: Iterable<HTMLElement>): void {
-    const { pass } = this.options;
-    for (const node of nodes) {
-      const target = node.dataset.resource ?? "";
+  start(): void {
+    const { container } = this.options.pass;
+    for (const node of container.querySelectorAll<HTMLElement>(
+      "[data-resource]",
+    )) {
       this.rememberPlaceholder(node);
-      const handleError = (error: unknown) => {
-        if (this.isActive) {
-          node.classList.add("unresolved-embed");
-          node.textContent = missingEmbedText(target, {
-            note: noteName(pass.documentUri),
-            section: error instanceof MissingSection,
-          });
-          node.title = String(error);
-          pass.measure();
-        }
-      };
-      const resource = this.resolve(node, target);
-      if (!resource) {
-        continue;
-      }
-      if (isPromise(resource)) {
-        void resource
-          .then((resolved) => this.apply(node, target, resolved))
-          .catch(handleError);
-      } else {
-        void this.apply(node, target, resource).catch(handleError);
-      }
+      this.show(node);
+    }
+  }
+
+  retryMissing(): void {
+    // Emptied first: an embed whose file is still missing comes back, and
+    // one being loaded is not loaded twice when the host reports again.
+    const missing = [...this.missing];
+    this.missing.clear();
+    for (const node of missing) {
+      this.show(node);
     }
   }
 
@@ -78,6 +78,55 @@ class EmbedPass {
     for (const reset of this.restore) {
       reset();
     }
+  }
+
+  /** Resolve an embed and show what it names, or why it cannot. */
+  private show(node: HTMLElement): void {
+    const target = node.dataset.resource ?? "";
+    const showError = (error: unknown) => this.showError(node, target, error);
+    const resource = this.resolve(node, target);
+    if (!resource) {
+      return;
+    }
+    if (!isPromise(resource)) {
+      void this.apply(node, target, resource).catch(showError);
+      return;
+    }
+    void resource.then(
+      (resolved) => this.apply(node, target, resolved).catch(showError),
+      (error: unknown) => {
+        this.missing.add(node);
+        showError(error);
+      },
+    );
+  }
+
+  private showError(node: HTMLElement, target: string, error: unknown): void {
+    if (!this.isActive) {
+      return;
+    }
+    const { pass } = this.options;
+    if (!this.ownTitles.has(node)) {
+      this.ownTitles.set(node, node.title);
+    }
+    node.classList.add("unresolved-embed");
+    node.textContent = missingEmbedText(target, {
+      note: noteName(pass.documentUri),
+      section: error instanceof MissingSection,
+    });
+    node.title = String(error);
+    pass.measure();
+  }
+
+  /** An embed that said it could not be shown shows its file now. */
+  private clearError(node: HTMLElement): void {
+    const title = this.ownTitles.get(node);
+    if (title === undefined) {
+      return;
+    }
+    this.ownTitles.delete(node);
+    node.classList.remove("unresolved-embed");
+    node.title = title;
   }
 
   private rememberPlaceholder(node: HTMLElement): void {
@@ -153,6 +202,7 @@ class EmbedPass {
     if (!this.isActive) {
       return;
     }
+    this.clearError(node);
     const wiki = embedIsWiki(node);
     if (resource.kind === "image") {
       this.showImage(node, target, resource, wiki);
@@ -369,58 +419,8 @@ function noteName(uri: string | undefined): string | undefined {
   return name && decodeURIComponent(name).replace(/\.md$/iu, "");
 }
 
-const EMBED_CACHE_LIMIT = 256;
-const embedResourceCaches = new WeakMap<
-  EmbedOptions["resources"],
-  Map<string, Resource>
->();
-
 function isPromise(
   value: Resource | Promise<Resource>,
 ): value is Promise<Resource> {
   return typeof (value as { then?: unknown }).then === "function";
-}
-
-/** Drop what embeds resolved with `resources`: the files may have changed. */
-export function forgetEmbedResources(
-  resources: EmbedOptions["resources"],
-): void {
-  embedResourceCaches.delete(resources);
-}
-
-export function getCachedEmbedResource(
-  resources: EmbedOptions["resources"],
-  key: string,
-): Resource | undefined {
-  const map = embedResourceCaches.get(resources);
-  if (!map) {
-    return undefined;
-  }
-  const cached = map.get(key);
-  if (cached !== undefined) {
-    map.delete(key);
-    map.set(key, cached);
-  }
-  return cached;
-}
-
-export function setCachedEmbedResource(
-  resources: EmbedOptions["resources"],
-  key: string,
-  resource: Resource,
-): void {
-  let map = embedResourceCaches.get(resources);
-  if (!map) {
-    map = new Map<string, Resource>();
-    embedResourceCaches.set(resources, map);
-  }
-  if (map.has(key)) {
-    map.delete(key);
-  } else if (map.size >= EMBED_CACHE_LIMIT) {
-    const oldest = map.keys().next().value;
-    if (oldest !== undefined) {
-      map.delete(oldest);
-    }
-  }
-  map.set(key, resource);
 }

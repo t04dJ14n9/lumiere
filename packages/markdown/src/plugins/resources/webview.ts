@@ -31,6 +31,10 @@ export const resourcesWebview: Plugin = {
     // Each URL carries the file's mtime when it was resolved (`?v=`), so a
     // rewritten file needs resolving again to show.
     ctx.on("resources/changed", () => cache.clear());
+    // Nothing that failed was cached, so there is nothing to drop.
+    ctx.effect(() =>
+      ctx.rpc.on(protocol, "found", () => ctx.emit("resources/found")),
+    );
 
     ctx.provide("resources", {
       peek: (target, source, syntax) =>
