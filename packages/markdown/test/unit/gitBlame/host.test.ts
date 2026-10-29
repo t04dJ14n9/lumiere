@@ -71,7 +71,7 @@ async function setup(git?: GitAccess) {
   };
 }
 
-test("panel host features start blame by default and follow resource settings", async (t) => {
+test("panel host features leave blame off by default and follow resource settings", async (t) => {
   const fake = fakeGit();
   const pair = rpcPair();
   const root = createRoot();
@@ -111,6 +111,15 @@ test("panel host features start blame by default and follow resource settings", 
   await root.settled();
 
   const request = { line: 1, contents: "note", version: 1 };
+  await assert.rejects(pair.client.call(protocol, "blameLine", request), {
+    code: "PluginDisabled",
+  });
+  assert.equal(fake.requests.length, 0);
+  assert.equal(fake.listeners.size, 0);
+
+  settings.gitBlame = { enabled: true, config: {} };
+  root.emit("editor/configure");
+  await root.settled();
   assert.deepEqual(await pair.client.call(protocol, "blameLine", request), {
     status: "uncommitted",
     repoGeneration: 0,

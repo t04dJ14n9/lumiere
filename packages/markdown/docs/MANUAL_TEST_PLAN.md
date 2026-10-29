@@ -619,8 +619,11 @@ title, then set `lumiere.markdown.plugins.inlineTitle.enabled` to true.
 ### outline
 
 1. With a Workshop note active, the Explorer's **Markdown Outline** lists its
-   headings; clicking one moves the caret there, and the current section is
-   selected as the caret moves.
+   headings collapsed until the caret enters a section. Only that heading's
+   ancestor path stays open. Clicking a heading moves the caret there, and
+   the current section is selected as the caret moves. Set
+   `lumiere.markdown.outline.expandMode` to `all` to start every parent
+   expanded and only select on follow.
 2. In the text editor, Markdown Outline hides; VS Code's Outline lists headings
    once.
 3. Use **Collapse All** in Markdown Outline's title bar, then **Expand All**.
@@ -1364,6 +1367,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.outgoingLinks.sortOrder` | `"alphabetical"` | alphabetical / alphabeticalReverse / byModifiedTime / byModifiedTimeReverse; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.outgoingLinks.extraContext` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.outline.followCursor` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.outline.expandMode` | `"accordion"` | accordion / all; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.properties.listPreviewCount` | `3` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.scratch.folder` | `"scratch"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
