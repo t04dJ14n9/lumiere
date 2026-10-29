@@ -1,34 +1,42 @@
-/** The open vault's files as folders and notes; a note opens in a tab. */
-import { useMemo, useState } from "react";
+/**
+ * The open vault's files as folders and notes; a note opens in a tab.
+ * Folders start closed, and the way to the shown note opens (folders.ts).
+ */
+import { useEffect, useMemo, useRef } from "react";
 import type { FileKind } from "../../shared/file-kind";
 import type { FileEntry } from "../api";
+import { useOpenFolders } from "../folders";
 import { buildTree, type Folder } from "../tree";
+import type { OpenFolders } from "../tree-state";
+import type { UiStateHandle } from "../ui-state";
 
 export interface FileTreeProps {
+  readonly vault: string;
   readonly files: readonly FileEntry[];
   readonly activePath: string | undefined;
   /** The kinds of file that open in a tab; the others are listed greyed. */
   readonly opens: readonly FileKind[];
+  /** The saved layout, which keeps the open folders. */
+  readonly ui: UiStateHandle;
   readonly onOpen: (path: string) => void;
 }
 
-export function FileTree({ files, activePath, opens, onOpen }: FileTreeProps) {
+export function FileTree({
+  vault,
+  files,
+  activePath,
+  opens,
+  ui,
+  onOpen,
+}: FileTreeProps) {
   const root = useMemo(() => buildTree(files), [files]);
-  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
-  const toggle = (path: string) =>
-    setClosed((current) => {
-      const next = new Set(current);
-      if (!next.delete(path)) {
-        next.add(path);
-      }
-      return next;
-    });
+  const folders = useOpenFolders(ui, vault, activePath);
   return (
     <nav className="file-tree" aria-label="Files">
       <FolderItems
         folder={root}
-        closed={closed}
-        toggle={toggle}
+        open={folders.open}
+        toggle={folders.toggle}
         activePath={activePath}
         opens={opens}
         onOpen={onOpen}
@@ -37,15 +45,18 @@ export function FileTree({ files, activePath, opens, onOpen }: FileTreeProps) {
   );
 }
 
-interface FolderItemsProps extends Omit<FileTreeProps, "files"> {
+interface FolderItemsProps extends Pick<
+  FileTreeProps,
+  "activePath" | "opens" | "onOpen"
+> {
   readonly folder: Folder;
-  readonly closed: ReadonlySet<string>;
+  readonly open: OpenFolders;
   readonly toggle: (path: string) => void;
 }
 
 function FolderItems({
   folder,
-  closed,
+  open,
   toggle,
   activePath,
   opens,
@@ -58,15 +69,15 @@ function FolderItems({
           <button
             type="button"
             className="tree-folder"
-            aria-expanded={!closed.has(child.path)}
+            aria-expanded={open.has(child.path)}
             onClick={() => toggle(child.path)}
           >
             {child.name}
           </button>
-          {!closed.has(child.path) && (
+          {open.has(child.path) && (
             <FolderItems
               folder={child}
-              closed={closed}
+              open={open}
               toggle={toggle}
               activePath={activePath}
               opens={opens}
@@ -77,18 +88,46 @@ function FolderItems({
       ))}
       {folder.files.map((file) => (
         <li key={file.path}>
-          <button
-            type="button"
-            className="tree-file"
-            data-kind={file.kind}
-            aria-current={file.path === activePath ? "page" : undefined}
-            disabled={!opens.includes(file.kind)}
-            onClick={() => onOpen(file.path)}
-          >
-            {file.path.slice(file.path.lastIndexOf("/") + 1)}
-          </button>
+          <FileItem
+            file={file}
+            isShown={file.path === activePath}
+            opens={opens}
+            onOpen={onOpen}
+          />
         </li>
       ))}
     </ul>
+  );
+}
+
+function FileItem({
+  file,
+  isShown,
+  opens,
+  onOpen,
+}: Pick<FileTreeProps, "opens" | "onOpen"> & {
+  readonly file: FileEntry;
+  readonly isShown: boolean;
+}) {
+  const button = useRef<HTMLButtonElement>(null);
+  // The shown note scrolls into view when it becomes shown or appears (its
+  // folders opened, the list shown), but not when other folders open or close.
+  useEffect(() => {
+    if (isShown) {
+      button.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [isShown]);
+  return (
+    <button
+      ref={button}
+      type="button"
+      className="tree-file"
+      data-kind={file.kind}
+      aria-current={isShown ? "page" : undefined}
+      disabled={!opens.includes(file.kind)}
+      onClick={() => onOpen(file.path)}
+    >
+      {file.path.slice(file.path.lastIndexOf("/") + 1)}
+    </button>
   );
 }

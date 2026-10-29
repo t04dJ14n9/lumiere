@@ -269,6 +269,8 @@ The pass, in the Tauri window:
    - File > Open Folder… (Cmd+O) opens the native picker.
    - The vault's files appear. A `.obsidian` folder and `node_modules` stay
      hidden.
+   - Folders start closed. Opening a note from a link opens the folders
+     above it. After Quit and a new launch, the same folders are open.
 2. **Edit.**
    - Open a note and type: the file on disk changes within a second.
    - Undo and redo work.

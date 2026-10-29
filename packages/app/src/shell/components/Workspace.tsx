@@ -142,6 +142,7 @@ function FilesSidebar({
   tabs,
   dispatch,
   opening,
+  ui,
   panels,
 }: WorkspaceProps) {
   const shown = tabs.tabs.find((tab) => tab.id === tabs.active);
@@ -157,6 +158,9 @@ function FilesSidebar({
             onHide={() => panels.hide("sidebar")}
           />
           <FileTree
+            // Each vault's list starts afresh, revealing the shown note again.
+            key={vault}
+            vault={vault}
             files={vaults.files}
             activePath={
               shown?.kind === "note" && shown.vault === vault
@@ -164,6 +168,7 @@ function FilesSidebar({
                 : undefined
             }
             opens={backend().editors.kinds ?? ["note", "pdf"]}
+            ui={ui}
             onOpen={(path) => {
               dispatch({ type: "open", vault, path });
               panels.dismiss();

@@ -33,6 +33,8 @@ with the note in front.
 Laid out as VS Code:
 
 - The vault's files on the left, the shown note's outline on the right.
+  As in VS Code's Explorer, folders start closed, and the ones on the way
+  to the shown note open whenever it changes (`folders.ts`).
 - Notes open as tabs in the middle. Each tab is an editor page in an
   iframe, sent the theme and told when it is shown
   (`@workshop/host-node/embedding`).
@@ -50,8 +52,9 @@ and ⌥⌘←) the next and previous tab, ⌘B the files sidebar, ⌥⌘B the ou
 ⌘O Open Folder. The app menu runs the same commands. A key the
 editor uses itself, such as ⌘B for Bold while typing, stays the editor's.
 
-The layout and Color Theme are kept by the server (`/api/ui`), because the
-window's own storage does not last: its port changes every launch.
+The layout (the panels, and each vault's open folders) and Color Theme are
+kept by the server (`/api/ui`), because the window's own storage does not
+last: its port changes every launch.
 
 From the desktop app the window uses only the folder picker, menu commands
 and the app's light or dark appearance (`tauri.ts`). In a browser it falls
@@ -82,7 +85,7 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 | `GET /api/files?vault=` | a vault's files, sorted, with their kind |
 | `POST /api/open` `{"path"}` | show a note or folder (Finder, a second launch) |
 | `GET /api/events` | server-sent events: vaults changed, a note to open |
-| `GET /api/ui`, `POST /api/ui` | the window's layout and Color Theme (`src/shared/ui-state.ts`) |
+| `GET /api/ui`, `POST /api/ui` | the window's layout, open folders and Color Theme (`src/shared/ui-state.ts`) |
 | `/lumiere/*` | the editor pages and tree views (`@workshop/host-node`) |
 
 ## Files
@@ -99,6 +102,7 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 - `src/shell/settings.ts`, `src/shell/settings-view.ts`: the settings, and how the Settings tab lays them out.
 - `src/shell/ui-state.ts`, `src/shared/ui-state.ts`, `src/server/ui-state.ts`: the layout and Color Theme, kept by the server.
 - `src/shell/tabs.ts`, `src/shell/tree.ts`, `src/shell/tree-state.ts`: tabs and tree state, as pure functions.
+- `src/shell/folders.ts`: which of the file list's folders are open, kept with the layout.
 - `src/shell/api.ts`, `src/shell/views.ts`: the server's API and the tree views, from the window.
 - `src/shell/theme.ts`: the window's light and dark palettes, and which one shows.
 - `src/shell/tauri.ts`: everything the window asks of the desktop app.

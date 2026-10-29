@@ -334,27 +334,31 @@ test("the window's layout and theme are kept, and only valid changes apply", asy
       sidebar: true,
       outline: true,
       theme: "system",
+      folders: {},
     },
   );
   const changed = await send(server.port, "/api/ui", {
     method: "POST",
     headers,
-    body: JSON.stringify({ outline: false, theme: "dark", sidebar: "maybe" }),
+    body: JSON.stringify({
+      outline: false,
+      theme: "dark",
+      sidebar: "maybe",
+      folders: { "/v": ["a", "a/b"] },
+    }),
   });
-  assert.deepEqual(JSON.parse(changed.body), {
+  const kept = {
     sidebar: true,
     outline: false,
     theme: "dark",
-  });
+    folders: { "/v": ["a", "a/b"] },
+  };
+  assert.deepEqual(JSON.parse(changed.body), kept);
   assert.deepEqual(
     JSON.parse(
       (await send(server.port, "/api/ui", { headers: { cookie } })).body,
     ),
-    {
-      sidebar: true,
-      outline: false,
-      theme: "dark",
-    },
+    kept,
   );
 });
 
