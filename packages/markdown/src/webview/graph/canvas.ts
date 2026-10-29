@@ -1,5 +1,6 @@
 import Graph from "graphology";
 import Sigma from "sigma";
+import { extremityArrow } from "sigma/rendering";
 import {
   startLayoutWorker,
   stopLayoutWorker,
@@ -63,7 +64,16 @@ export function mountCanvas(
   const graph = new Graph({ type: "directed", multi: false });
   return bindCanvas({
     graph,
-    renderer: new Sigma(graph, container, { defaultEdgeType: "arrow" }),
+    renderer: new Sigma(graph, container, {
+      // v3 sized nodes/edges in screen pixels; v4 defaults to "positions".
+      settings: { itemSizesReference: "screen" },
+      primitives: {
+        edges: {
+          extremities: [extremityArrow()],
+          defaultHead: "arrow",
+        },
+      },
+    }),
     positions: new Map(),
     previous: new Set(),
     workerSession: undefined,
