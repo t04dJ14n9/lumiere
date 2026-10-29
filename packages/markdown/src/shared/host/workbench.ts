@@ -75,6 +75,8 @@ export interface TreeHandle {
   expand(node: TreeNode): Promise<void>;
   /** Close this node in the tree UI without a full data rebuild. */
   collapse(node: TreeNode): Promise<void>;
+  /** Close every expandable node, when the native tree supports it. */
+  collapseAll?(): Promise<void>;
   readonly visible: boolean;
   onVisibilityChanged(listener: (visible: boolean) => void): Disposer;
   dispose(): void;

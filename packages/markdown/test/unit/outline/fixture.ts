@@ -37,6 +37,7 @@ export async function outlineFixture(
   }[] = [];
   const expands: TreeNode[] = [];
   const collapses: TreeNode[] = [];
+  let collapseAllCount = 0;
   let refreshCount = 0;
   // VS Code keeps a node open when refresh does not change collapsibleState.
   // Reveal-expand opens it visually; only expand() records the provider flag
@@ -91,6 +92,11 @@ export async function outlineFixture(
         if (wasExpanded) {
           visuallyOpen.delete(node.id);
         }
+      },
+      async collapseAll() {
+        collapseAllCount++;
+        visuallyOpen.clear();
+        providerExpanded.clear();
       },
       get visible() {
         return visible;
@@ -189,6 +195,9 @@ export async function outlineFixture(
     collapses,
     get refreshCount() {
       return refreshCount;
+    },
+    get collapseAllCount() {
+      return collapseAllCount;
     },
     isOpen(label: string) {
       for (const id of visuallyOpen) {

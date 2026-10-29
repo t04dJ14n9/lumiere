@@ -154,10 +154,22 @@ export class OutlineView {
     const key = [...expandIds].sort().join("\0");
     if (key !== this.lastAccordionKey) {
       this.lastAccordionKey = key;
-      await this.expandPath(path, expandIds);
-      await this.collapseOthers(expandIds);
+      await this.resetAccordion(path, expandIds);
     }
     await this.options.tree.reveal(active, { select: true, focus: false });
+  }
+
+  private async resetAccordion(
+    path: readonly TreeNode[],
+    expandIds: ReadonlySet<string>,
+  ): Promise<void> {
+    if (this.options.tree.collapseAll) {
+      await this.options.tree.collapseAll();
+      await this.expandPath(path, expandIds);
+      return;
+    }
+    await this.expandPath(path, expandIds);
+    await this.collapseOthers(expandIds);
   }
 
   private async expandPath(
