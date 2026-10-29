@@ -330,8 +330,10 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
   const origRender = mermaid.render;
   let initCalls = 0;
   let renderCalls = 0;
-  mermaid.initialize = (() => {
+  let initArg: any;
+  mermaid.initialize = ((config: unknown) => {
     initCalls++;
+    initArg = config;
   }) as typeof mermaid.initialize;
   mermaid.render = (async (id: string) => {
     renderCalls++;
@@ -358,6 +360,19 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
     await renderOne("flowchart LR\nC-->D");
     assert.equal(renderCalls, 2);
     assert.equal(initCalls, 1);
+    assert.equal(initArg.flowchart?.useMaxWidth, false);
+    assert.equal(initArg.sequence?.useMaxWidth, false);
+    assert.equal(initArg.git?.useMaxWidth, false);
+    assert.equal(initArg.er?.useMaxWidth, false);
+    assert.equal(initArg.gantt?.useMaxWidth, true);
+    assert.equal(initArg.journey?.useMaxWidth, true);
+    assert.equal(initArg.class?.useMaxWidth, true);
+    assert.equal(initArg.state?.useMaxWidth, true);
+    assert.equal(initArg.pie?.useMaxWidth, true);
+    assert.equal(
+      initArg.themeVariables?.fontFamily,
+      "var(--font-mermaid, var(--vscode-editor-font-family, inherit))",
+    );
 
     trusted = true;
     await renderOne("flowchart LR\nE-->F");

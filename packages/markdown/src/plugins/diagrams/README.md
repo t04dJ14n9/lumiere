@@ -49,4 +49,6 @@ No commands or default keybindings.
 HTML labels are disabled and SVG is sanitized. Theme is chosen from the VS Code
 light/dark theme when rendering. A failed render uses Obsidian's
 `mermaid-wrapper.is-guarded` chrome (title, error, Allow, source). Allow persists vault trust (`lumiere.mermaid-vault-trust`, Obsidian `mermaid-vault-trust`) and retries with `htmlLabels: true`; SVG output is still sanitized. Untrusted renders keep `htmlLabels: false`.
+Inline Mermaid sizing follows Obsidian per-type `useMaxWidth` (false for flowchart/sequence/git/er; true for gantt/journey/class/state/pie). The inline host scrolls horizontally for wide diagrams; height grows with the diagram. Do not shrink via CSS `max-width: 100%` (Task 2).
+
 Live-reference visual parity remains for the owner's manual comparison.
