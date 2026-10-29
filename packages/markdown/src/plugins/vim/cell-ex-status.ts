@@ -2,7 +2,8 @@ import type { Extension } from "@codemirror/state";
 import { ViewPlugin, type EditorView } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
 
-type StatusHost = { state: { statusbar?: HTMLElement | null } };
+/** Matches @replit/codemirror-vim CodeMirror.state.statusbar under exactOptionalPropertyTypes. */
+type StatusHost = { state: { statusbar?: Element | null } };
 
 /**
  * Point a nested cell Vim adapter's dialog host at the outer note status bar.
@@ -22,7 +23,11 @@ export function proxyCellExDialogToOuterStatus(
   cell.state.statusbar = host;
   return () => {
     if (cell.state.statusbar === host) {
-      cell.state.statusbar = previous;
+      if (previous === undefined) {
+        delete cell.state.statusbar;
+      } else {
+        cell.state.statusbar = previous;
+      }
     }
   };
 }
