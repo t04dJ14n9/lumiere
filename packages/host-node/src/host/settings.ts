@@ -8,16 +8,37 @@ import type { Disposer } from "@workshop/core";
 import {
   EffectiveConfiguration,
   readSettings,
+  switchesUnavailableIn,
   type ContributedSetting,
+  type HostNeed,
   type HostSettings,
   type SettingsAccess,
 } from "@workshop/markdown/portable";
+import { NODE_HOST_OFFERS } from "./inert";
 import type { HostStore } from "./platform";
 
 const PREFIX = "lumiere.markdown.";
 
 /** The reader's changes, in the host's store. */
 export const SETTINGS_FILE = "settings.json";
+
+/**
+ * Lumière's settings as this host serves them: a plugin it cannot serve
+ * (Manifest `needs` beyond what it offers, NODE_HOST_OFFERS) is off by
+ * default. Its settings are hidden here, so a reader could not turn it off,
+ * and against the host's stand-ins (inert.ts) it would only cost time.
+ */
+export function servedDefaults(
+  contributed: readonly ContributedSetting[],
+  offered: readonly HostNeed[] = NODE_HOST_OFFERS,
+): readonly ContributedSetting[] {
+  const off = switchesUnavailableIn(offered);
+  return contributed.map((setting) =>
+    off.has(setting.key)
+      ? { ...setting, schema: { ...setting.schema, default: false } }
+      : setting,
+  );
+}
 
 export interface HostSettingsOptions {
   /** The extension's contributed settings (`contributes.configuration`). */

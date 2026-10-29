@@ -7,13 +7,25 @@ import { VIEW_IDS } from "@workshop/host-node/views";
 import { TreePanel } from "./TreePanel";
 
 export interface OutlinePanelProps {
+  /** Over the note, in a narrow window (panels.ts). */
+  readonly floating: boolean;
   readonly onHide: () => void;
+  /** A heading was chosen. */
+  readonly onChoose: () => void;
   readonly report: (work: Promise<unknown>) => void;
 }
 
-export function OutlinePanel({ onHide, report }: OutlinePanelProps) {
+export function OutlinePanel({
+  floating,
+  onHide,
+  onChoose,
+  report,
+}: OutlinePanelProps) {
+  const className = floating
+    ? "side-panel outline-panel floating-panel"
+    : "side-panel outline-panel";
   return (
-    <aside className="side-panel outline-panel" aria-label="Outline">
+    <aside className={className} aria-label="Outline">
       <header className="panel-header">
         <span>Outline</span>
         <button
@@ -29,6 +41,7 @@ export function OutlinePanel({ onHide, report }: OutlinePanelProps) {
         viewId={VIEW_IDS.outline}
         visible
         unavailable="Open a note to see its outline."
+        onRun={onChoose}
         report={report}
       />
     </aside>

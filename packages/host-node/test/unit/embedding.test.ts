@@ -94,3 +94,47 @@ test("a channel is asked for and handed over only for the page's own panel", () 
   assert.equal(isPortMessage({ lumiere: "port", panel: "p2" }, "p1"), false);
   assert.equal(isEmbeddingMessage({ lumiere: "port", panel: "p1" }), true);
 });
+
+test("the menu message asks for the page's menu and nothing else", async () => {
+  const { isMenuMessage, isShownMessage, MENU_AT_SELECTION } =
+    await import("../../src/embedding");
+  assert.equal(isMenuMessage(MENU_AT_SELECTION), true);
+  assert.equal(isEmbeddingMessage(MENU_AT_SELECTION), true);
+  assert.equal(isShownMessage(MENU_AT_SELECTION), false);
+  for (const other of [
+    { lumiere: "shown" },
+    { lumiere: "theme" },
+    "menu",
+    null,
+  ]) {
+    assert.equal(isMenuMessage(other), false, JSON.stringify(other));
+  }
+});
+
+test("an inset message names how far the embedder's controls reach, within reason", async () => {
+  const { parseInsetMessage } = await import("../../src/embedding");
+  assert.deepEqual(parseInsetMessage({ lumiere: "inset", top: 84.4 }), {
+    lumiere: "inset",
+    top: 84,
+  });
+  assert.deepEqual(parseInsetMessage({ lumiere: "inset", top: 0 }), {
+    lumiere: "inset",
+    top: 0,
+  });
+  for (const other of [
+    { lumiere: "inset", top: -1 },
+    { lumiere: "inset", top: 5000 },
+    { lumiere: "inset", top: Number.NaN },
+    { lumiere: "inset", top: "84px" },
+    { lumiere: "theme" },
+  ]) {
+    assert.equal(parseInsetMessage(other), undefined, JSON.stringify(other));
+  }
+});
+
+test("the page's inset variable is the one the editor reads", async () => {
+  const { INSET_VARIABLE } = await import("../../src/embedding");
+  const { CHROME_INSET_VARIABLE } =
+    await import("../../../markdown/src/webview/ui/chrome-inset");
+  assert.equal(INSET_VARIABLE, CHROME_INSET_VARIABLE);
+});

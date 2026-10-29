@@ -105,7 +105,9 @@ button {
   font-variation-settings: var(--text-variations, normal);
 }
 #app .cm-content {
-  padding: var(--file-margin-top) var(--file-margins) 40vh;
+  /* --lumiere-inset-top: the embedder's controls over the page (chrome-inset.ts). */
+  padding: calc(var(--file-margin-top) + var(--lumiere-inset-top, 0px))
+    var(--file-margins) 40vh;
   caret-color: var(--vscode-editorCursor-foreground, currentColor);
 }
 #app .cm-line {
@@ -216,12 +218,16 @@ body.vscode-high-contrast-light
   transition: opacity 120ms;
 }
 /* Fold markers appear while the pointer is over the gutter, as in VS Code. */
-#app .cm-gutters:hover .cm-foldGutter .cm-gutterElement {
-  opacity: 0.7;
-}
-#app .cm-foldGutter .cm-gutterElement:hover {
-  color: var(--vscode-editor-foreground);
-  opacity: 1;
+/* Hovering reveals only where there is hover: on a touch screen WebKit
+   spends the first tap on a reveal and drops the tap (hover-reveals test). */
+@media (hover: hover) {
+  #app .cm-gutters:hover .cm-foldGutter .cm-gutterElement {
+    opacity: 0.7;
+  }
+  #app .cm-foldGutter .cm-gutterElement:hover {
+    color: var(--vscode-editor-foreground);
+    opacity: 1;
+  }
 }
 #app .cm-foldPlaceholder {
   margin: 0 4px;

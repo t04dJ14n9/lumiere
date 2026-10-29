@@ -1,11 +1,15 @@
 /**
  * The window, laid out as VS Code: the vault's files on the left, the open
  * notes (and Settings) as tabs in the middle, the shown note's outline on
- * the right. Either side can be hidden; the layout is kept between launches.
+ * the right. Either side can be hidden; in a narrow window they float over
+ * the note instead (panels.ts).
  */
-import type { Dispatch } from "react";
+import { useRef, type Dispatch, type ReactNode, type Ref } from "react";
+import { useChromeInset } from "../chrome-inset";
+import { backend } from "../backend";
 import type { VaultState } from "../hooks";
 import type { Opening } from "../opening";
+import type { Panels } from "../panels";
 import type { TabsAction, TabsState } from "../tabs";
 import type { UiStateHandle } from "../ui-state";
 import { EditorFrame } from "./EditorFrame";
@@ -23,63 +27,111 @@ export interface WorkspaceProps {
   readonly dispatch: Dispatch<TabsAction>;
   readonly opening: Opening;
   readonly ui: UiStateHandle;
+  readonly panels: Panels;
   readonly report: (work: Promise<unknown>) => void;
   readonly onCommandPalette?: (() => void) | undefined;
 }
 
 export function Workspace(props: WorkspaceProps) {
-  const { tabs, dispatch, opening, ui, report, onCommandPalette } = props;
-  const { sidebar, outline } = ui.state;
-  const columns = [sidebar && "260px", "minmax(0, 1fr)", outline && "240px"]
-    .filter(Boolean)
-    .join(" ");
+  const { tabs, dispatch, panels, report, onCommandPalette } = props;
+  const bar = useRef<HTMLDivElement>(null);
+  const bodies = useRef<HTMLDivElement>(null);
+  useChromeInset(bar, bodies);
+  const { narrow } = panels;
+  const columns = narrow
+    ? "minmax(0, 1fr)"
+    : [panels.sidebar && "260px", "minmax(0, 1fr)", panels.outline && "240px"]
+        .filter(Boolean)
+        .join(" ");
+  const sidebar = panels.sidebar && <FilesSidebar {...props} />;
+  const outline = panels.outline && (
+    <OutlinePanel
+      floating={narrow}
+      onHide={() => panels.hide("outline")}
+      onChoose={panels.dismiss}
+      report={report}
+    />
+  );
   return (
     <div className="app" style={{ gridTemplateColumns: columns }}>
-      {sidebar && <FilesSidebar {...props} />}
+      {!narrow && sidebar}
       <main className="editors">
         <TabStrip
+          ref={bar}
           tabs={tabs.tabs}
           active={tabs.active}
           onActivate={(id) => dispatch({ type: "activate", id })}
           onClose={(id) => dispatch({ type: "close", id })}
           trailing={
             <LayoutButtons
-              ui={ui}
+              panels={panels}
               onSettings={() => dispatch({ type: "openSettings" })}
               onCommandPalette={onCommandPalette}
             />
           }
         />
-        {/* Every tab stays laid out at full size, hidden or not (styles.css). */}
-        <div className="tab-bodies">
-          {tabs.tabs.map((tab) =>
-            tab.kind === "note" ? (
-              <EditorFrame
-                key={tab.id}
-                tab={tab}
-                visible={tab.id === tabs.active}
-                onOpen={opening.openPath}
-              />
-            ) : (
-              <SettingsEditor
-                key={tab.id}
-                visible={tab.id === tabs.active}
-                ui={ui}
-                report={report}
-              />
-            ),
+        <TabBodies {...props} bodies={bodies}>
+          {narrow && (sidebar || outline) && (
+            // A tap on the note puts a floating panel away, as a popover goes.
+            <div className="panel-scrim" onClick={panels.dismiss} />
           )}
-          {tabs.tabs.length === 0 && (
-            <p className="empty">Choose a note on the left.</p>
+          {narrow && sidebar}
+          {narrow && outline}
+        </TabBodies>
+      </main>
+      {!narrow && outline}
+    </div>
+  );
+}
+
+function TabBodies({
+  tabs,
+  opening,
+  ui,
+  panels,
+  report,
+  bodies,
+  children,
+}: WorkspaceProps & {
+  readonly bodies: Ref<HTMLDivElement>;
+  readonly children: ReactNode;
+}) {
+  return (
+    // Every tab stays laid out at full size, hidden or not (styles.css).
+    <div className="tab-bodies" ref={bodies}>
+      {tabs.tabs.map((tab) =>
+        tab.kind === "note" ? (
+          <EditorFrame
+            key={tab.id}
+            tab={tab}
+            visible={tab.id === tabs.active}
+            onOpen={opening.openPath}
+          />
+        ) : (
+          <SettingsEditor
+            key={tab.id}
+            visible={tab.id === tabs.active}
+            ui={ui}
+            report={report}
+          />
+        ),
+      )}
+      {tabs.tabs.length === 0 && (
+        <div className="empty">
+          {panels.narrow ? (
+            <button
+              type="button"
+              className="primary"
+              onClick={() => panels.toggle("sidebar")}
+            >
+              Choose a Note…
+            </button>
+          ) : (
+            <p>Choose a note on the left.</p>
           )}
         </div>
-      </main>
-      {outline && (
-        <OutlinePanel
-          onHide={() => ui.update({ outline: false })}
-          report={report}
-        />
       )}
+      {children}
     </div>
   );
 }
@@ -90,13 +142,20 @@ function FilesSidebar({
   tabs,
   dispatch,
   opening,
+  panels,
 }: WorkspaceProps) {
   const shown = tabs.tabs.find((tab) => tab.id === tabs.active);
+  const className = panels.narrow ? "sidebar floating-panel" : "sidebar";
   return (
-    <aside className="sidebar" aria-label="Files">
+    <aside className={className} aria-label="Files">
       {vault ? (
         <>
-          <VaultBar vault={vault} vaults={vaults} opening={opening} />
+          <VaultBar
+            vault={vault}
+            vaults={vaults}
+            opening={opening}
+            onHide={() => panels.hide("sidebar")}
+          />
           <FileTree
             files={vaults.files}
             activePath={
@@ -104,7 +163,11 @@ function FilesSidebar({
                 ? shown.path
                 : undefined
             }
-            onOpen={(path) => dispatch({ type: "open", vault, path })}
+            opens={backend().editors.kinds ?? ["note", "pdf"]}
+            onOpen={(path) => {
+              dispatch({ type: "open", vault, path });
+              panels.dismiss();
+            }}
           />
         </>
       ) : (
@@ -124,10 +187,12 @@ function VaultBar({
   vault,
   vaults,
   opening,
+  onHide,
 }: {
   readonly vault: string;
   readonly vaults: VaultState;
   readonly opening: Opening;
+  readonly onHide: () => void;
 }) {
   return (
     <header className="vault-bar">
@@ -155,6 +220,14 @@ function VaultBar({
         title="Close vault"
         aria-label="Close vault"
         onClick={() => opening.closeVault(vault)}
+      >
+        −
+      </button>
+      <button
+        type="button"
+        title="Hide Files (⌘B)"
+        aria-label="Hide Files"
+        onClick={onHide}
       >
         ×
       </button>

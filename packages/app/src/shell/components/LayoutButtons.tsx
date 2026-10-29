@@ -3,20 +3,20 @@
  * bar: show or hide the files sidebar and the outline, open the Command
  * Palette, and open Settings.
  */
-import type { UiStateHandle } from "../ui-state";
+import type { Panels } from "../panels";
 
 export interface LayoutButtonsProps {
-  readonly ui: UiStateHandle;
+  readonly panels: Panels;
   readonly onSettings: () => void;
   readonly onCommandPalette?: (() => void) | undefined;
 }
 
 export function LayoutButtons({
-  ui,
+  panels,
   onSettings,
   onCommandPalette,
 }: LayoutButtonsProps) {
-  const { sidebar, outline } = ui.state;
+  const { sidebar, outline } = panels;
   return (
     <div className="layout-buttons">
       {onCommandPalette && (
@@ -34,7 +34,7 @@ export function LayoutButtons({
         title="Toggle Sidebar (⌘B)"
         aria-label="Toggle Sidebar"
         aria-pressed={sidebar}
-        onClick={() => ui.update({ sidebar: !sidebar })}
+        onClick={() => panels.toggle("sidebar")}
       >
         <PanelIcon side="left" filled={sidebar} />
       </button>
@@ -43,7 +43,7 @@ export function LayoutButtons({
         title="Toggle Outline (⌥⌘B)"
         aria-label="Toggle Outline"
         aria-pressed={outline}
-        onClick={() => ui.update({ outline: !outline })}
+        onClick={() => panels.toggle("outline")}
       >
         <PanelIcon side="right" filled={outline} />
       </button>

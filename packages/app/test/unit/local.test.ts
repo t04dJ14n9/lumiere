@@ -46,6 +46,10 @@ async function localWindow(t: test.TestContext) {
       origin: "https://lumiere.example",
       editor: "https://lumiere.example/markdown/",
       shim: "https://lumiere.example/page/shim.js",
+      pdf: {
+        viewer: "https://lumiere.example/pdf/",
+        shim: "https://lumiere.example/page/pdf-shim.js",
+      },
       resource: () => "",
     },
   });
@@ -141,6 +145,29 @@ test(
     const port = page.connect?.();
     assert.ok(port, "a page without a server gets a channel");
     port.close();
+    page.dispose();
+  },
+);
+
+test(
+  "a PDF opens in a tab in Lumière's PDF viewer, which is handed its bytes",
+  { skip: !built && "the editor is not built" },
+  async (t) => {
+    const { backend } = await localWindow(t);
+    await backend.vaults.add("/vaults/Notes");
+    assert.deepEqual(backend.editors.kinds, ["note", "pdf"]);
+    const page = await backend.editors.open("/vaults/Notes", "papers/A.pdf");
+    assert.equal(page.connect, undefined, "a PDF needs no channel to a host");
+    const html = await (await fetch(page.url)).text();
+    assert.match(html, /viewer\.js/);
+    const pdf = /<meta name="lumiere-pdf" content="(blob:[^"]+)">/.exec(
+      html,
+    )?.[1];
+    assert.ok(pdf, "the page names its PDF");
+    assert.deepEqual(
+      new Uint8Array(await (await fetch(pdf)).arrayBuffer()),
+      new Uint8Array([37, 80, 68, 70]),
+    );
     page.dispose();
   },
 );

@@ -40,6 +40,8 @@ import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
 import { selectionDragScroll } from "./drag-scroll";
+import { focusOpensKeyboard } from "../../webview/ui/soft-keyboard";
+import { chromeInsetMargins } from "../../webview/ui/chrome-inset";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -125,7 +127,9 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerEditKeyOwnership(ctx, view);
     registerFindKeyOwnership(ctx, view);
     registerWebviewFocus(ctx);
-    view.focus();
+    if (!focusOpensKeyboard()) {
+      view.focus();
+    }
   },
 };
 
@@ -228,6 +232,7 @@ function createEditorView(
           }),
         }),
         menuSelectionContext,
+        chromeInsetMargins,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
         // BH-040/047: Tab/Shift+Tab and Mod-[/] via DOM so Vim cannot swallow indent.
         indentationDom(),
@@ -368,7 +373,7 @@ function registerReveal(ctx: Context, view: EditorView): void {
           throw new Error("Invalid selection");
         }
         runNavigation(view, () => {
-          if (focus) {
+          if (focus && !focusOpensKeyboard()) {
             view.focus();
           }
           view.dispatch({

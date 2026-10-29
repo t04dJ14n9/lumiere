@@ -18,6 +18,7 @@ import {
   useVaults,
 } from "./hooks";
 import { useOpening, type Opening } from "./opening";
+import { usePanels, type Panels } from "./panels";
 import {
   noTabs,
   tabToClose,
@@ -34,6 +35,7 @@ export function App() {
   const errors = useErrors();
   const vaults = useVaults(errors.report);
   const ui = useUiState(errors.report);
+  const panels = usePanels(ui);
   const [tabs, dispatch] = useReducer(tabsReducer, noTabs);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const opening = useOpening(vaults, dispatch, errors.report);
@@ -43,6 +45,7 @@ export function App() {
     tabs,
     dispatch,
     ui,
+    panels,
     opening,
     onTogglePalette: () => setPaletteOpen((open) => !open),
   });
@@ -61,6 +64,7 @@ export function App() {
           dispatch={dispatch}
           opening={opening}
           ui={ui}
+          panels={panels}
           report={errors.report}
           onCommandPalette={() => setPaletteOpen(true)}
         />
@@ -87,12 +91,14 @@ function windowCommands({
   tabs,
   dispatch,
   ui,
+  panels,
   opening,
   onTogglePalette,
 }: {
   readonly tabs: TabsState;
   readonly dispatch: (action: TabsAction) => void;
   readonly ui: UiStateHandle;
+  readonly panels: Panels;
   readonly opening: Opening;
   readonly onTogglePalette: () => void;
 }): CommandHandlers {
@@ -111,8 +117,8 @@ function windowCommands({
     "next-tab": () => dispatch({ type: "step", by: 1 }),
     "previous-tab": () => dispatch({ type: "step", by: -1 }),
     "last-tab": () => dispatch({ type: "last" }),
-    "toggle-sidebar": () => ui.update({ sidebar: !ui.state.sidebar }),
-    "toggle-outline": () => ui.update({ outline: !ui.state.outline }),
+    "toggle-sidebar": () => panels.toggle("sidebar"),
+    "toggle-outline": () => panels.toggle("outline"),
     "theme-system": () => ui.update({ theme: "system" }),
     "theme-light": () => ui.update({ theme: "light" }),
     "theme-dark": () => ui.update({ theme: "dark" }),

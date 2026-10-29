@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { PdfWebview } from "../../shared/host";
 import type { ToolbarSettings } from "../../shared/toolbar-settings";
+import { viewerPageHtml } from "../../shared/viewer-page";
 
 /**
  * The viewer page. Scripts load only from the host, with a nonce; the
@@ -12,30 +13,10 @@ export function viewerHtml(
   webview: Pick<PdfWebview, "cspSource" | "asset">,
   toolbar: ToolbarSettings,
 ): string {
-  const asset = (name: string) => webview.asset(name);
-  const nonce = randomBytes(16).toString("base64");
-  const csp = [
-    "default-src 'none'",
-    `script-src 'nonce-${nonce}' 'wasm-unsafe-eval'`,
-    // React and EmbedPDF position pages and overlays with inline styles.
-    `style-src ${webview.cspSource} 'unsafe-inline'`,
-    `img-src ${webview.cspSource} blob: data:`,
-    `font-src ${webview.cspSource}`,
-    `connect-src ${webview.cspSource} blob:`,
-    `worker-src blob:`,
-  ].join("; ");
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="${csp}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="${asset("viewer.css")}">
-  <title>PDF</title>
-</head>
-<body>
-  <div id="root" data-pdfium-wasm="${asset("pdfium.wasm")}" data-toolbar="${toolbar.mode}" data-dock="${toolbar.dock}"></div>
-  <script nonce="${nonce}" src="${asset("viewer.js")}"></script>
-</body>
-</html>`;
+  return viewerPageHtml({
+    asset: (name) => webview.asset(name),
+    cspSource: webview.cspSource,
+    nonce: randomBytes(16).toString("base64"),
+    toolbar,
+  });
 }

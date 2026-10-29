@@ -5,6 +5,16 @@ body,
   height: 100%;
   margin: 0;
 }
+/*
+ * On the iPad the window keeps clear of the status bar, the home indicator
+ * and the on-screen keyboard (the app counts it in the bottom safe area:
+ * KeyboardInset.swift). Elsewhere the insets are 0.
+ */
+#root {
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 body {
   background: var(--vscode-editor-background);
   color: var(--vscode-foreground);
@@ -111,59 +121,105 @@ button.primary:hover {
   min-width: 0;
   min-height: 0;
 }
+/*
+ * The tab bar sits on the note's own background, with one hairline under it:
+ * tabs are soft pills, the shown one gently filled, and a tab's × shows on
+ * the shown tab or under the pointer. The panel buttons are round icons.
+ */
 .tab-strip {
+  --tab-fill: color-mix(in srgb, var(--vscode-foreground) 7%, transparent);
+  --tab-fill-strong: color-mix(
+    in srgb,
+    var(--vscode-foreground) 11%,
+    transparent
+  );
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 6px 0 8px;
   border-bottom: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-editor-background);
 }
 .tabs {
   display: flex;
   flex: 1;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 .layout-buttons {
   display: flex;
   flex: none;
   align-items: center;
   gap: 2px;
-  padding: 0 6px;
 }
 .layout-buttons button {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 5px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   color: var(--vscode-descriptionForeground);
 }
-.layout-buttons button:hover {
-  background: var(--vscode-list-hoverBackground);
+.layout-buttons button:hover,
+.layout-buttons button[aria-pressed="true"] {
   color: var(--vscode-foreground);
+}
+.layout-buttons button:hover {
+  background: var(--tab-fill);
 }
 .tab {
   display: flex;
+  flex: none;
   align-items: center;
-  gap: 6px;
-  padding: 7px 8px 7px 12px;
-  border-right: 1px solid var(--vscode-panel-border);
+  gap: 2px;
+  max-width: 220px;
+  height: 28px;
+  padding: 0 4px 0 12px;
+  border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
   color: var(--vscode-descriptionForeground);
+  transition:
+    background-color 120ms,
+    color 120ms;
 }
-.tab[aria-selected="true"] {
-  background: var(--vscode-editor-background);
+.tab:hover {
+  background: var(--tab-fill);
   color: var(--vscode-foreground);
 }
+.tab[aria-selected="true"] {
+  background: var(--tab-fill-strong);
+  color: var(--vscode-foreground);
+  font-weight: 500;
+}
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .tab-close {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 14px;
   line-height: 1;
+  visibility: hidden;
+}
+.tab:hover .tab-close,
+.tab[aria-selected="true"] .tab-close {
+  visibility: visible;
 }
 .tab-close:hover {
-  background: var(--vscode-list-hoverBackground);
+  background: var(--tab-fill-strong);
 }
 /*
  * The tabs' bodies are stacked, and a hidden one is invisible rather than
@@ -194,6 +250,33 @@ button.primary:hover {
   place-items: center;
   margin: 0;
   color: var(--vscode-descriptionForeground);
+}
+/*
+ * A narrow window (panels.ts): the note takes the whole width, and the files
+ * or the outline float over it as a card only as tall as its content. The
+ * clear layer under the card puts it away when the note is tapped.
+ */
+.tab-bodies > .floating-panel {
+  inset: 8px auto auto 8px;
+  z-index: 2;
+  width: min(300px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  overflow: hidden;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+.tab-bodies > .floating-panel.outline-panel {
+  inset: 8px 8px auto auto;
+}
+/* A list longer than the card scrolls inside it. */
+.floating-panel .file-tree,
+.floating-panel .tree-panel {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.tab-bodies > .panel-scrim {
+  z-index: 1;
 }
 .vault-picker {
   max-width: 460px;
@@ -482,6 +565,159 @@ button.primary:hover {
 .settings-none {
   margin-top: 24px;
   color: var(--vscode-descriptionForeground);
+}
+/* A finger needs more room than a pointer: the iPad, a touchscreen. */
+@media (pointer: coarse) {
+  .tab-strip {
+    min-height: 48px;
+  }
+  .layout-buttons button {
+    width: 38px;
+    height: 38px;
+  }
+  .tab {
+    height: 34px;
+    padding-left: 14px;
+  }
+  .tab-close {
+    width: 26px;
+    height: 26px;
+  }
+  .panel-header button {
+    width: 30px;
+    height: 30px;
+  }
+  .vault-bar button {
+    width: 36px;
+  }
+  .tree-folder,
+  .tree-file {
+    padding: 8px 10px;
+  }
+  .tree-label {
+    padding-block: 7px;
+  }
+}
+/*
+ * Liquid Glass, on the iPad (apps/ipad/index.html sets the class). The note
+ * runs edge to edge, up behind the status bar, and the controls float over
+ * it as glass that blurs and tints what scrolls beneath: the tabs and the
+ * panel buttons as two capsules, the files and the outline as panels. Each
+ * note's page keeps its first line below the glass (chrome-inset.ts).
+ */
+:root.liquid-glass {
+  --glass-fill: light-dark(rgb(255 255 255 / 0.48), rgb(44 44 48 / 0.46));
+  --glass-blur: blur(20px) saturate(190%);
+  --glass-edge: light-dark(rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.16));
+  --glass-shadow:
+    0 8px 28px light-dark(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.45)),
+    0 1px 2px light-dark(rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.3));
+  /* Light catching the glass's top edge, and a softer one at the bottom. */
+  --glass-shine:
+    inset 0 1px 0.5px
+      light-dark(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.22)),
+    inset 0 -1px 0.5px
+      light-dark(rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.06));
+  --glass-pill: light-dark(rgb(0 0 0 / 0.07), rgb(255 255 255 / 0.13));
+}
+.liquid-glass #root {
+  padding-top: 0;
+}
+.liquid-glass .editors {
+  position: relative;
+}
+/* The tabs' bodies run under the bar, to the window's top. */
+.liquid-glass .tab-bodies {
+  position: absolute;
+  inset: 0;
+}
+/* Behind the status bar the note fades, so the time stays readable. */
+.liquid-glass .editors::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  height: calc(env(safe-area-inset-top) + 14px);
+  pointer-events: none;
+  background: linear-gradient(var(--vscode-editor-background) 45%, transparent);
+}
+.liquid-glass .tab-strip {
+  position: absolute;
+  z-index: 3;
+  top: calc(env(safe-area-inset-top) + 6px);
+  right: 10px;
+  left: 10px;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* Only the capsules take taps; the note shows, and scrolls, between them. */
+  pointer-events: none;
+}
+.liquid-glass .tabs,
+.liquid-glass .layout-buttons,
+.liquid-glass .app > .sidebar,
+.liquid-glass .app > .side-panel,
+.liquid-glass .tab-bodies > .floating-panel {
+  border: 0.5px solid var(--glass-edge);
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-shine);
+}
+.liquid-glass .tabs,
+.liquid-glass .layout-buttons {
+  flex: 0 1 auto;
+  padding: 5px;
+  border-radius: 999px;
+  pointer-events: auto;
+}
+.liquid-glass .tabs:empty {
+  display: none;
+}
+.liquid-glass .layout-buttons {
+  margin-left: auto;
+}
+.liquid-glass .tab {
+  height: 36px;
+  border-radius: 999px;
+}
+.liquid-glass .tab[aria-selected="true"] {
+  background: var(--glass-pill);
+}
+.liquid-glass .layout-buttons button {
+  width: 36px;
+  height: 36px;
+}
+/* The files and the outline: glass panels, beside the note or over it. */
+.liquid-glass .app > .sidebar,
+.liquid-glass .app > .side-panel,
+.liquid-glass .tab-bodies > .floating-panel {
+  overflow: hidden;
+  border-radius: 22px;
+}
+.liquid-glass .app > .sidebar {
+  margin: calc(env(safe-area-inset-top) + 6px) 0 10px 10px;
+}
+.liquid-glass .app > .side-panel {
+  margin: calc(env(safe-area-inset-top) + 6px) 10px 10px 0;
+}
+.liquid-glass .tab-bodies > .floating-panel {
+  top: calc(var(--chrome-inset, 0px) + 2px);
+  max-height: calc(100% - var(--chrome-inset, 0px) - 12px);
+}
+.liquid-glass .vault-bar,
+.liquid-glass .panel-header {
+  border-bottom-color: var(--glass-pill);
+}
+/* What has its own bar at the top starts below the glass. */
+.liquid-glass .tab-bodies > .editor-frame.is-pdf {
+  top: var(--chrome-inset, 0px);
+  height: auto;
+}
+.liquid-glass .settings-editor {
+  padding-top: var(--chrome-inset, 0px);
 }
 .command-palette-backdrop {
   position: fixed;

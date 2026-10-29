@@ -24,7 +24,12 @@ export { indexedDbFolder } from "./idb-folder";
 export { Mounts } from "./mounts";
 export { MemoryFileSystem, type MemoryEntry, type Persist } from "./memory-fs";
 export { notFound, type VaultFileInfo, type VaultFileSystem } from "./vault-fs";
-export { openEditorPage, type EditorPage, type EditorPageUrls } from "./pages";
+export {
+  openEditorPage,
+  openPdfPage,
+  type EditorPage,
+  type EditorPageUrls,
+} from "./pages";
 export { createWebPlatform } from "./platform";
 export { sha256 } from "./sha256";
 export { webWorkerLauncher } from "./workers";

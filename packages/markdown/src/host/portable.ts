@@ -9,6 +9,7 @@ export {
   pluginRank,
   pluginTitles,
   settingsUnavailableIn,
+  switchesUnavailableIn,
 } from "../plugins/catalog";
 export type { HostNeed } from "../shared/manifest";
 export { checkWrite, SETTING_PREFIX } from "../shared/setting-schema";

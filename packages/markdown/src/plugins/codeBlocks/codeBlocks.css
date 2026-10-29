@@ -59,11 +59,17 @@ body.vscode-high-contrast-light {
   opacity: 0;
   transition: opacity 120ms;
 }
-.hybrid-block:hover .copy-code,
-.cm-line:hover > .md-code-flair .copy-code,
-.cm-line.is-fence-hovered > .md-code-flair .copy-code,
 .copy-code:focus-visible {
   opacity: 1;
+}
+/* Hovering reveals only where there is hover: on a touch screen WebKit
+   spends the first tap on a reveal and drops the tap (hover-reveals test). */
+@media (hover: hover) {
+  .hybrid-block:hover .copy-code,
+  .cm-line:hover > .md-code-flair .copy-code,
+  .cm-line.is-fence-hovered > .md-code-flair .copy-code {
+    opacity: 1;
+  }
 }
 .copy-code:hover {
   color: var(--vscode-editor-foreground);

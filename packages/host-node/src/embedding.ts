@@ -36,6 +36,48 @@ export interface ShownMessage {
 export const SHOWN: ShownMessage = { lumiere: "shown" };
 
 /**
+ * In a PDF page of the web and iPad apps (host-web, `openPdfPage`): the blob
+ * URL of the PDF it shows, which page/pdf-shim.ts hands the viewer.
+ */
+export const PDF_META = "lumiere-pdf";
+
+/**
+ * The embedder asks for the page's right-click menu at the selection, for a
+ * device without a right click: the iPad's edit menu offers More… for it.
+ */
+export interface MenuMessage {
+  readonly lumiere: "menu";
+}
+
+export const MENU_AT_SELECTION: MenuMessage = { lumiere: "menu" };
+
+/**
+ * How far the embedder's controls reach over the top of the page: on the
+ * iPad they float as glass over the note, which scrolls under them. The
+ * page keeps its first line and its jumps below them (`INSET_VARIABLE`).
+ */
+export interface InsetMessage {
+  readonly lumiere: "inset";
+  /** In CSS pixels. */
+  readonly top: number;
+}
+
+/** The page's CSS variable for the inset; the editor reads it (markdown's chrome-inset.ts). */
+export const INSET_VARIABLE = "--lumiere-inset-top";
+
+/** An inset message, or undefined when `data` is not one. */
+export function parseInsetMessage(data: unknown): InsetMessage | undefined {
+  return isRecord(data) &&
+    data.lumiere === "inset" &&
+    typeof data.top === "number" &&
+    Number.isFinite(data.top) &&
+    data.top >= 0 &&
+    data.top <= 1000
+    ? { lumiere: "inset", top: Math.round(data.top) }
+    : undefined;
+}
+
+/**
  * A page whose host runs in its embedder's own window (host-web) has no
  * socket: it asks the embedder for a channel to its panel.
  */
@@ -122,6 +164,10 @@ export function isShownMessage(data: unknown): data is ShownMessage {
 }
 
 /** Whether `data` is any embedding message, which the editor must not see. */
+export function isMenuMessage(data: unknown): data is MenuMessage {
+  return isRecord(data) && data.lumiere === "menu";
+}
+
 export function isEmbeddingMessage(data: unknown): boolean {
   return isRecord(data) && typeof data.lumiere === "string";
 }

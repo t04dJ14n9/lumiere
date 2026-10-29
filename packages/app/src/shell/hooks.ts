@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FileEntry, ServerEvent } from "./api";
 import { backend } from "./backend";
+import { openShownPageMenu } from "./components/EditorFrame";
 import { onMenuCommand, type MenuCommand } from "./tauri";
 import { applyShellTheme, onThemeChange } from "./theme";
 
@@ -113,4 +114,15 @@ export function useMenuCommands(
   const latest = useRef(handlers);
   latest.current = handlers;
   useEffect(() => onMenuCommand((command) => latest.current[command]()), []);
+  useEffect(
+    () =>
+      backend().appCommands?.((command) => {
+        if (command === "page-menu") {
+          openShownPageMenu();
+        } else {
+          latest.current[command]();
+        }
+      }),
+    [],
+  );
 }

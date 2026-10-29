@@ -1,4 +1,4 @@
-import { unavailableSettings } from "../shared/host-needs";
+import { unavailableSettings, unavailableSwitches } from "../shared/host-needs";
 import publicApi from "./publicApi/manifest";
 import document from "./document/manifest";
 import editor from "./editor/manifest";
@@ -159,6 +159,13 @@ export function settingsUnavailableIn(
   offered: readonly HostNeed[],
 ): ReadonlySet<string> {
   return unavailableSettings(allManifests(), offered);
+}
+
+/** The switches of the plugins a host offering `offered` keeps off (shared/host-needs.ts). */
+export function switchesUnavailableIn(
+  offered: readonly HostNeed[],
+): ReadonlySet<string> {
+  return unavailableSwitches(allManifests(), offered);
 }
 
 /** Each plugin's title by its id ("lineNumbers" → "Line Numbers"), for settings pages. */

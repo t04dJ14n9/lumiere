@@ -307,11 +307,48 @@ Order: H1 → L1 → C1 and T1 (either first; C1 needs decision 1) → P1 → P2
   vaults in the browser (its private storage where a page can write it, else
   IndexedDB, as in Safari), and works offline.
 
-For L1 the iPad app gives host-web its files as a `VaultFileSystem` over the
-`VaultFileSystem` Capacitor plugin, and starts the window with
-`startLocalHost` as `apps/web/src/main.ts` does. Not done yet: images in
-notes (their `lumiere/file` URLs need an answer: the web app's service
-worker, or the iPad's scheme handler), and PDFs in tabs.
+L1 runs, for reading and writing notes: the iPad app gives host-web its
+vaults as `VaultFileSystem`s over the native `LumiereVaultFiles` plugin (the
+app's folder, and folders picked in Files) and starts the window with
+`startLocalHost`, as `apps/web/src/main.ts` does. Checked in the simulator:
+a note opens in Live Preview with its outline, and what is typed is written
+to its file. The touch work in section 3 is in:
+
+- the window keeps clear of the status bar, the home indicator and the
+  on-screen keyboard (safe areas);
+- below 1200 px wide (an iPad in portrait, Split View, a small window) the
+  note takes the whole width, and the files or the outline float over it,
+  one at a time, only as tall as their content (`panels.ts`); buttons and
+  rows grow on a touchscreen;
+- opening a note, or a heading from the outline, leaves the on-screen
+  keyboard down until the note is tapped;
+- the edit menu (Cut, Copy, Paste) has More…, which opens Lumière's
+  right-click menu at the selection, since a long-press belongs to the
+  cursor; the menu bar's and keys' commands reach the window
+  (`appCommands` on the window's backend).
+- PDFs open in a tab in Lumière's own viewer (EmbedPDF, as in VS Code),
+  with its toolbar, outline and search; a finger scrolls the pages. A
+  stand-in for the viewer's extension host hands it the PDF
+  (`openPdfPage`, host-node's `src/page/pdf-shim.ts`): WebKit's own PDF
+  view on the iPad shows only the first page.
+- plugins the host cannot serve (Git, the graph's panel, the VS Code and
+  Cursor bridges, Marp) are off, as their settings are hidden.
+- `apps/ipad/scripts/sample-vault.mjs` writes a sample vault with linked
+  notes and PDFs, for trying the app.
+- a note's images, videos and embedded PDFs load: the app's router
+  (`VaultRouter.swift`) serves vault files at `/_lumiere/vault/<id>/<path>`
+  through Capacitor's file handler, with their types and byte ranges.
+- one tap is enough: the editor's controls that only hovering revealed
+  (Edit on a block, Copy on code, table handles) no longer take the first
+  tap, which WebKit spends on a hover that reveals something.
+
+Not done yet:
+
+- on the real iPad: whether the edit menu shows after a long-press (in the
+  simulator it shows on a tap on the selection); Split View widths;
+- images and PDFs embedded in notes in the web app (their `lumiere/file`
+  URLs need an answer there: its service worker);
+- the Pencil (P1): only the sketch format exists (`packages/ink`).
 
 Who does what:
 - **Claude:** the architecture, host-web, the engine, the TypeScript

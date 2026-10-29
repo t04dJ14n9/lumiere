@@ -71,7 +71,8 @@ const boundaries = {
         : source;
       const pure =
         /\/src\/(kernel|shared|markdown)\//.test(file) ||
-        /\/packages\/(core|agents)\/src\//.test(file);
+        /\/packages\/(core|agents)\/src\//.test(file) ||
+        /\/packages\/ink\/src\/(format|service)\//.test(file);
       let invalid =
         pure &&
         (source === "vscode" ||
@@ -144,6 +145,8 @@ export default tseslint.config(
       // Throw-away measurement scripts (not part of the product).
       "packages/markdown/docs/obsidian-measurements/**",
       "**/dist/**",
+      // The web content cap sync copies into the iPad app's Xcode project.
+      "apps/ipad/ios/**",
       ".cache/**",
       "test-results/**",
       "playwright-report/**",
@@ -234,6 +237,9 @@ export default tseslint.config(
           "./packages/app/src/shell/tsconfig.json",
           "./packages/app/src/local/tsconfig.json",
           "./apps/web/tsconfig.json",
+          "./apps/ipad/src/tsconfig.json",
+          "./packages/ink/src/format/tsconfig.json",
+          "./packages/ink/src/service/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },

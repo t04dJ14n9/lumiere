@@ -76,3 +76,38 @@ test("a damaged settings file reads as no changes", async (t) => {
   const settings = await nodeSettings(contributed, dir);
   assert.equal(settings.get("preset", "minimal"), "obsidian");
 });
+
+test("a plugin this host cannot serve is off by default; the others keep theirs", async () => {
+  const { servedDefaults } = await import("../../src/host/settings");
+  const contributed = [
+    {
+      key: "lumiere.markdown.plugins.gitBlame.enabled",
+      schema: { type: "boolean", default: true },
+    },
+    {
+      key: "lumiere.markdown.plugins.graph.enabled",
+      schema: { type: "boolean", default: true },
+    },
+    {
+      key: "lumiere.markdown.plugins.outline.enabled",
+      schema: { type: "boolean", default: true },
+    },
+    {
+      key: "lumiere.markdown.gitBlame.delay",
+      schema: { type: "number", default: 500 },
+    },
+  ];
+  const served = servedDefaults(contributed as never);
+  const defaults = Object.fromEntries(
+    served.map((setting) => [setting.key, setting.schema.default]),
+  );
+  assert.deepEqual(defaults, {
+    "lumiere.markdown.plugins.gitBlame.enabled": true,
+    "lumiere.markdown.plugins.graph.enabled": false,
+    "lumiere.markdown.plugins.outline.enabled": true,
+    "lumiere.markdown.gitBlame.delay": 500,
+  });
+  // A host without Git turns Git blame off by default.
+  const withoutGit = servedDefaults(contributed as never, []);
+  assert.equal(withoutGit[0]?.schema.default, false);
+});

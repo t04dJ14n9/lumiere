@@ -127,7 +127,8 @@
   line-height: 1;
 }
 @media (hover: hover) {
-  .image-embed:hover .embed-actions {
+  .image-embed:hover .embed-actions,
+  .markdown-rendered .image-embed:hover .embed-actions {
     opacity: 1;
     pointer-events: auto;
   }
@@ -136,8 +137,7 @@
   }
 }
 .image-embed:has(img.md-image-selected) .embed-actions,
-.image-embed .embed-action:focus-visible,
-.markdown-rendered .image-embed:hover .embed-actions {
+.image-embed .embed-action:focus-visible {
   opacity: 1;
   pointer-events: auto;
 }

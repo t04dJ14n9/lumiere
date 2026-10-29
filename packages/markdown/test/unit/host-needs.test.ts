@@ -59,3 +59,30 @@ test("every setting with needs is one package.json contributes, so none escapes 
     assert.ok(contributed.has(key), `${key} is not a contributed setting`);
   }
 });
+
+test("a plugin whose needs a host cannot meet stays off there, with nothing else", async () => {
+  const { switchesUnavailableIn } = await import("../../src/plugins/catalog");
+  const off = switchesUnavailableIn([]);
+  for (const id of [
+    "bridge",
+    "cursorBridge",
+    "gitBlame",
+    "gitDiffEditor",
+    "gitGutter",
+    "gitInline",
+    "graph",
+    "ideContext",
+    "marp",
+  ]) {
+    const key = `lumiere.markdown.plugins.${id}.enabled`;
+    assert.ok(off.has(key), key);
+    assert.ok(contributed.has(key), `${key} is a real setting`);
+  }
+  for (const id of ["outline", "backlinks", "formatting", "tables"]) {
+    assert.ok(!off.has(`lumiere.markdown.plugins.${id}.enabled`), id);
+  }
+  // A host with Git keeps its Git plugins, not the ones needing more.
+  const withGit = switchesUnavailableIn(["git"]);
+  assert.ok(!withGit.has("lumiere.markdown.plugins.gitBlame.enabled"));
+  assert.ok(withGit.has("lumiere.markdown.plugins.gitDiffEditor.enabled"));
+});

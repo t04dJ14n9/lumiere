@@ -43,10 +43,17 @@
   right: -10px;
   top: -18px;
 }
-.hybrid-table:hover .table-handle,
 .hybrid-table:focus-within .table-handle {
   opacity: 1;
   pointer-events: auto;
+}
+/* Hovering reveals only where there is hover: on a touch screen WebKit
+   spends the first tap on a reveal and drops the tap (hover-reveals test). */
+@media (hover: hover) {
+  .hybrid-table:hover .table-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 .table-handle:hover,
 .table-handle:focus-visible {
@@ -219,10 +226,14 @@
      buffer) before the + was visible. Opacity snaps on :hover instead. */
   border: 1px solid var(--line);
 }
-.table-row-btn:hover,
-.table-col-btn:hover,
 .table-controls button:focus-visible {
   opacity: 1;
+}
+@media (hover: hover) {
+  .table-row-btn:hover,
+  .table-col-btn:hover {
+    opacity: 1;
+  }
 }
 .table-row-btn {
   grid-area: 2 / 1;

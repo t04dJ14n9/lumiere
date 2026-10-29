@@ -1,15 +1,18 @@
 /** The open vault's files as folders and notes; a note opens in a tab. */
 import { useMemo, useState } from "react";
+import type { FileKind } from "../../shared/file-kind";
 import type { FileEntry } from "../api";
 import { buildTree, type Folder } from "../tree";
 
 export interface FileTreeProps {
   readonly files: readonly FileEntry[];
   readonly activePath: string | undefined;
+  /** The kinds of file that open in a tab; the others are listed greyed. */
+  readonly opens: readonly FileKind[];
   readonly onOpen: (path: string) => void;
 }
 
-export function FileTree({ files, activePath, onOpen }: FileTreeProps) {
+export function FileTree({ files, activePath, opens, onOpen }: FileTreeProps) {
   const root = useMemo(() => buildTree(files), [files]);
   const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
   const toggle = (path: string) =>
@@ -27,6 +30,7 @@ export function FileTree({ files, activePath, onOpen }: FileTreeProps) {
         closed={closed}
         toggle={toggle}
         activePath={activePath}
+        opens={opens}
         onOpen={onOpen}
       />
     </nav>
@@ -44,6 +48,7 @@ function FolderItems({
   closed,
   toggle,
   activePath,
+  opens,
   onOpen,
 }: FolderItemsProps) {
   return (
@@ -64,6 +69,7 @@ function FolderItems({
               closed={closed}
               toggle={toggle}
               activePath={activePath}
+              opens={opens}
               onOpen={onOpen}
             />
           )}
@@ -76,8 +82,7 @@ function FolderItems({
             className="tree-file"
             data-kind={file.kind}
             aria-current={file.path === activePath ? "page" : undefined}
-            // Notes and PDFs open; images and other files do not yet.
-            disabled={file.kind !== "note" && file.kind !== "pdf"}
+            disabled={!opens.includes(file.kind)}
             onClick={() => onOpen(file.path)}
           >
             {file.path.slice(file.path.lastIndexOf("/") + 1)}

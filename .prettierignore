@@ -14,3 +14,9 @@ apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/resources/
 apps/desktop/.cache/
+# The iPad app's Xcode project: the web content cap sync copies in, its
+# generated config, Xcode's asset catalogs and Capacitor's package.
+apps/ipad/ios/App/App/public/
+apps/ipad/ios/App/App/capacitor.config.json
+apps/ipad/ios/App/App/Assets.xcassets/
+apps/ipad/ios/App/CapApp-SPM/

@@ -7,8 +7,25 @@
  */
 import type { SettingChange, SettingItem } from "@workshop/host-node/settings";
 import type { TreeEvent, TreeSnapshot } from "@workshop/host-node/views";
+import type { FileKind } from "../shared/file-kind";
 import type { UiState } from "../shared/ui-state";
 import type { FileEntry, PaletteCommand, ServerEvent, VaultList } from "./api";
+import { MENU_COMMANDS, type MenuCommand } from "./tauri";
+
+/**
+ * A command from the app's own menus: one of the window's (tauri.ts), or
+ * `page-menu`, the shown note's right-click menu at its selection, for a
+ * device without a right click (More… in the iPad's edit menu).
+ */
+export type AppCommand = MenuCommand | "page-menu";
+
+/** The command a native menu sent, if it is one the window knows. */
+export function parseAppCommand(value: unknown): AppCommand | undefined {
+  return value === "page-menu" ||
+    (MENU_COMMANDS as readonly unknown[]).includes(value)
+    ? (value as AppCommand)
+    : undefined;
+}
 
 export interface WindowBackend {
   readonly vaults: {
@@ -41,8 +58,18 @@ export interface WindowBackend {
     events(listener: (event: TreeEvent) => void): () => void;
   };
   readonly editors: {
+    /** The kinds of file it opens in a tab; notes when not given. */
+    readonly kinds?: readonly FileKind[];
     open(vault: string, path: string): Promise<OpenedEditor>;
   };
+  /**
+   * The commands chosen in the app's own menus and keys, where the app hands
+   * them over this way (the iPad's menu bar and edit menu); the desktop
+   * app's come through Tauri (tauri.ts).
+   */
+  readonly appCommands?: (
+    listener: (command: AppCommand) => void,
+  ) => () => void;
   /** A folder picker the window can show, when it has one; the vault's path. */
   readonly pickFolder?: () => Promise<string | undefined>;
   /**

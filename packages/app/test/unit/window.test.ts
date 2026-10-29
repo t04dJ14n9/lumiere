@@ -199,6 +199,104 @@ test("a description's `code` is told apart from its text", () => {
   ]);
 });
 
+test("the window keeps clear of the iPad's status bar, home indicator and keyboard", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const root = /#root\s*\{([^}]*)\}/g;
+  const rules = [...css.matchAll(root)].map((match) => match[1]).join("\n");
+  for (const side of ["top", "right", "bottom", "left"]) {
+    assert.match(rules, new RegExp(`env\\(safe-area-inset-${side}\\)`));
+  }
+  assert.match(rules, /box-sizing:\s*border-box/);
+});
+
+test("a wide window shows the panels it saved, as columns", async () => {
+  const { shownPanels, togglePanel } = await import("../../src/shell/panels");
+  const saved = { sidebar: true, outline: false };
+  assert.deepEqual(shownPanels(false, "outline", saved), saved);
+  assert.deepEqual(togglePanel("outline", false, undefined, saved), {
+    save: { outline: true },
+  });
+  assert.deepEqual(togglePanel("sidebar", false, undefined, saved), {
+    save: { sidebar: false },
+  });
+});
+
+test("a narrow window floats one panel at a time and saves nothing", async () => {
+  const { shownPanels, togglePanel } = await import("../../src/shell/panels");
+  const saved = { sidebar: true, outline: true };
+  assert.deepEqual(shownPanels(true, undefined, saved), {
+    sidebar: false,
+    outline: false,
+  });
+  assert.deepEqual(shownPanels(true, "outline", saved), {
+    sidebar: false,
+    outline: true,
+  });
+  // Showing one puts the other away; toggling the shown one hides it.
+  assert.deepEqual(togglePanel("outline", true, "sidebar", saved), {
+    floating: "outline",
+  });
+  assert.deepEqual(togglePanel("outline", true, "outline", saved), {
+    floating: undefined,
+  });
+});
+
+test("a native menu's command is one the window knows, or nothing", async () => {
+  const { parseAppCommand } = await import("../../src/shell/backend");
+  assert.equal(parseAppCommand("toggle-outline"), "toggle-outline");
+  assert.equal(parseAppCommand("page-menu"), "page-menu");
+  for (const other of ["toggle-everything", "", 3, null, undefined]) {
+    assert.equal(parseAppCommand(other), undefined, String(other));
+  }
+});
+
+test("a floating card's long list scrolls inside the card", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = /\.floating-panel \.tree-panel\s*\{([^}]*)\}/.exec(css)?.[1];
+  assert.ok(rule, "the floating lists' rule");
+  // A flex item keeps its content's height unless it may shrink below it.
+  assert.match(rule, /min-height:\s*0/);
+  assert.match(rule, /flex:\s*0 1 auto/);
+});
+
+test("the glass reaches over the notes by the bar's overlap, with room below it", async () => {
+  const { insetFor } = await import("../../src/shell/chrome-inset");
+  // The bar floats over bodies that run to the top: line 1 sits below it.
+  assert.equal(insetFor(76.4, 0), 82);
+  // The bar sits above the bodies, as on the desktop: nothing over the note.
+  assert.equal(insetFor(40, 40), 0);
+  assert.equal(insetFor(40, 48), 0);
+});
+
+test("with Liquid Glass the note runs up behind the status bar, and the glass keeps clear of it", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = (selector: string) => {
+    const start = css.indexOf(`${selector} {`);
+    assert.ok(start >= 0, `${selector} is styled`);
+    return css.slice(start, css.indexOf("}", start));
+  };
+  assert.match(rule(".liquid-glass #root"), /padding-top:\s*0/);
+  assert.match(
+    rule(".liquid-glass .tab-strip"),
+    /top:\s*calc\(env\(safe-area-inset-top\)/,
+  );
+  assert.match(rule(".liquid-glass .tab-bodies"), /inset:\s*0/);
+  // Only the capsules take taps; the note between them stays reachable.
+  assert.match(rule(".liquid-glass .tab-strip"), /pointer-events:\s*none/);
+});
+
 test("Command Palette shortcuts (⇧⌘P, Ctrl+Shift+P, F1) and filtering", async () => {
   assert.equal(
     shortcutCommand(press("KeyP", { meta: true, shift: true }), true),

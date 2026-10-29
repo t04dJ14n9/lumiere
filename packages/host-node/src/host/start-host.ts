@@ -33,7 +33,7 @@ import {
   type HostIdentity,
   type NodeHostCommands,
 } from "./services";
-import { SETTINGS_FILE } from "./settings";
+import { servedDefaults, SETTINGS_FILE } from "./settings";
 import { TreeHub } from "./trees";
 import { uriName } from "./uris";
 import { createHostVaultSystem } from "./vault";
@@ -145,7 +145,7 @@ async function bootstrapPlugins({
     documents,
     panels,
     roots,
-    contributed: options.contributed,
+    contributed: servedDefaults(options.contributed, git ? ["git"] : []),
     saved: await readSaved(platform),
     log,
     ...(git ? { git } : {}),
