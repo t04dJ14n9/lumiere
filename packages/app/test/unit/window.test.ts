@@ -220,6 +220,54 @@ test("the window keeps clear of the iPad's status bar, home indicator and keyboa
   assert.match(rules, /box-sizing:\s*border-box/);
 });
 
+test("a long-press on a file, a heading or a tab selects no text", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const unselectable = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter(([, , body]) => /(^|[\s;])user-select:\s*none/.test(body!))
+    .flatMap(([, selectors]) =>
+      selectors!
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .split(",")
+        .map((selector) => selector.trim()),
+    );
+  for (const chrome of [".sidebar", ".side-panel", ".tab-strip"]) {
+    assert.ok(unselectable.includes(chrome), chrome);
+  }
+  assert.ok(
+    !unselectable.some((selector) => /settings|editor-frame/.test(selector)),
+  );
+});
+
+test("the bar in the top-left corner starts after iPadOS's window controls", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(
+    new URL("../../src/shell/styles.css", import.meta.url),
+    "utf8",
+  );
+  const rule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find(([, , body]) =>
+    body!.includes("var(--window-controls-inset"),
+  );
+  assert.ok(rule, "the window controls' rule");
+  const selectors = rule[1]!
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split(",")
+    .map((selector) => selector.trim());
+  // Whichever column comes first holds the corner: the notes' tab strip
+  // (a narrow window, or the files hidden) or the files' vault bar.
+  assert.deepEqual(selectors.sort(), [
+    ".app > .editors:first-child > .tab-strip",
+    ".app > .sidebar:first-child > .vault-bar",
+  ]);
+  assert.match(
+    rule[2]!,
+    /padding-left:\s*calc\(8px \+ var\(--window-controls-inset, 0px\)\)/,
+  );
+});
+
 test("a wide window shows the panels it saved, as columns", async () => {
   const { shownPanels, togglePanel } = await import("../../src/shell/panels");
   const saved = { sidebar: true, outline: false };
@@ -250,6 +298,15 @@ test("a narrow window floats one panel at a time and saves nothing", async () =>
   assert.deepEqual(togglePanel("outline", true, "outline", saved), {
     floating: undefined,
   });
+});
+
+test("with no note open, Choose a Note… shows only while the files are put away", async () => {
+  const { emptyNotePrompt } = await import("../../src/shell/panels");
+  // A narrow window starts with its files floating: a button beside them
+  // would only put them away, as the layer under the card takes the tap.
+  assert.equal(emptyNotePrompt(true, true), "none");
+  assert.equal(emptyNotePrompt(true, false), "button");
+  assert.equal(emptyNotePrompt(false, true), "hint");
 });
 
 test("a native menu's command is one the window knows, or nothing", async () => {

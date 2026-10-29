@@ -122,6 +122,14 @@
 .property-chip-input {
   padding: 4px 8px;
 }
+/*
+ * WebKit on the iPad centres a date's value in its field, far from the
+ * other values; they all start at the left, as in Obsidian.
+ */
+.metadata-property-value
+  input[data-property-input]::-webkit-date-and-time-value {
+  text-align: start;
+}
 .metadata-property-value {
   min-width: 0;
   min-height: 1.75em;

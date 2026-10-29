@@ -46,6 +46,20 @@ button.primary:hover {
   grid-template-columns: 260px minmax(0, 1fr) 240px;
   height: 100%;
 }
+/*
+ * The files, the outline and the tabs are controls, not text: a long-press
+ * on one must not select its name (on the iPad that showed the edit menu
+ * over the file list), nor a drag across them a run of names. Notes are
+ * pages of their own, and Settings stays selectable.
+ */
+.sidebar,
+.side-panel,
+.tab-strip,
+.tab-bodies > .empty {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -140,6 +154,16 @@ button.primary:hover {
   padding: 0 6px 0 8px;
   border-bottom: 1px solid var(--vscode-panel-border);
   background: var(--vscode-editor-background);
+}
+/*
+ * In a window rather than full screen, iPadOS draws its window controls over
+ * the top-left corner (the app sets the width: WindowControlsInset.swift;
+ * elsewhere it is unset). The bar in that corner starts after them: the tab
+ * strip, or the vault bar when the files are a column.
+ */
+.app > .editors:first-child > .tab-strip,
+.app > .sidebar:first-child > .vault-bar {
+  padding-left: calc(8px + var(--window-controls-inset, 0px));
 }
 .tabs {
   display: flex;

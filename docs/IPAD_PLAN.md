@@ -321,11 +321,15 @@ to its file. The touch work in section 3 is in:
   one at a time, only as tall as their content (`panels.ts`); buttons and
   rows grow on a touchscreen;
 - opening a note, or a heading from the outline, leaves the on-screen
-  keyboard down until the note is tapped;
+  keyboard down until the note is tapped, a paired Pencil included
+  (WebKit counts it as a fine pointer that hovers);
 - the edit menu (Cut, Copy, Paste) has More…, which opens Lumière's
   right-click menu at the selection, since a long-press belongs to the
   cursor; the menu bar's and keys' commands reach the window
-  (`appCommands` on the window's backend).
+  (`appCommands` on the window's backend). A long-press on a word shows
+  the menu: WebKit keeps its own down when the editor writes the
+  selection back during the press, so the app shows one over the
+  selection (`LongPressEditMenu.swift`).
 - PDFs open in a tab in Lumière's own viewer (EmbedPDF, as in VS Code),
   with its toolbar, outline and search; a finger scrolls the pages. A
   stand-in for the viewer's extension host hands it the PDF
@@ -349,12 +353,28 @@ to its file. The touch work in section 3 is in:
   Firefox) the first note found nothing in a subfolder.
 - one tap is enough: the editor's controls that only hovering revealed
   (Edit on a block, Copy on code, table handles) no longer take the first
-  tap, which WebKit spends on a hover that reveals something.
+  tap, which WebKit spends on a hover that reveals something; with no note
+  open, Choose a Note… shows only while the files are put away.
+- in a window rather than full screen, the bar in the top-left corner
+  starts after iPadOS's window controls (`WindowControlsInset.swift`);
+  the files, outline and tabs take no text selection.
+
+Checked on the real iPad (iPad Pro 12.9-inch, 5th generation, a Pencil
+paired), driven by a UI test runner over USB: the first tap after launch
+opens a note; a long-press on a word shows Cut, Copy, Paste and More…;
+More… opens Lumière's menu; full screen, 375 pt and ⅔-width windows read
+well; notes with images, a video, embedded PDFs, tables, callouts and
+properties render, and a PDF opens in a tab.
 
 Not done yet:
 
-- on the real iPad: whether the edit menu shows after a long-press (in the
-  simulator it shows on a tap on the selection); Split View widths;
+- after a long-press selects a word in a note that was not focused, taps
+  in the note no longer move the caret (a double-tap selection is fine).
+  A plain editable page, in an iframe or with a transparent caret, does
+  not do this, so it is the editor's; not found yet.
+- the editor's transparent caret (CodeMirror's drawn selection) makes
+  WebKit hide its selection handles, so a selection cannot be dragged
+  wider on the iPad.
 - the Pencil (P1): only the sketch format exists (`packages/ink`).
 
 Who does what:

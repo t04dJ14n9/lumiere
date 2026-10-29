@@ -46,6 +46,23 @@ export function togglePanel(
   return { save: { [panel]: !saved[panel] } };
 }
 
+/**
+ * What the window shows while no note is open. A narrow one offers its
+ * files with a button while they are put away; once they float, the card is
+ * the choice, and a button beside it would only put the card away again,
+ * since the clear layer under the card takes the tap. A wide one points at
+ * its files.
+ */
+export function emptyNotePrompt(
+  narrow: boolean,
+  filesShown: boolean,
+): "button" | "hint" | "none" {
+  if (!narrow) {
+    return "hint";
+  }
+  return filesShown ? "none" : "button";
+}
+
 export interface Panels {
   /** The panels float over the note rather than sit beside it. */
   readonly narrow: boolean;

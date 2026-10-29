@@ -9,7 +9,7 @@ import { useChromeInset } from "../chrome-inset";
 import { backend } from "../backend";
 import type { VaultState } from "../hooks";
 import type { Opening } from "../opening";
-import type { Panels } from "../panels";
+import { emptyNotePrompt, type Panels } from "../panels";
 import type { TabsAction, TabsState } from "../tabs";
 import type { UiStateHandle } from "../ui-state";
 import { EditorFrame } from "./EditorFrame";
@@ -96,6 +96,7 @@ function TabBodies({
   readonly bodies: Ref<HTMLDivElement>;
   readonly children: ReactNode;
 }) {
+  const prompt = emptyNotePrompt(panels.narrow, panels.sidebar);
   return (
     // Every tab stays laid out at full size, hidden or not (styles.css).
     <div className="tab-bodies" ref={bodies}>
@@ -116,9 +117,9 @@ function TabBodies({
           />
         ),
       )}
-      {tabs.tabs.length === 0 && (
+      {tabs.tabs.length === 0 && prompt !== "none" && (
         <div className="empty">
-          {panels.narrow ? (
+          {prompt === "button" ? (
             <button
               type="button"
               className="primary"
