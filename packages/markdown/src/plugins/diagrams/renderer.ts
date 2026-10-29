@@ -143,7 +143,7 @@ export class DiagramRenderer {
         htmlLabels: trusted,
         flowchart: { htmlLabels: trusted, useMaxWidth: false },
         sequence: { useMaxWidth: false },
-        git: { useMaxWidth: false },
+        gitGraph: { useMaxWidth: false },
         er: { useMaxWidth: false },
         gantt: { useMaxWidth: true },
         journey: { useMaxWidth: true },

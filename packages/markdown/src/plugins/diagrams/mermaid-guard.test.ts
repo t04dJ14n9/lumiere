@@ -333,7 +333,7 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
   type MermaidInitArg = {
     flowchart?: { useMaxWidth?: boolean };
     sequence?: { useMaxWidth?: boolean };
-    git?: { useMaxWidth?: boolean };
+    gitGraph?: { useMaxWidth?: boolean };
     er?: { useMaxWidth?: boolean };
     gantt?: { useMaxWidth?: boolean };
     journey?: { useMaxWidth?: boolean };
@@ -374,7 +374,7 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
     assert.equal(initCalls, 1);
     assert.equal(initArg.flowchart?.useMaxWidth, false);
     assert.equal(initArg.sequence?.useMaxWidth, false);
-    assert.equal(initArg.git?.useMaxWidth, false);
+    assert.equal(initArg.gitGraph?.useMaxWidth, false);
     assert.equal(initArg.er?.useMaxWidth, false);
     assert.equal(initArg.gantt?.useMaxWidth, true);
     assert.equal(initArg.journey?.useMaxWidth, true);
