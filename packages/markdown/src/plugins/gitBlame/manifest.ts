@@ -5,7 +5,7 @@ export default defineManifest({
   description:
     "Shows who last committed the caret line at the end of the line in Live Preview.",
   kind: "feature",
-  defaultEnabled: true,
+  defaultEnabled: false,
   surfaces: ["host", "webview"],
   capabilities: ["editorChrome"],
   needs: ["git"],

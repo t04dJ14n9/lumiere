@@ -22,20 +22,20 @@ const blame = {
   subject: "Hello",
 };
 
-test("gitBlame is registered after gutter/inline, chrome only, and default-on", () => {
+test("gitBlame is registered after gutter/inline, chrome only, and default-off", () => {
   const order: readonly string[] = FEATURE_ORDER;
   assert.ok(order.indexOf("gitBlame") > order.indexOf("gitInline"));
   assert.ok(order.indexOf("gitInline") > order.indexOf("gitGutter"));
   const manifest = features.find(({ id }) => id === "gitBlame");
   assert.ok(manifest);
-  assert.equal(manifest.defaultEnabled, true);
+  assert.equal(manifest.defaultEnabled, false);
   assert.equal(manifest.title, "Current-line authorship");
   assert.deepEqual(manifest.capabilities, ["editorChrome"]);
   assert.deepEqual(manifest.surfaces, ["host", "webview"]);
   const properties = contributedProperties<{ default: unknown }>();
   assert.equal(
     properties["lumiere.markdown.plugins.gitBlame.enabled"]?.default,
-    true,
+    false,
   );
   assert.equal(
     properties["markdownWorkbench.plugins.gitBlame.enabled"],

@@ -2808,7 +2808,7 @@
           },
           "lumiere.markdown.plugins.gitBlame.enabled": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "scope": "resource",
             "description": "Shows who last committed the caret line at the end of the line in Live Preview."
           },

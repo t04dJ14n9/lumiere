@@ -253,7 +253,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: lumiere.markdown.plugins.gitBlame.enabled | No Obsidian core equivalent | Default on; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
+| Setting: lumiere.markdown.plugins.gitBlame.enabled | No Obsidian core equivalent | Default off; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
 | Setting: lumiere.markdown.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
