@@ -17,6 +17,7 @@ import { freezeRevealDuringVisual } from "./visual-reveal";
 import { normalCaretAfterHostEdits } from "./normal-caret";
 import { installVimKeyRouting } from "./key-routing";
 import { installExAddressLeadingSpaceFix } from "./ex-address-space";
+import { shareOuterStatusForCellDialogs } from "./cell-ex-status";
 import { vimLineKeyboard } from "./keyboard";
 import { insertIntoClickedSource } from "./click-insert";
 import {
@@ -204,6 +205,9 @@ function registerVimExtension(ctx: Context): void {
 function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
+    // Nested cells keep status:false chrome; share the note statusbar so
+    // : / ? dialogs mount there instead of a tiny in-cell panel (H1).
+    ...(status ? [] : [shareOuterStatusForCellDialogs(ctx.editor.view)]),
     vimLineKeyboard,
     insertIntoClickedSource,
     revealBlockMotion(ctx.livePreview),
