@@ -3,7 +3,7 @@
  * page, text stays put while blocks render, frames stay short in a flick
  * straight after opening, and a very long note scrolls without long tasks.
  */
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type CDPSession, type Page } from "@playwright/test";
 import { installRecorder } from "../perf/recorder";
 import { mermaidNote } from "../support/mermaid-note";
 import { note as blocksNote } from "../support/perf-note";
@@ -19,7 +19,7 @@ const SCROLL_EVENTS = ["wheel", "mousewheel", "touchstart", "touchmove"];
  */
 
 async function isStickyScrollWheel(
-  client: Awaited<ReturnType<Page["context"]>["newCDPSession"]>,
+  client: CDPSession,
   backendNodeId: number | undefined,
 ): Promise<boolean> {
   if (backendNodeId === undefined) {
