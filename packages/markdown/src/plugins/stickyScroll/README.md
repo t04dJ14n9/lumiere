@@ -1,8 +1,10 @@
 # Sticky scroll
 
 Pins the current section's ancestor Markdown headings above the editor while
-scrolling, like VS Code's sticky scroll. Obsidian has no built-in equivalent.
-Click a pinned heading to return to it. Works in Live Preview and Source mode.
+scrolling, like VS Code's sticky scroll. Each pin shows the heading's 1-based
+document line number in a gutter-aligned column, then the heading label.
+Obsidian has no built-in equivalent. Click a pinned heading to return to it.
+Works in Live Preview and Source mode.
 
 ## How it works
 

@@ -5,7 +5,7 @@ Status: approved (chat); implement
 
 ## Goal
 
-Pin the ATX/Setext heading ancestor chain at the top of the Lumière markdown editor while scrolling (Live Preview + Source), with click-to-jump — VS Code sticky-scroll style for Markdown outline structure.
+Pin the ATX/Setext heading ancestor chain at the top of the Lumière markdown editor while scrolling (Live Preview + Source), with click-to-jump — VS Code sticky-scroll style for Markdown outline structure. Each pin shows the heading's 1-based document line number in a gutter-aligned column (VS Code sticky scroll gutter parity), then the heading label.
 
 ## Existing code
 

@@ -142,10 +142,18 @@ export class StickyScrollView {
     button.type = "button";
     button.className = "mw-sticky-heading";
     const label = heading.label || "(Untitled heading)";
-    button.textContent = label;
+    const lineNumber = this.view.state.doc.lineAt(heading.from).number;
+    const line = this.dom.ownerDocument.createElement("span");
+    line.className = "mw-sticky-line";
+    line.textContent = String(lineNumber);
+    const text = this.dom.ownerDocument.createElement("span");
+    text.className = "mw-sticky-label";
+    text.textContent = label;
+    button.append(line, text);
     button.title = `Go to heading: ${label}`;
     button.dataset.from = String(heading.from);
     button.dataset.label = label;
+    button.dataset.line = String(lineNumber);
     button.style.setProperty("--sticky-depth", String(heading.level - 1));
     return button;
   }

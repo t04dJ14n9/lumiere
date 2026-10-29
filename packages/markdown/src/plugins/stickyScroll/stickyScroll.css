@@ -16,22 +16,44 @@
 }
 
 #app .mw-sticky-heading {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
   height: var(--sticky-row-height);
   padding-block: 0;
-  padding-inline: calc(var(--sticky-inset) + 2px + var(--sticky-depth) * 0.75em)
-    16px;
+  padding-inline: 0 16px;
   border: 0;
   border-radius: 0;
   color: inherit;
   background: transparent;
-  font-weight: 600;
   text-align: start;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Gutter-aligned 1-based line number, matching VS Code sticky scroll. */
+#app .mw-sticky-line {
+  flex: 0 0 var(--sticky-inset);
+  box-sizing: border-box;
+  width: var(--sticky-inset);
+  padding-inline-end: 2px;
+  color: var(--vscode-editorLineNumber-foreground, var(--faint));
+  font-family: var(--code-font);
+  font-size: 12px;
+  font-weight: normal;
+  text-align: end;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#app .mw-sticky-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline-start: calc(2px + var(--sticky-depth) * 0.75em);
+  font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  cursor: pointer;
 }
 
 #app .mw-sticky-heading:hover {
