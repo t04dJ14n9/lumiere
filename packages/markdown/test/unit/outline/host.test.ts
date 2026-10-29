@@ -303,6 +303,7 @@ body-a
 body-a2
 # B
 ## B1
+### B1a
 body-b
 `;
 
@@ -353,6 +354,32 @@ test("unchanged accordion path skips expand/collapse", async (t) => {
   assert.equal(fixture.reveals.at(-1)?.node.label, "A1a");
 });
 
+test("accordion chapter switch closes the prior path in the tree UI", async (t) => {
+  const fixture = await outlineFixture({ "A.md": NESTED });
+  t.after(() => fixture.root.dispose());
+  const { panel, cursor } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-b");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+
+  assert.equal(fixture.isOpen("A"), false, "prior chapter closes");
+  assert.equal(fixture.isOpen("A1"), false, "prior ancestor closes");
+  assert.equal(fixture.isOpen("A1a"), false, "prior nested branch closes");
+  assert.equal(
+    fixture.isOpen("A2"),
+    false,
+    "prior sibling branch stays closed",
+  );
+  assert.equal(fixture.isOpen("B"), true, "active chapter is open");
+  assert.equal(fixture.isOpen("B1"), true, "active nested branch is open");
+  assert.equal(fixture.reveals.at(-1)?.node.label, "B1a");
+});
+
 test("expandMode all keeps parents expanded on build and only reveals on follow", async (t) => {
   const fixture = await outlineFixture({ "A.md": NESTED });
   t.after(() => fixture.root.dispose());
@@ -370,7 +397,7 @@ test("expandMode all keeps parents expanded on build and only reveals on follow"
   await tick();
   assert.deepEqual(fixture.expands, []);
   assert.deepEqual(fixture.collapses, []);
-  assert.equal(fixture.reveals.at(-1)?.node.label, "B1");
+  assert.equal(fixture.reveals.at(-1)?.node.label, "B1a");
 });
 
 test("Expand All is folded back to the active path on the next follow", async (t) => {

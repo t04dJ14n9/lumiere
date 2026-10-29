@@ -10,6 +10,7 @@ import type {
 import { createWorkshopPanel } from "../panel-adapter";
 import { toDisposer } from "./documents";
 import { closeToggleSiblingTabs } from "../toggle-sibling-tabs";
+import { TreeExpansionState } from "./tree-expansion";
 
 export function createClipboard(): Clipboard {
   return {
@@ -111,19 +112,19 @@ function textEditor(uri: string) {
 
 const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
   const changed = new vscode.EventEmitter<TreeNode | undefined>();
-  const expansion = new Map<string, boolean>();
+  const expansion = new TreeExpansionState();
   const view = vscode.window.createTreeView<TreeNode>(viewId, {
     ...options,
     treeDataProvider: {
       onDidChangeTreeData: changed.event,
       getChildren: (node) => (node ? source.children(node) : source.roots()),
       getParent: (node) => source.parent?.(node),
-      getTreeItem: (node) => treeItem(withExpansion(node, expansion)),
+      getTreeItem: (node) => treeItem(expansion.item(node)),
     },
   });
   return {
     refresh: () => {
-      expansion.clear();
+      expansion.reset();
       changed.fire(undefined);
     },
     setMessage: (message) => {
@@ -140,7 +141,7 @@ const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
       // node, and VS Code applies the new collapsibleState only when it
       // changed. Leaves omit `expanded` and stay non-collapsible.
       if (options?.expand && node.expanded !== undefined) {
-        expansion.set(node.id, true);
+        expansion.expand(node);
       }
       await view.reveal(node, { select: true, focus: false, ...options });
     },
@@ -148,15 +149,15 @@ const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
       if (!view.visible) {
         return;
       }
-      expansion.set(node.id, true);
+      expansion.expand(node);
       await view.reveal(node, { expand: true, select: false, focus: false });
     },
     collapse: async (node) => {
       if (!view.visible) {
         return;
       }
-      expansion.set(node.id, false);
-      // Element-scoped refresh — not changed.fire(undefined).
+      expansion.collapse(node);
+      // A fresh TreeItem id discards VS Code's retained open state.
       changed.fire(node);
     },
     get visible() {
@@ -173,18 +174,6 @@ const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
   };
 };
 
-/** `expanded` follows an accordion override when one was recorded. */
-function withExpansion(
-  node: TreeNode,
-  expansion: Map<string, boolean>,
-): TreeNode {
-  const override = expansion.get(node.id);
-  if (override === undefined) {
-    return node;
-  }
-  return { ...node, expanded: override };
-}
-
 function collapsibleState(node: TreeNode): vscode.TreeItemCollapsibleState {
   if (node.expanded === undefined) {
     return vscode.TreeItemCollapsibleState.None;
@@ -194,9 +183,10 @@ function collapsibleState(node: TreeNode): vscode.TreeItemCollapsibleState {
     : vscode.TreeItemCollapsibleState.Collapsed;
 }
 
-function treeItem(node: TreeNode): vscode.TreeItem {
+function treeItem(presented: { node: TreeNode; id: string }): vscode.TreeItem {
+  const { node } = presented;
   const item = new vscode.TreeItem(node.label, collapsibleState(node));
-  item.id = node.id;
+  item.id = presented.id;
   if (node.description !== undefined) {
     item.description = node.description;
   }
