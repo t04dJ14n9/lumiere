@@ -6,7 +6,8 @@ pre[data-fence="mermaid"]:has(> svg) {
   background: none;
 }
 pre[data-fence="mermaid"] svg {
-  max-width: 100%;
+  /* Obsidian: native SVG size (useMaxWidth false types); host scrolls. */
+  max-width: none;
   height: auto;
   /*
    * Transparent gaps / arrow shafts must still hit this SVG. Default SVG
