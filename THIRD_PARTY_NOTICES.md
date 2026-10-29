@@ -869,7 +869,7 @@ Apache License
    limitations under the License.
 ```
 
-## @codemirror/autocomplete 6.20.3
+## @codemirror/autocomplete 6.20.4
 
 License: MIT  
 Source: git+https://code.haverbeke.berlin/codemirror/autocomplete.git
@@ -1217,7 +1217,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @codemirror/view 6.43.14
+## @codemirror/view 6.43.15
 
 License: MIT  
 Source: git+https://code.haverbeke.berlin/codemirror/view.git
@@ -1738,7 +1738,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @lezer/common 1.5.3
+## @lezer/common 1.5.4
 
 License: MIT  
 Source: git+https://code.haverbeke.berlin/lezer/common.git
@@ -2028,7 +2028,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## @lezer/markdown 1.8.0
+## @lezer/markdown 1.8.1
 
 License: MIT  
 Source: git+https://code.haverbeke.berlin/lezer/markdown.git
@@ -2505,7 +2505,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @modelcontextprotocol/sdk 1.32.1
+## @modelcontextprotocol/sdk 1.32.2
 
 License: MIT  
 Source: https://modelcontextprotocol.io
@@ -5071,7 +5071,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## fast-uri 3.1.8
+## fast-uri 3.1.9
 
 License: BSD-3-Clause  
 Source: https://github.com/fastify/fast-uri
@@ -5167,7 +5167,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## hono 4.13.13
+## hono 4.13.14
 
 License: MIT  
 Source: https://hono.dev
@@ -5468,7 +5468,7 @@ licenses; we recommend you read them, as their terms may differ from the
 terms above.
 ```
 
-## lucide 1.57.0
+## lucide 1.61.0
 
 License: ISC  
 Source: https://lucide.dev
