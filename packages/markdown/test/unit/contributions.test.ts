@@ -46,6 +46,13 @@ test("Markdown Outline title actions expose one checked or unchecked Follow Curs
     description:
       "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
   });
+  assert.deepEqual(properties["lumiere.markdown.outline.expandMode"], {
+    enum: ["accordion", "all"],
+    default: "accordion",
+    scope: "resource",
+    description:
+      "How Markdown Outline expands headings while Follow Cursor is on: accordion keeps only the active path open; all expands every parent (previous behavior).",
+  });
 });
 test("the source ledger preserves the complete pinned inventory", () => {
   const ledger = readFileSync("docs/TEST_LEDGER.md", "utf8");

@@ -5,6 +5,7 @@ import {
   DISABLE_FOLLOW_COMMAND,
   ENABLE_FOLLOW_COMMAND,
   EXPAND_ALL_COMMAND,
+  EXPAND_MODE_SETTING,
   FOLLOW_CURSOR_CONTEXT,
   FOLLOW_CURSOR_SETTING,
   TOGGLE_COMMAND,
@@ -37,6 +38,23 @@ export function followsCursor(
   return configured === undefined
     ? (settings.get(FOLLOW_CURSOR_SETTING, true) ?? true)
     : configured !== false;
+}
+
+export type OutlineExpandMode = "accordion" | "all";
+
+export function expandMode(
+  settings: HostSettings,
+  resource?: string,
+): OutlineExpandMode {
+  const configured = settings.access.inspect(
+    EXPAND_MODE_SETTING,
+    resource,
+  ).value;
+  const value =
+    configured === undefined
+      ? settings.get(EXPAND_MODE_SETTING, "accordion")
+      : configured;
+  return value === "all" ? "all" : "accordion";
 }
 
 export function registerOutlineActions(

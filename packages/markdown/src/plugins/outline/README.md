@@ -66,8 +66,10 @@ Markdown Outline so they do not linger beside non-Workshop editors.
 - Maintains `lumiere.markdown.plugin.outline` while the window plugin is
   running, so editor-scoped shortcuts (Go to Heading, Ctrl+Alt+O) reflect its
   lifetime. The Toggle Markdown Outline palette entry uses workbench/config gating.
-- Settings: `lumiere.markdown.plugins.outline.enabled` and
-  `lumiere.markdown.outline.followCursor` (default `true`, resource-scoped).
+- Settings: `lumiere.markdown.plugins.outline.enabled`,
+  `lumiere.markdown.outline.followCursor` (default `true`, resource-scoped),
+  and `lumiere.markdown.outline.expandMode` (default `accordion`,
+  resource-scoped; `all` expands every parent).
 - Commands: `lumiere.markdown.outline.expandAll`,
   `lumiere.markdown.outline.enableFollowCursor`,
   `lumiere.markdown.outline.disableFollowCursor` and

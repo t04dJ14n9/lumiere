@@ -3309,6 +3309,15 @@
             "description": "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
             "scope": "resource"
           },
+          "lumiere.markdown.outline.expandMode": {
+            "enum": [
+              "accordion",
+              "all"
+            ],
+            "default": "accordion",
+            "description": "How Markdown Outline expands headings while Follow Cursor is on: accordion keeps only the active path open; all expands every parent (previous behavior).",
+            "scope": "resource"
+          },
           "lumiere.markdown.properties.display": {
             "enum": [
               "visible",
