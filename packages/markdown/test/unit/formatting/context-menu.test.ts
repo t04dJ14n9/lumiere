@@ -25,7 +25,11 @@ test("the note's menu groups formatting into Format, Highlight and Insert submen
     note
       .flatMap((entry) => entry.command ?? [])
       .filter((command) => command.startsWith("lumiere.markdown.")),
-    ["lumiere.markdown.copyLinkForAgent", "lumiere.markdown.selectionActions"],
+    [
+      "lumiere.markdown.copyLinkForAgent",
+      "lumiere.markdown.selectionActions",
+      "lumiere.markdown.insertSketch",
+    ],
   );
   const shortTitles = (menu: { command: string }[]) =>
     menu.map(

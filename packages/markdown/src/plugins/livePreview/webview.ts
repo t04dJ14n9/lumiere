@@ -42,7 +42,8 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   provides: ["livePreview"],
   apply(ctx, config) {
     // One extension flush for engine + fallback block renderers (4 extends).
-    ctx.editor.batch!(() => {
+    const batch = ctx.editor.batch ?? ((fn) => fn());
+    batch(() => {
       const service = registerEngine(ctx, config.mode);
       ctx.provide("livePreview", service);
       registerRenderInvalidation(ctx, service);
