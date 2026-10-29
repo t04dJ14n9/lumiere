@@ -120,3 +120,14 @@ Inside a table cell, normal-mode vertical boundary hops ignore counts and the
 the dependency's behavior; Obsidian's hop would abandon that pending state.
 At note boundaries, table exit retains a blank separator so subsequent prose
 cannot become another table row.
+
+## Ex go-to-line leading spaces
+
+Real Vim accepts `: 123` (spaces after the colon before the line address).
+`@replit/codemirror-vim-core` (and Obsidian 1.14.4's bundled vim.js) parse the
+line range before eating those spaces, so `: 123` becomes an unknown command.
+`ex-address-space.ts` eats spaces after `eatWhile(':')` so `: 123`, `:123`, and
+bare `123` all move to line N. Stock keymap / `defaultExCommandMap` already match
+Obsidian 1.14.4's engine; Lumière keeps its note-oriented overlays (za/zc/zo folds,
+Ctrl+[ outdent, IME key routing, table motions). Deferred: Neovim, VSCodeVim-only
+commands, community Obsidian vimrc plugins.

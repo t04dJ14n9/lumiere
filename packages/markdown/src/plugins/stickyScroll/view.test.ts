@@ -7,7 +7,6 @@ import { StickyScrollView, stickyMaxLines } from "./view";
 
 class Element {
   className = "";
-  textContent = "";
   title = "";
   type = "";
   hidden = false;
@@ -17,6 +16,7 @@ class Element {
   attributes = new Map<string, string>();
   dataset: Record<string, string> = {};
   listeners = new Map<string, Array<(event?: unknown) => void>>();
+  private _textContent = "";
   style = {
     top: "",
     left: "",
@@ -26,10 +26,23 @@ class Element {
       this.values.set(key, value);
     },
   };
-  constructor(readonly ownerDocument: { createElement(): Element }) {}
-  append(element: Element) {
-    element.parent = this;
-    this.children.push(element);
+  constructor(
+    readonly ownerDocument: { createElement(tag?: string): Element },
+  ) {}
+  get textContent() {
+    return this.children.length > 0
+      ? this.children.map((child) => child.textContent).join("")
+      : this._textContent;
+  }
+  set textContent(value: string) {
+    this._textContent = value;
+    this.children = [];
+  }
+  append(...elements: Element[]) {
+    for (const element of elements) {
+      element.parent = this;
+      this.children.push(element);
+    }
   }
   replaceChildren(...elements: Element[]) {
     for (const child of this.children) {
@@ -110,6 +123,7 @@ function fixture() {
       clientTop: 0,
       clientWidth: 800,
       clientHeight: 600,
+      scrollTop: 0,
       scrollBy: (x: number, y: number) => wheel.push([x, y]),
     },
     contentDOM: {
@@ -172,16 +186,27 @@ function fixture() {
   return f;
 }
 
+function pinRows(dom: Element) {
+  return dom.children.map((button) => ({
+    line: button.children[0]?.textContent,
+    label: button.children[1]?.textContent,
+    classNames: button.children.map((child) => child.className),
+  }));
+}
+
 test("overlay is empty at the top, pins ancestors while scrolling and replaces the next section", () => {
   const f = fixture();
   f.flush();
   assert.equal(f.dom.hidden, true);
   f.scrollTo("root body");
   assert.equal(f.dom.hidden, false);
-  assert.deepEqual(
-    f.dom.children.map((button) => button.textContent),
-    ["Root"],
-  );
+  assert.deepEqual(pinRows(f.dom), [
+    {
+      line: "1",
+      label: "Root",
+      classNames: ["mw-sticky-line", "mw-sticky-label"],
+    },
+  ]);
   const root = f.dom.children[0];
   f.scrollTo("root body");
   assert.equal(
@@ -190,10 +215,18 @@ test("overlay is empty at the top, pins ancestors while scrolling and replaces t
     "ordinary scroll preserves keyboard focus",
   );
   f.scrollTo("child body");
-  assert.deepEqual(
-    f.dom.children.map((button) => button.textContent),
-    ["Root", "Child"],
-  );
+  assert.deepEqual(pinRows(f.dom), [
+    {
+      line: "1",
+      label: "Root",
+      classNames: ["mw-sticky-line", "mw-sticky-label"],
+    },
+    {
+      line: "4",
+      label: "Child",
+      classNames: ["mw-sticky-line", "mw-sticky-label"],
+    },
+  ]);
   assert.equal(f.chrome.height, 48);
   assert.equal(f.dom.style.top, "32px", "find panels remain above the overlay");
   assert.equal(f.dom.style.width, "800px");
@@ -201,10 +234,13 @@ test("overlay is empty at the top, pins ancestors while scrolling and replaces t
   f.scrollTo("# Next");
   assert.equal(f.dom.hidden, true);
   f.scrollTo("next body");
-  assert.deepEqual(
-    f.dom.children.map((button) => button.textContent),
-    ["Next"],
-  );
+  assert.deepEqual(pinRows(f.dom), [
+    {
+      line: "7",
+      label: "Next",
+      classNames: ["mw-sticky-line", "mw-sticky-label"],
+    },
+  ]);
 });
 
 test("each pinned row keeps its own tooltip and navigates to its own heading", () => {
@@ -215,6 +251,11 @@ test("each pinned row keeps its own tooltip and navigates to its own heading", (
   assert.equal(child!.type, "button");
   assert.equal(root!.title, "Go to heading: Root");
   assert.equal(child!.title, "Go to heading: Child");
+  assert.equal(root!.dataset.line, "1");
+  assert.equal(child!.dataset.line, "4");
+  assert.equal(root!.children[0]?.className, "mw-sticky-line");
+  assert.equal(root!.children[0]?.textContent, "1");
+  assert.equal(child!.children[0]?.textContent, "4");
   assert.equal(
     root!.dataset.from,
     String(f.view.state.doc.toString().indexOf("# Root")),
@@ -242,10 +283,13 @@ test("plain heading buttons navigate and the row budget adapts to a small pane",
   f.view.scrollDOM.clientHeight = 100;
   f.chrome.schedule();
   f.flush();
-  assert.deepEqual(
-    f.dom.children.map((button) => button.textContent),
-    ["Child"],
-  );
+  assert.deepEqual(pinRows(f.dom), [
+    {
+      line: "4",
+      label: "Child",
+      classNames: ["mw-sticky-line", "mw-sticky-label"],
+    },
+  ]);
   assert.equal(f.chrome.height, 24);
 });
 

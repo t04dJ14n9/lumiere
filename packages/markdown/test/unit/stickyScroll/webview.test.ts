@@ -6,25 +6,31 @@ import { readSettings } from "../../../src/host/settings";
 import { headingIndex } from "../../../src/plugins/stickyScroll/model";
 import { stickyMaxLines } from "../../../src/plugins/stickyScroll/view";
 
-test("sticky scroll is opt-in and accepts its resource setting through the existing reader", () => {
+test("sticky scroll is on by default and accepts its resource setting through the existing reader", () => {
   assert.equal(
     features.find(({ id }) => id === "stickyScroll")?.defaultEnabled,
-    false,
+    true,
   );
   const reader = (values: Record<string, unknown>) => ({
     get: <T>(key: string, fallback?: T) => (values[key] ?? fallback) as T,
   });
-  assert.equal(readSettings(reader({})).features?.stickyScroll?.enabled, false);
-  const enabled = readSettings(
+  assert.equal(readSettings(reader({})).features?.stickyScroll?.enabled, true);
+  const capped = readSettings(
     reader({
       "plugins.stickyScroll.enabled": true,
       "stickyScroll.maxLines": 3,
     }),
   );
-  assert.deepEqual(enabled.features?.stickyScroll, {
+  assert.deepEqual(capped.features?.stickyScroll, {
     enabled: true,
     config: { maxLines: 3 },
   });
+  const disabled = readSettings(
+    reader({
+      "plugins.stickyScroll.enabled": false,
+    }),
+  );
+  assert.equal(disabled.features?.stickyScroll?.enabled, false);
 });
 
 test("enable, reconfigure and disable preserve other panel state and leave no sticky state", async (t) => {

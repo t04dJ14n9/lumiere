@@ -1157,7 +1157,7 @@ default (§25).
 | Fold heading, Fold indent | `lumiere.markdown.folding.heading`, `.indent` | `true`, `true` |
 | Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |
-| (no built-in equivalent) Sticky headings | plugin `stickyScroll`; `lumiere.markdown.stickyScroll.maxLines` | off; 5 rows |
+| (no built-in equivalent) Sticky headings | plugin `stickyScroll`; `lumiere.markdown.stickyScroll.maxLines` | on; 5 rows |
 | Right-to-left | `lumiere.markdown.editor.rightToLeft` | `false` |
 | Spellcheck | plugin `spellcheck` | on |
 | Auto pair brackets / Markdown syntax | `lumiere.markdown.autoPair.brackets`, `.markdown` | `true`, `true` |

@@ -53,7 +53,7 @@ records it in `docs/PARITY.md`.
 | gitInline | Inline track changes over the git change bars' hunks: removed words struck through, added words tinted, a rendered ghost of changed tables, code and frontmatter, removed blocks with Restore; needs gitGutter | Off by default; Toggle Inline Git Changes |
 | gitDiffEditor | A side-by-side diff of two versions of a note, both rendered: blocks aligned, changed words and lines marked, read-only left side; Open Rendered Git Diff, or replaces Source Control's Markdown text diffs when diffEditor is rendered | On; diffEditor setting (native by default) |
 | indentGuides | Indentation guides | No active-guide highlight |
-| stickyScroll | Pins ancestor headings while scrolling in Live Preview and Source; click to navigate | Off by default; document-level headings only; up to five compact rows by default, limited to one third of the pane height |
+| stickyScroll | Pins ancestor headings while scrolling in Live Preview and Source; click to navigate | On by default; document-level headings only; up to five compact rows by default, limited to one third of the pane height |
 | spellcheck | The host's spellchecker | Dictionaries come from the OS |
 | autoPair | Brackets, quotes and Markdown markers | — |
 | smartLists | List continuation and exit | — |

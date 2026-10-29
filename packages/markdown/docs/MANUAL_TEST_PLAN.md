@@ -707,10 +707,11 @@ Use the disposable vault's `Core.md`. Under **Child heading**, paste enough
 paragraphs to fill two screens; add deeper headings through level 6 with more
 paragraphs. Keep **Formatting section** as a following sibling.
 
-1. With `lumiere.markdown.plugins.stickyScroll.enabled` unset/false, scroll:
-   no heading chrome appears. Enable it in Settings while the note is open:
-   scrolled-away **Core acceptance**, **Folding section** and **Child heading**
-   appear as compact rows at the top. At the document top there are no rows.
+1. With `lumiere.markdown.plugins.stickyScroll.enabled` unset (default on), scroll
+   under nested headings: scrolled-away **Core acceptance**, **Folding section**
+   and **Child heading** appear as compact rows at the top. At the document top
+   there are no rows. Disable it in Settings while the note is open: all rows
+   disappear; re-enable and the current ancestors return.
 2. Scroll into **Formatting section**: the previous child headings disappear.
    Add a new level-1 heading and a Setext heading (`Title` followed by `=====`)
    with paragraphs: each starts a new root section. Heading-looking text in a
@@ -1316,7 +1317,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.sourcesProperty.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.stickyScroll.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.stickyScroll.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.suggest.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.tables.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.tags.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

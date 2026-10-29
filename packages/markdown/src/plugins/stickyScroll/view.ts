@@ -142,10 +142,18 @@ export class StickyScrollView {
     button.type = "button";
     button.className = "mw-sticky-heading";
     const label = heading.label || "(Untitled heading)";
-    button.textContent = label;
+    const lineNumber = this.view.state.doc.lineAt(heading.from).number;
+    const line = this.dom.ownerDocument.createElement("span");
+    line.className = "mw-sticky-line";
+    line.textContent = String(lineNumber);
+    const text = this.dom.ownerDocument.createElement("span");
+    text.className = "mw-sticky-label";
+    text.textContent = label;
+    button.append(line, text);
     button.title = `Go to heading: ${label}`;
     button.dataset.from = String(heading.from);
     button.dataset.label = label;
+    button.dataset.line = String(lineNumber);
     button.style.setProperty("--sticky-depth", String(heading.level - 1));
     return button;
   }
@@ -255,9 +263,10 @@ export function stickyScrollExtension(navigate: (position: number) => void) {
     headingIndex,
     chrome,
     EditorView.scrollMargins.of((view) => ({
-      top:
-        chromeInsetTop(view.dom.ownerDocument) +
-        (view.plugin(chrome)?.height ?? 0),
+      // Host chrome only. Sticky pin height is applied as scrollIntoView
+      // yMargin on pin click (see webview.ts) so resizing pins does not
+      // retarget scrollTop mid-read.
+      top: chromeInsetTop(view.dom.ownerDocument),
     })),
   ];
 }
