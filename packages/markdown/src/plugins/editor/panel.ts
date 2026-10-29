@@ -92,11 +92,16 @@ function registerSessionHandshake(
     rpc.handle(protocol, "ready", async (_request, token) => {
       const readyStarted = performance.now();
       owned.emit("editor/loading");
-      await owned.settled();
-      const settledMs = Math.round(performance.now() - readyStarted);
-      await host.settings.effective.prepare(shell.document.uri);
-      const prepareMs =
-        Math.round(performance.now() - readyStarted) - settledMs;
+      let settledMs = 0;
+      let prepareMs = 0;
+      await Promise.all([
+        owned.settled().then(() => {
+          settledMs = Math.round(performance.now() - readyStarted);
+        }),
+        host.settings.effective.prepare(shell.document.uri).then(() => {
+          prepareMs = Math.round(performance.now() - readyStarted);
+        }),
+      ]);
       owned.logger.debug(
         `Panel ready: settled ${settledMs} ms, prepare ${prepareMs} ms`,
       );

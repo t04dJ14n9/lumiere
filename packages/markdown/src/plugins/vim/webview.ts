@@ -18,6 +18,10 @@ import { normalCaretAfterHostEdits } from "./normal-caret";
 import { installVimKeyRouting } from "./key-routing";
 import { vimLineKeyboard } from "./keyboard";
 import { insertIntoClickedSource } from "./click-insert";
+import {
+  getVimListContinueHandler,
+  setVimInsertCtrlWHandler,
+} from "../editor/vim-hooks";
 import type {} from "../livePreview/api";
 
 /** Live caret profile for the panel; reconfigure updates without remounting Vim. */
@@ -60,6 +64,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     installVimFoldKeys(ctx);
     // BH-047: INSERT Ctrl+[ must outdent (Obsidian), not Esc.
     installVimBracketIndentKeys(ctx);
+    installVimCloseCtrlW(ctx);
+    installVimSmartListContinue(ctx);
   },
 };
 
@@ -268,6 +274,32 @@ function installVimFoldKeys(ctx: Context): void {
       for (const [keys] of maps) {
         Vim.unmap(keys, anyMode);
       }
+    };
+  });
+}
+
+function installVimCloseCtrlW(ctx: Context): void {
+  ctx.effect(() =>
+    setVimInsertCtrlWHandler((view) => {
+      const cm = getCM(view);
+      if (cm) {
+        Vim.handleKey(cm, "<C-w>", "api");
+      }
+    }),
+  );
+}
+
+function installVimSmartListContinue(ctx: Context): void {
+  ctx.effect(() => {
+    const previous = CodeMirror.commands.newlineAndIndentContinueComment;
+    CodeMirror.commands.newlineAndIndentContinueComment = (cm: CodeMirror) => {
+      if (getVimListContinueHandler()?.(cm.cm6)) {
+        return;
+      }
+      CodeMirror.commands.newlineAndIndent(cm);
+    };
+    return () => {
+      CodeMirror.commands.newlineAndIndentContinueComment = previous;
     };
   });
 }

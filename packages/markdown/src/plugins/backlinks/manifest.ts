@@ -1,13 +1,13 @@
 import { Schema } from "@workshop/core";
 import { defineManifest } from "../../shared/manifest";
-import {
-  EXTRA_CONTEXT_CONTEXT,
-  SORT_ALPHABETICAL_CONTEXT,
-  SORT_ALPHABETICAL_REVERSE_CONTEXT,
-  SORT_MODIFIED_CONTEXT,
-  SORT_MODIFIED_REVERSE_CONTEXT,
-  VIEW_ID,
-} from "./tree";
+import { contributionId } from "../../shared/setting-schema";
+
+const VIEW_ID = contributionId("backlinks");
+const EXTRA_CONTEXT_CONTEXT = `${VIEW_ID}.extraContext`;
+const SORT_ALPHABETICAL_CONTEXT = `${VIEW_ID}.sortAlphabetical`;
+const SORT_ALPHABETICAL_REVERSE_CONTEXT = `${VIEW_ID}.sortAlphabeticalReverse`;
+const SORT_MODIFIED_CONTEXT = `${VIEW_ID}.sortByModifiedTime`;
+const SORT_MODIFIED_REVERSE_CONTEXT = `${VIEW_ID}.sortByModifiedTimeReverse`;
 
 export const config = Schema.object({
   sortOrder: Schema.union([

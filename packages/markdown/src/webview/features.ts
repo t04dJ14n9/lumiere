@@ -212,15 +212,17 @@ export function featureController(root: BaseContext) {
       );
       const managed = managedIdsForPhase(phase);
       const hadRenderedBlocks = hasMountedRenderFeatures || phase === "all";
-      const applySwitch = () =>
-        switches.update(managed, () =>
+      const applySwitch = async () => {
+        const changed = await switches.update(managed, () =>
           wantedPlugins(wantedManifests, settings),
         );
+        await root.settled();
+        return changed;
+      };
       const affected = await ((root.bail(
         "editor/batchExtensions",
         applySwitch,
       ) as Promise<ReadonlySet<string>> | undefined) ?? applySwitch());
-      await root.settled();
       if (touchesRenderFeatures(affected)) {
         hasMountedRenderFeatures = true;
         if (hadRenderedBlocks) {

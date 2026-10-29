@@ -63,45 +63,62 @@ export class Snapshot {
       return;
     }
     Object.assign(this.files, files.files);
+    let sliceStart = Date.now();
     for (const shard of SHARDS) {
       const stored = parse(await store.read(`metadata-${shard}`));
       if (isRecord(stored) && stored.version === SNAPSHOT_VERSION) {
         Object.assign(this.metadata, unpack(stored.metadata));
       }
-      await nextTurn();
+      if (Date.now() - sliceStart > 8) {
+        await nextTurn();
+        sliceStart = Date.now();
+      }
     }
   }
 
   /** Write what changed since the last save, dropping unreferenced metadata. */
   async save(store: SnapshotStore): Promise<void> {
-    const changed = [...this.dirty];
+    const changed = new Set(this.dirty);
     this.dirty.clear();
     const used = new Set(
       Object.values(this.files).flatMap((file) =>
         file.hash ? [file.hash] : [],
       ),
     );
-    for (const name of changed) {
-      const file = name === FILES ? FILES : `metadata-${name}`;
-      await store.write(file, this.serialize(name, used));
-      await nextTurn();
-    }
-  }
-
-  private serialize(name: string, used: Set<string>): string {
-    if (name === FILES) {
-      return JSON.stringify({ version: SNAPSHOT_VERSION, files: this.files });
-    }
-    const metadata: Record<string, NoteMetadata> = {};
+    const byShard = new Map<string, Record<string, NoteMetadata>>();
     for (const [hash, value] of Object.entries(this.metadata)) {
-      if (shardOf(hash) !== name) {
+      const shard = shardOf(hash);
+      if (!changed.has(shard)) {
         continue;
       }
       if (used.has(hash)) {
-        metadata[hash] = value;
+        let bucket = byShard.get(shard);
+        if (!bucket) {
+          bucket = {};
+          byShard.set(shard, bucket);
+        }
+        bucket[hash] = value;
       } else {
         delete this.metadata[hash];
       }
+    }
+    let sliceStart = Date.now();
+    for (const name of changed) {
+      const file = name === FILES ? FILES : `metadata-${name}`;
+      await store.write(file, this.serialize(name, byShard.get(name) ?? {}));
+      if (Date.now() - sliceStart > 8) {
+        await nextTurn();
+        sliceStart = Date.now();
+      }
+    }
+  }
+
+  private serialize(
+    name: string,
+    metadata: Record<string, NoteMetadata>,
+  ): string {
+    if (name === FILES) {
+      return JSON.stringify({ version: SNAPSHOT_VERSION, files: this.files });
     }
     return JSON.stringify({
       version: SNAPSHOT_VERSION,
@@ -194,12 +211,17 @@ export function unpack(value: unknown, key = ""): unknown {
   const unpacked: Record<string, unknown> =
     key === "blocks" ? Object.create(null) : {};
   for (const [field, item] of Object.entries(value)) {
-    Object.defineProperty(unpacked, field, {
-      value: unpack(item, field),
-      enumerable: true,
-      writable: true,
-      configurable: true,
-    });
+    const child = unpack(item, field);
+    if (field === "__proto__") {
+      Object.defineProperty(unpacked, field, {
+        value: child,
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    } else {
+      unpacked[field] = child;
+    }
   }
   return unpacked;
 }

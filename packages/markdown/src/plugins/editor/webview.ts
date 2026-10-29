@@ -35,7 +35,7 @@ import {
   deleteCharBackward,
   selectAll,
 } from "@codemirror/commands";
-import { getCM } from "@replit/codemirror-vim";
+import { isVimInsertMode } from "./vim-hooks";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
@@ -179,7 +179,7 @@ function registerFindKeyOwnership(ctx: Context, view: EditorView): void {
       },
       undefined,
       {
-        isInsertMode: () => Boolean(getCM(view)?.state.vim?.insertMode),
+        isInsertMode: () => isVimInsertMode(view),
         onInsertCtrlH: () => {
           deleteCharBackward(view);
         },

@@ -6,7 +6,6 @@ import type {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import { metadata } from "../../markdown/metadata";
 import { linkDestination } from "../../markdown/html";
 import { documentTree } from "./document-tree";
 import { renderRevision } from "./blocks";
@@ -234,9 +233,7 @@ class InlineDecorations implements InlineContext {
     const isRendered = !this.revealed(from, to);
     const href = url
       ? linkDestination(this.state.sliceDoc(url.from, url.to))
-      : metadata(this.state.doc).links.find(
-          (link) => link.position.start.offset === from,
-        )?.link;
+      : undefined;
 
     // Rendered labels: plain click reveals source; Mod-click follows (BH-020).
     // When revealed, mark the full [label](url) span with data-href so Mod-click

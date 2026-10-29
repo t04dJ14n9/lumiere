@@ -32,6 +32,7 @@ export class VaultRegistry implements Vaults {
   /** The latest text of each open note, kept without the indexing delay. */
   private readonly openTexts = new Map<string, string>();
   private policies: readonly LinkPolicy[] = [];
+  private readonly rootByFolder = new Map<string, Promise<string>>();
 
   constructor(
     private readonly system: VaultSystem,
@@ -137,6 +138,7 @@ export class VaultRegistry implements Vaults {
   }
 
   applySettings(): void {
+    this.rootByFolder.clear();
     for (const vault of this.opened.values()) {
       vault.indexer.applySettings();
     }
@@ -144,6 +146,7 @@ export class VaultRegistry implements Vaults {
 
   async dispose(): Promise<void> {
     const vaults = [...this.opened.values()];
+    this.rootByFolder.clear();
     this.ready.clear();
     this.opened.clear();
     await Promise.all(vaults.map((vault) => vault.indexer.dispose()));
@@ -151,15 +154,23 @@ export class VaultRegistry implements Vaults {
   }
 
   private async findRoot(uri: string, workspace: string): Promise<string> {
-    const markers = this.system.settings(workspace).rootMarkers;
     const folders = foldersUpTo(uri, workspace);
-    const hasMarker = async (folder: string) => {
-      const checks = await Promise.all(
-        markers.map((marker) => this.system.exists(`${folder}/${marker}`)),
+    const cacheKey = `${workspace}\0${folders[0] ?? workspace}`;
+    let pending = this.rootByFolder.get(cacheKey);
+    if (!pending) {
+      const markers = this.system.settings(workspace).rootMarkers;
+      const hasMarker = async (folder: string) => {
+        const checks = await Promise.all(
+          markers.map((marker) => this.system.exists(`${folder}/${marker}`)),
+        );
+        return checks.includes(true);
+      };
+      pending = findVaultRoot(folders, hasMarker).then(
+        (root) => root ?? workspace,
       );
-      return checks.includes(true);
-    };
-    return (await findVaultRoot(folders, hasMarker)) ?? workspace;
+      this.rootByFolder.set(cacheKey, pending);
+    }
+    return pending;
   }
 
   private async openVault(root: string): Promise<IndexedVault> {

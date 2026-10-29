@@ -62,6 +62,9 @@ export class VaultIndexer {
   private disposed = false;
   private reconciling = false;
   private isExcluded: (path: string) => boolean;
+  /** Resolves as soon as the initial file list is in the index. */
+  private fileListReady: Promise<void>;
+  private markFileListReady!: () => void;
   /** The first comparison with the file system, which may run after `ready`. */
   private reconciled: Promise<void> = Promise.resolve();
   /** The save in progress, which the next save waits for. */
@@ -74,6 +77,9 @@ export class VaultIndexer {
       root: options.root,
       folderNote,
       linkFormat,
+    });
+    this.fileListReady = new Promise<void>((resolve) => {
+      this.markFileListReady = resolve;
     });
     this.queue = this.createQueue();
     this.ready = this.start();
@@ -170,12 +176,14 @@ export class VaultIndexer {
     if (hasCachedFiles) {
       await this.loadCached();
     }
-    this.reconciled = this.reconcile().catch((error) =>
-      this.options.onError?.("Could not list the vault", error),
-    );
+    this.reconciled = this.reconcile()
+      .catch((error) =>
+        this.options.onError?.("Could not list the vault", error),
+      )
+      .finally(() => this.markFileListReady());
     if (!hasCachedFiles) {
       await waitUpTo(
-        this.reconciled,
+        this.fileListReady,
         this.options.delays?.ready ?? INITIAL_READY_BUDGET_MS,
       );
     }
@@ -187,10 +195,17 @@ export class VaultIndexer {
    */
   private async loadCached(): Promise<void> {
     const cached = Object.entries(this.snapshot.files);
-    await inSlices(cached, ([path, file]) =>
-      this.index.addFiles([
-        this.entry({ uri: file.uri, path, mtime: file.mtime, size: file.size }),
-      ]),
+    await inSlicesBatch(cached, (batch) =>
+      this.index.addFiles(
+        batch.map(([path, file]) =>
+          this.entry({
+            uri: file.uri,
+            path,
+            mtime: file.mtime,
+            size: file.size,
+          }),
+        ),
+      ),
     );
     await inSlices(cached, ([path, file]) => {
       const metadata = file.hash
@@ -217,21 +232,39 @@ export class VaultIndexer {
         this.onFileEvent(event),
       );
       const files = listing.files.filter((file) => !isIgnoredPath(file.path));
-      const present = new Set(files.map((file) => file.path));
-      for (const path of this.queue.overlayPaths()) {
-        present.add(path);
+      if (
+        this.index.files().length > 0 ||
+        Object.keys(this.snapshot.files).length > 0
+      ) {
+        const present = new Set(files.map((file) => file.path));
+        for (const path of this.queue.overlayPaths()) {
+          present.add(path);
+        }
+        this.index.removeFilesExcept(present);
+        this.forgetMissing(present);
       }
-      this.index.removeFilesExcept(present);
-      this.forgetMissing(present);
-      await inSlices(files, (file) => {
+      const toParse: string[] = [];
+      await inSlicesBatch(files, (batch) => {
         if (this.disposed) {
           return;
         }
-        this.index.addFiles([this.entry(file)]);
-        if (this.needsParse(file)) {
-          this.queue.enqueue(file.path);
+        this.index.addFiles(batch.map((file) => this.entry(file)));
+        for (const file of batch) {
+          if (this.needsParse(file)) {
+            toParse.push(file.path);
+          }
         }
       });
+      this.markFileListReady();
+      if (toParse.length > 0 && !this.disposed) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      for (const path of toParse) {
+        if (this.disposed) {
+          break;
+        }
+        this.queue.enqueue(path);
+      }
       if (!this.disposed && this.queue.isIdle) {
         this.drained();
       }
@@ -424,6 +457,22 @@ async function inSlices<T>(
   let sliceStart = Date.now();
   for (const item of items) {
     step(item);
+    if (Date.now() - sliceStart > SLICE_MS) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      sliceStart = Date.now();
+    }
+  }
+}
+
+/** Run `step` over slices of items within `SLICE_MS`, yielding between slices. */
+async function inSlicesBatch<T>(
+  items: readonly T[],
+  step: (batch: readonly T[]) => void,
+): Promise<void> {
+  const chunkSize = 512;
+  let sliceStart = Date.now();
+  for (let i = 0; i < items.length; i += chunkSize) {
+    step(items.slice(i, i + chunkSize));
     if (Date.now() - sliceStart > SLICE_MS) {
       await new Promise((resolve) => setTimeout(resolve, 0));
       sliceStart = Date.now();

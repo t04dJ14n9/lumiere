@@ -189,7 +189,10 @@ function registerUnresolvedLinks(
     }
     unresolvedBySource.clear();
     unresolvedBySource.set("", Promise.resolve(paths));
-    view.dispatch({ effects: setUnresolved.of(new Set(paths)) });
+    const effect = setUnresolved.of(new Set(paths));
+    if (!ctx.editor.dispatchEffect?.(effect)) {
+      view.dispatch({ effects: effect });
+    }
     void refreshRenderedUnresolved(ctx, view);
   };
   ctx.effect(() => ctx.editor.extend(unresolvedLinks));
@@ -215,7 +218,10 @@ function registerKnownNotes(
   const apply = (keys: readonly string[]) => {
     if (live) {
       unresolvedBySource.clear();
-      view.dispatch({ effects: setKnownNotes.of(new Set(keys)) });
+      const effect = setKnownNotes.of(new Set(keys));
+      if (!ctx.editor.dispatchEffect?.(effect)) {
+        view.dispatch({ effects: effect });
+      }
     }
   };
   ctx.effect(() => ctx.editor.extend(knownNotes));

@@ -1,5 +1,4 @@
 import {
-  lookupKey,
   splitLinktext,
   withoutNoteExtension,
   type LinkSyntax,
@@ -77,7 +76,8 @@ export function knownNoteKeys(vault: VaultIndex): string[] {
       continue;
     }
     keys.add(withoutNoteExtension(file.path).toLowerCase());
-    keys.add(lookupKey(file.path));
+    // Basename is already the Obsidian lookup key for .md notes.
+    keys.add(file.basename.toLowerCase());
     for (const alias of vault.metadata(file.path)?.aliases ?? []) {
       const name = alias.trim().toLowerCase();
       if (name.length > 0) {

@@ -84,15 +84,15 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
       previewCount = listPreviewCount(next.listPreviewCount);
     });
     registerEmptySheet(ctx, presentation);
-    registerEditorControls(ctx, { heading, editing, presentation });
     ctx.effect(() => {
       presentation.install();
       return () => presentation.dispose();
     });
     registerAddProperty(ctx, editing);
+    registerVaultSnippets(ctx, lifetime.signal);
+    registerEditorControls(ctx, { heading, editing, presentation });
     registerPreferences(ctx, editing, lifetime.signal);
     registerDisclosure(ctx, editing, lifetime.signal);
-    registerVaultSnippets(ctx, lifetime.signal);
     registerDraftFlush(ctx);
   },
 };

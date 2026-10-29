@@ -1,4 +1,4 @@
-import { moveCompletionSelection } from "@codemirror/autocomplete";
+import { moveActiveCompletionSelection } from "../editor/completion-hooks";
 import { keymap } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
 import { protocol } from "./protocol";
@@ -8,7 +8,7 @@ import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
 import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
 import { keepQuickOpenKey } from "./quick-open-keys";
 import { keepCloseKey } from "./close-keys";
-import { getCM, Vim } from "@replit/codemirror-vim";
+import { isVimInsertMode, runVimInsertCtrlW } from "../editor/vim-hooks";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
@@ -140,7 +140,7 @@ function registerQuickOpenKey(
         trigger(ctx, host, "quickOpen");
       },
       leavesNativeHistory,
-      () => moveCompletionSelection(false)(view),
+      () => moveActiveCompletionSelection(false, view),
     );
   });
 }
@@ -160,13 +160,9 @@ function registerCloseKey(
       },
       leavesNativeHistory,
       {
-        isInsertMode: () =>
-          Boolean(getCM(ctx.editor.view)?.state.vim?.insertMode),
+        isInsertMode: () => isVimInsertMode(ctx.editor.view),
         onInsertCtrlW: () => {
-          const cm = getCM(ctx.editor.view);
-          if (cm) {
-            Vim.handleKey(cm, "<C-w>", "api");
-          }
+          runVimInsertCtrlW(ctx.editor.view);
         },
       },
     ),

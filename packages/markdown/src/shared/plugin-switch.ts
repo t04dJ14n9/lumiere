@@ -97,11 +97,36 @@ export class PluginSwitch {
     // Start service providers before optional consumers so plugins like tables
     // and math bind optional services (formatting, links, vim) on first plug
     // without tearing down and restarting their fiber mid-phase.
-    starts.sort(
-      (a, b) =>
-        (b.plugin.provides?.length ?? 0) - (a.plugin.provides?.length ?? 0),
-    );
+    const optionalWanted = new Set<string>();
     for (const entry of starts) {
+      for (const opt of entry.plugin.inject?.optional ?? []) {
+        optionalWanted.add(opt);
+      }
+    }
+    const providers: WantedPlugin[] = [];
+    const consumers: WantedPlugin[] = [];
+    for (const entry of starts) {
+      if (entry.plugin.provides?.some((p) => optionalWanted.has(p))) {
+        providers.push(entry);
+      } else {
+        consumers.push(entry);
+      }
+    }
+    const providerHandles = providers.map((entry) => {
+      const handle = this.root.plugin(entry.plugin, entry.config);
+      this.running.set(entry.plugin.name, {
+        handle,
+        signature: entry.signature ?? "",
+      });
+      return handle as PluginHandle<unknown> & { idle?(): Promise<unknown> };
+    });
+    if (providerHandles.length > 0 && consumers.length > 0) {
+      await Promise.all(providerHandles.map((h) => h.idle?.()));
+      if (!this.live) {
+        return affected;
+      }
+    }
+    for (const entry of consumers) {
       const handle = this.root.plugin(entry.plugin, entry.config);
       this.running.set(entry.plugin.name, {
         handle,
