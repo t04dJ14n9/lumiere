@@ -2,12 +2,37 @@
  * A focusout that left the table. CodeMirror detaching the widget because it
  * scrolled out of the viewport also blurs it, but is not that departure: the
  * root is gone and focus fell to the body, so the retained cell stays.
+ *
+ * Focus in the note's shared Vim status dialog (cell `:` / `/` / `?` proxied
+ * onto the outer `.cm-vim-panel`) also stays with the cell session — otherwise
+ * the table tears the cell down mid-prompt and orphans the dialog.
  */
 export function noteTookTableFocus(
   root: { isConnected: boolean; contains(node: Node | null): boolean },
   active: Node | null,
 ): boolean {
-  return root.isConnected && !root.contains(active);
+  return root.isConnected && !tableSessionHoldsFocus(root, active);
+}
+
+/**
+ * Focus still belongs to the table editing session: inside the table, or in
+ * the shared outer Vim status dialog opened from a cell.
+ */
+export function tableSessionHoldsFocus(
+  root: { contains(node: Node | null): boolean },
+  active: Node | null,
+): boolean {
+  if (root.contains(active)) {
+    return true;
+  }
+  return isSharedVimDialogFocus(active);
+}
+
+function isSharedVimDialogFocus(active: Node | null): boolean {
+  if (!active || typeof (active as Element).closest !== "function") {
+    return false;
+  }
+  return Boolean((active as Element).closest(".cm-vim-panel"));
 }
 
 /**
@@ -99,7 +124,7 @@ export function bindTableFocus(options: {
         return;
       }
       afterFocusSettles(() => {
-        if (!root.contains(root.ownerDocument.activeElement)) {
+        if (!tableSessionHoldsFocus(root, root.ownerDocument.activeElement)) {
           leave();
         }
       });
