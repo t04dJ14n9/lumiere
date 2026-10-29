@@ -1,4 +1,4 @@
-import type { PdfSelection } from "../../../shared/selection";
+import type { PdfSelection } from "../../shared/selection";
 
 /** A selection with the version of the file it was made in. */
 export interface SelectionSnapshot {

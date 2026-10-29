@@ -15,9 +15,10 @@ import {
 } from "@workshop/markdown/portable";
 import { NODE_HOST_OFFERS } from "./inert";
 import { injectShim, pageQuery, socketSource } from "./page";
-import type { PanelUrls } from "./panel";
+import type { PageSocket, PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
 import type { LumiereHost } from "./start";
+import { createPdfRoutes, NO_PDF_ROUTES, type PdfRoutes } from "./pdf-routes";
 import { serveFile, serveStatic } from "./static";
 import { createCommandRoutes } from "./command-palette";
 import { createSettingsRoutes } from "./settings-routes";
@@ -33,6 +34,10 @@ export interface EditorAssets {
   readonly markdown: string;
   /** The built page shim (`page/shim.js`). */
   readonly shim: string;
+  /** The built PDF viewer (`packages/pdf/dist/webview`); without it PDFs do not open. */
+  readonly pdf?: string;
+  /** Where the PDF viewer's problems go (a file it cannot read). */
+  readonly log?: (message: string) => void;
 }
 
 export interface EditorRoutes {
@@ -52,6 +57,13 @@ export function createEditorRoutes(
   const roots = new Map<string, string>();
   const sockets = new WebSocketServer({ noServer: true });
   const views = createViewRoutes(host.trees);
+  const pdf = assets.pdf
+    ? createPdfRoutes({
+        base: BASE,
+        viewer: assets.pdf,
+        log: assets.log ?? (() => {}),
+      })
+    : NO_PDF_ROUTES;
   const settings = createSettingsRoutes(
     host.settings,
     pluginTitles(),
@@ -63,30 +75,32 @@ export function createEditorRoutes(
   return {
     async handle(req, res) {
       const url = new URL(req.url ?? "/", "http://host");
-      const rest = url.pathname.startsWith(BASE + "/")
-        ? url.pathname.slice(BASE.length)
-        : undefined;
+      if (!url.pathname.startsWith(BASE + "/")) {
+        return false;
+      }
+      const rest = url.pathname.slice(BASE.length);
       if (rest === "/editor") {
         await servePage({ req, res, url, host, roots });
-      } else if (rest?.startsWith("/m/")) {
+      } else if (rest.startsWith("/m/")) {
         await serveStatic(res, assets.markdown, rest.slice(3));
       } else if (rest === "/page/shim.js") {
         await serveFile(res, assets.shim);
       } else if (rest === "/file") {
         await serveResource(res, url, roots);
-      } else if (rest === "/views" || rest?.startsWith("/views/")) {
+      } else if (rest === "/views" || rest.startsWith("/views/")) {
         return views.handle(req, res, rest.slice("/views".length));
       } else if (rest === "/settings") {
         return settings.handle(req, res, "");
       } else if (rest === "/commands" && commands) {
         return commands.handle(req, res, "");
       } else {
-        return false;
+        // The PDF routes answer false for anything that is not theirs.
+        return pdf.handle(req, res, rest);
       }
       return true;
     },
     upgrade: (req, socket, head) =>
-      acceptSocket({ host, sockets, req, socket, head }),
+      acceptSocket({ host, pdf, sockets, req, socket, head }),
     close() {
       // A server's close() waits for every connection to end, and pages keep
       // their sockets open: end them, or the server never stops.
@@ -95,12 +109,14 @@ export function createEditorRoutes(
       }
       sockets.close();
       views.close();
+      pdf.close();
     },
   };
 }
 
 interface SocketRequest {
   readonly host: LumiereHost;
+  readonly pdf: PdfRoutes;
   readonly sockets: WebSocketServer;
   readonly req: IncomingMessage;
   readonly socket: Duplex;
@@ -110,18 +126,22 @@ interface SocketRequest {
 /** A page's socket to its panel; false when the request is not one. */
 function acceptSocket({
   host,
+  pdf,
   sockets,
   req,
   socket,
   head,
 }: SocketRequest): boolean {
   const url = new URL(req.url ?? "/", "http://host");
-  const panel = host.panels.get(url.searchParams.get("panel") ?? "");
-  if (url.pathname !== SOCKET_PATH || !panel) {
+  const id = url.searchParams.get("panel") ?? "";
+  const panel = host.panels.get(id);
+  // A PDF page uses the same shim, so the same socket path.
+  const pdfPage = panel ? undefined : pdf.page(id);
+  if (url.pathname !== SOCKET_PATH || (!panel && !pdfPage)) {
     return false;
   }
   sockets.handleUpgrade(req, socket, head, (ws) => {
-    host.panels.attach(panel.id, {
+    const page: PageSocket = {
       send: (text) => ws.send(text),
       onMessage: (listener) => {
         const receive = (data: unknown) => listener(String(data));
@@ -137,7 +157,12 @@ function acceptSocket({
         };
       },
       close: () => ws.close(),
-    });
+    };
+    if (panel) {
+      host.panels.attach(panel.id, page);
+    } else {
+      pdfPage?.attach(page);
+    }
   });
   return true;
 }

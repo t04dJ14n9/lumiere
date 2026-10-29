@@ -362,11 +362,19 @@ test("the API closes open vaults, refuses non-note opens, and serves the command
   const { server, vault, cookie } = await fixture(t);
   const headers = { cookie, "content-type": "application/json" };
   await writeFile(path.join(vault, "doc.pdf"), "");
+  await writeFile(path.join(vault, "image.png"), "");
+
+  const pdfOpen = await send(server.port, "/api/open", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ path: path.join(vault, "doc.pdf") }),
+  });
+  assert.equal(pdfOpen.status, 200);
 
   const nonNote = await send(server.port, "/api/open", {
     method: "POST",
     headers,
-    body: JSON.stringify({ path: path.join(vault, "doc.pdf") }),
+    body: JSON.stringify({ path: path.join(vault, "image.png") }),
   });
   assert.equal(nonNote.status, 400);
 

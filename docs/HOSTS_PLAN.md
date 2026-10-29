@@ -193,12 +193,15 @@ push. `pnpm check:desktop` also passes when `apps/desktop` changed.
       the quick switcher;
     - a WebKit run of the Markdown browser suite.
 - **M5, PDF in tabs (Claude):**
-  - give `packages/pdf` a host-services seam like Markdown's: a portable
-    entry, and a layers test that fails if `vscode` is reachable;
-  - serve its viewer from host-node as `/lumiere/pdf`;
-  - `FileTree` stops disabling `.pdf`, and a PDF tab is an `EditorFrame`
-    on that route;
-  - DSH registers it for `.pdf`.
+  - *Done, for viewing:* `@workshop/pdf/portable` gives host-node the viewer
+    core (`src/host` cannot reach `vscode`); host-node serves the viewer as
+    `/lumiere/pdf` over the notes' page shim and socket; `FileTree` opens
+    `.pdf`, a PDF tab is an `EditorFrame` on that route, and the desktop app
+    opens PDFs from Finder.
+  - *Later:* the PDF plugins outside VS Code (Copy Link for Agent, look up,
+    the outline view, history), on host contracts kept on branch
+    `claude/lumiere-pdf-plugins-later`; the PDF settings and right-click
+    menu; links in a PDF; DSH registering the viewer for `.pdf`.
 - **M6, Git outside VS Code (Claude, done):** `GitAccess` over the `git`
   CLI, for blame and the change gutter in DSH and the app
   (`packages/host-node/src/host/git.ts`, built from the VS Code adapter's
@@ -319,6 +322,19 @@ The pass, in the Tauri window:
     - On a Mac without Xcode's command-line tools (`xcode-select -p`
       fails), opening the note shows no "install the tools" dialog; there
       is just no authorship and no bars.
+13. **PDFs (M5).** Put a few PDFs in the throwaway vault, one of them long
+    and one with links.
+    - Click a PDF in the files: it opens in a tab, fitted to the width, in
+      the window's light or dark theme. In a bundled build, Open With ›
+      Lumière on a `.pdf` opens it in a tab, as step 8 does for a note.
+    - Scroll with the trackpad and the keys; zoom with the toolbar, ⌘ and
+      the wheel, and a pinch; find a word (the toolbar's search). Select
+      text and copy it with ⌘C.
+    - Replace the PDF on disk with another: the tab shows the new one.
+    - Close the tab, reopen the PDF: it opens where you left it (until the
+      app quits).
+    - Known gaps, not bugs: right-click has only the page's own menu, links
+      do nothing, and the outline button does nothing.
 
 Report each problem as an issue or a PR. For each fix:
 

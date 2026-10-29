@@ -1,7 +1,7 @@
-import type { HostMessage, ViewerMessage } from "../../../shared/messages";
-import type { PdfLocation } from "../../../shared/pdf-location";
-import type { HistorySnapshot } from "../../../shared/pdf-history";
-import type { ReadingPosition } from "../../../shared/reading-position";
+import type { HostMessage, ViewerMessage } from "../../shared/messages";
+import type { PdfLocation } from "../../shared/pdf-location";
+import type { HistorySnapshot } from "../../shared/pdf-history";
+import type { ReadingPosition } from "../../shared/reading-position";
 
 type Kind = "historyCaptured" | "historyRestored";
 type Report = Extract<ViewerMessage, { type: Kind }>;

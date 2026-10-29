@@ -117,6 +117,9 @@ importers:
       '@workshop/markdown':
         specifier: workspace:*
         version: link:../markdown
+      '@workshop/pdf':
+        specifier: workspace:*
+        version: link:../pdf
       ws:
         specifier: 8.22.0
         version: 8.22.0

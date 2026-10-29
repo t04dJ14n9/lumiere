@@ -1,81 +1,49 @@
-import * as vscode from "vscode";
-import {
-  parseSavedPosition,
-  savedPosition,
-  type ReadingPosition,
-} from "../../../shared/reading-position";
-import {
-  parseViewSettings,
-  resolveSmoothScrolling,
-  type ViewSettings,
-} from "../../../shared/view-settings";
-import type { PdfPanels } from "./panels";
+import type * as vscode from "vscode";
+import type { PdfState } from "../../../shared/host";
+import type { ReadingPosition } from "../../../shared/reading-position";
+import type { ViewSettings } from "../../../shared/view-settings";
+import type { PdfViewerPanel } from "../../../host/viewer/panel";
+import { PdfViewPreferences } from "../../../host/viewer/preferences";
+import { vscodePdfConfiguration } from "./configuration";
 
-const SECTION = "lumiere.pdf.view";
-
-/** Defaults for new views; saved positions are read once, independently by each panel. */
+/**
+ * The view preferences (`PdfViewPreferences`) over VS Code's settings and
+ * the extension's global state, by VS Code `Uri`.
+ */
 export class ViewPreferences implements vscode.Disposable {
-  private readonly subscription: vscode.Disposable;
+  private readonly preferences: PdfViewPreferences;
 
   constructor(
-    private readonly state: vscode.Memento,
-    panels: PdfPanels,
+    state: vscode.Memento,
+    panels: { readonly all: readonly PdfViewerPanel[] },
   ) {
-    this.subscription = vscode.workspace.onDidChangeConfiguration((event) => {
-      if (
-        !event.affectsConfiguration(SECTION) &&
-        !event.affectsConfiguration("editor.smoothScrolling")
-      ) {
-        return;
-      }
-      for (const panel of panels.all) {
-        panel.setViewSettings(this.settings(panel.uri));
-      }
-    });
+    this.preferences = new PdfViewPreferences(
+      vscodePdfConfiguration,
+      mementoState(state),
+      panels,
+    );
   }
 
   settings(uri: vscode.Uri): ViewSettings {
-    const config = vscode.workspace.getConfiguration(SECTION, uri);
-    const settings = parseViewSettings({
-      defaultZoom: config.get("defaultZoom"),
-      pageLayout: config.get("pageLayout"),
-      scrollMode: config.get("scrollMode"),
-      scrollDirection: config.get("scrollDirection"),
-      smoothScrolling: config.get("smoothScrolling"),
-    });
-    settings.smoothScrolling = resolveSmoothScrolling(
-      settings.smoothScrolling,
-      vscode.workspace.getConfiguration("editor", uri).get("smoothScrolling"),
-      false,
-    );
-    return settings;
+    return this.preferences.settings(uri.toString());
   }
 
   position(uri: vscode.Uri): ReadingPosition | undefined {
-    if (
-      !vscode.workspace
-        .getConfiguration(SECTION, uri)
-        .get<boolean>("restoreOnReopen", true)
-    ) {
-      return undefined;
-    }
-    return parseSavedPosition(this.state.get(this.key(uri)));
+    return this.preferences.position(uri.toString());
   }
 
   save(uri: vscode.Uri, position: ReadingPosition): void {
-    // Detached storage work has an error sink; open panels never follow this saved value.
-    void this.state
-      .update(this.key(uri), savedPosition(position))
-      .then(undefined, (error) =>
-        console.error("Could not save PDF view", error),
-      );
+    this.preferences.save(uri.toString(), position);
   }
 
   dispose(): void {
-    this.subscription.dispose();
+    this.preferences.dispose();
   }
+}
 
-  private key(uri: vscode.Uri): string {
-    return `lumiere.pdf.readingPosition:${uri.toString()}`;
-  }
+function mementoState(memento: vscode.Memento): PdfState {
+  return {
+    get: (key) => memento.get(key),
+    update: (key, value) => Promise.resolve(memento.update(key, value)),
+  };
 }

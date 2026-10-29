@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { ZEN_COMMAND_IDS } from "../pdf/registered-commands";
+import { ZEN_COMMAND_IDS } from "../../../shared/command-ids";
 import manifest from "./manifest";
 import { StatusBarAfterZen, type StatusBarSetting } from "./status-bar";
 

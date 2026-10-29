@@ -162,9 +162,12 @@ test("closing an open vault removes it from open and keeps it in recent", async 
   assert.deepEqual(events, [{ type: "vaults", open: [path.join(dir, "b")] }]);
 });
 
-test("showing a non-Markdown file is refused", async (t) => {
+test("showing a PDF opens it, while an unsupported file is refused", async (t) => {
   const dir = await scratch(t);
   await writeFile(path.join(dir, "doc.pdf"), "");
+  await writeFile(path.join(dir, "image.png"), "");
   const vaults = new Vaults(path.join(dir, "vaults.json"));
-  await assert.rejects(vaults.show(path.join(dir, "doc.pdf")), /Not a note/);
+  await vaults.show(path.join(dir, "doc.pdf"));
+  assert.deepEqual(vaults.list().open, [dir]);
+  await assert.rejects(vaults.show(path.join(dir, "image.png")), /Not a note/);
 });

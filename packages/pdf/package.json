@@ -5,13 +5,14 @@
   "description": "Lumière PDF: an EmbedPDF-based viewer that copies selections with exact page-and-box locations.",
   "exports": {
     "./host": "./src/extension/extension.ts",
+    "./portable": "./src/host/portable.ts",
     "./contributes.json": "./contributes.json",
     "./lazy-bridge-server": "./scripts/lazy-bridge-server.mjs"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/extension && tsc -p src/bridge-stdio && tsc -p src/webview && tsc -p test",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/host && tsc -p src/extension && tsc -p src/bridge-stdio && tsc -p src/webview && tsc -p test",
     "test": "tsx --test test/unit/*.test.ts test/unit/*/*.test.ts",
     "fixtures": "node test/fixtures/make-fixtures.mjs",
     "test:browser": "node scripts/build.mjs && pnpm fixtures && playwright test --config test/browser/playwright.config.ts"

@@ -13,8 +13,17 @@ export interface PageQuery {
  * inside the workspace. Without a workspace, the note's folder stands in.
  */
 export function pageQuery(url: URL): PageQuery | undefined {
+  return fileQuery(url, /\.(md|markdown)$/i);
+}
+
+/** As `pageQuery`, for a PDF. */
+export function pdfQuery(url: URL): PageQuery | undefined {
+  return fileQuery(url, /\.pdf$/i);
+}
+
+function fileQuery(url: URL, kind: RegExp): PageQuery | undefined {
   const note = url.searchParams.get("path") ?? "";
-  if (!path.isAbsolute(note) || !/\.(md|markdown)$/i.test(note)) {
+  if (!path.isAbsolute(note) || !kind.test(note)) {
     return undefined;
   }
   const normalized = path.normalize(note);

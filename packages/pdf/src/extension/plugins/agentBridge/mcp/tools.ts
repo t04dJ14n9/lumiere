@@ -8,7 +8,7 @@ import * as vscode from "vscode";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { notePayload, noteReference } from "@workshop/agents/handoff";
-import { OPEN_LOCATION_COMMAND_ID } from "../../pdf/registered-commands";
+import { OPEN_LOCATION_COMMAND_ID } from "../../../../shared/command-ids";
 import type { AgentHandoff } from "../handoff";
 import type { NoteSelections } from "../note-selections";
 import { LastPdf } from "../last-pdf";

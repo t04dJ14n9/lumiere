@@ -7,7 +7,7 @@ import {
 } from "../../../shared/bridge-envelope";
 import type { PdfSelection } from "../../../shared/selection";
 import type { PdfPanel } from "../pdf/panel";
-import { displayPath } from "../pdf/source";
+import { displayPath } from "../pdf/files";
 import type { RegionSnapshots } from "../pdfRegions/region-snapshots";
 import { openAgentChat } from "./chat";
 import { hashSelection } from "./envelope";
