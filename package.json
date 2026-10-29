@@ -702,7 +702,7 @@
       {
         "command": "lumiere.markdown.insertSketch",
         "title": "Insert Sketch",
-        "category": "Lumi\u00e8re"
+        "category": "Lumière"
       },
       {
         "command": "lumiere.markdown.insertTable",
@@ -2243,6 +2243,11 @@
           "group": "0_agent@2"
         },
         {
+          "command": "lumiere.markdown.insertSketch",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.sketch && webviewSection == 'markdownContent' && lumiere.markdown.sketch.canDraw",
+          "group": "sketch@1"
+        },
+        {
           "submenu": "lumiere.markdown.menu.format",
           "when": "webviewId == 'lumiere.markdown.editor'",
           "group": "formatting@1"
@@ -2256,11 +2261,6 @@
           "submenu": "lumiere.markdown.menu.insert",
           "when": "webviewId == 'lumiere.markdown.editor'",
           "group": "formatting@3"
-        },
-        {
-          "command": "lumiere.markdown.insertSketch",
-          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.sketch && webviewSection == 'markdownContent' && lumiere.markdown.sketch.canDraw",
-          "group": "sketch@1"
         },
         {
           "command": "lumiere.pdf.lookUp",
@@ -3636,7 +3636,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.64.1",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.5",
     "@types/vscode": "1.125.0",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
