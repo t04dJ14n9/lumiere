@@ -47,4 +47,14 @@ export type TreeEvent =
       readonly viewId: string;
       readonly id: string;
       readonly select: boolean;
+    }
+  | {
+      readonly type: "expand";
+      readonly viewId: string;
+      readonly id: string;
+    }
+  | {
+      readonly type: "collapse";
+      readonly viewId: string;
+      readonly id: string;
     };

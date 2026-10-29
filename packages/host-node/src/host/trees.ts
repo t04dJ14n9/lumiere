@@ -27,6 +27,11 @@ interface LiveTree {
   readonly visibility: Set<(visible: boolean) => void>;
   /** The nodes of the last snapshot, by id, for running their commands. */
   nodes: Map<string, TreeNode>;
+  /**
+   * Accordion overrides for `expanded`. A full refresh clears them so the
+   * next snapshot uses the source's own flags.
+   */
+  expansion: Map<string, boolean>;
 }
 
 export class TreeHub {
@@ -44,6 +49,7 @@ export class TreeHub {
       visible: this.visibility.get(viewId) ?? false,
       visibility: new Set(),
       nodes: new Map(),
+      expansion: new Map(),
     };
     this.trees.set(viewId, tree);
     this.emit({ type: "changed", viewId });
@@ -62,7 +68,7 @@ export class TreeHub {
     }
     const nodes = new Map<string, TreeNode>();
     const budget = { left: MAX_NODES };
-    const items = await this.items(tree.source, undefined, {
+    const items = await this.items(tree, undefined, {
       nodes,
       budget,
       depth: 0,
@@ -113,6 +119,7 @@ export class TreeHub {
     return {
       refresh: () => {
         if (live()) {
+          tree.expansion.clear();
           this.emit({ type: "changed", viewId });
         }
       },
@@ -130,6 +137,18 @@ export class TreeHub {
             id: node.id,
             select: options?.select ?? false,
           });
+        }
+      },
+      expand: async (node) => {
+        if (live()) {
+          tree.expansion.set(node.id, true);
+          this.emit({ type: "expand", viewId, id: node.id });
+        }
+      },
+      collapse: async (node) => {
+        if (live()) {
+          tree.expansion.set(node.id, false);
+          this.emit({ type: "collapse", viewId, id: node.id });
         }
       },
       get visible() {
@@ -151,7 +170,7 @@ export class TreeHub {
   }
 
   private async items(
-    source: TreeSource,
+    tree: LiveTree,
     parent: TreeNode | undefined,
     walk: {
       nodes: Map<string, TreeNode>;
@@ -159,7 +178,9 @@ export class TreeHub {
       depth: number;
     },
   ): Promise<TreeItem[]> {
-    const nodes = parent ? await source.children(parent) : await source.roots();
+    const nodes = parent
+      ? await tree.source.children(parent)
+      : await tree.source.roots();
     const items: TreeItem[] = [];
     for (const node of nodes) {
       if (walk.budget.left <= 0) {
@@ -167,11 +188,12 @@ export class TreeHub {
       }
       walk.budget.left--;
       walk.nodes.set(node.id, node);
+      const shown = withExpansion(node, tree.expansion);
       const children =
-        node.expanded === undefined || walk.depth >= MAX_DEPTH
+        shown.expanded === undefined || walk.depth >= MAX_DEPTH
           ? undefined
-          : await this.items(source, node, { ...walk, depth: walk.depth + 1 });
-      items.push(toItem(node, children));
+          : await this.items(tree, node, { ...walk, depth: walk.depth + 1 });
+      items.push(toItem(shown, children));
     }
     return items;
   }
@@ -181,6 +203,18 @@ export class TreeHub {
       listener(event);
     }
   }
+}
+
+/** Snapshot `expanded` follows an accordion override when one was recorded. */
+function withExpansion(
+  node: TreeNode,
+  expansion: Map<string, boolean>,
+): TreeNode {
+  const override = expansion.get(node.id);
+  if (override === undefined) {
+    return node;
+  }
+  return { ...node, expanded: override };
 }
 
 function toItem(node: TreeNode, children: TreeItem[] | undefined): TreeItem {

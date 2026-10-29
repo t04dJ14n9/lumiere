@@ -112,3 +112,7 @@ forbids this package from importing `vscode` or any embedder.
   they are unavailable.
 - No command palette or keybindings: commands run from clicks, links and the
   editor's own menus.
+- `TreeHandle.expand` / `collapse` emit `expand` / `collapse` events (and
+  record the override on the next snapshot) for accordion outlines. They do
+  not emit `changed`. Embedders that ignore those events leave expansion at
+  the snapshot's `expanded` flags only.

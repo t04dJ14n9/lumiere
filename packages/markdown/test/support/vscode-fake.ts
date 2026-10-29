@@ -66,6 +66,8 @@ function defaultHost(): HostServices {
         refresh() {},
         setMessage() {},
         async reveal() {},
+        async expand() {},
+        async collapse() {},
         visible: true,
         onVisibilityChanged: none,
         dispose() {},

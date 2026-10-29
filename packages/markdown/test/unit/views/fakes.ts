@@ -96,6 +96,8 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
         refresh() {},
         setMessage: (message) => (record.message = message),
         async reveal() {},
+        async expand() {},
+        async collapse() {},
         visible: true,
         onVisibilityChanged: () => () => {},
         dispose: () => (record.disposed = true),

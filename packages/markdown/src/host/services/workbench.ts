@@ -111,17 +111,21 @@ function textEditor(uri: string) {
 
 const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
   const changed = new vscode.EventEmitter<TreeNode | undefined>();
+  const expansion = new Map<string, boolean>();
   const view = vscode.window.createTreeView<TreeNode>(viewId, {
     ...options,
     treeDataProvider: {
       onDidChangeTreeData: changed.event,
       getChildren: (node) => (node ? source.children(node) : source.roots()),
       getParent: (node) => source.parent?.(node),
-      getTreeItem: treeItem,
+      getTreeItem: (node) => treeItem(withExpansion(node, expansion)),
     },
   });
   return {
-    refresh: () => changed.fire(undefined),
+    refresh: () => {
+      expansion.clear();
+      changed.fire(undefined);
+    },
     setMessage: (message) => {
       // VS Code removes the message when it is set to undefined; its typing
       // (`message?: string`) does not say so, and deleting the property
@@ -132,6 +136,21 @@ const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
       if (view.visible) {
         await view.reveal(node, { select: true, focus: false, ...options });
       }
+    },
+    expand: async (node) => {
+      if (!view.visible) {
+        return;
+      }
+      expansion.set(node.id, true);
+      await view.reveal(node, { expand: true, select: false, focus: false });
+    },
+    collapse: async (node) => {
+      if (!view.visible) {
+        return;
+      }
+      expansion.set(node.id, false);
+      // Element-scoped refresh — not changed.fire(undefined).
+      changed.fire(node);
     },
     get visible() {
       return view.visible;
@@ -146,6 +165,18 @@ const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
     },
   };
 };
+
+/** `expanded` follows an accordion override when one was recorded. */
+function withExpansion(
+  node: TreeNode,
+  expansion: Map<string, boolean>,
+): TreeNode {
+  const override = expansion.get(node.id);
+  if (override === undefined) {
+    return node;
+  }
+  return { ...node, expanded: override };
+}
 
 function collapsibleState(node: TreeNode): vscode.TreeItemCollapsibleState {
   if (node.expanded === undefined) {
