@@ -38,6 +38,8 @@ export const noViews: WorkbenchViews = {
     refresh: () => {},
     setMessage: () => {},
     reveal: async () => {},
+    expand: async () => {},
+    collapse: async () => {},
     visible: false,
     onVisibilityChanged: () => () => {},
     dispose: () => {},

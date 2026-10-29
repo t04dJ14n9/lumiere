@@ -175,7 +175,9 @@ test("the ghost keeps one quiet style on every line and leaves layout and clicks
   assert.match(ghost, /font-size:\s*calc\(0\.8 \* var\(--text-size\)\)/);
   assert.match(ghost, /font-weight:\s*normal/);
   assert.match(ghost, /font-family:\s*var\(--ui-font\)/);
-  assert.match(ghost, /--vscode-git-blame-editorDecorationForeground/);
+  assert.match(ghost, /--vscode-gitlens-trailingLineForegroundColor/);
+  assert.match(ghost, /#99999959/);
+  assert.doesNotMatch(ghost, /--vscode-git-blame-editorDecorationForeground/);
   assert.match(ghost, /white-space:\s*nowrap/);
   assert.match(ghost, /text-overflow:\s*ellipsis/);
   assert.match(ghost, /translateY\(-50%\)/);

@@ -209,6 +209,8 @@ async function fixture(options: FixtureOptions = {}) {
             async reveal() {
               assert.fail("the probe must never reveal or take focus");
             },
+            async expand() {},
+            async collapse() {},
             dispose() {
               probeDisposed = true;
             },

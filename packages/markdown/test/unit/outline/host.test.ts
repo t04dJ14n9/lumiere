@@ -4,6 +4,7 @@ import {
   DISABLE_FOLLOW_COMMAND,
   ENABLE_FOLLOW_COMMAND,
   EXPAND_ALL_COMMAND,
+  EXPAND_MODE_SETTING,
   FOLLOW_CURSOR_SETTING,
   OPEN_COMMAND,
   TOGGLE_COMMAND,
@@ -261,8 +262,13 @@ test("Expand All visits every level and preserves selection and focus", async (t
   await tick();
   await fixture.fake.commands.get(EXPAND_ALL_COMMAND)!();
   assert.deepEqual(
+    fixture.expands.map((node) => node.label),
+    ["One", "Two", "Three", "Four", "Five"],
+    "each parent is recorded open so a later collapse can close it",
+  );
+  assert.deepEqual(
     fixture.reveals.map((reveal) => reveal.node.label),
-    ["One", "Two", "Three", "Four", "Five", "Six", "Other"],
+    ["Six", "Other"],
   );
   for (const reveal of fixture.reveals) {
     assert.deepEqual(reveal.options, {
@@ -283,6 +289,155 @@ test("stopping the plugin removes commands, view and follow context", async () =
   assert.equal(fixture.followsCursor, undefined);
   assert.equal(fixture.commandsAvailable, undefined);
   assert.deepEqual(fixture.warnings, []);
+});
+
+// A1a and A2 have child headings, so they are expandable. `body-a` still
+// sits in A1a (before its child), which is the node Follow Cursor reveals.
+const NESTED = `# A
+## A1
+### A1a
+body-a
+#### Detail
+## A2
+### A2a
+body-a2
+# B
+## B1
+### B1a
+body-b
+`;
+
+test("accordion follow expands only the active path and does not refresh", async (t) => {
+  const fixture = await outlineFixture({ "A.md": NESTED });
+  t.after(() => fixture.root.dispose());
+  const { panel, cursor } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  const refreshAfterOpen = fixture.refreshCount;
+  const collapseAllBeforeFollow = fixture.collapseAllCount;
+  fixture.expands.length = 0;
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  assert.equal(fixture.refreshCount, refreshAfterOpen, "no caret-only refresh");
+  assert.equal(
+    fixture.collapseAllCount,
+    collapseAllBeforeFollow + 1,
+    "native collapse all resets every off-path branch",
+  );
+  assert.deepEqual(
+    fixture.expands.map((node) => node.label).sort(),
+    ["A", "A1", "A1a"].sort(),
+  );
+  assert.equal(fixture.reveals.at(-1)?.node.label, "A1a");
+});
+
+test("unchanged accordion path skips expand/collapse", async (t) => {
+  const fixture = await outlineFixture({ "A.md": NESTED });
+  t.after(() => fixture.root.dispose());
+  const { panel, cursor } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  fixture.expands.length = 0;
+  fixture.collapses.length = 0;
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a") + 1;
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  assert.deepEqual(fixture.expands, []);
+  assert.deepEqual(fixture.collapses, []);
+  assert.equal(fixture.reveals.at(-1)?.node.label, "A1a");
+});
+
+test("accordion chapter switch closes the prior path in the tree UI", async (t) => {
+  const fixture = await outlineFixture({ "A.md": NESTED });
+  t.after(() => fixture.root.dispose());
+  const { panel, cursor } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  const collapseAllBeforeSwitch = fixture.collapseAllCount;
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-b");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+
+  assert.equal(
+    fixture.collapseAllCount,
+    collapseAllBeforeSwitch + 1,
+    "chapter switch resets native expansion before opening the next path",
+  );
+  assert.equal(fixture.isOpen("A"), false, "prior chapter closes");
+  assert.equal(fixture.isOpen("A1"), false, "prior ancestor closes");
+  assert.equal(fixture.isOpen("A1a"), false, "prior nested branch closes");
+  assert.equal(
+    fixture.isOpen("A2"),
+    false,
+    "prior sibling branch stays closed",
+  );
+  assert.equal(fixture.isOpen("B"), true, "active chapter is open");
+  assert.equal(fixture.isOpen("B1"), true, "active nested branch is open");
+  assert.equal(fixture.reveals.at(-1)?.node.label, "B1a");
+});
+
+test("expandMode all keeps parents expanded on build and only reveals on follow", async (t) => {
+  const fixture = await outlineFixture({ "A.md": NESTED });
+  t.after(() => fixture.root.dispose());
+  fixture.fake.settings[EXPAND_MODE_SETTING] = "all";
+  fixture.configure();
+  const { panel, cursor } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  const roots = await fixture.view.source.roots();
+  assert.equal(roots[0]?.expanded, true);
+  fixture.expands.length = 0;
+  fixture.collapses.length = 0;
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-b");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  assert.deepEqual(fixture.expands, []);
+  assert.deepEqual(fixture.collapses, []);
+  assert.equal(fixture.reveals.at(-1)?.node.label, "B1a");
+});
+
+test("Expand All is folded back to the active path on the next follow", async (t) => {
+  const fixture = await outlineFixture({ "A.md": NESTED });
+  t.after(() => fixture.root.dispose());
+  const { panel, cursor } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a");
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  await fixture.fake.commands.get(EXPAND_ALL_COMMAND)!();
+  fixture.expands.length = 0;
+  fixture.collapses.length = 0;
+  const collapseAllBeforeFollow = fixture.collapseAllCount;
+  cursor.head = fixture.texts.get("A.md")!.indexOf("body-a") + 1;
+  fixture.root.emit("editor/selectionChanged", panel, false);
+  await tick();
+  assert.equal(
+    fixture.collapseAllCount,
+    collapseAllBeforeFollow + 1,
+    "the next follow resets every branch Expand All opened",
+  );
+  assert.equal(fixture.reveals.at(-1)?.node.label, "A1a");
+  assert.equal(fixture.isOpen("A"), true);
+  assert.equal(fixture.isOpen("A1"), true);
+  assert.equal(fixture.isOpen("A1a"), true);
+  assert.equal(
+    fixture.isOpen("A2"),
+    false,
+    "sibling opened by Expand All collapses",
+  );
+  assert.equal(
+    fixture.isOpen("B"),
+    false,
+    "other chapter opened by Expand All collapses",
+  );
 });
 
 test("Toggle Markdown Outline targets the view's hide command and restores it with focus", async (t) => {

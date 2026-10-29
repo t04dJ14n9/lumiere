@@ -2808,7 +2808,7 @@
           },
           "lumiere.markdown.plugins.gitBlame.enabled": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "scope": "resource",
             "description": "Shows who last committed the caret line at the end of the line in Live Preview."
           },
@@ -3307,6 +3307,15 @@
             "type": "boolean",
             "default": true,
             "description": "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
+            "scope": "resource"
+          },
+          "lumiere.markdown.outline.expandMode": {
+            "enum": [
+              "accordion",
+              "all"
+            ],
+            "default": "accordion",
+            "description": "How Markdown Outline expands headings while Follow Cursor is on: accordion keeps only the active path open; all expands every parent (previous behavior).",
             "scope": "resource"
           },
           "lumiere.markdown.properties.display": {

@@ -32,7 +32,7 @@ commits. Identity is resolved through Git config for the “You” label.
 
 ## Files
 
-- `manifest.ts`: default-on enablement and quiet settings title.
+- `manifest.ts`: default-off enablement and quiet settings title.
 - `protocol.ts`: validated snapshot, result, identity and required generation messages.
 - `host.ts`: panel-bound RPC and immediate repository invalidation.
 - `epoch.ts`: document/caret/repository freshness comparisons.
@@ -43,15 +43,15 @@ commits. Identity is resolved through Git config for the “You” label.
 - `blameWidget.ts`: identity state, the caret line's ghost, its placement, and the layer that draws it.
 - `blameTooltip.ts`: the full-message tooltip, shown by hit-testing the pointer (the ghost lets clicks through).
 - `paintable.ts`: hide the ghost inside unrevealed Live Preview replaces.
-- `gitBlame.css`: `git.blame.editorDecorationForeground`, fixed small UI type, nowrap + ellipsis, click-through layer, hover tooltip, Source-mode hiding.
+- `gitBlame.css`: GitLens trailing-line color (`#99999959` when that token is absent), fixed small UI type, nowrap + ellipsis, click-through layer, hover tooltip, Source-mode hiding.
 
 ## Services, events and settings
 
 Host injects the host service `git` and `rpc`; webview injects `editor` and `rpc`. Provides
 no services, listens/emits no kernel events, and uses only its own RPC channel.
 Repository changes arrive through injected GitAccess. One resource-scoped switch,
-`lumiere.markdown.plugins.gitBlame.enabled`, defaults to true in the Obsidian
-preset. It works without `gitGutter` or `gitInline`; no commands or mutations.
+`lumiere.markdown.plugins.gitBlame.enabled`, defaults to false. It works
+without `gitGutter` or `gitInline`; no commands or mutations.
 
 ## Limits and differences
 

@@ -11,8 +11,10 @@ The view parses the active panel's authoritative document text into nested
 headings and refreshes after edits. Follow Cursor defaults to on; its checked
 overflow action persists `outline.followCursor` through VS Code settings.
 When enabled, cursor movement, panel changes and view visibility reveal and
-select the current section without taking focus. Version and panel identity
-guards discard stale captures. Collapse All uses VS Code's native tree action;
+select the current section without taking focus. The default expand mode is
+accordion: only the active heading's ancestor path stays open, without
+rebuilding the tree. `all` starts every parent expanded and follow only
+selects. Version and panel identity guards discard stale captures. Collapse All uses VS Code's native tree action;
 Expand All reveals every node in order so deeply nested headings also expand.
 Clicking a heading opens the note at its offset; the links plugin's `navigate` then
 scrolls that offset to the vertical centre of the editor, as VS Code's Outline
@@ -66,8 +68,10 @@ Markdown Outline so they do not linger beside non-Workshop editors.
 - Maintains `lumiere.markdown.plugin.outline` while the window plugin is
   running, so editor-scoped shortcuts (Go to Heading, Ctrl+Alt+O) reflect its
   lifetime. The Toggle Markdown Outline palette entry uses workbench/config gating.
-- Settings: `lumiere.markdown.plugins.outline.enabled` and
-  `lumiere.markdown.outline.followCursor` (default `true`, resource-scoped).
+- Settings: `lumiere.markdown.plugins.outline.enabled`,
+  `lumiere.markdown.outline.followCursor` (default `true`, resource-scoped),
+  and `lumiere.markdown.outline.expandMode` (default `accordion`,
+  resource-scoped; `all` expands every parent).
 - Commands: `lumiere.markdown.outline.expandAll`,
   `lumiere.markdown.outline.enableFollowCursor`,
   `lumiere.markdown.outline.disableFollowCursor` and

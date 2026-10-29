@@ -71,6 +71,12 @@ export interface TreeHandle {
     node: TreeNode,
     options?: { select?: boolean; focus?: boolean; expand?: boolean | number },
   ): Promise<void>;
+  /** Open this node in the tree UI without a full data rebuild. */
+  expand(node: TreeNode): Promise<void>;
+  /** Close this node in the tree UI without a full data rebuild. */
+  collapse(node: TreeNode): Promise<void>;
+  /** Close every expandable node, when the native tree supports it. */
+  collapseAll?(): Promise<void>;
   readonly visible: boolean;
   onVisibilityChanged(listener: (visible: boolean) => void): Disposer;
   dispose(): void;

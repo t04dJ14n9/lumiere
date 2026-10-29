@@ -253,7 +253,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: lumiere.markdown.plugins.gitBlame.enabled | No Obsidian core equivalent | Default on; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
+| Setting: lumiere.markdown.plugins.gitBlame.enabled | No Obsidian core equivalent | Default off; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
 | Setting: lumiere.markdown.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -370,6 +370,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
 | Setting: lumiere.markdown.outgoingLinks.sortOrder | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.outline.expandMode | No Obsidian core equivalent | Default accordion; all expands every parent | Unit accordion follow tests; manual scenario pending | Intentional extension |
 | Command: lumiere.markdown.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.graph.enabled | not observed | not manually observed | Manual scenario pending | not observed |

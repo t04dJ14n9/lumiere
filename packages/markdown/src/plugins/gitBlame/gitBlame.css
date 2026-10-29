@@ -19,11 +19,8 @@
   font-weight: normal;
   letter-spacing: normal;
   line-height: 1.4;
-  /* VS Code git.blame.editorDecorationForeground (+ quiet fallbacks). */
-  color: var(
-    --vscode-git-blame-editorDecorationForeground,
-    var(--vscode-descriptionForeground, var(--muted))
-  );
+  /* GitLens trailing-line blame; quiet gray ~35% alpha when the token is absent. */
+  color: var(--vscode-gitlens-trailingLineForegroundColor, #99999959);
   user-select: none;
 }
 .is-source-mode .mw-gb-ghost {

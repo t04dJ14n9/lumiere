@@ -120,6 +120,8 @@ const FIXED: Readonly<
     "debugTokenExpression-string": "#a31515",
     "editor-findMatchBackground": "#a8ac94",
     "editor-findMatchHighlightBackground": "#ea5c0055",
+    // GitLens trailing-line blame: gray #999999 at about 35% alpha.
+    "gitlens-trailingLineForegroundColor": "#99999959",
     "scrollbarSlider-background": "#64646466",
     "scrollbarSlider-hoverBackground": "#646464b3",
     "symbolIcon-functionForeground": "#652d90",
@@ -138,6 +140,8 @@ const FIXED: Readonly<
     "debugTokenExpression-string": "#ce9178",
     "editor-findMatchBackground": "#515c6a",
     "editor-findMatchHighlightBackground": "#ea5c0055",
+    // GitLens trailing-line blame: gray #999999 at about 35% alpha.
+    "gitlens-trailingLineForegroundColor": "#99999959",
     "scrollbarSlider-background": "#79797966",
     "scrollbarSlider-hoverBackground": "#646464b3",
     "symbolIcon-functionForeground": "#b180d7",

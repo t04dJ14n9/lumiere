@@ -116,6 +116,22 @@ test("a huge tree is cut short instead of taking the host down", async () => {
   assert.equal(snapshot?.truncated, true);
 });
 
+test("expand and collapse emit without a full changed refresh", async () => {
+  const { trees, events } = hub();
+  const handle = trees.tree("outline", outline());
+  events.length = 0;
+  await handle.expand({ id: "title", label: "TITLE" });
+  await handle.collapse({ id: "title", label: "TITLE" });
+  assert.deepEqual(events, [
+    { type: "expand", viewId: "outline", id: "title" },
+    { type: "collapse", viewId: "outline", id: "title" },
+  ]);
+  assert.equal(
+    events.some((event) => event.type === "changed"),
+    false,
+  );
+});
+
 test("visibility set before a tree registers is preserved on the registered handle", () => {
   const { trees } = hub();
   trees.setVisible("outline", true);
