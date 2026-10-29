@@ -20,6 +20,8 @@ import { TableKeyboard } from "./keyboard";
 import { TableClipboard } from "./clipboard";
 import { TableToolbar } from "./toolbar";
 import { TableHandles } from "./handles";
+import { ColumnResize } from "./column-resize";
+import { sourceAfterOperation, splitTableSource } from "./column-widths";
 import { activeTables, tableSelectionChanges } from "./state";
 import { TableStickyHScroll } from "./sticky-hscroll";
 import { bindTableFocus } from "./focus-lifetime";
@@ -34,6 +36,7 @@ export class TableController {
   private clipboard!: TableClipboard;
   private toolbar!: TableToolbar;
   private readonly handles: TableHandles;
+  private readonly columnResize: ColumnResize;
   private readonly sticky: TableStickyHScroll;
   private readonly events = new AbortController();
   private requested?: CellPosition | undefined;
@@ -67,6 +70,13 @@ export class TableController {
     this.grid.render();
     this.handles = this.createHandles();
     this.handles.refresh();
+    this.columnResize = new ColumnResize(
+      this.grid.root,
+      this.grid.table,
+      (widths) => this.grid.replaceTable(this.grid.tableSource(), widths),
+    );
+    this.columnResize.refresh();
+    this.columnResize.applyWidths(this.grid.widths);
     this.sticky = new TableStickyHScroll(this.grid.scroll, outer.scrollDOM);
   }
 
@@ -212,14 +222,19 @@ export class TableController {
       {
         select: (axis, index) => this.selected.selectAxis(axis, index),
         move: (axis, from, to) => {
+          const op: TableOperation = {
+            type: "move",
+            axis,
+            from,
+            to: from,
+            destination: to,
+          };
           this.grid.replace(
-            operateTable(this.grid.model, {
-              type: "move",
-              axis,
-              from,
-              to: from,
-              destination: to,
-            }),
+            sourceAfterOperation(
+              operateTable(this.grid.model, op),
+              this.grid.widths,
+              op,
+            ),
           );
           this.selected.selectAxis(axis, to);
         },
@@ -246,7 +261,8 @@ export class TableController {
       this.toolbar.close();
     }
     this.grid.outer = outer;
-    const model = parseTable(block.source);
+    const split = splitTableSource(block.source);
+    const model = parseTable(split.table);
     if (!model) {
       return;
     }
@@ -255,10 +271,11 @@ export class TableController {
       model.rows.length !== previousModel.rows.length ||
       model.alignments.length !== previousModel.alignments.length;
     const moved = shapeChanged
-      ? this.relocatedCell(model, block.source)
+      ? this.relocatedCell(model, split.table)
       : undefined;
     this.grid.block = block;
     this.grid.model = model;
+    this.grid.widths = split.widths;
     this.refreshCells(shapeChanged, moved, previousModel, force);
     this.projection.update();
     if (this.requested) {
@@ -270,19 +287,15 @@ export class TableController {
     }
     this.highlight();
     this.handles.refresh();
+    this.columnResize.refresh();
+    this.columnResize.applyWidths(this.grid.widths);
   }
 
-  private canSkipUpdate(
-    b: RenderBlock,
-    outer: EditorView,
-    force: boolean,
-  ): boolean {
-    const same =
+  private canSkipUpdate(b: RenderBlock, outer: EditorView, force: boolean) {
+    return (
       !force &&
       b.source === this.grid.block.source &&
-      outer === this.grid.outer;
-    return (
-      same &&
+      outer === this.grid.outer &&
       !this.requested &&
       !b.source.includes("[^") &&
       !b.source.includes("^[")
@@ -362,12 +375,13 @@ export class TableController {
   }
 
   execute(operation: TableOperation, focus: CellPosition): void {
-    const source = operateTable(this.grid.model, operation);
+    const table = operateTable(this.grid.model, operation);
+    const source = sourceAfterOperation(table, this.grid.widths, operation);
     if (source === this.grid.block.source) {
       (this.editor ?? this.grid.outer).focus();
       return;
     }
-    const next = parseTable(source);
+    const next = parseTable(table);
     this.close();
     delete this.selected.range;
     this.requested = next
@@ -389,6 +403,7 @@ export class TableController {
     this.suspend(true);
     this.selected.drag.destroy();
     this.handles.destroy();
+    this.columnResize.destroy();
     this.sticky.destroy();
     this.events.abort();
     this.projection.cellEditor?.destroy();

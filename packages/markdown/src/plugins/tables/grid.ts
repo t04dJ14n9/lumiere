@@ -6,6 +6,8 @@ import {
 } from "../../markdown/tables/model";
 import { editGroup } from "../document/api";
 import type { RenderBlock } from "../livePreview/api";
+import type { ColumnWidth } from "./column-widths";
+import { joinTableSource, splitTableSource } from "./column-widths";
 import type { TableEnvironment } from "./environment";
 
 /** Rendered cells and their current source snapshot. It owns no selection. */
@@ -16,6 +18,8 @@ export class TableGrid {
   readonly scroll: HTMLElement;
   cells: HTMLElement[][] = [];
   model: Table;
+  /** Pixel column widths from a trailing `lumiere-col-widths` comment. */
+  widths: ColumnWidth[] | undefined;
   private operationSequence = 0;
 
   constructor(
@@ -27,7 +31,9 @@ export class TableGrid {
       "disposeContent" | "renderContent"
     >,
   ) {
-    this.model = parseTable(block.source)!;
+    const split = splitTableSource(block.source);
+    this.model = parseTable(split.table)!;
+    this.widths = split.widths;
     this.table.className = "markdown-rendered table-editor";
     this.table.setAttribute("aria-label", "Markdown table");
     // A wide table scrolls by itself, as in Obsidian, not the whole note.
@@ -56,6 +62,19 @@ export class TableGrid {
       changes: { from, to: from + this.block.source.length, insert: source },
       annotations: editGroup.of(this.commandGroup()),
     });
+  }
+
+  /** Replace the GFM table while preserving or updating column widths. */
+  replaceTable(
+    tableMarkdown: string,
+    widths: ColumnWidth[] | undefined = this.widths,
+  ): void {
+    this.replace(joinTableSource(tableMarkdown, widths));
+  }
+
+  /** Table markdown without a trailing widths comment. */
+  tableSource(): string {
+    return splitTableSource(this.block.source).table;
   }
 
   render(): void {

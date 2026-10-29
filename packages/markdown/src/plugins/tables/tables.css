@@ -295,3 +295,23 @@
   padding: 0;
   line-height: 1.3;
 }
+
+/* Column width drag: right-edge affordance, clear of the top move grip (⠶). */
+.table-col-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  z-index: 3;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+.table-col-resizing,
+.table-col-resizing .table-col-resizer {
+  cursor: col-resize;
+}
+.table-col-resizing {
+  user-select: none;
+}
