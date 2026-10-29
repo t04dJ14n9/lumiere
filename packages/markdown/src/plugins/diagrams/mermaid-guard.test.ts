@@ -330,10 +330,22 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
   const origRender = mermaid.render;
   let initCalls = 0;
   let renderCalls = 0;
-  let initArg: any;
+  type MermaidInitArg = {
+    flowchart?: { useMaxWidth?: boolean };
+    sequence?: { useMaxWidth?: boolean };
+    git?: { useMaxWidth?: boolean };
+    er?: { useMaxWidth?: boolean };
+    gantt?: { useMaxWidth?: boolean };
+    journey?: { useMaxWidth?: boolean };
+    class?: { useMaxWidth?: boolean };
+    state?: { useMaxWidth?: boolean };
+    pie?: { useMaxWidth?: boolean };
+    themeVariables?: { fontFamily?: string };
+  };
+  let initArg: MermaidInitArg | undefined;
   mermaid.initialize = ((config: unknown) => {
     initCalls++;
-    initArg = config;
+    initArg = config as MermaidInitArg;
   }) as typeof mermaid.initialize;
   mermaid.render = (async (id: string) => {
     renderCalls++;
