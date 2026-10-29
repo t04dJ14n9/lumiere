@@ -1,9 +1,3 @@
-export {
-  CommunityPluginLoader,
-  isValidPluginId,
-  type LoadedCommunityPlugins,
-} from "./community-plugins";
-export { resolveConfigDirectory } from "./config-dir";
 import type { Disposer } from "@workshop/core";
 
 /** Serialized Obsidian types, distinct from editable UI kinds. */
@@ -22,44 +16,6 @@ export type PropertyTypes = Readonly<Record<string, WirePropertyType | string>>;
 export type ObsidianOverrides = Readonly<Partial<Record<string, unknown>>>;
 export interface VaultConfigChange {
   readonly vaultRoot: string;
-}
-
-export interface ObsidianPluginManifest {
-  readonly id: string;
-  readonly name: string;
-  readonly version: string;
-  readonly minAppVersion?: string;
-  readonly description?: string;
-  readonly author?: string;
-  readonly authorUrl?: string;
-  readonly isDesktopOnly?: boolean;
-  readonly dir?: string;
-}
-
-export interface CommunityPluginBundle {
-  readonly id: string;
-  readonly manifest: ObsidianPluginManifest;
-  readonly mainJs: string;
-  readonly stylesCss?: string;
-  readonly data?: unknown;
-}
-
-export interface SerializedVaultFile {
-  readonly path: string;
-  readonly mtime: number;
-  readonly ctime?: number;
-  readonly size: number;
-  readonly content?: string;
-}
-
-export interface ObsidianBootstrapSnapshot {
-  readonly trusted: boolean;
-  readonly vaultRoot: string;
-  readonly vaultName: string;
-  readonly configDir: string;
-  readonly activePath: string;
-  readonly files: readonly SerializedVaultFile[];
-  readonly plugins: readonly CommunityPluginBundle[];
 }
 
 export interface ObsidianCompat {
@@ -84,9 +40,6 @@ declare module "@workshop/core" {
   }
   interface Events {
     /** @mode emit */ "obsidianCompat/changed": (
-      change: VaultConfigChange,
-    ) => void;
-    /** @mode emit */ "obsidianCompat/pluginsChanged": (
       change: VaultConfigChange,
     ) => void;
   }

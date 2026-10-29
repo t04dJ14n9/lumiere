@@ -8,7 +8,7 @@ import "./support/install-fake-vscode";
 import * as vscode from "./support/fake-vscode";
 import { AgentHandoff } from "../../src/extension/plugins/agentBridge/handoff";
 import type { PdfPanel } from "../../src/extension/plugins/pdf/panel";
-import type { SelectionSnapshot } from "../../src/extension/plugins/pdf/selection";
+import type { SelectionSnapshot } from "../../src/host/viewer/selection";
 import { RegionImages } from "../../src/extension/plugins/pdfRegions/region-images";
 import { RegionSnapshots } from "../../src/extension/plugins/pdfRegions/region-snapshots";
 

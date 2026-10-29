@@ -373,7 +373,12 @@ function blockMarkers(
   return markers;
 }
 
-function markers(view: EditorView): RectangleMarker[] {
+export function selectionMarkers(view: EditorView): RectangleMarker[] {
+  // A caret-only selection has no rectangles. Skip the content-box read so
+  // scrolling does not force layout on every viewport update.
+  if (view.state.selection.ranges.every((range) => range.empty)) {
+    return [];
+  }
   const geometry: Geometry = {
     origin: base(view),
     content: view.contentDOM.getBoundingClientRect(),
@@ -402,7 +407,7 @@ function markers(view: EditorView): RectangleMarker[] {
 export const selectionLayer: Extension = layer({
   above: false,
   class: "mw-selection-layer",
-  markers,
+  markers: selectionMarkers,
   update: (update: ViewUpdate) =>
     update.docChanged ||
     update.selectionSet ||

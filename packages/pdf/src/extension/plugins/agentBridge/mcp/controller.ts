@@ -16,7 +16,7 @@
  */
 import * as vscode from "vscode";
 import type { PdfPanels } from "../../pdf/panels";
-import { AGENT_BRIDGE_COMMAND_IDS } from "../../pdf/registered-commands";
+import { AGENT_BRIDGE_COMMAND_IDS } from "../../../../shared/command-ids";
 import type { AgentHandoff } from "../handoff";
 import type { NoteSelections } from "../note-selections";
 import type { LastPdf } from "../last-pdf";

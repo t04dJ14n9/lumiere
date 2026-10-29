@@ -8,7 +8,7 @@ import type {
   Vaults,
   VaultSystem,
 } from "./api";
-import { VaultIndexer } from "./indexer";
+import { INITIAL_READY_BUDGET_MS, VaultIndexer, waitUpTo } from "./indexer";
 import { MemoryVaultIndex } from "./memory-index";
 import { findVaultRoot, foldersUpTo } from "./roots";
 
@@ -45,11 +45,13 @@ export class VaultRegistry implements Vaults {
       return this.looseVault(uri);
     }
     const root = await this.findRoot(uri, workspace);
-    let vault = this.ready.get(root);
-    if (!vault) {
-      vault = this.openVault(root);
-      this.ready.set(root, vault);
+    let pending = this.ready.get(root);
+    if (!pending) {
+      pending = this.openVault(root);
+      this.ready.set(root, pending);
     }
+    const vault = await pending;
+    vault.seedDocument(uri);
     return vault;
   }
 
@@ -124,7 +126,7 @@ export class VaultRegistry implements Vaults {
     this.openTexts.set(uri, text);
     const owner = this.owner(uri);
     if (owner && isMarkdownPath(owner.path)) {
-      owner.vault.indexer.setOverlay(owner.path, text);
+      owner.vault.indexer.setOverlay(owner.path, text, uri);
     }
   }
 
@@ -152,12 +154,10 @@ export class VaultRegistry implements Vaults {
     const markers = this.system.settings(workspace).rootMarkers;
     const folders = foldersUpTo(uri, workspace);
     const hasMarker = async (folder: string) => {
-      for (const marker of markers) {
-        if (await this.system.exists(`${folder}/${marker}`)) {
-          return true;
-        }
-      }
-      return false;
+      const checks = await Promise.all(
+        markers.map((marker) => this.system.exists(`${folder}/${marker}`)),
+      );
+      return checks.includes(true);
     };
     return (await findVaultRoot(folders, hasMarker)) ?? workspace;
   }
@@ -183,6 +183,12 @@ export class VaultRegistry implements Vaults {
     indexer.index.setLinkPolicies(this.policies);
     const vault = new IndexedVault(root, indexer);
     this.opened.set(root, vault);
+    for (const [uri, text] of this.openTexts) {
+      const owner = this.owner(uri);
+      if (owner?.vault === vault && isMarkdownPath(owner.path)) {
+        vault.indexer.setOverlay(owner.path, text, uri);
+      }
+    }
     await indexer.ready;
     return vault;
   }
@@ -198,12 +204,15 @@ export class VaultRegistry implements Vaults {
       folderNote: "",
       linkFormat: "shortest",
     });
-    const listing = await this.system.list(root, 1_000, true);
     index.setLinkPolicies(this.policies);
-    index.replaceFiles(listing.files);
+    const listed = this.system
+      .list(root, 1_000, true)
+      .then((listing) => index.replaceFiles(listing.files))
+      .catch((error) => this.events.error("Could not list the folder", error));
+    await waitUpTo(listed, INITIAL_READY_BUDGET_MS);
     return {
       index,
-      settled: async () => {},
+      settled: () => listed,
       pathOf: (target) => pathInside(root, target),
     };
   }
@@ -247,6 +256,13 @@ class IndexedVault implements Vault {
 
   pathOf(uri: string): string | undefined {
     return pathInside(this.root, uri);
+  }
+
+  seedDocument(uri: string): void {
+    const path = this.pathOf(uri);
+    if (path && isMarkdownPath(path)) {
+      this.indexer.seedFile(uri, path);
+    }
   }
 }
 

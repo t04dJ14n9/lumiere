@@ -83,9 +83,17 @@ function directMatch(files: FileTable, path: string): VaultFile | undefined {
 /** A link without an extension names a note: `Note` finds `Note.md`. */
 function withExtension(files: FileTable, path: string): VaultFile | undefined {
   if (extensionOf(path)) {
-    return files.find(path) ?? files.find(`${path}.md`);
+    return (
+      files.find(path) ??
+      files.find(`${path}.md`) ??
+      files.find(`${path}.markdown`)
+    );
   }
-  return files.find(`${path}.md`) ?? files.find(path);
+  return (
+    files.find(`${path}.md`) ??
+    files.find(`${path}.markdown`) ??
+    files.find(path)
+  );
 }
 
 /**
@@ -99,14 +107,16 @@ function suffixMatches(
   sourcePath: string,
 ): VaultFile[] {
   const wanted = path.replace(/^\/+/, "").toLowerCase();
-  const wantedWithExtension = extensionOf(wanted) ? wanted : `${wanted}.md`;
+  const wantedMd = extensionOf(wanted) ? wanted : `${wanted}.md`;
+  const wantedMarkdown = extensionOf(wanted) ? wanted : `${wanted}.markdown`;
   const sourceFolder = folderOf(sourcePath);
   return files
     .withKey(linkLookupKey(path))
     .filter((file) => {
       const candidate = file.path.toLowerCase();
       return (
-        endsWithSegments(candidate, wantedWithExtension) ||
+        endsWithSegments(candidate, wantedMd) ||
+        endsWithSegments(candidate, wantedMarkdown) ||
         endsWithSegments(candidate, wanted)
       );
     })

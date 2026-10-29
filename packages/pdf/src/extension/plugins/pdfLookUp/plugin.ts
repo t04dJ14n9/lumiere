@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { lookUpEnabled, lookUpUrl } from "../../../shared/look-up";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { LOOK_UP_COMMAND_IDS } from "../pdf/registered-commands";
+import { LOOK_UP_COMMAND_IDS } from "../../../shared/command-ids";
 import manifest from "./manifest";
 
 const SETTING = "lumiere.pdf.lookUp.enabled";

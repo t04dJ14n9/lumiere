@@ -21,13 +21,14 @@ export class PdfEditorProvider implements vscode.CustomReadonlyEditorProvider {
     webviewPanel: vscode.WebviewPanel,
   ): void {
     const uri = document.uri.with({ fragment: "" });
-    const panel = new PdfPanel(uri, webviewPanel, {
+    const panel: PdfPanel = new PdfPanel(uri, webviewPanel, {
       extensionUri: this.extensionUri,
       toolbar: this.panels.viewerToolbar(),
       settings: this.preferences.settings(uri),
       position: this.preferences.position(uri),
       savePosition: (position) => this.preferences.save(uri, position),
-      route: (target, message) => this.panels.route(target, message),
+      // Messages arrive only after the page loads, once `panel` is set.
+      route: (message) => this.panels.route(panel, message),
     });
     this.panels.add(panel);
     // A link such as `paper.pdf#page=3` opens at that page.

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SETTING_PREFIX } from "../../../src/shared/setting-schema";
 import { VIEW_TYPE } from "../../../src/extension/plugins/pdf/panels";
-import { RUNTIME_COMMAND_IDS } from "../../../src/extension/plugins/pdf/registered-commands";
+import { RUNTIME_COMMAND_IDS } from "../../../src/shared/command-ids";
 import { pdfContributes } from "../support/manifest";
 
 const contributes = pdfContributes<Record<string, any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any -- loose JSON fixture

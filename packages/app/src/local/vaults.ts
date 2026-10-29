@@ -7,7 +7,7 @@ import type { Mounts } from "@workshop/host-web";
 import { listVault } from "@workshop/host-node/core";
 import type { FileEntry, ServerEvent, VaultList } from "../shell/api";
 import { fileKind } from "../shared/file-kind";
-import type { TextFile } from "../shared/vault-trust";
+import type { TextFile } from "./json-file";
 
 /** A window lists at most this many of a vault's files. */
 const MAX_FILES = 20_000;
@@ -52,6 +52,14 @@ export class LocalVaults {
     await this.saved.write(JSON.stringify(this.recent, null, 2));
     this.emit({ type: "vaults", open: [...this.open], added: path });
     return path;
+  }
+
+  /** Close an open vault; its recent entry remains. */
+  async close(path: string): Promise<VaultList> {
+    this.open.delete(path);
+    const list = this.list();
+    this.emit({ type: "vaults", open: list.open });
+    return list;
   }
 
   async files(vault: string): Promise<readonly FileEntry[]> {

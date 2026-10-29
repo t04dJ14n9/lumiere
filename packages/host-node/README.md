@@ -24,6 +24,9 @@ over Node, then starts the plugins with the same `bootstrap` VS Code uses
 any Node web server:
 
 - `/lumiere/editor?path=&root=`: a note's page;
+- `/lumiere/pdf?path=&root=`: a PDF's page, Lumière PDF's viewer
+  (`/lumiere/pdf/viewer/*`), which fetches the PDF from `/lumiere/pdf/bytes`.
+  It runs only when the embedder passes the built viewer (`EditorAssets.pdf`);
 - `/lumiere/m/*`: the built editor;
 - `/lumiere/page/shim.js`: the page shim;
 - `/lumiere/file`: a note's images;
@@ -31,8 +34,8 @@ any Node web server:
 - `/lumiere/views`: the tree views;
 - `/lumiere/settings`: Lumière's settings, for a settings page. A plugin
   declares what it needs from its host (`needs` in its manifest: VS Code's
-  window, Git, panels); this host offers none of them yet
-  (`NODE_HOST_OFFERS`), so their settings are left out until it does.
+  window, Git, panels); this host offers Git (`NODE_HOST_OFFERS`), so the
+  settings of a plugin that needs the window or panels are left out.
 
 The embedder puts its own authentication in front of them. A page runs in
 the embedder's iframe. Its shim stands in for VS Code's webview API: what
@@ -49,16 +52,6 @@ chosen command. `menus.json`, written at build time, lists the items.
 Paths are checked as VS Code's host checks them (`paths.ts`): inside the
 workspace after `..` is resolved, and still inside through symbolic links.
 The workspace may not be the filesystem root.
-
-A vault's own code (Obsidian community plugins) runs only where the
-embedder says so. `startLumiere({ vaultCode })` takes its answer, a
-`VaultCodeTrust` (exported from the main entry): may this vault's code run,
-and ask the owner, once per vault. The plugins see it as
-`workspace.vaultCode`. Without it, `noVaultCode` (`inert.ts`) refuses every
-vault and asks no one; DSH runs this way. The app asks in its window
-(`packages/app`). `workspace.isTrusted()` stays true: the owner opened these
-folders, so remote images and media load. A vault's code is the separate,
-per-vault question.
 
 The host itself is shared with host-web: `@workshop/host-node/core`
 (`src/core.ts`) starts the plugins on a `HostPlatform` (`src/host/platform.ts`)
@@ -87,6 +80,7 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/documents.ts`: notes on disk, edited in memory, saved after a pause.
 - `src/host/panels.ts`, `src/host/panel.ts`: editor pages as panels, and their sockets.
 - `src/host/routes.ts`, `src/host/page.ts`, `src/host/static.ts`: the routes above.
+- `src/host/pdf-pages.ts`, `src/host/pdf-routes.ts`: PDF tabs, on Lumière PDF's viewer core (`@workshop/pdf/portable`) and the same page shim and socket as notes.
 - `src/host/trees.ts`, `src/host/view-routes.ts`: the plugins' tree views and their routes.
 - `src/host/settings-routes.ts`: the settings for a settings page, and changes to them.
 - `src/host/context-menu.ts`, `src/host/when.ts`, `src/page/context-menu.ts`: the right-click menu, its when-clauses, and drawing it.
@@ -96,13 +90,19 @@ forbids this package from importing `vscode` or any embedder.
 - `src/host/ui-services.ts`: dialogs, the clipboard and the active editor, drawn by the page.
 - `src/host/workspace.ts`, `src/host/watch.ts`: workspace files and state, and file watching.
 - `src/host/paths.ts`: containment and safe writes.
-- `src/host/inert.ts`: Git, diffs, status entries and panels, which have no counterpart yet; `noVaultCode`, for an embedder that cannot ask.
+- `src/host/git.ts`, `src/host/git-blobs.ts`, `src/host/git-program.ts`: Git from the `git` command line (blame, a note at HEAD or in the index, staging, each repository's changes), and which `git` to run.
+- `src/host/inert.ts`: diffs, status entries and panels, which have no counterpart yet.
 - `src/page/shim.ts`, `src/page/ui.ts`, `src/page/theme.ts`: the page's stand-in for VS Code.
 - `scripts/assets.mjs`: what every embedder ships beside its code (the editor, the shim, the settings).
 
 ## Limits
 
-- No Git (blame, gutter, diffs), no status bar entries and no extra panels
+- Git is blame, the change gutter and staging, through the `git` on the
+  PATH (`git.ts`), for notes inside the workspace. On macOS, Xcode's
+  `/usr/bin/git` stand-in is used only when the command-line tools are
+  installed, so no install dialog appears. A repository is watched once a
+  note in it was asked about; a `git init` is seen on the next question.
+- No rendered or native diffs, no status bar entries and no extra panels
   (the vault graph) yet: `inert.ts` answers for them as VS Code does when
   they are unavailable.
 - No command palette or keybindings: commands run from clicks, links and the

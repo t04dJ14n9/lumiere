@@ -77,21 +77,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
         });
         panels.set(panel.id, panel);
         unfinished.add(panel);
-        panel.rpc.on(protocol, "pluginsChanged", () =>
-          notify(() => ctx.emit("editor/pluginsChanged", panel)),
-        );
-        // The endpoint is disposed with the panel, which removes this listener.
-        panel.rpc.on(protocol, "selectionChanged", ({ hasSelection }) =>
-          notify(() =>
-            ctx.emit("editor/selectionChanged", panel, hasSelection),
-          ),
-        );
-        panel.rpc.on(protocol, "focusChanged", ({ hasFocus }) =>
-          notify(() => setFocus(panel, hasFocus)),
-        );
-        panel.rpc.on(protocol, "initialized", () =>
-          notify(() => ctx.emit("editor/ready", panel)),
-        );
+        bindPanelEvents(ctx, { panel, shell, editors, setFocus, notify });
         ctx.emit("editor/opened", panel);
       }),
     );
@@ -102,6 +88,46 @@ export const editorHost: Plugin<EditorHostConfig> = {
     });
   },
 };
+
+function bindPanelEvents(
+  ctx: Context,
+  options: {
+    panel: EditorPanel;
+    shell: PanelShell;
+    editors: Editors;
+    setFocus: (panel: { readonly id: string }, hasFocus: boolean) => void;
+    notify: (send: () => void) => void;
+  },
+): void {
+  const { panel, shell, editors, setFocus, notify } = options;
+  shell.bindViewState?.({
+    capture: () => editors.capture(panel.id),
+    restore: async (state) => {
+      await panel.ready;
+      await editors.restore(panel.id, state as never);
+    },
+  });
+  panel.rpc.on(protocol, "pluginsChanged", () =>
+    notify(() => ctx.emit("editor/pluginsChanged", panel)),
+  );
+  // The endpoint is disposed with the panel, which removes this listener.
+  panel.rpc.on(
+    protocol,
+    "selectionChanged",
+    ({ hasSelection, anchor, head }) => {
+      if (anchor !== undefined && head !== undefined) {
+        shell.reportSelection?.({ anchor, head });
+      }
+      notify(() => ctx.emit("editor/selectionChanged", panel, hasSelection));
+    },
+  );
+  panel.rpc.on(protocol, "focusChanged", ({ hasFocus }) =>
+    notify(() => setFocus(panel, hasFocus)),
+  );
+  panel.rpc.on(protocol, "initialized", () =>
+    notify(() => ctx.emit("editor/ready", panel)),
+  );
+}
 
 function registerActiveContexts(
   ctx: Context,

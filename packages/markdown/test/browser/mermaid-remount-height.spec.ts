@@ -81,3 +81,64 @@ test("off-viewport mermaid rebuild keeps diagram height in the map", async ({
     result.measured * 0.7,
   );
 });
+
+test("scrolling a rendered Mermaid block out of view and back retains the live section and svg DOM node", async ({
+  page,
+}) => {
+  const longFiller = Array.from(
+    { length: 160 },
+    (_, i) => `Filler paragraph ${i} scrolls the diagram far out of view.`,
+  ).join("\n\n");
+  await page.setViewportSize({ width: 1100, height: 760 });
+  await open(page, `# Title\n\n${SHORT_TALL_MERMAID}\n\n${longFiller}\n`);
+  await constrain(page);
+  await expect(
+    page
+      .locator('pre[data-fence="mermaid"][aria-label="Mermaid diagram"] svg')
+      .first(),
+  ).toBeVisible({ timeout: 10000 });
+
+  const retention = await page.evaluate(async () => {
+    const firstSvg = document.querySelector<SVGElement>(
+      'pre[data-fence="mermaid"] svg',
+    );
+    const firstSection = firstSvg?.closest<HTMLElement>("section.hybrid-block");
+    if (!firstSection || !firstSvg) {
+      return {
+        hadInitial: false,
+        exitedViewport: false,
+        sameSection: false,
+        sameSvg: false,
+      };
+    }
+    window.harness.reveal(window.harness.text.indexOf("Filler paragraph 150"));
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
+    const exitedViewport = !firstSection.isConnected;
+
+    window.harness.reveal(0);
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
+    const remountedSvg = document.querySelector<SVGElement>(
+      'pre[data-fence="mermaid"] svg',
+    );
+    const remountedSection = remountedSvg?.closest<HTMLElement>(
+      "section.hybrid-block",
+    );
+    return {
+      hadInitial: true,
+      exitedViewport,
+      sameSection: remountedSection === firstSection,
+      sameSvg: remountedSvg === firstSvg,
+    };
+  });
+
+  expect(retention).toEqual({
+    hadInitial: true,
+    exitedViewport: true,
+    sameSection: true,
+    sameSvg: true,
+  });
+});

@@ -10,7 +10,7 @@ test("resource kinds preserve note and PDF precedence and unknown-file fallback"
   assert.equal(resourceKind("photo.png"), "image");
   assert.equal(resourceKind("sound.mp3"), "audio");
   assert.equal(resourceKind("clip.mp4"), "video");
-  assert.equal(resourceKind("note.markdown"), "file");
+  assert.equal(resourceKind("note.markdown"), "note");
   assert.equal(resourceKind("other.bin"), "file");
 });
 

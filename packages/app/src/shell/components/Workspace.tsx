@@ -29,10 +29,11 @@ export interface WorkspaceProps {
   readonly ui: UiStateHandle;
   readonly panels: Panels;
   readonly report: (work: Promise<unknown>) => void;
+  readonly onCommandPalette?: (() => void) | undefined;
 }
 
 export function Workspace(props: WorkspaceProps) {
-  const { tabs, dispatch, panels, report } = props;
+  const { tabs, dispatch, panels, report, onCommandPalette } = props;
   const bar = useRef<HTMLDivElement>(null);
   const bodies = useRef<HTMLDivElement>(null);
   useChromeInset(bar, bodies);
@@ -65,6 +66,7 @@ export function Workspace(props: WorkspaceProps) {
             <LayoutButtons
               panels={panels}
               onSettings={() => dispatch({ type: "openSettings" })}
+              onCommandPalette={onCommandPalette}
             />
           }
         />
@@ -161,7 +163,7 @@ function FilesSidebar({
                 ? shown.path
                 : undefined
             }
-            opens={backend().editors.kinds ?? ["note"]}
+            opens={backend().editors.kinds ?? ["note", "pdf"]}
             onOpen={(path) => {
               dispatch({ type: "open", vault, path });
               panels.dismiss();
@@ -212,6 +214,14 @@ function VaultBar({
         onClick={() => opening.openVault()}
       >
         +
+      </button>
+      <button
+        type="button"
+        title="Close vault"
+        aria-label="Close vault"
+        onClick={() => opening.closeVault(vault)}
+      >
+        −
       </button>
       <button
         type="button"

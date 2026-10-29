@@ -102,12 +102,12 @@ test("a plugin this host cannot serve is off by default; the others keep theirs"
     served.map((setting) => [setting.key, setting.schema.default]),
   );
   assert.deepEqual(defaults, {
-    "lumiere.markdown.plugins.gitBlame.enabled": false,
+    "lumiere.markdown.plugins.gitBlame.enabled": true,
     "lumiere.markdown.plugins.graph.enabled": false,
     "lumiere.markdown.plugins.outline.enabled": true,
     "lumiere.markdown.gitBlame.delay": 500,
   });
-  // A host with Git would keep Git blame.
-  const withGit = servedDefaults(contributed as never, ["git"]);
-  assert.equal(withGit[0]?.schema.default, true);
+  // A host without Git turns Git blame off by default.
+  const withoutGit = servedDefaults(contributed as never, []);
+  assert.equal(withoutGit[0]?.schema.default, false);
 });

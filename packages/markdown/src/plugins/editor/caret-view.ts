@@ -25,6 +25,7 @@ class CaretView {
   private source: CaretSource;
   private readonly layer: HTMLElement;
   private appearance: CaretAppearance;
+  private appearanceKey = "";
   private unwatch: (() => void) | undefined;
   private isExplicitMove = true;
   private restartsBlink = true;
@@ -55,12 +56,19 @@ class CaretView {
       this.watchMode();
     }
     this.trackMove(update);
-    this.appearance = this.applyAppearance();
-    this.restartsBlink ||=
+    const activeChange =
       sourceChanged ||
       update.selectionSet ||
       update.docChanged ||
       update.focusChanged;
+    if (
+      activeChange ||
+      update.startState.facet(editorSettings) !==
+        update.state.facet(editorSettings)
+    ) {
+      this.appearance = this.applyAppearance();
+    }
+    this.restartsBlink ||= activeChange;
     if (
       update.geometryChanged ||
       update.viewportChanged ||
@@ -109,11 +117,20 @@ class CaretView {
       this.isExplicitMove,
       profile,
     );
-    this.view.dom.dataset.caretMode = mode;
-    this.view.dom.dataset.caretStyle = appearance.style;
-    this.view.dom.dataset.caretProfile = profile;
-    for (const [property, value] of Object.entries(appearance.variables)) {
-      this.layer.style.setProperty(property, value);
+    const key = JSON.stringify([
+      mode,
+      appearance.style,
+      profile,
+      appearance.variables,
+    ]);
+    if (key !== this.appearanceKey) {
+      this.appearanceKey = key;
+      this.view.dom.dataset.caretMode = mode;
+      this.view.dom.dataset.caretStyle = appearance.style;
+      this.view.dom.dataset.caretProfile = profile;
+      for (const [property, value] of Object.entries(appearance.variables)) {
+        this.layer.style.setProperty(property, value);
+      }
     }
     return appearance;
   }

@@ -33,14 +33,45 @@ export const blockIndex = StateField.define<IndexedBlock[]>({
   create: (state) => index(state),
   update(value, tr) {
     if (
-      tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers) ||
-      tr.effects.some((effect) => effect.is(replaceDocumentTree))
+      tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers)
     ) {
-      return index(tr.state);
+      return reuseIndexedBlocks(value, index(tr.state));
+    }
+    if (tr.effects.some((effect) => effect.is(replaceDocumentTree))) {
+      return reuseIndexedBlocks(value, index(tr.state));
     }
     return tr.docChanged ? reindex(value, tr) : value;
   },
 });
+
+function reuseIndexedBlocks(
+  previous: readonly IndexedBlock[],
+  next: IndexedBlock[],
+): IndexedBlock[] {
+  if (!previous.length || !next.length) {
+    return next;
+  }
+  let p = 0;
+  for (let i = 0; i < next.length && p < previous.length; i++) {
+    const target = next[i]!;
+    while (p < previous.length && previous[p]!.from < target.from) {
+      p++;
+    }
+    const candidate = previous[p];
+    if (
+      candidate &&
+      candidate.from === target.from &&
+      candidate.to === target.to &&
+      candidate.kind === target.kind &&
+      candidate.source === target.source &&
+      candidate.renderer === target.renderer
+    ) {
+      next[i] = candidate;
+      p++;
+    }
+  }
+  return next;
+}
 
 /** Index again only the region the change touched (see `blockIndex`). */
 function reindex(
@@ -186,17 +217,29 @@ class GuardedWidget extends WidgetType {
     return this.widget.estimatedHeight;
   }
 }
+const guardedWidgets = new WeakMap<
+  RenderBlock,
+  { revision: number; report: (error: unknown) => void; widget: GuardedWidget }
+>();
+
 function guarded(
   state: Parameters<typeof revealed>[0],
   block: RenderBlock & { renderer: BlockRenderer },
   report: (error: unknown) => void,
 ): GuardedWidget {
-  return new GuardedWidget(
+  const revision = state.field(renderRevision, false) ?? 0;
+  const cached = guardedWidgets.get(block);
+  if (cached && cached.revision === revision && cached.report === report) {
+    return cached.widget;
+  }
+  const widget = new GuardedWidget(
     block,
     block.renderer.widget(block),
-    state.field(renderRevision, false) ?? 0,
+    revision,
     report,
   );
+  guardedWidgets.set(block, { revision, report, widget });
+  return widget;
 }
 
 /** Revealed source lines, highlighted, with the rendered result below. */

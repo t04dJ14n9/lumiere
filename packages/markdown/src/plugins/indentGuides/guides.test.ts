@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorSelection, EditorState } from "@codemirror/state";
-import { activeListGuideColumn, guideDecorations, indentation } from "./guides";
+import {
+  activeListGuideColumn,
+  guideDecorations,
+  indentation,
+  syncListActiveGuide,
+} from "./guides";
+import { documentTree } from "../livePreview/api";
 
 function widths(doc: string, isLivePreview: boolean, tabSize = 4) {
   const state = EditorState.create({
@@ -113,4 +119,43 @@ test("list continuation CSS paints guides from list-guide-depth", async () => {
   );
   assert.match(css, /md-list-continuation/);
   assert.match(css, /--list-guide-depth/);
+});
+
+test("guideDecorations reuses documentTree and syncListActiveGuide avoids redundant DOM mutations", () => {
+  const doc = ["- parent", "  - child", "    - grand"].join("\n");
+  const state = EditorState.create({
+    doc,
+    selection: EditorSelection.cursor(doc.indexOf("grand")),
+    extensions: [documentTree],
+  });
+  assert.equal(activeListGuideColumn(state), 1);
+  let setCalls = 0;
+  const classes = new Set<string>();
+  const dom = {
+    style: {
+      setProperty() {
+        setCalls++;
+      },
+      removeProperty() {},
+    },
+    classList: {
+      add(cls: string) {
+        classes.add(cls);
+      },
+      remove(cls: string) {
+        classes.delete(cls);
+      },
+      contains(cls: string) {
+        return classes.has(cls);
+      },
+    },
+  } as unknown as HTMLElement;
+  syncListActiveGuide(dom, state, true);
+  assert.equal(setCalls, 1);
+  syncListActiveGuide(dom, state, true);
+  assert.equal(
+    setCalls,
+    1,
+    "unchanged active depth does not mutate style again",
+  );
 });

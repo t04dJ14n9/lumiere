@@ -132,7 +132,7 @@ export class PanelHub implements CustomEditors {
     }
   }
 
-  private activate(id: string | undefined): void {
+  activate(id: string | undefined): void {
     if (this.activeId === id) {
       return;
     }

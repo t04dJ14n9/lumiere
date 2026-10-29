@@ -1,6 +1,6 @@
 /**
  * The window's view of a Lumière server (src/server/api.ts): vaults, files,
- * opening, trust and the event stream (`httpApi`, part of http-backend.ts).
+ * opening, commands and the event stream (`httpApi`, part of http-backend.ts).
  * Same origin, so the token cookie goes along.
  */
 
@@ -14,10 +14,10 @@ export interface FileEntry {
   readonly kind: "note" | "pdf" | "image" | "other";
 }
 
-/** A vault waiting for the owner to say whether its plugins may run. */
-export interface TrustQuestion {
-  readonly vault: string;
-  readonly plugins: readonly string[];
+export interface PaletteCommand {
+  readonly command: string;
+  readonly title: string;
+  readonly category?: string;
 }
 
 export type ServerEvent =
@@ -26,9 +26,7 @@ export type ServerEvent =
       readonly open: readonly string[];
       readonly added?: string;
     }
-  | { readonly type: "open"; readonly vault: string; readonly path: string }
-  /** The questions waiting changed; read them with `trustQuestions`. */
-  | { readonly type: "trust" };
+  | { readonly type: "open"; readonly vault: string; readonly path: string };
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -50,6 +48,12 @@ export const httpApi = {
   vaults: {
     list: () => request<VaultList>("/api/vaults"),
     add: (path: string) => post("/api/vaults", { path }),
+    close: (path: string) =>
+      request<VaultList>("/api/vaults", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ path }),
+      }),
     files: async (vault: string) =>
       (
         await request<{ files: FileEntry[] }>(
@@ -58,10 +62,11 @@ export const httpApi = {
       ).files,
     open: (path: string) => post("/api/open", { path }),
   },
-  trust: {
-    questions: () => request<TrustQuestion[]>("/api/trust"),
-    decide: (vault: string, allowed: boolean) =>
-      post("/api/trust", { vault, allowed }),
+  commands: {
+    list: async () =>
+      (await request<{ commands: PaletteCommand[] }>("/lumiere/commands"))
+        .commands,
+    run: (command: string) => post("/lumiere/commands", { command }),
   },
   events(listener: (event: ServerEvent) => void): () => void {
     const source = new EventSource("/api/events");
@@ -71,13 +76,30 @@ export const httpApi = {
   },
 };
 
-/** The editor page for a vault file (host-node's `/lumiere/editor`). */
+export const api = {
+  vaults: () => httpApi.vaults.list(),
+  addVault: (path: string) => httpApi.vaults.add(path),
+  closeVault: (path: string) => httpApi.vaults.close(path),
+  files: (vault: string) => httpApi.vaults.files(vault),
+  open: (path: string) => httpApi.vaults.open(path),
+  commands: () => httpApi.commands.list(),
+  runCommand: (command: string) => httpApi.commands.run(command),
+  events: (listener: (event: ServerEvent) => void) => httpApi.events(listener),
+};
+
+/** Whether a path names a Markdown note or PDF that the app can open in a tab. */
+export function isNotePath(path: string): boolean {
+  return /\.(?:md|markdown|pdf)$/i.test(path);
+}
+
+/** The page for a vault file: host-node's editor, or its PDF viewer for a PDF. */
 export function editorUrl(vault: string, path: string): string {
   const query = new URLSearchParams({
     path: joinPath(vault, path),
     root: vault,
   });
-  return `/lumiere/editor?${query.toString()}`;
+  const page = /\.pdf$/i.test(path) ? "pdf" : "editor";
+  return `/lumiere/${page}?${query.toString()}`;
 }
 
 /** A vault path back to vault-relative, or undefined outside the vault. */

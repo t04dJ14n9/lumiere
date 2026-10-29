@@ -44,3 +44,13 @@ export function parseMarkdown(
   }
   return tree;
 }
+
+/** The tree `parseMarkdown` already made for `doc`, without parsing. */
+export function cachedMarkdown(doc: Text): Tree | undefined {
+  return trees.get(doc);
+}
+
+export function rememberParsedMarkdown(doc: Text, tree: Tree): Tree {
+  trees.set(doc, tree);
+  return tree;
+}

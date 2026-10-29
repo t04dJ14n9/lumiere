@@ -1,4 +1,5 @@
 import type { Plugin } from "@workshop/core";
+import { RecentlyUsed } from "../../shared/recently-used";
 import type { LinkSyntax } from "../../shared/vault-path";
 import type { Resource } from "./api";
 import { protocol } from "./protocol";
@@ -22,28 +23,7 @@ export const resourcesWebview: Plugin = {
   inject: { required: ["rpc"] },
   provides: ["resources"],
   apply(ctx) {
-    const cache = new Map<string, Resource>();
-
-    const getCached = (key: string): Resource | undefined => {
-      const cached = cache.get(key);
-      if (cached !== undefined) {
-        cache.delete(key);
-        cache.set(key, cached);
-      }
-      return cached;
-    };
-
-    const setCached = (key: string, resource: Resource): void => {
-      if (cache.has(key)) {
-        cache.delete(key);
-      } else if (cache.size >= RESOURCE_CACHE_LIMIT) {
-        const oldest = cache.keys().next().value;
-        if (oldest !== undefined) {
-          cache.delete(oldest);
-        }
-      }
-      cache.set(key, resource);
-    };
+    const cache = new RecentlyUsed<string, Resource>(RESOURCE_CACHE_LIMIT);
 
     ctx.effect(() => () => {
       cache.clear();
@@ -51,10 +31,10 @@ export const resourcesWebview: Plugin = {
 
     ctx.provide("resources", {
       peek: (target, source, syntax) =>
-        getCached(makeResourceKey(target, source, syntax)),
+        cache.get(makeResourceKey(target, source, syntax)),
       load: async (target, source, syntax) => {
         const key = makeResourceKey(target, source, syntax);
-        const cached = getCached(key);
+        const cached = cache.get(key);
         if (cached !== undefined) {
           return cached;
         }
@@ -64,7 +44,7 @@ export const resourcesWebview: Plugin = {
           ...(syntax === undefined ? {} : { syntax }),
         });
         if (isCacheableResource(resolved)) {
-          setCached(key, resolved);
+          cache.set(key, resolved);
         }
         return resolved;
       },

@@ -4,10 +4,7 @@ import { EditorSelection, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { createViewState } from "../../../src/plugins/editor/view-state";
 import { viewState } from "../../../src/plugins/editor/protocol";
-import { blockRenderers } from "../../../src/plugins/livePreview/registry";
 import { tablesWebview } from "../../../src/plugins/tables/webview";
-import { TableWidget } from "../../../src/plugins/tables/widget";
-import { forwardTableWheel } from "../../../src/plugins/tables/wheel-scroll";
 import { fixture } from "./fixture";
 
 function wheel(overrides: Partial<WheelEvent> = {}) {
@@ -22,28 +19,22 @@ function wheel(overrides: Partial<WheelEvent> = {}) {
   });
 }
 
-test("table wheel cancels restore only for vertical input and preserves boundary chaining", async (t) => {
+test("vertical wheel over a table cancels a pending scroll restore", async (t) => {
   const { root, view } = fixture();
   t.after(() => root.dispose());
   const presentation = createViewState(root);
-  const scrolls: ScrollToOptions[] = [];
-  const viewport = Object.assign(view.scrollDOM, {
+  Object.assign(view.scrollDOM, {
     scrollTop: 600,
     scrollHeight: 2000,
     clientHeight: 500,
-    scrollTo(options: ScrollToOptions) {
-      scrolls.push(options);
-      // Instant scroll applies synchronously in the browser.
-      if (options.behavior === "instant" && options.top !== undefined) {
-        this.scrollTop = options.top;
-      }
-    },
     getBoundingClientRect: () => ({ top: 0 }),
   });
-  const dom = Object.assign(view.dom, {
-    ownerDocument: {
-      defaultView: { matchMedia: () => ({ matches: false }) },
-    },
+  // A wheel dispatched on this fake editor DOM targets the DOM itself, so it
+  // answers `closest` as the node under the pointer would.
+  let overTable = true;
+  Object.assign(view.dom, {
+    closest: (selector: string) =>
+      overTable && selector === ".hybrid-table" ? {} : null,
   });
   Object.assign(view, {
     documentTop: 0,
@@ -54,19 +45,6 @@ test("table wheel cancels restore only for vertical input and preserves boundary
   const fiber = root.plugin(tablesWebview);
   await root.settled();
   assert.equal(fiber.state, "active");
-  const renderer = view.state
-    .facet(blockRenderers)
-    .find((item) => item.kind === "Table");
-  assert.ok(renderer);
-  const source = "| A | B |\n| --- | --- |\n| C | D |";
-  const widget = renderer.widget({
-    kind: "Table",
-    source,
-    from: 0,
-    to: source.length,
-  });
-  assert.ok(widget instanceof TableWidget);
-  const scrollNote = widget.environment.scrollNote;
   const restoreScroll = EditorState.create({
     extensions: presentation.restoreScrollPosition,
   }).facet(EditorView.scrollHandler)[0]!;
@@ -81,7 +59,7 @@ test("table wheel cancels restore only for vertical input and preserves boundary
         mode: "livePreview",
       }),
     );
-  const applyRestore = () =>
+  const restorePending = () =>
     restoreScroll(view, EditorSelection.cursor(0), {
       x: "nearest",
       y: "start",
@@ -90,48 +68,34 @@ test("table wheel cancels restore only for vertical input and preserves boundary
     });
   for (const input of [
     { deltaX: 120, deltaY: 0 },
+    { deltaX: 120, deltaY: 30 },
     { shiftKey: true },
     { ctrlKey: true },
     { metaKey: true },
     { deltaY: 0 },
   ]) {
     restore();
-    const event = wheel(input);
-    forwardTableWheel(event, viewport, 24, scrollNote);
-    assert.equal(event.defaultPrevented, false);
-    assert.equal(
-      applyRestore(),
-      true,
-      "non-forwarded input retains pending restore",
-    );
+    view.dom.dispatchEvent(wheel(input));
+    assert.equal(restorePending(), true, "a pan or zoom keeps the restore");
   }
+  for (const input of [{}, { deltaY: -120 }, { deltaX: 30, deltaY: 120 }]) {
+    restore();
+    const event = wheel(input);
+    view.dom.dispatchEvent(event);
+    assert.equal(event.defaultPrevented, false, "the browser keeps the wheel");
+    assert.equal(restorePending(), false, "vertical table wheel cancels");
+  }
+  overTable = false;
   restore();
-  const verticalWheel = wheel();
-  forwardTableWheel(verticalWheel, viewport, 24, scrollNote);
-  assert.equal(verticalWheel.defaultPrevented, true);
+  view.dom.dispatchEvent(wheel());
   assert.equal(
-    applyRestore(),
-    false,
-    "table-forwarded input clears pending restore",
+    restorePending(),
+    true,
+    "CodeMirror's own observer handles the rest of the note",
   );
-
-  // The destination reaches the edge while the visible note is still midway.
-  const towardEdge = wheel({ deltaY: 1000 });
-  forwardTableWheel(towardEdge, viewport, 24, scrollNote);
+  await fiber.dispose();
+  overTable = true;
   restore();
-  const chainedWheel = wheel();
-  const callsBeforeChaining = scrolls.length;
-  forwardTableWheel(chainedWheel, viewport, 24, scrollNote);
-  dom.dispatchEvent(chainedWheel);
-  assert.equal(chainedWheel.defaultPrevented, false);
-  assert.equal(
-    scrolls.length,
-    callsBeforeChaining,
-    "chaining does not stop in-flight motion",
-  );
-  assert.equal(
-    applyRestore(),
-    false,
-    "a real vertical tick at the edge also cancels restore",
-  );
+  view.dom.dispatchEvent(wheel());
+  assert.equal(restorePending(), true, "the listener ends with the plugin");
 });

@@ -8,7 +8,7 @@ import type { PdfPanels } from "../pdf/panels";
 import {
   VIEW_COMMAND_IDS,
   VIEW_CONTROL_COMMAND_IDS,
-} from "../pdf/registered-commands";
+} from "../../../shared/command-ids";
 import { SECTION } from "./preferences";
 import { statusBarPriority, type StatusBarEntryId } from "./status-bar-layout";
 

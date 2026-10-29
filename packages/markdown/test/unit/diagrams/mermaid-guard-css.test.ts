@@ -40,3 +40,10 @@ test("diagrams.css styles Mermaid internal-link nodes with pointer cursor", () =
     /cursor:\s*pointer/,
   );
 });
+
+test("diagrams.css reserves top height above Mermaid SVG so header badges never overlap", () => {
+  assert.match(
+    rule('pre[data-fence="mermaid"]:has(> svg)'),
+    /padding:\s*40px 0 8px/,
+  );
+});

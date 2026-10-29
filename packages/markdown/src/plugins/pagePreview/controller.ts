@@ -185,7 +185,11 @@ class LinkPreviews {
         }
         if (
           target &&
-          (event.metaKey || event.ctrlKey) &&
+          (event.metaKey ||
+            event.ctrlKey ||
+            (target.tagName === "A" &&
+              (target.dataset.wiki === "true" ||
+                target.classList.contains("internal-link")))) &&
           this.shown !== target
         ) {
           this.scheduleShow(target);

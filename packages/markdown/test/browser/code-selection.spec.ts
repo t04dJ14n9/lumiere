@@ -97,10 +97,12 @@ for (const dark of [false, true]) {
               line,
               NodeFilter.SHOW_TEXT,
             );
+            let offset = 0;
             let node: Node | null;
             while ((node = walker.nextNode())) {
-              const index = node.nodeValue!.indexOf(" alpha");
-              if (index >= 0) {
+              const text = node.nodeValue ?? "";
+              const index = 5 - offset;
+              if (index >= 0 && index < text.length && text[index] === " ") {
                 const range = document.createRange();
                 range.setStart(node, index);
                 range.setEnd(node, index + 1);
@@ -110,6 +112,7 @@ for (const dark of [false, true]) {
                   y: Math.floor((rect.top + rect.bottom) / 2),
                 };
               }
+              offset += text.length;
             }
             throw new Error("no space after const");
           });

@@ -9,8 +9,17 @@ import type {
 import { metadata } from "../../markdown/metadata";
 import { linkDestination } from "../../markdown/html";
 import { documentTree } from "./document-tree";
-import { inlineRenderers, inlineRevealRange, revealed } from "./registry";
-import { isPointerSelecting } from "../../webview/ui/pointer-selection";
+import { renderRevision } from "./blocks";
+import {
+  decoratePersistentOffViewport,
+  inlineRenderers,
+  inlineRevealRange,
+  revealed,
+} from "./registry";
+import {
+  isPointerSelecting,
+  revealFreezeToggled,
+} from "../../webview/ui/pointer-selection";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
 import { decorateBlockId } from "./block-id";
@@ -18,7 +27,7 @@ import { decorateHighlightColour, highlightClass } from "./highlight-colour";
 import { decorateCodeLines } from "./code-lines";
 import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
-import { isUnresolved } from "../links/api";
+import { isUnresolved, unresolvedLinks } from "../links/api";
 const inlineClasses: Readonly<Record<string, string>> = {
   Highlight: "md-highlight",
   StrongEmphasis: "md-strong",
@@ -55,41 +64,6 @@ export function inlineDecorations(
   // a remount collapses the line to ~one text line (#117 gap).
   decoratePersistentOffViewport(state, builder, visibleRanges);
   return Decoration.set(builder.ranges, true);
-}
-
-function decoratePersistentOffViewport(
-  state: EditorState,
-  builder: InlineDecorations,
-  visibleRanges: readonly { from: number; to: number }[],
-): void {
-  const persistent = new Set(
-    state
-      .facet(inlineRenderers)
-      .filter((renderer) => renderer.persistent)
-      .flatMap((renderer) => renderer.nodes),
-  );
-  if (persistent.size === 0) {
-    return;
-  }
-  state.field(documentTree).iterate({
-    enter: (node) => {
-      if (!persistent.has(node.name)) {
-        return;
-      }
-      if (
-        visibleRanges.some(
-          (visible) => node.from < visible.to && node.to > visible.from,
-        )
-      ) {
-        return false;
-      }
-      const custom = state
-        .facet(inlineRenderers)
-        .find((renderer) => renderer.nodes.includes(node.name));
-      custom?.decorate(node, builder);
-      return false;
-    },
-  });
 }
 
 class InlineDecorations implements InlineContext {
@@ -168,7 +142,7 @@ class InlineDecorations implements InlineContext {
     if (name === "Escape" && !this.lineRevealed(from)) {
       this.hide(from, from + 1);
     }
-    decorateListItem(node, this);
+    decorateListItem(node, this, visible);
     decorateInlineHtml(node, this);
     decorateBlockId(node, this);
     decorateHighlightColour(node, this);
@@ -179,7 +153,7 @@ class InlineDecorations implements InlineContext {
       this.line(from, `md-heading md-h${name.at(-1)}${position}`);
     }
     this.decorateBlockLines(node, visible);
-    decorateCodeLines(node, this);
+    decorateCodeLines(node, this, visible);
     this.decorateRule(node);
     this.decorateLink(node);
     this.decorateBareUrl(node);
@@ -265,9 +239,11 @@ class InlineDecorations implements InlineContext {
         )?.link;
 
     // Rendered labels: plain click reveals source; Mod-click follows (BH-020).
+    // When revealed, mark the full [label](url) span with data-href so Mod-click
+    // and Mod-hover preview work anywhere on the link syntax.
     this.mark(
-      from + 1,
-      closingLabel?.from ?? to,
+      isRendered ? from + 1 : from,
+      isRendered ? (closingLabel?.from ?? to) : to,
       linkClass(
         isRendered,
         href ?? "",
@@ -320,12 +296,26 @@ class InlineDecorations implements InlineContext {
       return;
     }
     // Revealed syntax stays faint, as in Obsidian, so the text reads first.
+    const emptyAtxHeading =
+      name === "HeaderMark" &&
+      parent.name.startsWith("ATXHeading") &&
+      this.state.doc.lineAt(from).text.trim() ===
+        this.state.sliceDoc(from, to).trim();
     if (
       ["QuoteMark", "HeaderMark"].includes(name)
-        ? this.lineRevealed(from)
+        ? this.lineRevealed(from) || emptyAtxHeading
         : this.revealed(parent.from, parent.to)
     ) {
       this.mark(from, to, "md-syntax-mark");
+      // Obsidian atxHeaderRE = /^(#+)(?: |$)/ includes at most one delimiter space.
+      if (
+        name === "HeaderMark" &&
+        parent.name.startsWith("ATXHeading") &&
+        from === parent.from &&
+        this.state.sliceDoc(to, to + 1) === " "
+      ) {
+        this.mark(to, to + 1, "md-header-space");
+      }
       return;
     }
     // A setext underline is its own line; Obsidian keeps it, faint.
@@ -353,8 +343,33 @@ const SYNTAX_MARKS = [
   "HighlightMark",
 ];
 
+function shouldRebuildInline(update: ViewUpdate): boolean {
+  if (
+    update.docChanged ||
+    update.viewportChanged ||
+    update.selectionSet ||
+    update.focusChanged
+  ) {
+    return true;
+  }
+  const { startState, state } = update;
+  if (startState === state) {
+    return false;
+  }
+  return (
+    startState.field(documentTree) !== state.field(documentTree) ||
+    startState.facet(inlineRenderers) !== state.facet(inlineRenderers) ||
+    startState.field(unresolvedLinks, false) !==
+      state.field(unresolvedLinks, false) ||
+    startState.field(renderRevision, false) !==
+      state.field(renderRevision, false) ||
+    revealFreezeToggled(startState, state)
+  );
+}
+
 export class HybridInline {
   decorations: DecorationSet;
+  private wasComposing = false;
   constructor(view: EditorView) {
     this.decorations = inlineDecorations(view.state, view.visibleRanges);
   }
@@ -366,7 +381,13 @@ export class HybridInline {
       update.view.composing ||
       (isPointerSelecting(update.state) && !update.viewportChanged)
     ) {
+      this.wasComposing = update.view.composing;
       this.decorations = this.decorations.map(update.changes);
+      return;
+    }
+    const endedComposing = this.wasComposing && !update.view.composing;
+    this.wasComposing = false;
+    if (!endedComposing && !shouldRebuildInline(update)) {
       return;
     }
     this.decorations = inlineDecorations(

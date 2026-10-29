@@ -10,7 +10,7 @@ import type {} from "../services";
 import { changeSetting } from "./change-setting";
 import { openSettingsEditor } from "../../settings-editor";
 import manifest from "./manifest";
-import { SETTINGS_COMMAND_IDS } from "../pdf/registered-commands";
+import { SETTINGS_COMMAND_IDS } from "../../../shared/command-ids";
 
 const VIEW = "lumiere.pdf.view";
 

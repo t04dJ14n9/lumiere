@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { OUTLINE_COMMAND_IDS } from "../pdf/registered-commands";
+import { OUTLINE_COMMAND_IDS } from "../../../shared/command-ids";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
 import manifest from "./manifest";
