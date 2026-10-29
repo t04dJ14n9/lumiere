@@ -255,9 +255,10 @@ export function stickyScrollExtension(navigate: (position: number) => void) {
     headingIndex,
     chrome,
     EditorView.scrollMargins.of((view) => ({
-      top:
-        chromeInsetTop(view.dom.ownerDocument) +
-        (view.plugin(chrome)?.height ?? 0),
+      // Host chrome only. Sticky pin height is applied as scrollIntoView
+      // yMargin on pin click (see webview.ts) so resizing pins does not
+      // retarget scrollTop mid-read.
+      top: chromeInsetTop(view.dom.ownerDocument),
     })),
   ];
 }

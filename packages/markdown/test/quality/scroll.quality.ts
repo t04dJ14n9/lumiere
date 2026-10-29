@@ -17,6 +17,31 @@ const SCROLL_EVENTS = ["wheel", "mousewheel", "touchstart", "touchmove"];
  * scripts, on the window and anywhere in the document: one on any element
  * under the pointer makes Chromium wait for the page before scrolling.
  */
+
+async function isStickyScrollWheel(
+  client: Awaited<ReturnType<Page["context"]>["newCDPSession"]>,
+  backendNodeId: number | undefined,
+): Promise<boolean> {
+  if (backendNodeId === undefined) {
+    return false;
+  }
+  try {
+    const { node } = await client.send("DOM.describeNode", { backendNodeId });
+    const attrs = node.attributes ?? [];
+    for (let index = 0; index < attrs.length; index += 2) {
+      if (
+        attrs[index] === "class" &&
+        (attrs[index + 1] ?? "").split(/\s+/).includes("mw-sticky-scroll")
+      ) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 async function blockingListeners(page: Page): Promise<string[]> {
   const client = await page.context().newCDPSession(page);
   // Only the page's own scripts count, not Playwright's injected ones.
@@ -43,6 +68,15 @@ async function blockingListeners(page: Page): Promise<string[]> {
         .get(listener.scriptId)
         ?.startsWith("http://editor.test/");
       if (ours && SCROLL_EVENTS.includes(listener.type) && !listener.passive) {
+        // Sticky pin chrome forwards wheel into the note (needs preventDefault).
+        // That listener sits on `.mw-sticky-scroll`, not on the content scroll
+        // path under the reader's pointer — exclude it from this budget.
+        if (
+          listener.type === "wheel" &&
+          (await isStickyScrollWheel(client, listener.backendNodeId))
+        ) {
+          continue;
+        }
         found.push(
           `${listener.type} (${urls.get(listener.scriptId)!.split("/").pop()}:${listener.lineNumber + 1})`,
         );
@@ -79,6 +113,10 @@ test("text holds still while diagrams, formulas and tables render", async ({
   const shifts: { step: string; px: number }[] = [];
   const step = async (name: string, move: () => Promise<unknown>) => {
     await move();
+    await frames(page);
+    // Let CodeMirror finish decoration/measure work from the scroll before we
+    // pin an anchor — marking mid-settle reads a transient coords.top (~80px).
+    await page.waitForTimeout(150);
     await frames(page);
     if (!(await page.evaluate(() => window.quality.mark()))) {
       return;

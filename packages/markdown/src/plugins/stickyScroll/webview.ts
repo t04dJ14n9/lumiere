@@ -38,9 +38,17 @@ function registerStickyHeadings(ctx: Context, maxLines: number): void {
       stickyScrollExtension((position) =>
         ctx.editor.navigate(() => {
           ctx.editor.focus();
+          const sticky = ctx.editor.view.dom.querySelector(".mw-sticky-scroll");
+          const stickyHeight =
+            sticky instanceof HTMLElement && !sticky.hidden
+              ? sticky.getBoundingClientRect().height
+              : 0;
           ctx.editor.view.dispatch({
             selection: { anchor: position },
-            effects: EditorView.scrollIntoView(position, { y: "start" }),
+            effects: EditorView.scrollIntoView(position, {
+              y: "start",
+              yMargin: stickyHeight,
+            }),
             userEvent: "select",
           });
         }),

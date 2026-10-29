@@ -110,6 +110,7 @@ function fixture() {
       clientTop: 0,
       clientWidth: 800,
       clientHeight: 600,
+      scrollTop: 0,
       scrollBy: (x: number, y: number) => wheel.push([x, y]),
     },
     contentDOM: {

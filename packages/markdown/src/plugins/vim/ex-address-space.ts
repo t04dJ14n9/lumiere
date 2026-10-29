@@ -1,5 +1,7 @@
 import { CodeMirror } from "@replit/codemirror-vim";
 
+type StringStream = InstanceType<typeof CodeMirror.StringStream>;
+
 /**
  * Real Vim eats spaces after `:` before the line address (`: 123` → line 123).
  * `@replit/codemirror-vim-core` `ExCommandDispatcher.parseInput_` calls
@@ -15,12 +17,12 @@ export function installExAddressLeadingSpaceFix(): () => void {
   const proto = CodeMirror.StringStream.prototype;
   const original = proto.eatWhile;
   proto.eatWhile = function (
-    this: InstanceType<typeof CodeMirror.StringStream>,
     match: string | RegExp | ((ch: string) => boolean),
   ) {
-    const matched = original.call(this, match);
+    const stream = this as StringStream;
+    const matched = original.call(stream, match);
     if (match === ":") {
-      this.eatSpace();
+      stream.eatSpace();
     }
     return matched;
   };
