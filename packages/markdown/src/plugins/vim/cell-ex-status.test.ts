@@ -32,3 +32,30 @@ test("restore leaves a newer statusbar assignment alone", () => {
   restore();
   assert.equal(cell.state.statusbar, other);
 });
+
+test("restore clears an orphaned dialog from the shared outer bar", () => {
+  const dialog = { tag: "dialog" } as unknown as HTMLElement;
+  const host = {
+    tag: "host",
+    contains(node: Node) {
+      return node === (dialog as unknown as Node);
+    },
+    textContent: "stale",
+  } as unknown as HTMLElement;
+  let outerRepaints = 0;
+  const cell: Adapter & {
+    state: { dialog?: HTMLElement | null; statusbar?: HTMLElement | null };
+  } = { state: { dialog } };
+  const outer = {
+    state: {
+      statusbar: host,
+      vimPlugin: { updateStatus: () => outerRepaints++ },
+    },
+  };
+  const restore = proxyCellExDialogToOuterStatus(cell as never, outer as never);
+  assert.equal(cell.state.statusbar, host);
+  restore();
+  assert.equal(host.textContent, "");
+  assert.equal(outerRepaints, 1);
+  assert.equal(cell.state.statusbar, undefined);
+});

@@ -117,3 +117,60 @@ test("a retained cell is focused only once connected, and only if nothing has fo
   }
   assert.equal(focused, 3);
 });
+
+test("shared vim status dialog focus does not leave the table", () => {
+  const panel = {
+    classList: { contains: (name: string) => name === "cm-vim-panel" },
+    closest(selector: string) {
+      return selector === ".cm-vim-panel" ? this : null;
+    },
+  } as unknown as Element;
+  const input = {
+    closest(selector: string) {
+      return selector === ".cm-vim-panel" ? panel : null;
+    },
+  } as unknown as Element;
+  const root = {
+    isConnected: true,
+    contains(_node: Node | null) {
+      return false;
+    },
+  };
+  assert.equal(
+    noteTookTableFocus(root, input),
+    false,
+    "focus in the shared : / / ? bar stays with the cell session",
+  );
+  assert.equal(
+    noteTookTableFocus(root, {} as Node),
+    true,
+    "ordinary note focus still leaves the table",
+  );
+});
+
+test("focusout into the shared vim panel does not clear the table", async () => {
+  const panel = {
+    closest(selector: string) {
+      return selector === ".cm-vim-panel" ? this : null;
+    },
+  } as unknown as Element;
+  const ownerDocument = { activeElement: null as unknown };
+  const root = Object.assign(new EventTarget(), {
+    isConnected: true,
+    ownerDocument,
+    classList: { add() {}, remove() {} },
+    contains: () => false,
+  });
+  const contentDOM = new EventTarget();
+  let cleared = 0;
+  bindTableFocus({
+    root: root as unknown as HTMLElement,
+    contentDOM: contentDOM as unknown as HTMLElement,
+    signal: new AbortController().signal,
+    clear: () => cleared++,
+  });
+  ownerDocument.activeElement = panel;
+  root.dispatchEvent(new Event("focusout"));
+  await settle();
+  assert.equal(cleared, 0, "shared status dialog keeps the cell session");
+});
