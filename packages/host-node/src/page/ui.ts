@@ -4,7 +4,7 @@
  * with the page's `--vscode-*` variables, so they follow the embedder's theme.
  */
 import type { OpenMessage } from "../embedding";
-import { PageMenu } from "./context-menu";
+import { PageMenu } from "./page-menu";
 import {
   safeExternalHref,
   type PageFrame,
@@ -15,7 +15,8 @@ import {
 type Send = (frame: PageFrame) => void;
 type Prompt = Extract<UiRequest, { type: "ask" | "input" | "pick" }>;
 
-const STYLE = `
+/** The page's styles for what it draws in VS Code's place. */
+export const PAGE_STYLE = `
 .lumiere-page-toast{position:fixed;bottom:12px;right:12px;max-width:min(420px,80vw);padding:8px 12px;border-radius:6px;z-index:1000;
   background:var(--vscode-editorWidget-background);color:var(--vscode-editorWidget-foreground);border:1px solid var(--vscode-widget-border);font:13px var(--vscode-font-family)}
 .lumiere-page-toast.error{border-color:var(--vscode-errorForeground)}
@@ -37,11 +38,20 @@ const STYLE = `
 .lumiere-page-menu{position:fixed;z-index:1002;min-width:200px;padding:4px;border-radius:6px;user-select:none;
   background:var(--vscode-menu-background,var(--vscode-editorWidget-background));color:var(--vscode-menu-foreground,var(--vscode-editorWidget-foreground));
   border:1px solid var(--vscode-menu-border,var(--vscode-widget-border));box-shadow:0 4px 16px var(--vscode-widget-shadow);font:13px var(--vscode-font-family)}
-.lumiere-page-menu [role=menuitem]{padding:4px 24px 4px 10px;border-radius:4px;cursor:default;white-space:nowrap}
+.lumiere-page-menu [role=menuitem]{display:flex;align-items:center;gap:16px;padding:4px 24px 4px 10px;border-radius:4px;cursor:default;white-space:nowrap}
 .lumiere-page-menu [role=menuitem].active:not([aria-disabled]){background:var(--vscode-menu-selectionBackground,var(--vscode-list-activeSelectionBackground));
   color:var(--vscode-menu-selectionForeground,inherit)}
 .lumiere-page-menu [aria-disabled]{opacity:.45}
+.lumiere-page-menu [role=menuitem][aria-haspopup]{padding-right:10px}
+.lumiere-page-menu [aria-haspopup]::after{content:"";flex:none;margin-left:auto;width:5px;height:5px;border:solid currentColor;border-width:1.5px 1.5px 0 0;transform:rotate(45deg)}
 .lumiere-page-menu hr{border:0;border-top:1px solid var(--vscode-menu-separatorBackground,var(--vscode-widget-border));margin:4px 2px}
+/* A finger needs a row about 44 points tall, as the window's buttons grow on a touchscreen. */
+@media (pointer:coarse){
+.lumiere-page-menu{min-width:240px;padding:6px;border-radius:10px;font-size:17px}
+.lumiere-page-menu [role=menuitem]{box-sizing:border-box;min-height:44px;padding:0 32px 0 14px;border-radius:6px}
+.lumiere-page-menu [role=menuitem][aria-haspopup]{padding-right:16px}
+.lumiere-page-menu [aria-haspopup]::after{width:7px;height:7px;border-width:2px 2px 0 0}
+.lumiere-page-menu hr{margin:6px 4px}}
 `;
 
 export function createUi(send: Send): (request: UiRequest) => void {
@@ -97,7 +107,7 @@ function openInEmbedder(message: OpenMessage): void {
 
 function installStyle(): void {
   const style = document.createElement("style");
-  style.textContent = STYLE;
+  style.textContent = PAGE_STYLE;
   document.head.append(style);
 }
 

@@ -3,11 +3,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import type { Manifest } from "../src/shared/manifest";
 import {
+  EDITOR_SUBMENUS,
+  type EditorSubmenu,
+} from "../src/shared/editor-menus";
+import {
   MARKDOWN_EDITOR,
   whenActive,
   whenWebview,
 } from "../src/shared/editor-provider";
-import { contributionId } from "../src/shared/setting-schema";
+import { contributionId, SETTING_PREFIX } from "../src/shared/setting-schema";
 const pluginsDirectory = fileURLToPath(
   new URL("../src/plugins", import.meta.url),
 );
@@ -33,8 +37,14 @@ export async function contributions() {
       title: command.title,
       category: "Lumière",
       ...(command.icon ? { icon: command.icon } : {}),
+      ...(command.shortTitle ? { shortTitle: command.shortTitle } : {}),
     })),
   );
+  const submenus = editorSubmenus(manifests);
+  const noteMenu: NoteMenuEntry[] = [
+    ...manifestMenus(manifests, "webview/context"),
+    ...submenus.entries,
+  ];
   const menus = manifests.flatMap((manifest) =>
     (manifest.contributes?.commands ?? []).map((command) =>
       withWhen(
@@ -67,6 +77,7 @@ export async function contributions() {
       },
     ],
     commands,
+    submenus: submenus.submenus,
     keybindings: manifests.flatMap((manifest) =>
       [
         ...(manifest.contributes?.commands ?? []).filter(
@@ -87,7 +98,8 @@ export async function contributions() {
     ...(views.length > 0 ? { views: { explorer: views } } : {}),
     menus: {
       commandPalette: menus,
-      "webview/context": manifestMenus(manifests, "webview/context"),
+      "webview/context": noteMenu,
+      ...submenus.menus,
       "view/title": manifestMenus(manifests, "view/title"),
       "editor/title": [
         ...manifestMenus(manifests, "editor/title"),
@@ -259,10 +271,11 @@ function menuEnablement(
 function manifestMenus(
   manifests: readonly Manifest[],
   location: "editor/title" | "webview/context" | "view/title",
+  submenu?: EditorSubmenu,
 ) {
   return manifests.flatMap((manifest) =>
     (manifest.contributes?.menus ?? [])
-      .filter((menu) => menu.location === location)
+      .filter((menu) => menu.location === location && menu.submenu === submenu)
       .map((menu) => ({
         command: contributionId(menu.command),
         when: [menuEnablement(manifest, location), menu.when]
@@ -271,4 +284,51 @@ function manifestMenus(
         ...(menu.group ? { group: menu.group } : {}),
       })),
   );
+}
+
+/** An entry of the note's menu: a command, or a submenu of commands. */
+interface NoteMenuEntry {
+  readonly command?: string;
+  readonly submenu?: string;
+  readonly when: string;
+  readonly group?: string;
+}
+
+/**
+ * The note menu's submenus that some plugin fills: VS Code's `submenus`,
+ * an entry for each in `webview/context`, and each one's items as a menu
+ * of its own.
+ */
+function editorSubmenus(manifests: readonly Manifest[]) {
+  const filled = (Object.keys(EDITOR_SUBMENUS) as EditorSubmenu[]).filter(
+    (id) =>
+      manifests.some((manifest) =>
+        (manifest.contributes?.menus ?? []).some((menu) => menu.submenu === id),
+      ),
+  );
+  return {
+    submenus: filled.map((id) => ({
+      id: submenuId(id),
+      label: EDITOR_SUBMENUS[id].label,
+    })),
+    // VS Code shows a submenu only while one of its items shows, so the
+    // items' clauses decide; this one keeps it to the note's menu.
+    entries: filled.map((id) => ({
+      submenu: submenuId(id),
+      when: whenWebview(MARKDOWN_EDITOR),
+      group: EDITOR_SUBMENUS[id].group,
+    })),
+    menus: Object.fromEntries(
+      filled.map((id) => [
+        submenuId(id),
+        manifestMenus(manifests, "webview/context", id),
+      ]),
+    ) as Partial<Record<SubmenuId, ReturnType<typeof manifestMenus>>>,
+  };
+}
+
+type SubmenuId = `${typeof SETTING_PREFIX}menu.${EditorSubmenu}`;
+
+function submenuId(id: EditorSubmenu): SubmenuId {
+  return `${SETTING_PREFIX}menu.${id}`;
 }

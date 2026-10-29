@@ -32,11 +32,14 @@ keystroke there: VS Code forwards webview keystrokes that reach the window to
 its keybinding service, which would otherwise run the contributed binding a
 second time (Ctrl+B bolding then unbolding) or Cursor's own Ctrl+I. The
 contributed bindings still apply when focus is outside the editor text.
-Read-only views reject edits.
+Read-only views reject edits. The note's right-click menu holds the inline
+commands in submenus, as Obsidian's editor menu does: Format (bold, italics,
+strikethrough, highlight, inline code), Highlight (the six colours) and
+Insert (link), where host-node labels each by its short title (Bold).
 
 ## Files
 
-- `manifest.ts`: command and keybinding contributions.
+- `manifest.ts`: command, keybinding and right-click menu contributions.
 - `api.ts`: injected formatting service contract.
 - `webview.ts`: service, command catalogue and keymap registrations.
 - `format-keys.ts`: capture-phase Ctrl/Cmd+B/I so Vim cannot page-back / jumplist-steal bold and italic; Vim host consume yields while formatting is on (BH-024).

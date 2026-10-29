@@ -329,7 +329,9 @@ to its file. The touch work in section 3 is in:
   (`appCommands` on the window's backend). A long-press on a word shows
   the menu: WebKit keeps its own down when the editor writes the
   selection back during the press, so the app shows one over the
-  selection (`LongPressEditMenu.swift`).
+  selection (`LongPressEditMenu.swift`). The menu's rows are 44 points
+  tall on a touchscreen, and formatting sits in Format, Highlight and
+  Insert submenus that a tap opens beside their rows.
 - PDFs open in a tab in Lumière's own viewer (EmbedPDF, as in VS Code),
   with its toolbar, outline and search; a finger scrolls the pages. A
   stand-in for the viewer's extension host hands it the PDF

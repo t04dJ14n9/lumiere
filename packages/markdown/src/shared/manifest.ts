@@ -1,4 +1,5 @@
 import type { Schema } from "@workshop/core";
+import type { EditorSubmenu } from "./editor-menus";
 
 /**
  * What a plugin does, in terms an editor host can reason about without
@@ -86,6 +87,8 @@ export interface Manifest {
     menus?: readonly {
       command: string;
       location: "editor/title" | "webview/context" | "view/title";
+      /** In this submenu of the note's menu (`webview/context` only), not at its top. */
+      submenu?: EditorSubmenu;
       when?: string;
       group?: string;
     }[];
@@ -102,6 +105,12 @@ export interface Manifest {
       title: string;
       /** A codicon such as `$(go-to-file)`; title-bar buttons show it instead of the title. */
       icon?: string;
+      /**
+       * VS Code's `shortTitle`: the label inside a submenu, where the
+       * submenu's name says the rest (Bold under Format). host-node shows
+       * it there; VS Code's context menus keep the title.
+       */
+      shortTitle?: string;
       editorCommand?: string;
       palette?: boolean;
       key?: string;

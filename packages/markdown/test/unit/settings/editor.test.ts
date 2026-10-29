@@ -220,6 +220,11 @@ test("required settings, title actions, native context menus and unbound verify 
   );
   assert.ok(
     generated.menus["webview/context"].some(
+      (menu) => menu.submenu === "lumiere.markdown.menu.format",
+    ),
+  );
+  assert.ok(
+    generated.menus["lumiere.markdown.menu.format"]?.some(
       (menu) =>
         menu.command === "lumiere.markdown.toggleBold" &&
         menu.when.includes("markdownContent"),
@@ -243,13 +248,14 @@ test("required settings, title actions, native context menus and unbound verify 
   }
 });
 
-test("manual and parity inventories include every generated command and setting", async () => {
+test("manual and parity inventories include every generated command, submenu and setting", async () => {
   const { readFileSync } = await import("node:fs");
   const generated = await contributions();
   const manual = readFileSync("docs/MANUAL_TEST_PLAN.md", "utf8");
   const parity = readFileSync("docs/PARITY.md", "utf8");
   for (const id of [
     ...generated.commands.map((command) => command.command),
+    ...generated.submenus.map((submenu) => submenu.id),
     ...Object.keys(generated.configuration.properties),
   ]) {
     assert.ok(manual.includes(id), `manual: ${id}`);
@@ -321,7 +327,7 @@ test("agent commands copy a reference or open a reference the user already copie
     assert.equal(
       menus.some(
         (menu) =>
-          menu.command.endsWith(".copyForAgent") &&
+          menu.command?.endsWith(".copyForAgent") &&
           menu.command !== "lumiere.markdown.wiki.copyForAgent",
       ),
       false,

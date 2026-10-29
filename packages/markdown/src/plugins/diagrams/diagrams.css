@@ -130,9 +130,13 @@ pre[data-fence="mermaid"] svg .internal-link tspan {
   opacity: 0;
   transition: opacity 120ms;
 }
-.hybrid-block:hover .inspect-diagram,
 .inspect-diagram:focus-visible {
   opacity: 1;
+}
+@media (hover: hover) {
+  .hybrid-block:hover .inspect-diagram {
+    opacity: 1;
+  }
 }
 .inspect-diagram:hover {
   color: var(--vscode-editor-foreground);

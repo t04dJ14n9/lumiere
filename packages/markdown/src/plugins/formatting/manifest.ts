@@ -9,29 +9,37 @@ export default defineManifest({
   capabilities: ["editing", "commands", "keybindings"],
   contributes: {
     menus: [
+      // Grouped as Obsidian's editor menu groups them: Format, Highlight
+      // (Obsidian 1.14's colours) and Insert, each a submenu.
       ...[
         "toggleBold",
         "toggleItalics",
         "toggleStrikethrough",
         "toggleHighlight",
         "toggleCode",
-        "insertLink",
-      ].map((command) => ({
+      ].map((command, index) => ({
         command,
         location: "webview/context" as const,
+        submenu: "format" as const,
         when: "webviewSection == 'markdownContent'",
-        group: "formatting@1",
+        group: `formatting@${index + 1}`,
       })),
-      // Obsidian offers coloured highlights from the editor menu / palette;
-      // surface the same toggles on the webview context menu.
       ...(["Red", "Orange", "Yellow", "Green", "Blue", "Purple"] as const).map(
         (colour, index) => ({
           command: `toggleHighlight${colour}`,
           location: "webview/context" as const,
+          submenu: "highlight" as const,
           when: "webviewSection == 'markdownContent'",
           group: `formattingColour@${index + 1}`,
         }),
       ),
+      {
+        command: "insertLink",
+        location: "webview/context",
+        submenu: "insert",
+        when: "webviewSection == 'markdownContent'",
+        group: "insert@1",
+      },
     ],
     keybindings: [
       {
@@ -46,6 +54,7 @@ export default defineManifest({
       {
         id: "toggleBold",
         title: "Toggle Bold",
+        shortTitle: "Bold",
         editorCommand: "editor:toggle-bold",
         key: "ctrl+b",
         mac: "cmd+b",
@@ -53,6 +62,7 @@ export default defineManifest({
       {
         id: "toggleItalics",
         title: "Toggle Italics",
+        shortTitle: "Italics",
         editorCommand: "editor:toggle-italics",
         key: "ctrl+i",
         mac: "cmd+i",
@@ -60,11 +70,13 @@ export default defineManifest({
       {
         id: "toggleStrikethrough",
         title: "Toggle Strikethrough",
+        shortTitle: "Strikethrough",
         editorCommand: "editor:toggle-strikethrough",
       },
       {
         id: "toggleHighlight",
         title: "Toggle Highlight",
+        shortTitle: "Highlight",
         editorCommand: "editor:toggle-highlight",
       },
       // Obsidian 1.14's coloured highlights (`==🔵text==`).
@@ -72,12 +84,14 @@ export default defineManifest({
         (colour) => ({
           id: `toggleHighlight${colour}`,
           title: `Toggle ${colour} Highlight`,
+          shortTitle: colour,
           editorCommand: `editor:toggle-highlight-${colour.toLowerCase()}`,
         }),
       ),
       {
         id: "toggleCode",
         title: "Toggle Inline Code",
+        shortTitle: "Inline Code",
         editorCommand: "editor:toggle-code",
       },
       {
@@ -88,6 +102,7 @@ export default defineManifest({
       {
         id: "insertLink",
         title: "Insert Link",
+        shortTitle: "Link",
         editorCommand: "editor:insert-link",
       },
       {
