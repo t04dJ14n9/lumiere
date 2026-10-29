@@ -39,9 +39,7 @@ const css = readFileSync(
 );
 
 test("mermaid SVG is not shrink-to-fit with max-width 100%", () => {
-  const svgRule = css.match(
-    /pre\[data-fence="mermaid"\] svg\s*\{[^}]*\}/,
-  )?.[0];
+  const svgRule = css.match(/pre\[data-fence="mermaid"\] svg\s*\{[^}]*\}/)?.[0];
   assert.ok(svgRule, "expected svg rule");
   assert.equal(/\bmax-width\s*:\s*100%/.test(svgRule), false);
 });

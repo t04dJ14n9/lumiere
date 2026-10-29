@@ -21,9 +21,9 @@ test("Live Preview image-embed does not clamp with max-width 100%", () => {
     "",
   );
   // Prefer: no max-width:100% on .image-embed { ... } blocks used in LP
-  const hosts = [...withoutInspector.matchAll(/\.image-embed\s*\{[^}]*\}/g)].map(
-    (m) => m[0],
-  );
+  const hosts = [
+    ...withoutInspector.matchAll(/\.image-embed\s*\{[^}]*\}/g),
+  ].map((m) => m[0]);
   assert.ok(hosts.length >= 1);
   for (const rule of hosts) {
     assert.equal(/\bmax-width\s*:\s*100%/.test(rule), false, rule);
@@ -37,9 +37,9 @@ test("Live Preview image-embed is pane-constrained so overflow-x can scroll", ()
     /\.image-inspector[\s\S]*?(?=\n\/\*|\n\.file-embed|\n\.pdf-embed|$)/,
     "",
   );
-  const hosts = [...withoutInspector.matchAll(/\.image-embed\s*\{[^}]*\}/g)].map(
-    (m) => m[0],
-  );
+  const hosts = [
+    ...withoutInspector.matchAll(/\.image-embed\s*\{[^}]*\}/g),
+  ].map((m) => m[0]);
   assert.ok(hosts.length >= 1);
   for (const rule of hosts) {
     const constrained =
