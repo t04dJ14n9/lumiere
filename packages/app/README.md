@@ -56,14 +56,6 @@ The layout (the panels, and each vault's open folders) and Color Theme are
 kept by the server (`/api/ui`), because the window's own storage does not
 last: its port changes every launch.
 
-Obsidian community plugins that come with a vault run only after the owner
-says yes, once per vault, as in Obsidian (`vault-trust.ts`, host-node's
-`vaultCode`). The first note opened in a vault that turns plugins on shows a
-dialog: Keep Them Off, the default, or Trust and Turn On, which loads them
-in every open note of that vault. The answers are kept in `trust.json` in
-the data folder. Open Obsidian Community Plugins Marketplace asks again
-after a no.
-
 From the desktop app the window uses only the folder picker, menu commands
 and the app's light or dark appearance (`tauri.ts`). In a browser it falls
 back to a path field.
@@ -92,9 +84,8 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 | `GET /api/vaults`, `POST /api/vaults` `{"path"}` | the open and recent vaults; open one |
 | `GET /api/files?vault=` | a vault's files, sorted, with their kind |
 | `POST /api/open` `{"path"}` | show a note or folder (Finder, a second launch) |
-| `GET /api/events` | server-sent events: vaults changed, a note to open, a vault's plugins waiting for an answer (`{"type":"trust"}`) |
+| `GET /api/events` | server-sent events: vaults changed, a note to open |
 | `GET /api/ui`, `POST /api/ui` | the window's layout, open folders and Color Theme (`src/shared/ui-state.ts`) |
-| `GET /api/trust`, `POST /api/trust` `{"vault","allowed"}` | the vaults waiting for an answer, with the plugins they turn on; the owner's answer, accepted only for a vault that asked |
 | `/lumiere/*` | the editor pages and tree views (`@workshop/host-node`) |
 
 ## Files
@@ -105,12 +96,9 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 - `src/server/auth.ts`: the token, Host and Origin checks.
 - `src/server/api.ts`: the API above.
 - `src/server/vaults.ts`: open and recent vaults, and their files.
-- `src/server/vault-trust.ts`: the owner's answers about running a vault's plugins (`trust.json`), and the questions waiting.
-- `src/server/json-file.ts`: writing the data folder's JSON files without leaving half a file.
 - `src/shell/App.tsx`, `src/shell/components/`: the window.
 - `src/shell/opening.ts`: opening vaults and notes from the picker, menu, links and the server.
 - `src/shell/commands.ts`: the window's commands and VS Code's keys for them.
-- `src/shell/trust.ts`, `src/shell/components/TrustDialog.tsx`: asking the owner about a vault's plugins, one vault at a time.
 - `src/shell/settings.ts`, `src/shell/settings-view.ts`: the settings, and how the Settings tab lays them out.
 - `src/shell/ui-state.ts`, `src/shared/ui-state.ts`, `src/server/ui-state.ts`: the layout and Color Theme, kept by the server.
 - `src/shell/tabs.ts`, `src/shell/tree.ts`, `src/shell/tree-state.ts`: tabs and tree state, as pure functions.
@@ -122,5 +110,13 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 
 ## Limits
 
-- Markdown only: PDFs are listed but do not open yet.
+- PDFs open in Lumière PDF's viewer: scroll, zoom, find and select. Its
+  plugins (Copy Link for Agent, look up, the outline view) and the PDF
+  settings work only in VS Code for now, and links in a PDF do not open.
 - One window per server.
+- Git blame and the change gutter start off in the app (`src/server/defaults.ts`):
+  git runs with the repository's own configuration, which can name programs
+  to run, so the owner turns them on in Settings for their own repositories.
+- Git blame and the change gutter use the `git` on the server's PATH. The
+  desktop app started from Finder sees only the system's PATH, so on macOS
+  that is Xcode's git, and Git is off without the command-line tools.

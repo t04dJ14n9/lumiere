@@ -105,7 +105,9 @@ button {
   font-variation-settings: var(--text-variations, normal);
 }
 #app .cm-content {
-  padding: var(--file-margin-top) var(--file-margins) 40vh;
+  /* --lumiere-inset-top: the embedder's controls over the page (chrome-inset.ts). */
+  padding: calc(var(--file-margin-top) + var(--lumiere-inset-top, 0px))
+    var(--file-margins) 40vh;
   caret-color: var(--vscode-editorCursor-foreground, currentColor);
 }
 #app .cm-line {
@@ -172,6 +174,9 @@ body.vscode-high-contrast-light {
   z-index: 1 !important; /* CodeMirror's base theme puts it at -2 */
   mix-blend-mode: screen;
   pointer-events: none;
+}
+#app .cm-editor :is(.cm-selectionLayer, .mw-selection-layer):empty {
+  display: none;
 }
 body.vscode-light #app .cm-editor :is(.cm-selectionLayer, .mw-selection-layer),
 body.vscode-high-contrast-light

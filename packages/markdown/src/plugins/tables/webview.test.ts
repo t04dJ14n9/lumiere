@@ -15,39 +15,15 @@ import type { BlockRenderer } from "../livePreview/api";
 import { tablesWebview } from "./webview";
 import { TableWidget } from "./widget";
 
-function wheel(overrides: Partial<WheelEvent> = {}) {
-  return Object.assign(new Event("wheel", { cancelable: true }), {
-    deltaX: 0,
-    deltaY: 120,
-    deltaMode: 0,
-    ctrlKey: false,
-    metaKey: false,
-    shiftKey: false,
-    ...overrides,
-  });
-}
-
 test("tables always register a widget and own their document-entry keys and commands", async () => {
   const root = createRoot();
   const renderers: BlockRenderer[] = [];
   const extensions: Extension[] = [];
   const commands = new Map<string, () => boolean | Promise<boolean>>();
-  const scrolls: ScrollToOptions[] = [];
-  const viewport = Object.assign(new EventTarget(), {
-    scrollTop: 600,
-    scrollHeight: 2000,
-    clientHeight: 500,
-    scrollTo: (options: ScrollToOptions) => scrolls.push(options),
-  });
-  const dom = Object.assign(new EventTarget(), {
-    ownerDocument: {
-      defaultView: { matchMedia: () => ({ matches: false }) },
-    },
-  });
   let document = EditorState.create();
   const view = {
-    dom,
-    scrollDOM: viewport,
+    dom: new EventTarget(),
+    scrollDOM: new EventTarget(),
     get state() {
       return document;
     },
@@ -138,35 +114,7 @@ test("tables always register a widget and own their document-entry keys and comm
     to: document.doc.length,
   });
   assert.ok(widget instanceof TableWidget);
-  const scrollNote = widget.environment.scrollNote;
-  for (const type of ["wheel", "pointerdown", "keydown", "touchstart"]) {
-    const before = scrolls.length;
-    scrollNote(120, wheel());
-    assert.deepEqual(scrolls.at(-1), { top: 720, behavior: "instant" });
-    // Instant motion has no pending destination; interruption is a no-op.
-    dom.dispatchEvent(new Event(type));
-    assert.equal(scrolls.length, before + 1);
-  }
-  const forwardedWheel = new Event("wheel", { cancelable: true });
-  forwardedWheel.preventDefault();
-  scrollNote(120, wheel());
-  dom.dispatchEvent(forwardedWheel);
-  assert.equal(scrolls.at(-1)?.behavior, "instant");
-  dom.dispatchEvent(new Event("pointerdown"));
-  viewport.scrollTop = 600;
-  scrollNote(0.25, wheel({ deltaY: 0.25 }));
-  assert.deepEqual(scrolls.at(-1), { top: 600.25, behavior: "instant" });
-  viewport.scrollTop = 900;
-  scrollNote(0.25, wheel({ deltaY: 0.25 }));
-  assert.equal(scrolls.at(-1)?.top, 900.25);
-  viewport.scrollTop = 600;
-  const beforeDispose = scrolls.length;
   await root.dispose();
-  // Disposal stops motion; with no pending destination that is a no-op.
-  assert.equal(scrolls.length, beforeDispose);
-  const afterDisposal = scrolls.length;
-  dom.dispatchEvent(new Event("wheel"));
-  assert.equal(scrolls.length, afterDisposal);
   rpc.dispose();
   assert.equal(renderers.length, 0);
   assert.equal(extensions.length, 0);

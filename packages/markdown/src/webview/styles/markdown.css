@@ -39,8 +39,16 @@
 }
 /* As in Obsidian: one body-text size of space above a heading, none below. */
 #app .cm-line.md-heading {
+  display: block !important;
   padding-top: var(--text-size);
   padding-bottom: 0;
+}
+/* Keep revealed ATX heading markers and their trailing space inline and
+ * non-breaking so "#" never wraps onto its own line above the heading text. */
+#app .cm-line.md-heading .md-syntax-mark,
+#app .cm-line.md-heading .md-header-space {
+  display: inline !important;
+  white-space: pre;
 }
 /* Except on line 1, which starts right at the top (--file-margin-top). */
 #app .cm-line.md-heading.is-first-line {

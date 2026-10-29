@@ -39,7 +39,17 @@ export type {
   WorkerOptions,
   WorkerPort,
 } from "../shared/workers";
-export type { DiffViews, GitAccess, GitBaselineResult } from "../shared/git";
-export type { GitBlameLineResult } from "../shared/git-blame";
+export type {
+  DiffViews,
+  GitAccess,
+  GitBaselineResult,
+  GitRef,
+} from "../shared/git";
+export type {
+  GitBlameLineResult,
+  GitBlameSnapshot,
+  GitIdentity,
+} from "../shared/git-blame";
+export { exceedsDiffLimits, MAX_DIFF_CHARS } from "../shared/diff/limits";
 export type { DiagnosticSink, WorkspaceFiles } from "../shared/workspace-files";
 export type { EditorProvider } from "../shared/editor-provider";

@@ -164,3 +164,90 @@ test("right cell padding opens at the end of the text", async ({ page }) => {
     .poll(() => page.evaluate(() => window.harness.text))
     .toContain("| Bananaz |");
 });
+
+test("clicking in the middle of a table cell places the caret at the clicked character, not at offset 0", async ({
+  page,
+}) => {
+  await open(
+    page,
+    "| Fruit | Description |\n| --- | --- |\n| Banana | Alpha Beta Gamma |\n",
+    "obsidian",
+    { features: { vim: { enabled: false, config: {} } } },
+  );
+  const point = await page.evaluate(() => {
+    const cell = document.querySelectorAll(
+      ".hybrid-table .table-cell-content",
+    )[3]!;
+    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      const idx = node.data.indexOf("Beta");
+      if (idx >= 0) {
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + 4);
+        const rect = range.getBoundingClientRect();
+        return { x: rect.left, y: rect.top + rect.height / 2 };
+      }
+    }
+    return null;
+  });
+  expect(point).toBeTruthy();
+  await page.mouse.click(point!.x + 1, point!.y);
+  const editor = page.getByRole("textbox", {
+    name: "Table cell 2, 2",
+    exact: true,
+  });
+  await expect(editor).toBeFocused();
+  await page.keyboard.type("X");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("| Alpha XBeta Gamma |");
+});
+
+test("dragging across text in an unopened table cell selects that text range", async ({
+  page,
+}) => {
+  await open(
+    page,
+    "| Fruit | Description |\n| --- | --- |\n| Banana | Alpha Beta Gamma |\n",
+    "obsidian",
+    { features: { vim: { enabled: false, config: {} } } },
+  );
+  const bounds = await page.evaluate(() => {
+    const cell = document.querySelectorAll(
+      ".hybrid-table .table-cell-content",
+    )[3]!;
+    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      const idx = node.data.indexOf("Beta");
+      if (idx >= 0) {
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + 4);
+        const rect = range.getBoundingClientRect();
+        return {
+          startX: rect.left + 1,
+          endX: rect.right - 1,
+          y: rect.top + rect.height / 2,
+        };
+      }
+    }
+    return null;
+  });
+  expect(bounds).toBeTruthy();
+  await page.mouse.move(bounds!.startX, bounds!.y);
+  await page.mouse.down();
+  await page.mouse.move(bounds!.endX, bounds!.y, { steps: 4 });
+  await page.mouse.up();
+  const editor = page.getByRole("textbox", {
+    name: "Table cell 2, 2",
+    exact: true,
+  });
+  await expect(editor).toBeFocused();
+  await page.keyboard.type("Z");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("| Alpha Z Gamma |");
+});

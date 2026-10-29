@@ -187,24 +187,6 @@ Each contract is written once, in code. Change both sides in the same PR.
 | Server process | `packages/app/src/server/contract.ts` | server ↔ `apps/desktop/src-tauri/src/server.rs` |
 | Server API | `packages/app/src/server/api.ts` (table in its README) | server ↔ window, desktop |
 | Window ↔ Tauri | `packages/app/src/shell/tauri.ts` | window ↔ `capabilities/shell.json`, `menu.rs` |
-| Vault code trust | `VaultCodeTrust` in `packages/markdown/src/shared/host/workspace.ts` | plugins ↔ VS Code adapter, host-node ← app |
-
-A vault's own code (Obsidian community plugins) runs only where the owner
-said yes. The plugins ask `HostWorkspace.vaultCode`: its answer for a vault,
-a request to ask, and a change event. Vaults are named by root URI.
-
-- VS Code answers with workspace trust (Restricted Mode) and never asks
-  itself.
-- host-node takes the embedder's answer as `StartOptions.vaultCode`. An
-  embedder that cannot ask leaves it out and gets `noVaultCode` (`inert.ts`):
-  every vault refused, nobody asked. DSH does this.
-- The app asks once per vault (`vault-trust.ts`). A waiting question reaches
-  the window as the `{"type":"trust"}` event on `GET /api/events`; the window
-  reads the questions with `GET /api/trust` and posts the answer to
-  `POST /api/trust` `{"vault","allowed"}`, accepted only for a vault that
-  asked. Answers are kept in `trust.json` in the data folder.
-- `isTrusted()` stays true outside VS Code: it covers remote images and
-  media, not a vault's code.
 
 ## 5. Milestones
 
@@ -230,14 +212,21 @@ push. `pnpm check:desktop` also passes when `apps/desktop` changed.
       the quick switcher;
     - a WebKit run of the Markdown browser suite.
 - **M5, PDF in tabs (Claude):**
-  - give `packages/pdf` a host-services seam like Markdown's: a portable
-    entry, and a layers test that fails if `vscode` is reachable;
-  - serve its viewer from host-node as `/lumiere/pdf`;
-  - `FileTree` stops disabling `.pdf`, and a PDF tab is an `EditorFrame`
-    on that route;
-  - DSH registers it for `.pdf`.
-- **M6, Git outside VS Code (Claude):** `GitAccess` over the `git` CLI, for
-  blame and the change gutter in DSH and the app.
+  - *Done, for viewing:* `@workshop/pdf/portable` gives host-node the viewer
+    core (`src/host` cannot reach `vscode`); host-node serves the viewer as
+    `/lumiere/pdf` over the notes' page shim and socket; `FileTree` opens
+    `.pdf`, a PDF tab is an `EditorFrame` on that route, and the desktop app
+    opens PDFs from Finder.
+  - *Later:* the PDF plugins outside VS Code (Copy Link for Agent, look up,
+    the outline view, history), on host contracts kept on branch
+    `claude/lumiere-pdf-plugins-later`; the PDF settings and right-click
+    menu; links in a PDF; DSH registering the viewer for `.pdf`.
+- **M6, Git outside VS Code (Claude, done):** `GitAccess` over the `git`
+  CLI, for blame and the change gutter in DSH and the app
+  (`packages/host-node/src/host/git.ts`, built from the VS Code adapter's
+  command-line half). host-node now offers "git", so those plugins'
+  settings show. Still VS Code's only: the rendered diff editor, which also
+  needs the window. Section 6, step 12, checks it by hand.
 - **M7, releases (Grok Bot, with the owner's credentials):**
   - macOS signing and notarisation (hardened runtime with `allow-jit` for
     Node), and Windows signing;
@@ -327,39 +316,46 @@ The pass, in the Tauri window:
      tab.
    - With the app already running, the same file goes to the running window.
 9. **Quit with unsaved text.** Type, then Cmd+Q at once: the text is on disk.
-10. **Vault plugins.** In a second throwaway vault, never the owner's, with
-    one harmless plugin that marks the page:
+10. **Errors.** Rename the vault folder while it is open, or start with a
+   broken `LUMIERE_SERVER`: a message appears, never a blank window.
+12. **Git (M6).** In a throwaway repository, never the owner's notes:
 
     ```bash
-    v=/tmp/lumiere-plugin-vault; p=$v/.obsidian/plugins/hello-test
-    mkdir -p "$p" && echo '# One' > "$v/One.md" && echo '# Two' > "$v/Two.md"
-    echo '["hello-test"]' > "$v/.obsidian/community-plugins.json"
-    echo '{"id":"hello-test","name":"Hello Test","version":"1.0.0"}' > "$p/manifest.json"
-    cat > "$p/main.js" <<'EOF'
-    const { Plugin, Notice } = require("obsidian");
-    module.exports = class extends Plugin {
-      onload() {
-        document.documentElement.dataset.helloTest = "on";
-        new Notice("Hello Test is on");
-      }
-    };
-    EOF
+    v=/tmp/lumiere-git-vault; mkdir -p "$v" && cd "$v" && git init -q
+    git config user.name Test && git config user.email test@example.com
+    printf '# One\n\nfirst line\nsecond line\n' > One.md
+    git add One.md && git commit -qm "First"
     ```
 
-    - Opening a note asks once, even with both notes open. Keep Them Off
-      has the focus.
-    - Keep Them Off: no notice, and `data-hello-test` is missing from the
-      note's `<html>`. After a relaunch nothing asks, and
-      `/tmp/lumiere-dev/trust.json` holds the answer.
-    - Open Obsidian Community Plugins Marketplace asks again after a no.
-    - Trust and Turn On: the notice shows in every open note of the vault
-      without reopening it.
-    - A copy of the vault at another path is asked about separately.
-    - DSH on the same vault never asks and never runs the plugin.
-    - VS Code and Cursor follow workspace trust: in Restricted Mode the
-      plugin stays off, and trusting the folder turns it on.
-11. **Errors.** Rename the vault folder while it is open, or start with a
-   broken `LUMIERE_SERVER`: a message appears, never a blank window.
+    - In the desktop app, Git is off at first: no authorship text or change
+      bars. Turn on Git Blame and Git Gutter in Settings (⌘,), then go on.
+      DSH starts with them on.
+    - Open `One.md` in the desktop app and in DSH. With the caret on "first
+      line", quiet text after the line names Test, the time and "First";
+      hovering it shows the commit.
+    - Type a new line: a change bar marks it added. Change "second line":
+      its bar marks it modified. The new line's authorship says it is not
+      committed yet.
+    - Run `git commit -qam Second` in a terminal: within a second the bars
+      go and the changed line names "Second", without reopening the note.
+    - Settings lists Current-line authorship, Git change bars and Inline git
+      changes, but not Rendered git diff.
+    - On a Mac without Xcode's command-line tools (`xcode-select -p`
+      fails), opening the note shows no "install the tools" dialog; there
+      is just no authorship and no bars.
+13. **PDFs (M5).** Put a few PDFs in the throwaway vault, one of them long
+    and one with links.
+    - Click a PDF in the files: it opens in a tab, fitted to the width, in
+      the window's light or dark theme. In a bundled build, Open With ›
+      Lumière on a `.pdf` opens it in a tab, as step 8 does for a note.
+    - Scroll with the trackpad and the keys; zoom with the toolbar, ⌘ and
+      the wheel, and a pinch; find a word (the toolbar's search). Select
+      text and copy it with ⌘C.
+    - Replace the PDF on disk with another: the tab shows the new one.
+    - Close the tab, reopen the PDF: it opens where you left it (until the
+      app quits).
+    - Known gaps, not bugs: right-click has only the page's own menu, links
+      do nothing, and the outline button does nothing.
 
 Report each problem as an issue or a PR. For each fix:
 

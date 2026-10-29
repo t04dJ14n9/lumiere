@@ -250,3 +250,25 @@ test("disposing the links owner releases an unready pending reveal", async () =>
   assert.equal(await pending, false);
   assert.equal(f.calls.length, 0);
 });
+
+test("a search match range [at, to] crosses the validated navigation RPC", async (t) => {
+  const setup = await fixture();
+  t.after(() => setup.dispose());
+  const delivery = setup.router.deliver(setup.router.begin(), "pane", {
+    fragment: "",
+    at: 420,
+    to: 437,
+  });
+  setup.loading();
+  assert.equal(setup.calls.length, 0);
+  await setup.ready("search-session");
+  assert.equal(await delivery, true);
+  assert.equal(setup.calls.length, 1);
+  assert.deepEqual(setup.calls[0]?.target, {
+    fragment: "",
+    at: 420,
+    to: 437,
+    requestId: 1,
+    session: "search-session",
+  });
+});

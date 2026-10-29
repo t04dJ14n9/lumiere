@@ -15,10 +15,13 @@ interface TaskControls {
 
 export function bindRenderedTasks(options: TaskControls): void {
   const { pass, cleanups } = options;
-  const events = new AbortController();
   const controls = [
     ...pass.container.querySelectorAll<HTMLInputElement>("input[data-task]"),
   ];
+  if (controls.length === 0) {
+    return;
+  }
+  const events = new AbortController();
   const cleanup = () => {
     events.abort();
     for (const box of controls) {

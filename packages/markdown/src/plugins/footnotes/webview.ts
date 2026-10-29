@@ -1,11 +1,11 @@
 import { protocol as links } from "../links/protocol";
 import { EditorView } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
-import { footnotes } from "../../markdown/metadata/footnotes";
+import { extractFootnotes } from "../../markdown/metadata/footnote-extract";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import type {} from "../livePreview/api";
+import { documentTree } from "../livePreview/api";
 import type { RenderPass } from "../render/api";
 import { footnoteInline } from "./inline";
 import { insertFootnote } from "./edit";
@@ -43,7 +43,15 @@ function registerDefinitionInvalidation(ctx: Context): void {
         if (!update.docChanged) {
           return;
         }
-        const next = JSON.stringify(footnotes(update.state.doc).definitions);
+        if (key === "" && !update.state.doc.toString().includes("[^")) {
+          return;
+        }
+        const tree = update.state.field(documentTree, false);
+        const definitions = extractFootnotes(
+          update.state.doc,
+          tree,
+        ).definitions;
+        const next = definitions.length ? JSON.stringify(definitions) : "";
         if (next === key) {
           return;
         }

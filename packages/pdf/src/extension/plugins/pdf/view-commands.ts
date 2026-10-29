@@ -6,9 +6,10 @@ import {
   type ViewerAction,
   type ViewState,
 } from "../../../shared/view-state";
+import { VIEW_ACTION_COMMANDS } from "../../../shared/view-commands";
 import { ZOOM_STEPS } from "../../../shared/zoom-steps";
 import type { PdfPanels } from "./panels";
-import { VIEW_COMMAND_IDS } from "./registered-commands";
+import { VIEW_COMMAND_IDS } from "../../../shared/command-ids";
 
 /**
  * The commands behind the viewer's controls, wherever they are: the editor
@@ -16,51 +17,9 @@ import { VIEW_COMMAND_IDS } from "./registered-commands";
  * viewer's own toolbar. Each acts on the PDF in the active editor.
  */
 export function registerViewCommands(panels: PdfPanels): vscode.Disposable {
-  const act = (action: ViewerAction) => (): void => panels.active?.act(action);
   return vscode.Disposable.from(
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.previousPage,
-      act({ action: "previousPage" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.nextPage,
-      act({ action: "nextPage" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.previousPageKeepingPlace,
-      act({ action: "previousPageKeepingPlace" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.nextPageKeepingPlace,
-      act({ action: "nextPageKeepingPlace" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.zoomIn,
-      act({ action: "zoomIn" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.zoomOut,
-      act({ action: "zoomOut" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.fitWidth,
-      act({ action: "fitWidth" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.fitPage,
-      act({ action: "fitPage" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.find,
-      act({ action: "find" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.selectTextTool,
-      act({ action: "setTool", tool: "text" }),
-    ),
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.selectRegionTool,
-      act({ action: "setTool", tool: "region" }),
+    ...VIEW_ACTION_COMMANDS.map(({ id, action }) =>
+      vscode.commands.registerCommand(id, () => panels.active?.act(action)),
     ),
     vscode.commands.registerCommand(
       VIEW_COMMAND_IDS.goToPage,

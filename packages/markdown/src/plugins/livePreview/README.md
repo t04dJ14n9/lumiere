@@ -6,6 +6,9 @@ Live Preview. Each panel can switch between Live Preview and Source mode.
 ## How it works
 
 A shared document tree feeds block indexes and viewport inline decorations.
+For a large note it starts as the opening band; when the viewport passes its
+end, the parse resumes up to the viewport and a margin, and idle slices of a
+few milliseconds finish the rest, during scrolling too.
 Feature renderers are selected in catalog rank order; generic core blocks use
 the base slot. Caller-bound registrations retain the contributing plugin's owner.
 Built-in block renderers declare their eligible node names. Structural syntax
@@ -27,11 +30,18 @@ syntax parser and HTML renderer share the highlight-aware emphasis flanking rule
 ## Files
 
 - `manifest.ts`: core metadata and Toggle Source command.
-- `api.ts`: renderer, inline context and service contracts.
+- `api.ts`: renderer, inline context and service contracts; `documentTree`,
+  the syntax tree (a prefix while a large note is still parsing), which an
+  edit parses again only where it touched.
 - `host.ts`: native Toggle Source command routing.
 - `webview.ts`: engine/service, invalidation, fallback and mode registrations.
 - `registry.ts`: renderer facets and reveal rules.
-- `document-tree.ts`: incremental document syntax tree.
+- `document-tree.ts`: parses past the viewport when it outruns the tree and
+  finishes a large note in idle slices.
+- `document-parse.ts`: a Markdown parse that stops part-way, resumes, and
+  hands its work on to the next document version.
+- `document-tree.test.ts`: first-paint prefix, viewport catch-up, idle
+  slices and reuse across edits.
 - `blocks.ts`: block index, widget decorations and render revision.
 - `block-discovery.ts`: structural syntax cache and renderer candidate selection.
 - `block-discovery.test.ts`: registration cost, discovery parity and unrestricted renderers.

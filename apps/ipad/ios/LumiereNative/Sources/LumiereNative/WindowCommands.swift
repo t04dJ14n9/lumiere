@@ -7,6 +7,7 @@ import UIKit
 public enum WindowCommand: String, CaseIterable {
     case openVault = "open-vault"
     case openSettings = "open-settings"
+    case commandPalette = "command-palette"
     case closeTab = "close-tab"
     case nextTab = "next-tab"
     case previousTab = "previous-tab"
@@ -21,6 +22,7 @@ public enum WindowCommand: String, CaseIterable {
         switch self {
         case .openVault: return "Open Folder…"
         case .openSettings: return "Settings…"
+        case .commandPalette: return "Command Palette…"
         case .closeTab: return "Close Tab"
         case .nextTab: return "Show Next Tab"
         case .previousTab: return "Show Previous Tab"
@@ -44,6 +46,7 @@ struct CommandKey {
 
 let commandKeys: [CommandKey] = [
     CommandKey(command: .openSettings, input: ",", modifiers: .command),
+    CommandKey(command: .commandPalette, input: "p", modifiers: [.command, .shift]),
     CommandKey(command: .openVault, input: "o", modifiers: .command),
     CommandKey(command: .closeTab, input: "w", modifiers: .command),
     // No ⌘B or ⌥⌘B here: inside a note ⌘B is Bold, and a menu key would take
@@ -72,7 +75,7 @@ public enum WindowMenu {
         replaceOrAdd(builder, .preferences, menu(.preferences, [.openSettings]), in: .application)
         replaceOrAdd(builder, .close, menu(.close, [.closeTab]), in: .file)
         builder.insertChild(menu(UIMenu.Identifier("lumiere.open"), [.openVault]), atStartOfMenu: .file)
-        builder.insertChild(menu(UIMenu.Identifier("lumiere.panels"), [.toggleSidebar, .toggleOutline]), atStartOfMenu: .view)
+        builder.insertChild(menu(UIMenu.Identifier("lumiere.panels"), [.commandPalette, .toggleSidebar, .toggleOutline]), atStartOfMenu: .view)
         let theme = UIMenu(
             title: "Color Theme",
             identifier: UIMenu.Identifier("lumiere.theme"),

@@ -70,8 +70,9 @@ plugins. Restart DSH after rebuilding.
 ## Limits and differences from VS Code
 
 - Markdown only: PDFs still open in DSH's own viewer.
-- No Git features (blame, gutter, diffs), no graph panel and no status bar:
-  DSH has no counterpart yet.
+- Git blame and the change gutter work for notes in a repository, through
+  the `git` on DSH's PATH; the rendered diff does not.
+- No graph panel and no status bar: DSH has no counterpart yet.
 - Outline, Backlinks and Tags are served by the host (`/lumiere/views`) but
   not yet shown in DSH: each would be a DSH sidebar tab drawing a tree from
   `@workshop/host-node/views`, as the desktop app's sidebar does.

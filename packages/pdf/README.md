@@ -342,7 +342,7 @@ pnpm build            # dist/extension.js and dist/webview/
 pnpm check            # lint, typecheck, unit tests
 pnpm test:browser     # the viewer in Chromium, with a stand-in for VS Code
 pnpm test:vscode      # the packaged extension in a real VS Code window (local only, not in CI)
-pnpm check:full       # check, test:browser and test:vscode: run before every push
+pnpm check:full       # check, test:browser and test:vscode, in that order
 pnpm package          # production build and .vsix
 ```
 
@@ -372,14 +372,16 @@ override the user's disabled bridge and clipboard-only agent target. The normal
 `test:vscode` suite disables workspace trust, so it cannot establish this. Run
 the two native suites sequentially; both use the same throwaway test directory.
 
-**Before every push run the full local check, `pnpm check:full`** (on headless
-Linux: `xvfb-run -a pnpm check:full`). It runs `pnpm check`, `pnpm test:browser`
-and `pnpm test:vscode` sequentially, stopping at the first failure. `pnpm check`
+**Before every push run `pnpm check` and `pnpm test:browser`. Before merging a
+pull request, and before pushing a change to editor integration, run the full
+local check, `pnpm check:full`** (on headless Linux:
+`xvfb-run -a pnpm check:full`). It runs `pnpm check`, `pnpm test:browser` and
+`pnpm test:vscode` sequentially, stopping at the first failure. `pnpm check`
 already includes unit tests; no separate unit run is needed. The full local
 check does not include the separate CI packaging/size, secret-scan or advisory
 audit gates listed below. GitHub Actions does not run the real-VS Code specs
-(`test/vscode`): they were flaky under load, so they are a required local
-pre-push check instead.
+(`test/vscode`): they were flaky under load. AGENTS.md says what counts as
+editor integration.
 
 On a shared machine, run one heavy suite at a time and use a private X display
 for the VS Code tests. The browser harness uses port 8990 and can reuse an
@@ -405,7 +407,7 @@ request and on pushes to `main`. Each job, and how to run it locally:
 | `audit (advisory)`        | `pnpm audit --prod`; a warning, never a failure                                                                                                                                                        | `pnpm audit --prod`                                           |
 
 The real-VS Code specs (`pnpm test:vscode`) are not a CI job: run them locally
-before every push (see Development). Cursor cannot run in CI either, so test it
+before merging (see Development). Cursor cannot run in CI either, so test it
 by hand with
 `VSCODE_EXECUTABLE=<cursor executable> xvfb-run -a pnpm test:vscode`. CI never
 uses API keys or other secrets. Dependabot proposes grouped npm and

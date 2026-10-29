@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 # The real-VS Code specs (test/vscode, `pnpm test:vscode`) do not run here: they
-# are flaky under load. They are a required local pre-push check, see README.
+# are flaky under load. They run locally before merging, see AGENTS.md.
 
 jobs:
   check:
@@ -60,6 +60,41 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 7
+          if-no-files-found: ignore
+
+  # Scroll smoothness and opening speed (packages/markdown/test/quality): a
+  # merge gate. Timing budgets stretch with the runner's measured speed.
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - name: Install Chromium and its system dependencies
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Chromium's system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - name: pnpm test:quality
+        run: pnpm test:quality
+      - name: Upload the measurements
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality
+          path: packages/markdown/test-results/
+          retention-days: 30
           if-no-files-found: ignore
 
   package:

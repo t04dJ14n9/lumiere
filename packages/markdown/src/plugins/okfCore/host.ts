@@ -24,16 +24,28 @@ export const okfCoreHost: Plugin<OkfCoreConfig> = {
       okfLinkPolicy((root) => bundles.get(root) ?? []),
     );
     ctx.effect(() => stop);
+    let pending: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {
+      clearTimeout(pending);
+      pending = undefined;
       if (syncBundles(ctx, bundles)) {
         ctx.vaults.invalidateLinkResolution();
       }
     };
-    ctx.on("vault/changed", refresh);
+    // Each refresh reads every file in the vault, and a vault changes once
+    // per note it indexes: follow changes once a burst settles. Resolution
+    // marks the end of an indexing pass, so it refreshes at once.
+    ctx.on("vault/changed", () => {
+      pending ??= setTimeout(refresh, BUNDLE_SYNC_MS);
+    });
     ctx.on("vault/resolved", refresh);
     ctx.effect(() => ctx.settings.onChange(refresh));
+    ctx.effect(() => () => clearTimeout(pending));
   },
 };
+
+/** How long note changes may settle before OKF bundles follow them. */
+export const BUNDLE_SYNC_MS = 300;
 
 function publish(
   ctx: Context,

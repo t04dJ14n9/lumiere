@@ -3,7 +3,7 @@ import {
   type SelectionRange,
   type Text,
 } from "@codemirror/state";
-import { Direction, type EditorView } from "@codemirror/view";
+import { BlockType, Direction, type EditorView } from "@codemirror/view";
 import type { CaretAppearance, CaretMode } from "./caret";
 import { caretCharacterPosition } from "./caret";
 
@@ -201,11 +201,55 @@ function endCaret(
   };
 }
 
+function caretOutsideViewport(view: EditorView): boolean {
+  const { from, to } = view.viewport;
+  if (to <= from) {
+    return false;
+  }
+  return view.state.selection.ranges.every(
+    (range) => range.head < from || range.head > to,
+  );
+}
+
+/** A block widget has no text caret box. Measuring it reads the whole widget. */
+function isReplacedCaretBlock(view: EditorView, head: number): boolean {
+  const type = view.lineBlockAt(head).type;
+  if (Array.isArray(type)) {
+    return type.every((part) => part.type !== BlockType.Text);
+  }
+  return type !== BlockType.Text;
+}
+
+function skipCaretLayout(view: EditorView): boolean {
+  if (caretOutsideViewport(view)) {
+    return true;
+  }
+  // The cell editor draws its own caret. The outer editor is blurred, and
+  // coordsAtPos on the table widget is the whole grid.
+  if (view.hasFocus) {
+    return false;
+  }
+  return view.state.selection.ranges.every((range) =>
+    isReplacedCaretBlock(view, range.head),
+  );
+}
+
 function measureRange(
   measure: Measure,
   range: SelectionRange,
 ): CaretGeometry[] {
   const { view, appearance, mode } = measure;
+  // Heads outside the drawn range have no on-screen caret. coordsAtPos would
+  // force layout for a caret the viewport cannot show.
+  if (
+    view.viewport.to > view.viewport.from &&
+    (range.head < view.viewport.from || range.head > view.viewport.to)
+  ) {
+    return [];
+  }
+  if (!view.hasFocus && isReplacedCaretBlock(view, range.head)) {
+    return [];
+  }
   const placed = caretCharacterPosition(view.state.doc, range, mode);
   // Vim moves by code point, so its head can sit inside a cluster (after the
   // `e` of `é` written with a combining mark); a block covers the whole cluster.
@@ -236,6 +280,9 @@ export function measureCarets(
   appearance: CaretAppearance,
   mode: CaretMode,
 ): CaretGeometry[] {
+  if (skipCaretLayout(view)) {
+    return [];
+  }
   const base = view.scrollDOM.getBoundingClientRect();
   const frame = {
     baseLeft:

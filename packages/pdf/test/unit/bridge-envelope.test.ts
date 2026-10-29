@@ -11,8 +11,8 @@ import {
   selectionCanonical,
 } from "../../src/shared/bridge-envelope";
 import { hashSelection } from "../../src/extension/plugins/agentBridge/envelope";
-import { PdfSelectionState } from "../../src/extension/plugins/pdf/selection";
-import { createPdfViewId } from "../../src/extension/plugins/pdf/view-id";
+import { PdfSelectionState } from "../../src/host/viewer/selection";
+import { createPdfViewId } from "../../src/host/viewer/view-id";
 import { parseWorkbenchBridgeEnvelope } from "./support/workbench-bridge-parse";
 
 const sourceHash = "ab".repeat(32);

@@ -20,12 +20,12 @@ export function setImageSelectedChrome(
   image: HTMLImageElement,
   selected: boolean,
 ): void {
+  const host = image.parentElement;
+  if (!host || !isSelectableImage(image)) {
+    return;
+  }
   if (selected) {
     image.classList.add(SELECTED);
-    const host = image.parentElement;
-    if (!host) {
-      return;
-    }
     if (!host.classList.contains(EMBED)) {
       host.classList.add(EMBED);
       tagged.add(host);
@@ -40,10 +40,6 @@ export function setImageSelectedChrome(
   }
 
   image.classList.remove(SELECTED);
-  const host = image.parentElement;
-  if (!host) {
-    return;
-  }
   if (host.querySelector(`img.${SELECTED}`)) {
     return;
   }
@@ -56,4 +52,12 @@ export function setImageSelectedChrome(
     host.classList.remove(EMBED);
     tagged.delete(host);
   }
+}
+
+export function isSelectableImage(image: HTMLImageElement): boolean {
+  return (
+    !image.classList.contains("cm-widgetBuffer") &&
+    !image.parentElement?.classList.contains("cm-line") &&
+    !image.parentElement?.classList.contains("cm-content")
+  );
 }

@@ -1,42 +1,21 @@
 /**
  * Sticky horizontal scrollbar for tall wide tables (BH-016).
  *
- * `.table-scroll` grows with the table (`overflow-y: hidden`), so the native
- * horizontal scrollbar sits only at the table bottom. While that native bar is
- * below the note viewport, a sticky custom scrollbar stays at the bottom of the
- * visible note and drives `.table-scroll.scrollLeft` directly.
+ * `.table-scroll` grows with the table (`overflow-y: hidden`), so its native
+ * horizontal scrollbar sits only at the table's foot. A custom bar right after
+ * it is `position: sticky; bottom: 0`: while the foot is below the note
+ * viewport the browser keeps the bar on the viewport's bottom edge, and it
+ * hides once the native bar is on screen. CSS does all the positioning and
+ * observers decide only whether to show the bar, so scrolling the note runs
+ * no script and reads no layout, however many wide tables are mounted.
  */
 
-export type StickyHScrollLayout = {
+/** Hidden unless the table overflows sideways and its native bar is off screen. */
+export function stickyHScrollHidden(state: {
   overflowsX: boolean;
-  tableTop: number;
-  tableBottom: number;
-  viewportTop: number;
-  viewportBottom: number;
-  scrollbar: number;
-};
-
-/** Whether the sticky mirror should be shown for this layout. */
-export function stickyHScrollVisible(layout: StickyHScrollLayout): boolean {
-  if (!layout.overflowsX) {
-    return false;
-  }
-  if (
-    layout.tableBottom <= layout.viewportTop ||
-    layout.tableTop >= layout.viewportBottom
-  ) {
-    return false;
-  }
-  const nativeTop = layout.tableBottom - layout.scrollbar;
-  return nativeTop > layout.viewportBottom - 0.5;
-}
-
-/** Sticky `top` so the bar rides the bottom edge of the note scrollport. */
-export function stickyHScrollTop(
-  viewportHeight: number,
-  barHeight: number,
-): number {
-  return Math.max(0, viewportHeight - barHeight);
+  footVisible: boolean;
+}): boolean {
+  return !state.overflowsX || state.footVisible;
 }
 
 export function stickyThumbMetrics(
@@ -54,71 +33,106 @@ export function stickyThumbMetrics(
   return { thumbWidth, thumbLeft, maxLeft };
 }
 
+function element(className: string): HTMLElement {
+  const created = document.createElement("div");
+  created.className = className;
+  created.setAttribute("aria-hidden", "true");
+  return created;
+}
+
 /**
  * Owns the sticky custom scrollbar and drives `.table-scroll.scrollLeft`.
+ * It inserts itself right after the table scroller.
  */
 export class TableStickyHScroll {
-  readonly root: HTMLElement;
-  private readonly track: HTMLElement;
-  private readonly thumb: HTMLElement;
+  readonly root = element("table-hscroll-sticky");
+  /** Covers the native bar's strip; whether it is on screen hides the mirror. */
+  private readonly foot = element("table-hscroll-foot");
+  private readonly track = element("table-hscroll-track");
+  private readonly thumb = element("table-hscroll-thumb");
   private readonly events = new AbortController();
-  private frame?: number;
-  private resize?: ResizeObserver;
+  private readonly resize: ResizeObserver;
+  private readonly footWatch: IntersectionObserver;
   private drag?: { startX: number; startLeft: number };
+  private overflowsX = false;
+  /** Assumed until the observer reports, so the mirror never flashes over the native bar. */
+  private footVisible = true;
+  private clientWidth = 0;
+  private scrollWidth = 0;
 
   constructor(
     private readonly tableScroll: HTMLElement,
-    private readonly noteScroll: HTMLElement,
-    private readonly barHeight = 14,
+    noteScroll: HTMLElement,
   ) {
-    this.root = document.createElement("div");
-    this.root.className = "table-hscroll-sticky";
     this.root.hidden = true;
-    this.root.setAttribute("aria-hidden", "true");
-    this.track = document.createElement("div");
-    this.track.className = "table-hscroll-track";
-    this.thumb = document.createElement("div");
-    this.thumb.className = "table-hscroll-thumb";
     this.track.append(this.thumb);
     this.root.append(this.track);
-
-    const schedule = (): void => this.schedule();
-    this.noteScroll.addEventListener("scroll", schedule, {
-      passive: true,
-      signal: this.events.signal,
-    });
-    this.tableScroll.addEventListener("scroll", () => this.paintThumb(), {
-      passive: true,
-      signal: this.events.signal,
-    });
-    this.resize = new ResizeObserver(schedule);
-    this.resize.observe(this.tableScroll);
-    this.resize.observe(this.noteScroll);
-    if (this.tableScroll.firstElementChild) {
-      this.resize.observe(this.tableScroll.firstElementChild);
+    tableScroll.after(this.foot, this.root);
+    this.footWatch = new IntersectionObserver(
+      (entries) => {
+        this.footVisible = entries[entries.length - 1]?.isIntersecting ?? true;
+        this.show();
+      },
+      { root: noteScroll },
+    );
+    this.resize = new ResizeObserver(() => this.measureOverflow());
+    this.resize.observe(tableScroll);
+    if (tableScroll.firstElementChild) {
+      this.resize.observe(tableScroll.firstElementChild);
     }
-    window.addEventListener("resize", schedule, { signal: this.events.signal });
+    this.registerPointer();
+    tableScroll.addEventListener("scroll", () => this.paintThumb(), {
+      passive: true,
+      signal: this.events.signal,
+    });
+  }
 
+  private registerPointer(): void {
+    const { signal } = this.events;
     this.thumb.addEventListener(
       "pointerdown",
       (event) => this.onThumbDown(event),
-      { signal: this.events.signal },
+      { signal },
     );
     this.track.addEventListener(
       "pointerdown",
       (event) => this.onTrackDown(event),
-      { signal: this.events.signal },
+      { signal },
     );
     window.addEventListener("pointermove", (event) => this.onDrag(event), {
-      signal: this.events.signal,
+      signal,
     });
-    window.addEventListener("pointerup", () => this.endDrag(), {
-      signal: this.events.signal,
+    window.addEventListener("pointerup", () => this.endDrag(), { signal });
+    window.addEventListener("pointercancel", () => this.endDrag(), { signal });
+  }
+
+  /**
+   * ResizeObserver reports after layout, so these reads do not force one.
+   * A detached table reports zero sizes and stops watching its foot.
+   */
+  private measureOverflow(): void {
+    this.clientWidth = this.tableScroll.clientWidth;
+    this.scrollWidth = this.tableScroll.scrollWidth;
+    const overflowsX = this.scrollWidth > this.clientWidth + 1;
+    if (overflowsX !== this.overflowsX) {
+      this.overflowsX = overflowsX;
+      this.footVisible = true;
+      // Only overflowing tables are watched while the note scrolls.
+      if (overflowsX) {
+        this.footWatch.observe(this.foot);
+      } else {
+        this.footWatch.unobserve(this.foot);
+      }
+    }
+    this.show();
+    this.paintThumb();
+  }
+
+  private show(): void {
+    this.root.hidden = stickyHScrollHidden({
+      overflowsX: this.overflowsX,
+      footVisible: this.footVisible,
     });
-    window.addEventListener("pointercancel", () => this.endDrag(), {
-      signal: this.events.signal,
-    });
-    this.schedule();
   }
 
   private onThumbDown(event: PointerEvent): void {
@@ -140,11 +154,7 @@ export class TableStickyHScroll {
     }
     event.preventDefault();
     const bounds = this.track.getBoundingClientRect();
-    const metrics = stickyThumbMetrics(
-      this.tableScroll.clientWidth,
-      this.tableScroll.scrollWidth,
-      this.tableScroll.scrollLeft,
-    );
+    const metrics = this.metrics();
     const click = event.clientX - bounds.left - metrics.thumbWidth / 2;
     const travel = bounds.width - metrics.thumbWidth;
     if (travel <= 0 || metrics.maxLeft <= 0) {
@@ -152,18 +162,13 @@ export class TableStickyHScroll {
     }
     this.tableScroll.scrollLeft =
       (Math.max(0, Math.min(travel, click)) / travel) * metrics.maxLeft;
-    this.paintThumb();
   }
 
   private onDrag(event: PointerEvent): void {
     if (!this.drag) {
       return;
     }
-    const metrics = stickyThumbMetrics(
-      this.tableScroll.clientWidth,
-      this.tableScroll.scrollWidth,
-      this.tableScroll.scrollLeft,
-    );
+    const metrics = this.metrics();
     const travel = this.track.clientWidth - metrics.thumbWidth;
     if (travel <= 0 || metrics.maxLeft <= 0) {
       return;
@@ -171,70 +176,35 @@ export class TableStickyHScroll {
     const delta = event.clientX - this.drag.startX;
     this.tableScroll.scrollLeft =
       this.drag.startLeft + (delta / travel) * metrics.maxLeft;
-    this.paintThumb();
   }
 
   private endDrag(): void {
     delete this.drag;
   }
 
-  private schedule(): void {
-    if (this.frame !== undefined) {
-      return;
-    }
-    this.frame = requestAnimationFrame(() => {
-      delete this.frame;
-      this.measure();
-    });
-  }
-
-  /** Recompute visibility, sticky top, and thumb geometry. */
-  measure(): void {
-    if (!this.tableScroll.isConnected || !this.noteScroll.isConnected) {
-      return;
-    }
-    const overflowsX =
-      this.tableScroll.scrollWidth > this.tableScroll.clientWidth + 1;
-    const table = this.tableScroll.getBoundingClientRect();
-    const note = this.noteScroll.getBoundingClientRect();
-    const scrollbar = Math.max(
-      this.barHeight,
-      this.tableScroll.offsetHeight - this.tableScroll.clientHeight,
-    );
-    const visible = stickyHScrollVisible({
-      overflowsX,
-      tableTop: table.top,
-      tableBottom: table.bottom,
-      viewportTop: note.top,
-      viewportBottom: note.bottom,
-      scrollbar,
-    });
-    this.root.hidden = !visible;
-    if (!visible) {
-      return;
-    }
-    this.root.style.top = `${stickyHScrollTop(this.noteScroll.clientHeight, this.barHeight)}px`;
-    this.paintThumb();
-  }
-
-  private paintThumb(): void {
-    const metrics = stickyThumbMetrics(
-      this.tableScroll.clientWidth,
-      this.tableScroll.scrollWidth,
+  private metrics(): ReturnType<typeof stickyThumbMetrics> {
+    return stickyThumbMetrics(
+      this.clientWidth,
+      this.scrollWidth,
       this.tableScroll.scrollLeft,
     );
+  }
+
+  /** Runs when the table pans or resizes, never for a note scroll. */
+  private paintThumb(): void {
+    if (!this.overflowsX) {
+      return;
+    }
+    const metrics = this.metrics();
     this.thumb.style.width = `${metrics.thumbWidth}px`;
     this.thumb.style.transform = `translateX(${metrics.thumbLeft}px)`;
   }
 
   destroy(): void {
     this.events.abort();
-    this.resize?.disconnect();
-    delete this.resize;
-    if (this.frame !== undefined) {
-      cancelAnimationFrame(this.frame);
-      delete this.frame;
-    }
+    this.resize.disconnect();
+    this.footWatch.disconnect();
+    this.foot.remove();
     this.root.remove();
   }
 }

@@ -4,7 +4,7 @@
  * embedder mounts its folders (vaults, and the host's data) and says where
  * the built editor, page shim and workers are.
  */
-import { uriPath, type LumiereHost } from "@workshop/host-node/core";
+import type { LumiereHost, MenuContribution } from "@workshop/host-node/core";
 import {
   startHostWeb,
   type EditorPageUrls,
@@ -16,9 +16,7 @@ import type {
   WorkerLauncher,
   WorkerName,
 } from "@workshop/markdown/portable";
-import type { MenuContribution } from "@workshop/host-node/core";
 import type { WindowBackend } from "../shell/backend";
-import { VaultTrust } from "../shared/vault-trust";
 import { createLocalBackend, EventHub } from "./backend";
 import { dataFile } from "./json-file";
 import { LocalVaults } from "./vaults";
@@ -53,12 +51,7 @@ export async function startLocalHost(
 ): Promise<LocalHost> {
   const { files, dataRoot } = config;
   const events = new EventHub();
-  const trust = new VaultTrust(
-    dataFile(files, `${dataRoot}/window/trust.json`),
-    uriPath,
-  );
-  await trust.load();
-  trust.onQuestionsChange(() => events.emit({ type: "trust" }));
+
   const host = await startHostWeb({
     files,
     dataRoot,
@@ -67,7 +60,6 @@ export async function startLocalHost(
     contributed: config.contributed,
     ...(config.menus ? { menus: config.menus } : {}),
     ...(config.logger ? { logger: config.logger } : {}),
-    vaultCode: trust,
   });
   const vaults = new LocalVaults(
     files,
@@ -79,7 +71,6 @@ export async function startLocalHost(
     host,
     files,
     vaults,
-    trust,
     layout: dataFile(files, `${dataRoot}/window/window.json`),
     events,
     pages: config.pages,

@@ -5959,3 +5959,284 @@ error at `test/unit/cursor-bridge/host.test.ts:210`; PDF typechecking is not
 reached. Browser/native suites and Host GUI retest were not run for this
 focused fix. No push; the R7 plan records the local commit, package/install
 verification and exact parent-computerUse retest steps.
+
+## Smooth scrolling through Mermaid notes — 2026-10-26
+
+The owner found scrolling through notes with Mermaid diagrams still bad
+after #389, #392, #396, #398 and #401. Measured first, with a new probe
+(`pnpm measure:scroll`, test/perf) on a generated note (40 sections, a
+Mermaid diagram of one of seven kinds in each, and math, tables, images,
+callouts and code): headless Chromium at 1280×900, scrolled by a fast
+wheel, trackpad flicks, reading bursts, Vim Ctrl+D and `j` held, PageDown
+held and with pauses, and a scrollbar drag. It records frame times, long
+animation frames with their scripts, wheel and key input latency, layout
+shifts, and how long diagrams stay blank on screen. Obsidian 1.14.4 was
+studied with REA as a behaviour reference (notes in the session's shared
+folder); no code was taken.
+
+Frame rates were already 60 fps at full CPU speed; what was bad was
+visual, and found in this order:
+
+1. Mermaid drew a diagram only once it was on screen and scrolling had
+   stopped for 80 ms (#389, #396). While scrolling, 92% of frames showed
+   Mermaid source in place of a diagram, and each diagram then changed
+   height under the reader when it drew. Obsidian draws as soon as
+   CodeMirror mounts the widget (the viewport plus about a screen); so does
+   `diagrams/mount-queue.ts` now: one at a time, a frame apart, nearest the
+   window first, a diagram scrolled past before its turn taken up when its
+   block mounts again (`mw-render-remount`, from MarkdownBlock).
+2. The pending diagram's reserved height was dropped as soon as the
+   placeholder source's highlighting asked for a measure, and the block's
+   ResizeObserver recorded the reserve as its height. Fence processors now
+   mark unfinished elements `data-render-pending` (render/api.ts); a block
+   keeps its reserve, and records no height, until none is left, and
+   drops a reserve it still holds when it comes back drawn.
+3. The reserve was guessed as 48 px plus 72 px a source line, up to four
+   times off (a class diagram drawing at 390 px reserved 1560 px).
+   `webview/ui/mermaid-height.ts` guesses from the diagram's structure,
+   within 25% of the drawn height on 15 diagrams at two widths.
+4. Two listeners on the whole editor could cancel wheel events (the scroll
+   restore's domEventHandlers and the jump recorder's capture listener), so
+   each wheel gesture waited for the main thread. They are passive now.
+5. MarkdownBlock, note embeds and tables read layout while CodeMirror
+   built and dropped them (clientWidth in toDOM, getBoundingClientRect in
+   destroy), one forced layout per block; the reads were redundant.
+
+Before and after (medians of 3 alternating runs of main at abc28d08 and
+this branch, 1x CPU; the machine was shared with other sessions, so frame
+timings vary about ±25% between runs, counts much less):
+
+| Scenario | Blank-diagram frames | Layout shift | Wheel input p50 |
+| --- | --- | --- | --- |
+| Fast wheel | 92% → 0% | 6.1 → 1.2 | 34 → 19 ms |
+| Trackpad flicks | 91% → 0% | 5.0 → 0.6 | 34 → 17 ms |
+| Reading bursts | 13% → 0% | 4.3 → 1.2 | 34 → 17 ms |
+| Vim Ctrl+D held | 23% → 3% | 1.3 → 1.2 | |
+| Vim `j` held | 49% → 0% | 9.2 → 7.8 | |
+| PageDown with pauses (2 runs) | 20% → 1.5% | 10.8 → 4.3 | |
+| PageDown held, 30/s | 31% → 13% | 1.5 → 8.9 | |
+| Scrollbar drag | 71% → 35% | 0.2 → 0.2 | |
+
+Holding `j` no longer has a 317 ms frame (worst 33 ms). A diagram on
+screen draws within about 20 ms instead of 180 ms. Holding PageDown at
+key-repeat speed now draws diagrams while paging, more than Mermaid can
+keep a page ahead of, so they move the text as they draw; before they
+stayed as source until the key was let go. At 4x CPU slowdown the cost of
+drawing during the scroll shows: about twice the frames over 50 ms in a
+fast wheel scroll (12 → 24), work that main did after the scroll stopped;
+PageDown's long-frame blocking fell from 1105 to 242 ms.
+
+Not changed: Mermaid still runs on the main thread (it measures text in
+the DOM); the tables' and sticky headings' wheel listeners still cancel
+wheel events over them; a fresh screen of blocks after a jump still costs
+50–140 ms at 4x. `pnpm check` and `pnpm test:browser` pass; the real
+VS Code suite was not run (it opens VS Code windows on the owner's Mac).
+
+## Scroll stability in VS Code and Cursor — 2026-10-26
+
+The owner still found scrolling bad after #389–#408 and #405 and asked for
+the extension's scroll stability first, with Grok Bot's PRs reviewed and
+design problems fixed. Three reviews of #389/#396, #392/#401 and
+#398/#408, and one of #405, found the causes below; this branch takes in
+#405 and fixes them, each with a unit test.
+
+Measured in a real VS Code 1.142 and Cursor with a Playwright probe
+(`test/vscode/scroll-stability.spec.ts`, left in #410's commits, not in
+the repo): a 40-section note with a Mermaid diagram, a formula, a table,
+a callout, an image and code in each, flicked straight after opening,
+stepped down, flicked, jumped to 75% and read upward. It also lists the
+wheel and touch listeners between the editor's scroller and the window
+that are not passive (Chromium waits on the page for the first event of
+each gesture past one).
+
+| | main (401a299c) | this branch |
+| --- | --- | --- |
+| Blocking wheel/touch listeners | 2 (jump recorder, restore cancel) | 0 |
+| Flick right after opening, worst frame | 125 ms VS Code, 151 ms Cursor | 18 ms, 33 ms |
+| Frames over 50 ms in that flick | 1, 4 | 0, 0 |
+| Text moved after a far jump | 0 (213 px midway) | 0 |
+| Text moved stepping down or reading up | 0 | 0 |
+
+Fixed, in the order of the commits:
+
+1. A block rendered while CodeMirror built it, before it was in the page,
+   kept its reserved height for good (a one-line formula: a 110 px gap),
+   and the gap was then remembered as its height. Every mount now asks to
+   release the reserve at CodeMirror's next measure, which also ends a
+   forced layout per drawn diagram.
+2. Block heights were remembered as the largest ever seen and the guess
+   from the source lifted any smaller one; the latest painted height now
+   wins, and a block holding its reserve records none.
+3. Cleanup kept on the widget that built an element was lost when an edit
+   above made CodeMirror destroy it through an equal widget (blocks,
+   inline renders, footnotes, tasks); it is kept by element now.
+4. Each block copied its HTML into a string cache on every measure, read
+   almost never; removed. The block pool alone keeps finished blocks.
+5. Mermaid drew the diagram nearest the window first, above or below;
+   while the reader scrolls, diagrams behind them now wait until the
+   scroll stops, measured from the note's scroller.
+6. A rendered block across the top edge that resized moved all the text
+   below it (CodeMirror holds the block's top, off screen): 213 px after a
+   far jump in VS Code. The editor now holds its bottom instead
+   (`editor/keep-below-still.ts`), standing aside while a restored
+   position is pinned.
+7. Restoring a position: the pin ended only on input over the text, so a
+   wheel over the readable-width margin or the scrollbar snapped back; and
+   the pin and CodeMirror both undid growth above the line, which left a
+   reopened note a whole image past its saved line. Both fixed.
+8. Live Preview parsed the whole note inside a scroll update once the
+   viewport passed its first 10,000 characters (a 139–146 ms task on a
+   1 MB note, 55 ms at 300 KB); the parse now resumes to the viewport and
+   finishes in idle slices, and heading folds use a partial tree.
+9. Tables: the wheel forwarder and its dead motion state are gone; a
+   mostly vertical diagonal wheel over a wide table scrolls the note; the
+   sticky horizontal scrollbar is CSS, not a frame of layout per table;
+   focus in the note leaves an off-screen table; a retained cell no longer
+   takes focus from the find bar; the caret at a cell's end is not clipped.
+10. Comments citing Obsidian's minified names (`RW`) and internals were
+    reworded; four caches share one least-recently-used map.
+
+The owner chose to keep only unit tests: the new browser and real-VS Code
+tests written while fixing these (block reserve, straddling block, restore
+under a wheel, cell caret, the 1 MB parse, table focus, diagonal wheel and
+sticky bar, and the VS Code scroll probe) were dropped. Existing browser
+tests that pinned removed behaviour (the table wheel forwarder, heights
+that only grew) were updated.
+
+Left for later: rendering still runs inside CodeMirror's update when a
+block mounts (#392), and a listener returning a promise silently makes it
+asynchronous again (the event bus's `sync` tag); embeds keep a second
+resource cache, and neither is invalidated when a file changes; publishing
+a new tree re-indexes the whole note; the note is parsed twice (Live
+Preview and CodeMirror's language); a far jump in a huge note before the
+background parse ends still parses to the viewport at once.
+
+## Remove the community plugin PoC — 2026-10-27
+
+The owner removed the Obsidian community plugin proof of concept (#385,
+#387), its marketplace (#388) and the prompt that asked whether a vault's
+plugins may run (2c3b3de2), after measuring what it cost:
+
+- It ran in every note's webview. In the owner's trusted vault each open
+  loaded 8.3 MB of plugin code (Excalidraw, Dataview, PDF++, obsidian-git)
+  and read all 4,041 notes for it, over SSH on their CVM.
+- Its panel host was in `CRITICAL_PANEL_HOSTS`, so a note's `ready` waited
+  for it before showing any text.
+- Its vault mirror sent each open note the whole file list on every vault
+  change. With OKF's rescans (fixed separately), this kept the extension
+  host busy 22.2 s of a 24 s run in a 107,654-file vault.
+
+The vault settings reader from #83 stays (`plugins/obsidianCompat`: the
+Obsidian config folder, property types and app settings), as does its
+switch and `configFolder` setting. The webview feature list goes back to
+`features` alone: no workbench feature has a webview surface. The
+marketplace command and setting leave `package.json`. Obsidian community
+plugins are listed as not implemented in `CAPABILITIES.md`.
+
+## Opening notes in a large vault — 2026-10-27
+
+The owner found opening notes slow on their CVM (Cursor over Remote-SSH).
+The CVM's Lumière logs showed the extension host not answering webviews
+for over 10 s: `ready`, `unresolved` (up to 503 timeouts in one minute),
+`knownNotes` and Git `baseline` timed out, and one open failed outright
+("Editor bootstrap failed"). The owner's vault is a code repository with
+notes in it: about 126,000 files in 19,900 folders, 4,041 notes, and a
+3.2 GB Git history.
+
+Measured in Cursor 3.27 with a disposable vault of the same shape
+(107,654 files, 4,003 notes, in Git) and a CPU profile of the extension
+host while three notes opened: the host was busy 22.2 s of about 24 s.
+Two listeners did work proportional to every file for every note the
+vault indexed (it changes once per indexed note):
+
+1. The community plugin PoC (#385, #387) sent each open note's webview
+   the whole file list on every vault change and read every note on each
+   open. The owner chose to remove the PoC and the marketplace; that is
+   its own change.
+2. OKF bundle detection re-read every file on each vault change. It now
+   follows changes once they settle (300 ms); the end of an indexing pass
+   still refreshes at once. Unit test: a burst of 500 changes reads the
+   file list once.
+
+With a fix for both, the same run kept the host busy 2.0 s.
+
+Measuring also showed that Cursor holds each new webview frame for 1 s
+while Playwright is attached over CDP; timings were taken without it.
+
+## Keep the text editor the reader chose — 2026-10-27
+
+The owner reported that opening a note in the built-in text editor in
+Cursor switched it back to Lumière. Reclaim (`host/reclaim.ts`, on by
+default in Cursor) moved every associated note that landed in the text
+editor back, including a switch in place (**Reopen Editor With… › Text
+Editor**, Cursor's **Markdown** button). Only asking twice within 10 s
+stuck, and after those 10 s a command selection in that tab (a find, go
+to line, an agent's jump) moved it back too.
+
+Reclaim now moves only what a tool opens: a new text tab (a chat link, a
+review card) and a switch into Cursor's own Markdown editor. A text tab
+that arrives and is not reclaimed (a switch in place, Open as Text,
+asking twice) is the reader's: its note is kept as text until its last
+text tab closes, also against selection reclaim and across a window
+reload (workspace state). Unit tests cover the policy and the host.
+
+Not covered: **Open With… › Text Editor** from the explorer on a closed
+note opens a new text tab, which looks like a tool's and is reclaimed
+once; asking again within 10 s keeps it.
+
+## Quality checks as a merge gate — 2026-10-27
+
+The owner asked for scroll smoothness and opening speed to become checks
+every pull request passes before it merges. `pnpm test:quality`
+(`test/quality`, README there) runs them; CI's `quality` job runs it, and
+AGENTS.md makes `check`, `browser` and `quality` the merge gate, with a
+local run when GitHub Actions cannot run.
+
+- Scrolling, in Chromium with the real webview: no wheel or touch listener
+  that is not passive anywhere in the page; text holds still while blocks
+  render, after a far jump and when a block across the top edge grows; a
+  flick straight after opening keeps frames short; a 1 MB note scrolls
+  without long tasks.
+- Opening: first paint and every feature loaded for a small note, a
+  16,000-block note and a note with diagrams; and on the real host with an
+  in-memory vault of 3,000 and 30,000 files, the bytes an open note receives
+  per vault change, host work per change (it must not grow with the vault)
+  and `ready` in the large vault.
+
+Counts, bytes and pixels are exact; timing budgets are for the reference
+machine and stretch with a measured speed factor (a fixed parse), so slower
+CI runners pass and fast machines are not given slack. Proven against the
+regressions they guard: a planted non-passive wheel listener and the
+text-holding fix of #410 switched off both fail; `main` before #413 and
+the community plugin removal fails the large-vault check (352 KB per change
+with 3,000 files, 3.9 MB with 30,000) and passes with them. The real-editor
+probes stay local: VS Code and Cursor cannot run in CI.
+
+## Real-VS Code tests before merging; the three that failed — 2026-10-27
+
+The owner found the test suites too long. `pnpm check:full`, with the
+real-VS Code specs (about 5 minutes), was required before every push; it
+now runs before merging, and before pushing a change to editor
+integration (AGENTS.md says what counts). Every push still runs
+`pnpm check` and `pnpm test:browser`.
+
+Three real-VS Code specs had failed on `main` since 20 October:
+
+1. `vim-caret` and `vim-caret-vscodevim` measured our caret against VS
+   Code's own, but #138 made the Obsidian fat caret the default and opted
+   only the browser versions of these specs into `caretStyle: "vscodevim"`.
+   The real-VS Code specs now choose it too.
+2. `font-size` expected Properties at the body size; #137 made them
+   0.875em, as Obsidian's, and the browser version already expects that.
+3. With that fixed, `font-size` found a real bug: after a live font size
+   change, every line number below the Properties sheet sat 32 px off its
+   line, at every size once the sheet's fixed reserve was gone. Two causes:
+   - the sheet's 2rem bottom margin collapsed through its wrapper, so the
+     height CodeMirror measured left it out (hidden until now by the
+     reserve: a box with a min-height does not collapse its child's
+     margin). The wrapper now keeps it (`display: flow-root`);
+   - the reserve (#100, #139) was never released, so the sheet stayed at
+     its estimated height whatever the font size: padded in smaller text,
+     and in larger text grown past a height map that no longer followed.
+     It is now released once CodeMirror has measured the sheet in the page.
+   Unit tests cover both; the three specs pass in VS Code.

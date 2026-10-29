@@ -335,3 +335,98 @@ test("lazy quote continuation lines keep the quote bar (Obsidian LP / CommonMark
   );
   assert.deepEqual(quoteLines, [1, 2]);
 });
+
+test("decoratePersistentOffViewport caches persistent nodes per Tree and skips full-tree walks on plain Markdown", () => {
+  const doc = Array.from(
+    { length: 200 },
+    (_, i) => `## Heading ${i}\n\nPlain **paragraph** ${i}.`,
+  ).join("\n\n");
+  const state = EditorState.create({
+    doc,
+    extensions: [
+      documentTree,
+      inlineRenderers.of({
+        nodes: ["WikiEmbed", "Image"],
+        persistent: true,
+        decorate(node, { mark }) {
+          mark(node.from, node.to, "persist-embed");
+        },
+      }),
+    ],
+  });
+  const tree = state.field(documentTree);
+  const origIterate = tree.iterate.bind(tree);
+  let fullWalks = 0;
+  tree.iterate = ((spec: Parameters<typeof tree.iterate>[0]) => {
+    if (spec.from === undefined && spec.to === undefined) {
+      fullWalks++;
+    }
+    return origIterate(spec);
+  }) as typeof tree.iterate;
+  try {
+    inlineDecorations(state, [{ from: 0, to: 120 }]);
+    assert.equal(fullWalks, 1, "first query indexes persistent nodes once");
+    for (let step = 1; step <= 10; step++) {
+      inlineDecorations(state, [{ from: step * 100, to: step * 100 + 120 }]);
+    }
+    assert.equal(
+      fullWalks,
+      1,
+      "subsequent viewport steps perform 0 full-tree walks",
+    );
+  } finally {
+    tree.iterate = origIterate;
+  }
+
+  const withEmbed =
+    "![[diagram.png|600x400]]\n\n" + "Paragraph line.\n".repeat(40);
+  const embedState = EditorState.create({
+    doc: withEmbed,
+    extensions: [
+      documentTree,
+      inlineRenderers.of({
+        nodes: ["WikiEmbed"],
+        persistent: true,
+        decorate(node, { mark }) {
+          mark(node.from, node.to, "persist-embed");
+        },
+      }),
+    ],
+  });
+  const offViewportClasses: string[] = [];
+  inlineDecorations(embedState, [{ from: 200, to: withEmbed.length }]).between(
+    0,
+    withEmbed.length,
+    (_from, _to, value) => {
+      if (value.spec.class) {
+        offViewportClasses.push(String(value.spec.class));
+      }
+    },
+  );
+  assert.ok(offViewportClasses.includes("persist-embed"));
+});
+
+test("ATX heading matches Obsidian formatting-header: single delimiter space and visible empty heading when unrevealed", () => {
+  const doc = "#  Heading title\n\n# \n\nafter";
+  const revealed = EditorState.create({
+    doc,
+    selection: { anchor: 3 },
+    extensions: [documentTree],
+  });
+  const marks: Array<{ cls: string; text: string }> = [];
+  inlineDecorations(revealed, [{ from: 0, to: doc.length }]).between(
+    0,
+    doc.length,
+    (from, to, value) => {
+      if (from < to && typeof value.spec.class === "string") {
+        marks.push({ cls: value.spec.class, text: doc.slice(from, to) });
+      }
+    },
+  );
+  assert.deepEqual(marks, [
+    { cls: "md-syntax-mark", text: "#" },
+    { cls: "md-header-space", text: " " },
+    { cls: "md-syntax-mark", text: "#" },
+    { cls: "md-header-space", text: " " },
+  ]);
+});

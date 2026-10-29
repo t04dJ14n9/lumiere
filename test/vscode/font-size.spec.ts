@@ -84,7 +84,11 @@ test("lumiere.markdown.editor.fontSize sets the note's body size (16px by defaul
         2,
       );
       expect(measured.tableCell, `${label} table`).toBe(expected);
-      expect(measured.properties, `${label} properties`).toBe(expected);
+      // Properties are a size smaller, as Obsidian's (#137).
+      expect(measured.properties, `${label} properties`).toBeCloseTo(
+        expected * 0.875,
+        2,
+      );
       expect(measured.copyCode / expected, `${label} copy button`).toBeCloseTo(
         0.6875,
         2,

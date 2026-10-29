@@ -7,8 +7,10 @@
  * module (host/page.ts puts it first).
  */
 import {
+  INSET_VARIABLE,
   isEmbeddingMessage,
   isMenuMessage,
+  parseInsetMessage,
   isPortMessage,
   isShownMessage,
   parseThemeMessage,
@@ -67,8 +69,22 @@ function listenToEmbedder(send: (frame: PageFrame) => void): void {
       send({ ch: "ui", data: { type: "focus" } });
     } else if (isMenuMessage(event.data)) {
       openMenuAtSelection(document);
+    } else {
+      applyInset(event.data);
     }
   });
+}
+
+/** The embedder's controls over the page's top; the editor measures again. */
+function applyInset(data: unknown): void {
+  const inset = parseInsetMessage(data);
+  if (inset) {
+    document.documentElement.style.setProperty(
+      INSET_VARIABLE,
+      `${inset.top}px`,
+    );
+    window.dispatchEvent(new Event("resize"));
+  }
 }
 
 function meta(name: string): string | undefined {

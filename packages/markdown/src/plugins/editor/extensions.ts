@@ -1,5 +1,4 @@
-import { Prec } from "@codemirror/state";
-import type { Extension } from "@codemirror/state";
+import { Prec, type Extension, type StateEffect } from "@codemirror/state";
 import type { Disposer } from "@workshop/core";
 
 export type ExtensionSlot = "override" | "suggest" | "keymap" | "base";
@@ -21,9 +20,15 @@ interface Entry {
 export class ExtensionRegistry {
   private readonly entries = new Set<Entry>();
   private sequence = 0;
+  private batchDepth = 0;
+  private dirty = false;
+  private pendingEffects: StateEffect<unknown>[] = [];
   constructor(
     private readonly rank: (owner: string) => number,
-    private readonly changed: (extensions: Extension) => void,
+    private readonly changed: (
+      extensions: Extension,
+      effects?: readonly StateEffect<unknown>[],
+    ) => void,
   ) {}
   ordered(): readonly Entry[] {
     return [...this.entries].sort(
@@ -35,9 +40,58 @@ export class ExtensionRegistry {
     );
   }
   private refresh(): void {
+    if (this.batchDepth > 0) {
+      this.dirty = true;
+      return;
+    }
+    this.dirty = true;
+    this.flush();
+  }
+  flush(): void {
+    if (!this.dirty && this.pendingEffects.length === 0) {
+      return;
+    }
+    this.dirty = false;
+    const effects =
+      this.pendingEffects.length > 0
+        ? this.pendingEffects.splice(0)
+        : undefined;
     this.changed(
       this.ordered().map((entry) => wrap[entry.slot](entry.extension)),
+      effects,
     );
+  }
+  dispatchEffect(effect: StateEffect<unknown>): boolean {
+    if (this.batchDepth > 0) {
+      this.pendingEffects.push(effect);
+      return true;
+    }
+    return false;
+  }
+  batch<T>(fn: () => T): T {
+    this.batchDepth++;
+    let finished = false;
+    const complete = () => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      this.batchDepth--;
+      if (this.batchDepth === 0) {
+        this.flush();
+      }
+    };
+    try {
+      const result = fn();
+      if (result instanceof Promise) {
+        return result.finally(complete) as T;
+      }
+      complete();
+      return result;
+    } catch (error) {
+      complete();
+      throw error;
+    }
   }
   register(
     owner: string,

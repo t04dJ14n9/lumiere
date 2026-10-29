@@ -29,7 +29,7 @@ export class PluginSwitch {
     string,
     { handle: PluginHandle<unknown>; signature: string }
   >();
-  private queue = Promise.resolve();
+  private queue: Promise<unknown> = Promise.resolve();
   private live = true;
 
   constructor(private readonly root: BaseContext) {
@@ -45,10 +45,12 @@ export class PluginSwitch {
   update(
     managed: readonly string[],
     wanted: () => readonly WantedPlugin[],
-  ): Promise<void> {
+  ): Promise<ReadonlySet<string>> {
     const next = this.queue
       .catch(() => {})
-      .then(() => (this.live ? this.reconcile(managed, wanted()) : undefined));
+      .then(() =>
+        this.live ? this.reconcile(managed, wanted()) : new Set<string>(),
+      );
     this.queue = next;
     this.root.track(next);
     return next;
@@ -57,11 +59,12 @@ export class PluginSwitch {
   private async reconcile(
     managed: readonly string[],
     wanted: readonly WantedPlugin[],
-  ): Promise<void> {
+  ): Promise<ReadonlySet<string>> {
     const byName = new Map(wanted.map((entry) => [entry.plugin.name, entry]));
     const stops: Promise<void>[] = [];
     const starts: WantedPlugin[] = [];
     const updates: Promise<void>[] = [];
+    const affected = new Set<string>();
 
     for (const name of managed) {
       const next = byName.get(name);
@@ -70,15 +73,18 @@ export class PluginSwitch {
         if (current) {
           this.running.delete(name);
           stops.push(current.handle.dispose());
+          affected.add(name);
         }
         continue;
       }
       const signature = next.signature ?? "";
       if (!current) {
         starts.push(next);
+        affected.add(name);
       } else if (current.signature !== signature) {
         current.signature = signature;
         updates.push(current.handle.update(next.config));
+        affected.add(name);
       }
     }
 
@@ -88,6 +94,13 @@ export class PluginSwitch {
     if (stops.length) {
       await Promise.all(stops);
     }
+    // Start service providers before optional consumers so plugins like tables
+    // and math bind optional services (formatting, links, vim) on first plug
+    // without tearing down and restarting their fiber mid-phase.
+    starts.sort(
+      (a, b) =>
+        (b.plugin.provides?.length ?? 0) - (a.plugin.provides?.length ?? 0),
+    );
     for (const entry of starts) {
       const handle = this.root.plugin(entry.plugin, entry.config);
       this.running.set(entry.plugin.name, {
@@ -95,5 +108,6 @@ export class PluginSwitch {
         signature: entry.signature ?? "",
       });
     }
+    return affected;
   }
 }
