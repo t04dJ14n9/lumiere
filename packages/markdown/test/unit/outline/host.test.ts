@@ -356,7 +356,8 @@ test("expandMode all keeps parents expanded on build and only reveals on follow"
   const { panel, cursor } = fixture.panel("one");
   fixture.open(panel);
   await tick();
-  assert.equal(fixture.view.source.roots()[0]?.expanded, true);
+  const roots = await fixture.view.source.roots();
+  assert.equal(roots[0]?.expanded, true);
   fixture.expands.length = 0;
   fixture.collapses.length = 0;
   cursor.head = fixture.texts.get("A.md")!.indexOf("body-b");
