@@ -342,7 +342,7 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
     pie?: { useMaxWidth?: boolean };
     themeVariables?: { fontFamily?: string };
   };
-  let initArg: MermaidInitArg | undefined;
+  let initArg = {} as MermaidInitArg;
   mermaid.initialize = ((config: unknown) => {
     initCalls++;
     initArg = config as MermaidInitArg;
