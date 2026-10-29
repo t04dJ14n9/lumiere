@@ -4,10 +4,10 @@
  * opened from Finder or the command line reaches the window this way).
  */
 import { useCallback, useMemo, useState, type Dispatch } from "react";
-import { api, isNotePath, relativeTo, type ServerEvent } from "./api";
+import { isNotePath, relativeTo, type ServerEvent } from "./api";
+import { backend } from "./backend";
 import type { VaultState } from "./hooks";
 import type { TabsAction } from "./tabs";
-import { inDesktopApp, pickFolder } from "./tauri";
 
 export interface Opening {
   /** Open a folder as a vault; with no folder, ask with the native picker or folder dialog. */
@@ -35,7 +35,8 @@ export function useOpening(
   );
   const { reload, select, refreshFiles } = vaults;
   const closeVault = useCallback(
-    (folder: string) => report(api.closeVault(folder).then(() => reload())),
+    (folder: string) =>
+      report(backend().vaults.close(folder).then(() => reload())),
     [reload, report],
   );
   const openPath = useCallback(
@@ -82,17 +83,18 @@ function chooseVault(
   setPickingVault: (picking: boolean) => void,
   report: (work: Promise<unknown>) => void,
 ): void {
+  const host = backend();
   if (folder !== undefined) {
     setPickingVault(false);
-    report(api.addVault(folder));
-  } else if (!inDesktopApp()) {
-    setPickingVault(true);
-  } else {
+    report(host.vaults.add(folder));
+  } else if (host.pickFolder) {
     report(
-      pickFolder().then((chosen) =>
-        chosen ? api.addVault(chosen) : undefined,
+      host.pickFolder().then((chosen) =>
+        chosen ? host.vaults.add(chosen) : undefined,
       ),
     );
+  } else if (host.typesPaths) {
+    setPickingVault(true);
   }
 }
 
@@ -122,5 +124,5 @@ function openNotePath({
       return;
     }
   }
-  report(api.open(path));
+  report(backend().vaults.open(path));
 }

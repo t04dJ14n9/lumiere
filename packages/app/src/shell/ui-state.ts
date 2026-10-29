@@ -1,6 +1,6 @@
 /**
  * The window's layout and theme as the window uses them: read from the
- * server once, changed here at once, and saved back (shared/ui-state.ts).
+ * backend once, changed here at once, and saved back (shared/ui-state.ts).
  */
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -8,6 +8,13 @@ import {
   readUiState,
   type UiState,
 } from "../shared/ui-state";
+import { backend } from "./backend";
+
+/** The layout as a Lumière server keeps it (`/api/ui`), for http-backend.ts. */
+export const httpUi = {
+  load: async () => readUiState(await (await fetch("/api/ui")).json()),
+  save,
+};
 
 async function save(change: Partial<UiState>): Promise<UiState> {
   const response = await fetch("/api/ui", {
@@ -35,10 +42,10 @@ export function useUiState(
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     report(
-      fetch("/api/ui")
-        .then((response) => response.json())
-        .then((saved: unknown) => {
-          setState(readUiState(saved));
+      backend()
+        .ui.load()
+        .then((saved) => {
+          setState(saved);
           setLoaded(true);
         }),
     );
@@ -46,7 +53,7 @@ export function useUiState(
   const update = useCallback(
     (change: Partial<UiState>) => {
       setState((current) => ({ ...current, ...change }));
-      report(save(change));
+      report(backend().ui.save(change));
     },
     [report],
   );

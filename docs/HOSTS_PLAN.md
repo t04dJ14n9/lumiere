@@ -124,26 +124,42 @@ packages/core, agents, markdown, pdf   the plugins: the same in every host
         │
         ├─ packages/markdown/src/host  VS Code's host services (the extension)
         │
-        └─ packages/host-node          Node's host services, editor routes, tree views,
-             │                         page shim, embedding/palette/views contracts
+        └─ packages/host-node          the shared host (src/core.ts: no Node), on Node's
+             │                         platform; editor routes, tree views, page shim,
+             │                         embedding/palette/views contracts
+             ├─ packages/host-web      the shared host on a browser's folders (no Node)
              ├─ packages/dsh           host-node's routes on DSH's server + DSH's preview plugin
-             └─ packages/app           Lumière's server (auth, API) + the window (React)
-                  └─ apps/desktop      Tauri: native window, menu, picker, Finder; nothing else
+             └─ packages/app           the window (React) over a WindowBackend: Lumière's
+                  │                    server over HTTP (src/server), or host-web in the
+                  │                    same page (src/local)
+                  ├─ apps/desktop      Tauri: native window, menu, picker, Finder; nothing else
+                  └─ apps/web          a static site: the window on host-web, offline
 ```
 
 Arrows point one way only. The `architecture/boundaries` lint rule enforces
 it:
 
-- host-node imports no embedder and no `vscode`;
-- embedders import host-node only through its four public entries;
+- host-node and host-web import no embedder and no `vscode`;
+- embedders import host-node only through its public entries; host-web
+  uses only `@workshop/host-node/core` (and `/embedding`), which a test
+  bundles for a browser and fails on any Node built-in;
 - the app knows nothing of DSH.
+
+The shared host is written once against `HostPlatform`
+(`packages/host-node/src/host/platform.ts`): files named by `file:` URIs, a
+small store, workers and SHA-256. Node's platform keeps the real-path
+containment and no-follow writes; host-web mounts `VaultFileSystem`s (memory,
+a folder handle, IndexedDB, the iPad's native files) at absolute paths. It
+lives inside host-node until the PRs open on those files land, then moves to
+its own package.
 
 Where each kind of work belongs:
 
 | If the change is about | It goes in |
 | --- | --- |
 | how a note edits, renders or links | the plugin (`packages/markdown/src/plugins/<id>`), for every host at once |
-| a host service outside VS Code (files, settings, dialogs, trees) | `packages/host-node/src/host` |
+| a host service outside VS Code (files, settings, dialogs, trees) | `packages/host-node/src/host`, over `HostPlatform` |
+| a browser's or the iPad's files, workers or pages | `packages/host-web` |
 | what a page and its embedder say to each other | `packages/host-node/src/embedding.ts` (both sides read it) |
 | the desktop window: sidebar, tabs, menus as the page sees them | `packages/app/src/shell` |
 | vaults, files, auth, the API | `packages/app/src/server` |
@@ -161,8 +177,11 @@ Each contract is written once, in code. Change both sides in the same PR.
 | Contract | Written in | Sides |
 | --- | --- | --- |
 | Host services | `packages/markdown/src/shared/host` | plugins ↔ VS Code adapter, host-node |
-| Page ↔ host socket | `packages/host-node/src/protocol.ts` | page shim ↔ panels |
-| Embedder ↔ page | `packages/host-node/src/embedding.ts` | DSH client, app window ↔ page shim |
+| Host platform | `packages/host-node/src/host/platform.ts` | shared host ↔ Node's platform, host-web |
+| Page ↔ host socket | `packages/host-node/src/protocol.ts` | page shim ↔ panels, over a socket or a `MessagePort` |
+| Embedder ↔ page | `packages/host-node/src/embedding.ts` | DSH client, app window ↔ page shim (also `connect`/`port` for a channel) |
+| Window ↔ its host | `packages/app/src/shell/backend.ts` (`WindowBackend`) | window ↔ `http-backend.ts`, `src/local` |
+| A vault's folder in a browser | `packages/host-web/src/vault-fs.ts` (`VaultFileSystem`) | host-web ↔ apps/web, the iPad's native files |
 | Theme | `packages/host-node/src/palette.ts` | DSH client, app window → page |
 | Tree views | `packages/host-node/src/views.ts` | host-node ↔ app window (DSH later) |
 | Server process | `packages/app/src/server/contract.ts` | server ↔ `apps/desktop/src-tauri/src/server.rs` |

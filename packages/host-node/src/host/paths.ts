@@ -10,12 +10,9 @@ import { mkdir, open, realpath, rename, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-export class OutsideWorkspace extends Error {
-  constructor() {
-    super("That path is outside the workspace");
-    this.name = "OutsideWorkspace";
-  }
-}
+import { OutsideWorkspace } from "./platform";
+
+export { OutsideWorkspace } from "./platform";
 
 /** Filesystem path of a `file:` URI, or undefined when it is not one. */
 export function fileUriToPath(uri: string): string | undefined {

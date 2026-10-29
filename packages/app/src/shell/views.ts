@@ -1,6 +1,7 @@
 /**
  * The plugins' tree views (Outline now; Backlinks, Tags and Outgoing Links
- * the same way), served by host-node (`@workshop/host-node/views`).
+ * the same way), as a Lumière server serves them (`@workshop/host-node/views`);
+ * part of http-backend.ts.
  */
 import {
   VIEWS_PATH,
@@ -22,7 +23,7 @@ async function post(path: string, body: unknown): Promise<void> {
   }
 }
 
-export const views = {
+export const httpViews = {
   /** The tree now; undefined while its plugin has not registered it. */
   async snapshot(viewId: string): Promise<TreeSnapshot | undefined> {
     const response = await fetch(`${VIEWS_PATH}/${encodeURIComponent(viewId)}`);

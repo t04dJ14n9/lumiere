@@ -8,8 +8,11 @@
  */
 import {
   isEmbeddingMessage,
+  isPortMessage,
   isShownMessage,
   parseThemeMessage,
+  TRANSPORT_META,
+  type ConnectMessage,
 } from "../embedding";
 import { parseHostFrame, type PageFrame } from "../protocol";
 import { applyTheme, followSystemTheme } from "./theme";
@@ -28,10 +31,13 @@ declare global {
   }
 }
 
-const panelId =
-  document.querySelector<HTMLMetaElement>('meta[name="lumiere-panel"]')
-    ?.content ?? "";
-const send = connect(panelId);
+const panelId = meta("lumiere-panel") ?? "";
+// Registered before listenToEmbedder, which keeps embedding messages from the
+// editor: a channel's port arrives as one.
+const send =
+  meta(TRANSPORT_META) === "channel"
+    ? connectChannel(panelId)
+    : connect(panelId);
 window.acquireVsCodeApi = () => vsCodeApi(send);
 listenToEmbedder(send);
 reportFocus(send);
@@ -62,20 +68,18 @@ function listenToEmbedder(send: (frame: PageFrame) => void): void {
   });
 }
 
-function connect(panel: string): (frame: PageFrame) => void {
-  const scheme = location.protocol === "https:" ? "wss" : "ws";
-  const socket = new WebSocket(
-    `${scheme}://${location.host}/lumiere/socket?panel=${encodeURIComponent(panel)}`,
+function meta(name: string): string | undefined {
+  return (
+    document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content ??
+    undefined
   );
-  const waiting: string[] = [];
+}
+
+/** A frame from the host: the editor's RPC, or a request to draw some UI. */
+function receiver(send: (frame: PageFrame) => void): (text: string) => void {
   const handleUi = createUi((frame) => send(frame));
-  socket.addEventListener("open", () => {
-    for (const text of waiting.splice(0)) {
-      socket.send(text);
-    }
-  });
-  socket.addEventListener("message", (event) => {
-    const frame = parseHostFrame(String(event.data));
+  return (text) => {
+    const frame = parseHostFrame(text);
     if (!frame) {
       return;
     }
@@ -90,7 +94,56 @@ function connect(panel: string): (frame: PageFrame) => void {
     } else {
       handleUi(frame.data);
     }
+  };
+}
+
+/** The host in the embedder's own window (host-web): a channel it hands over. */
+function connectChannel(panel: string): (frame: PageFrame) => void {
+  const waiting: string[] = [];
+  let port: MessagePort | undefined;
+  const receive = receiver((frame) => send(frame));
+  window.addEventListener("message", (event) => {
+    if (
+      port ||
+      event.source !== window.parent ||
+      !isPortMessage(event.data, panel) ||
+      !event.ports[0]
+    ) {
+      return;
+    }
+    event.stopImmediatePropagation();
+    port = event.ports[0];
+    port.onmessage = (message) => receive(String(message.data));
+    for (const text of waiting.splice(0)) {
+      port.postMessage(text);
+    }
   });
+  const request: ConnectMessage = { lumiere: "connect", panel };
+  window.parent.postMessage(request, location.origin);
+  function send(frame: PageFrame): void {
+    const text = JSON.stringify(frame);
+    if (port) {
+      port.postMessage(text);
+    } else {
+      waiting.push(text);
+    }
+  }
+  return send;
+}
+
+function connect(panel: string): (frame: PageFrame) => void {
+  const scheme = location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(
+    `${scheme}://${location.host}/lumiere/socket?panel=${encodeURIComponent(panel)}`,
+  );
+  const waiting: string[] = [];
+  const receive = receiver((frame) => send(frame));
+  socket.addEventListener("open", () => {
+    for (const text of waiting.splice(0)) {
+      socket.send(text);
+    }
+  });
+  socket.addEventListener("message", (event) => receive(String(event.data)));
   socket.addEventListener("close", () => {
     document.body.dataset.lumiereDisconnected = "";
   });
@@ -107,7 +160,8 @@ function connect(panel: string): (frame: PageFrame) => void {
 
 /** Saved view state (scroll, folds) lives with the tab, as VS Code keeps it with the webview. */
 function vsCodeApi(send: (frame: PageFrame) => void): VsCodeApi {
-  const key = `lumiere:state:${location.search}`;
+  // A page host-web made is a blob: document, with no query to key on.
+  const key = `lumiere:state:${meta("lumiere-state") ?? location.search}`;
   return {
     postMessage: (message) => send({ ch: "rpc", data: message }),
     getState: () => {

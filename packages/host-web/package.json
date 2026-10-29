@@ -1,0 +1,19 @@
+{
+  "name": "@workshop/host-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lumière's host without Node: the shared host on a browser's files, for the web app and the iPad app.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p test",
+    "test": "tsx --test \"test/unit/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@workshop/core": "workspace:*",
+    "@workshop/host-node": "workspace:*",
+    "@workshop/markdown": "workspace:*"
+  }
+}

@@ -1,3 +1,4 @@
+import { pathToFileUriString } from "../../../src/host/ide-context-file-uri";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -89,6 +90,8 @@ test("picker Codex → Codex only", async () => {
     },
     showQuickPick: async () => "codex",
     tempFs: fs,
+    // The VS Code agent host's own conversion (ideContextTemp).
+    tempFileUri: pathToFileUriString,
     tempDir: "/tmp/agent-ide-context",
     now: () => 1_000_000,
     leaseMs: 60_000,
@@ -180,6 +183,7 @@ test("MW Codex: renewLeaseAtomic called before retry across renewal boundary", a
     },
     showQuickPick: async () => undefined,
     tempFs: fs,
+    tempFileUri: pathToFileUriString,
     tempDir: "/tmp/agent-ide-context",
     now: () => 1_000_000,
     leaseMs: 1_000,
@@ -216,6 +220,7 @@ test("MW Codex: on retry renew is after open prep and immediately before add-fil
     },
     showQuickPick: async () => undefined,
     tempFs: new MemoryTempFs(),
+    tempFileUri: pathToFileUriString,
     tempDir: "/tmp/agent-ide-context",
     now: () => 1_000_000,
     leaseMs: 1_000,
@@ -256,6 +261,7 @@ test("MW Codex: temp publish {skipped:true} → clipboard kept; no invalid add-f
       warning: "quota full; lease-protected",
     }),
     tempFs: new MemoryTempFs(),
+    tempFileUri: pathToFileUriString,
   });
   assert.ok(clipboard.includes("IDE context"));
   assert.equal(executed.includes(AGENT_COMMANDS.codexAddFile), false);
@@ -276,6 +282,7 @@ test("Codex attaches Windows temp paths as file URI strings", async () => {
       }
     },
     tempFs: new MemoryTempFs(),
+    tempFileUri: pathToFileUriString,
     publishTemp: async () => ({
       finalPath:
         "C:\\Users\\test\\AppData\\Local\\Temp\\agent-ide-context\\ide-context-x.json",

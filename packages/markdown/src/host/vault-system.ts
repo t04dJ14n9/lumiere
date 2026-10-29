@@ -11,7 +11,8 @@ import type {
 } from "../plugins/vault/api";
 import { isIgnoredPath } from "../plugins/vault/exclusion";
 import { createVaultParser } from "./vault-parser";
-import { workerPath } from "./running-extension";
+import { nodeWorkerLauncher } from "./node-workers";
+import { workersFolder } from "./running-extension";
 
 /** Directory reads and stats run this many at a time while listing a vault. */
 export const STAT_CONCURRENCY = 32;
@@ -55,7 +56,9 @@ export function createVaultSystem(
       ),
     // The bundle runs from dist/, the worker is in dist/markdown/workers.
     createParser: () =>
-      createVaultParser(workerPath(context.extensionUri, "vault")),
+      createVaultParser(
+        nodeWorkerLauncher(workersFolder(context.extensionUri)),
+      ),
     hash: (text) => createHash("sha256").update(text).digest("hex"),
     warn: (message) => void vscode.window.showWarningMessage(message),
   };

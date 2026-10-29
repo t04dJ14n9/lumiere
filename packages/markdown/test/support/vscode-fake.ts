@@ -2,6 +2,7 @@ import type { Configuration } from "../../src/shared/configuration";
 import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
 import type { WorkspaceFiles } from "../../src/shared/workspace-files";
+import type { WorkerLauncher } from "../../src/shared/workers";
 
 /** Members to replace, per host service. */
 export type HostOverrides = {
@@ -107,7 +108,7 @@ function defaultHost(): HostServices {
       revealTextEditor: async () => {},
     },
     storage: { get: (_key, fallback) => fallback, update: async () => {} },
-    extensions: { isInstalled: () => false, workerPath: () => "" },
+    extensions: { isInstalled: () => false, workers: noWorkers() },
     navigation: {
       registerReveal: none,
       registerNativeLinks: none,
@@ -163,6 +164,15 @@ function unavailableFiles(): WorkspaceFiles {
   };
 }
 
+/** Starting a worker fails, as when its build is missing. */
+function noWorkers(): WorkerLauncher {
+  return {
+    start: () => {
+      throw new Error("No workers in this fake host");
+    },
+  };
+}
+
 function noGit(): GitAccess {
   return {
     blameLine: async () => ({ status: "unavailable", repoGeneration: 0 }),
@@ -172,6 +182,11 @@ function noGit(): GitAccess {
     onDidChange: none,
     stage: async () => false,
     toGitUri: () => undefined,
+    // Where there is no Git extension: every URI is its own source. Tests
+    // that hand over git: URIs pass VS Code's parser (src/host/git-source.ts),
+    // and those that follow links on disk its realContains: this file is also
+    // bundled for the browser harness, which has no Node.
+    sourceOf: (uri) => ({ source: uri }),
   };
 }
 

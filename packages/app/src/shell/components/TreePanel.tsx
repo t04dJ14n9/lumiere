@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TreeItem, TreeSnapshot } from "@workshop/host-node/views";
 import { ancestors, expandTo, isExpanded, type Toggled } from "../tree-state";
-import { views } from "../views";
+import { backend } from "../backend";
 
 /** Changes this close together are read as one. */
 const REFRESH_DELAY_MS = 30;
@@ -35,7 +35,7 @@ export function TreePanel({
   useVisibility(viewId, visible, report);
   useEffect(
     () =>
-      views.events((event) => {
+      backend().views.events((event) => {
         if (event.type === "reveal" && event.viewId === viewId) {
           setCurrent(event.id);
         }
@@ -74,7 +74,7 @@ export function TreePanel({
           toggled,
           current,
           toggle,
-          run: (item) => report(views.run(viewId, item.id)),
+          run: (item) => report(backend().views.run(viewId, item.id)),
         }}
       />
     </div>
@@ -88,10 +88,10 @@ function useVisibility(
   report: (work: Promise<unknown>) => void,
 ): void {
   useEffect(() => {
-    report(views.setVisible(viewId, visible));
+    report(backend().views.setVisible(viewId, visible));
     return () => {
       if (visible) {
-        report(views.setVisible(viewId, false));
+        report(backend().views.setVisible(viewId, false));
       }
     };
   }, [viewId, visible, report]);
@@ -117,12 +117,14 @@ function useSnapshot(
       setTimeout(() => {
         pending = false;
         report(
-          views.snapshot(viewId).then((next) => live && setSnapshot(next)),
+          backend()
+            .views.snapshot(viewId)
+            .then((next) => live && setSnapshot(next)),
         );
       }, REFRESH_DELAY_MS);
     };
     load();
-    const stop = views.events((event) => {
+    const stop = backend().views.events((event) => {
       if (event.type === "changed" && event.viewId === viewId) {
         load();
       }

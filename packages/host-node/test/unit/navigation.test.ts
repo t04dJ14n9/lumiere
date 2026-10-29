@@ -9,8 +9,9 @@ import {
   type HostSettings,
   type PanelShell,
 } from "@workshop/markdown/portable";
-import { NoteDocuments } from "../../src/host/documents";
-import { createNodeNavigation, resolveLink } from "../../src/host/navigation";
+import { NoteDocuments, noteFiles } from "../../src/host/documents";
+import { createNodePlatform, nodeFiles } from "../../src/host/node-platform";
+import { createHostNavigation, resolveLink } from "../../src/host/navigation";
 import type { PageSocket } from "../../src/host/panel";
 import { PanelHub } from "../../src/host/panels";
 
@@ -41,11 +42,11 @@ test("creating a note stays inside the workspace and does not follow a symlink o
     folderNote: "",
   };
   await assert.rejects(
-    () => resolveLink({ ...request, path: "../outside.md" }),
+    () => resolveLink(nodeFiles, { ...request, path: "../outside.md" }),
     /outside the vault/,
   );
   await assert.rejects(
-    () => resolveLink({ ...request, path: "out/New.md" }),
+    () => resolveLink(nodeFiles, { ...request, path: "out/New.md" }),
     /outside the vault/,
   );
   assert.equal(
@@ -53,14 +54,14 @@ test("creating a note stays inside the workspace and does not follow a symlink o
     "",
   );
 
-  const created = await resolveLink({ ...request, path: "Made.md" });
+  const created = await resolveLink(nodeFiles, { ...request, path: "Made.md" });
   assert.equal(created, pathToFileURL(path.join(dir, "Made.md")).toString());
   assert.equal(await readFile(path.join(dir, "Made.md"), "utf8"), "");
   await writeFile(path.join(dir, "Made.md"), "keep");
-  await resolveLink({ ...request, path: "Made.md" });
+  await resolveLink(nodeFiles, { ...request, path: "Made.md" });
   assert.equal(await readFile(path.join(dir, "Made.md"), "utf8"), "keep");
 
-  const createdMarkdown = await resolveLink({
+  const createdMarkdown = await resolveLink(nodeFiles, {
     ...request,
     path: "NoteTwo.markdown",
   });
@@ -77,7 +78,10 @@ test("a link to a note open in another tab asks that tab to come forward", async
   await writeFile(other, "there");
   const firstUri = pathToFileURL(path.join(dir, "Note.md")).toString();
   const otherUri = pathToFileURL(other).toString();
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(
+    noteFiles(createNodePlatform({ data: tmpdir(), workers: "" })),
+    60_000,
+  );
   const hub = new PanelHub(documents);
   const shells: PanelShell[] = [];
   hub.register(MARKDOWN_EDITOR, (shell) => {
@@ -101,7 +105,7 @@ test("a link to a note open in another tab asks that tab to come forward", async
   hub.attach(second.id, hidden.socket);
   page.receive('{"ch":"ui","data":{"type":"focus"}}');
 
-  await createNodeNavigation(hub, settings, {
+  await createHostNavigation(nodeFiles, hub, settings, {
     appName: "DeepSeek Harness",
     uriScheme: "dsh",
   }).open(root, otherUri, "", "here");
@@ -146,7 +150,10 @@ test("revealing in a hidden tab that focuses itself still tells the presenting t
   await writeFile(other, "# Heading\nthere");
   const firstUri = pathToFileURL(path.join(dir, "Note.md")).toString();
   const otherUri = pathToFileURL(other).toString();
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(
+    noteFiles(createNodePlatform({ data: tmpdir(), workers: "" })),
+    60_000,
+  );
   const hub = new PanelHub(documents);
   hub.register(MARKDOWN_EDITOR, (shell) => {
     shell.setHTML("<html></html>");
@@ -168,7 +175,7 @@ test("revealing in a hidden tab that focuses itself still tells the presenting t
   hub.attach(second.id, hidden.socket);
   page.receive('{"ch":"ui","data":{"type":"focus"}}');
 
-  const nav = createNodeNavigation(hub, settings, {
+  const nav = createHostNavigation(nodeFiles, hub, settings, {
     appName: "DeepSeek Harness",
     uriScheme: "dsh",
   });

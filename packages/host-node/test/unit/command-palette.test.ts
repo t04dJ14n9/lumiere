@@ -7,7 +7,7 @@ import {
 } from "../../src/host/command-palette";
 import { ContextKeys } from "../../src/host/context-menu";
 import { createHostCommands } from "../../src/host/services";
-import { createNodeSettings } from "../../src/host/settings";
+import { createHostSettings } from "../../src/host/settings";
 
 const EDITOR = "lumiere.markdown.editor";
 const contributions: CommandContribution[] = [
@@ -67,7 +67,7 @@ test("createCommandPalette scopes editor commands to active panel and runs offer
     "lumiere.markdown.plugin.formatting",
     true,
   );
-  const settings = createNodeSettings({
+  const settings = createHostSettings({
     contributed: [
       { key: "lumiere.markdown.preset", schema: { default: "default" } },
       {
@@ -75,7 +75,8 @@ test("createCommandPalette scopes editor commands to active panel and runs offer
         schema: { default: true },
       },
     ],
-    file: "/tmp/nonexistent-palette-settings.json",
+    store: { read: async () => undefined, write: async () => {} },
+    saved: undefined,
   });
   let active = false;
   const palette = createCommandPalette({

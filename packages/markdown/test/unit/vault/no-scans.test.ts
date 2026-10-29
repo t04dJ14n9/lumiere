@@ -6,10 +6,12 @@ import { readFileSync, readdirSync } from "node:fs";
 // vault's file system adapter walks the vault. A feature that scans on its
 // own is slow in a large vault and disagrees with the index about what exists.
 // workspace-files lists one directory the user just named (assets, scratch or
-// exports). It does not walk the vault or replace the index.
+// exports). It does not walk the vault or replace the index. ide-context-temp
+// lists the agents' temp folder, outside every vault.
 const LISTERS = new Set([
   "src/host/vault-system.ts",
   "src/host/workspace-files.ts",
+  "src/host/ide-context-temp.ts",
 ]);
 const SCANS =
   /\b(findFiles|readDirectory|readdir(Sync)?|opendir(Sync)?|glob)\s*\(/;

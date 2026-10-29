@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/host/index.ts",
+    "./core": "./src/core.ts",
     "./embedding": "./src/embedding.ts",
     "./palette": "./src/palette.ts",
     "./views": "./src/views.ts",

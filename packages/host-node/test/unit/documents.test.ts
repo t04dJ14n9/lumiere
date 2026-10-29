@@ -4,7 +4,17 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import { diskReadReplacesNote, NoteDocuments } from "../../src/host/documents";
+import {
+  diskReadReplacesNote,
+  NoteDocuments,
+  noteFiles,
+} from "../../src/host/documents";
+import { createNodePlatform } from "../../src/host/node-platform";
+
+/** Notes on Node's file system, as the Node host keeps them. */
+const NODE_NOTES = noteFiles(
+  createNodePlatform({ data: tmpdir(), workers: "" }),
+);
 
 async function note(text: string) {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-host-"));
@@ -29,7 +39,7 @@ const until = async (check: () => Promise<boolean> | boolean) => {
 
 test("edits apply in LF offsets over CRLF text, report source offsets and write after a pause", async (t) => {
   const { file, uri, cleanup } = await note("a\r\nb\r\nc");
-  const documents = new NoteDocuments(10);
+  const documents = new NoteDocuments(NODE_NOTES, 10);
   t.after(() => documents.dispose());
   t.after(cleanup);
   const document = await documents.open(uri);
@@ -59,7 +69,7 @@ test("edits apply in LF offsets over CRLF text, report source offsets and write 
 
 test("pending edits flush before a save writes, and save listeners hear it", async (t) => {
   const { file, uri, cleanup } = await note("one");
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(NODE_NOTES, 60_000);
   t.after(() => documents.dispose());
   t.after(cleanup);
   const document = await documents.open(uri);
@@ -75,7 +85,7 @@ test("pending edits flush before a save writes, and save listeners hear it", asy
 
 test("another program's change reloads a clean note but never unsaved typing", async (t) => {
   const { file, uri, cleanup } = await note("start");
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(NODE_NOTES, 60_000);
   t.after(() => documents.dispose());
   t.after(cleanup);
   const document = await documents.open(uri);
@@ -91,7 +101,7 @@ test("another program's change reloads a clean note but never unsaved typing", a
 
 test("the last panel to let go writes unsaved text and closes the note", async (t) => {
   const { file, uri, cleanup } = await note("x");
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(NODE_NOTES, 60_000);
   t.after(() => documents.dispose());
   t.after(cleanup);
   const closed: string[] = [];
@@ -110,7 +120,7 @@ test("the last panel to let go writes unsaved text and closes the note", async (
 
 test("a failed write still closes every watch, so the host can exit", async (t) => {
   const { uri, cleanup } = await note("doomed");
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(NODE_NOTES, 60_000);
   const document = await documents.open(uri);
   await documents.apply(document, [{ from: 0, to: 0, insert: "!" }]);
   await cleanup();
@@ -148,17 +158,21 @@ test("a disk read in flight during a save is dropped when it resumes", async (t)
   const { file, uri, cleanup } = await note("saved");
   const pending: Array<(text: string) => void> = [];
   let opened = false;
-  const documents = new NoteDocuments(60_000, {
-    readFile: (target) => {
-      if (!opened) {
-        opened = true;
-        return readFile(target, "utf8");
-      }
-      return new Promise((resolve) => {
-        pending.push(resolve);
-      });
+  const documents = new NoteDocuments(
+    {
+      ...NODE_NOTES,
+      readText: (target) => {
+        if (!opened) {
+          opened = true;
+          return NODE_NOTES.readText(target);
+        }
+        return new Promise((resolve) => {
+          pending.push(resolve);
+        });
+      },
     },
-  });
+    60_000,
+  );
   t.after(() => {
     for (const resolve of pending) {
       resolve("edited");
@@ -179,16 +193,59 @@ test("a disk read in flight during a save is dropped when it resumes", async (t)
 
 test("opening a note twice at once returns one document", async (t) => {
   const { uri, cleanup } = await note("same");
-  const documents = new NoteDocuments();
+  const documents = new NoteDocuments(NODE_NOTES);
   t.after(() => documents.dispose());
   t.after(cleanup);
   const [a, b] = await Promise.all([documents.open(uri), documents.open(uri)]);
   assert.equal(a, b);
 });
 
+test("a note's files may be a class instance: its methods keep their object", async () => {
+  const platform = createNodePlatform({ data: tmpdir(), workers: "" });
+  class ClassFiles {
+    constructor(private readonly prefix: string) {}
+    async readText(uri: string): Promise<string> {
+      return `${this.prefix}${uri}`;
+    }
+  }
+  const notes = noteFiles({
+    ...platform,
+    files: Object.assign(new ClassFiles("read:"), {
+      save: platform.files.save,
+      watch: platform.files.watch,
+    }) as never,
+  });
+  assert.equal(await notes.readText("file:///n.md"), "read:file:///n.md");
+});
+
+test("a save after typing pauses that fails is reported, and the text stays", async (t) => {
+  const { uri, cleanup } = await note("start");
+  t.after(cleanup);
+  const documents = new NoteDocuments(
+    {
+      ...NODE_NOTES,
+      save: async () => {
+        throw new Error("The disk is full");
+      },
+    },
+    10,
+  );
+  const failed: [string, string][] = [];
+  documents.onSaveFailed((target, error) =>
+    failed.push([target, (error as Error).message]),
+  );
+  const document = await documents.open(uri);
+  await documents.apply(document, [{ from: 0, to: 5, insert: "typed" }]);
+  await until(() => failed.length > 0);
+  assert.deepEqual(failed, [[uri, "The disk is full"]]);
+  assert.equal(document.getText(), "typed");
+  assert.equal(document.isDirty, true);
+  await documents.dispose().catch(() => {});
+});
+
 test("retaining a dirty note while release() is saving keeps the document open", async (t) => {
   const { uri, cleanup } = await note("initial");
-  const documents = new NoteDocuments(60_000);
+  const documents = new NoteDocuments(NODE_NOTES, 60_000);
   t.after(() => documents.dispose());
   t.after(cleanup);
 

@@ -3,11 +3,11 @@
  * LF line endings, and nothing past the diff limits. HEAD texts are cached by
  * commit, since a commit's text never changes; the index's is read each time.
  */
+import type { GitBlameRunner } from "@workshop/markdown/node";
 import {
   exceedsDiffLimits,
   MAX_DIFF_CHARS,
   type GitBaselineResult,
-  type GitBlameRunner,
   type GitRef,
 } from "@workshop/markdown/portable";
 

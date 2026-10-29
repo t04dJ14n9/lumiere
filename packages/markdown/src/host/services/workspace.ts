@@ -5,7 +5,9 @@ import type {
   WorkspaceStorage,
 } from "../../shared/host";
 import { createDiagnostics } from "../diagnostics";
-import { workerPath } from "../running-extension";
+import { nodeWorkerLauncher } from "../node-workers";
+import { workersFolder } from "../running-extension";
+import { realContains } from "../real-contains";
 import { createWorkspaceFiles } from "../workspace-files";
 
 export function createHostWorkspace(): HostWorkspace {
@@ -23,6 +25,7 @@ export function createHostWorkspace(): HostWorkspace {
         symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink),
       };
     },
+    realContains,
     watch: watchFile,
     files: createWorkspaceFiles(),
     diagnostics: createDiagnostics(),
@@ -43,7 +46,7 @@ export function createWorkspaceStorage(
 export function createExtensions(extensionUri: vscode.Uri): Extensions {
   return {
     isInstalled: (id) => Boolean(vscode.extensions.getExtension(id)),
-    workerPath: (name) => workerPath(extensionUri, name),
+    workers: nodeWorkerLauncher(workersFolder(extensionUri)),
   };
 }
 

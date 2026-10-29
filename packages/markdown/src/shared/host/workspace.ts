@@ -1,4 +1,5 @@
 import type { Disposer } from "@workshop/core";
+import type { WorkerLauncher } from "../workers";
 import type { DiagnosticSink, WorkspaceFiles } from "../workspace-files";
 
 /** The workspace: its folders, trust and files. Plugins pass URIs; the host checks them. */
@@ -7,6 +8,12 @@ export interface HostWorkspace {
   isTrusted(): boolean;
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
+  /**
+   * Whether `uri` is inside `root` once both are resolved through symbolic
+   * links on a local disk. Both are `file:` URIs; a missing path rejects.
+   * Absent where files have no real path (a browser): links are refused there.
+   */
+  realContains?(root: string, uri: string): Promise<boolean>;
   /**
    * Hear a file change, appear or go away; it and the folders above it
    * need not exist yet (VS Code's file watchers work this way).
@@ -30,5 +37,6 @@ export interface WorkspaceStorage {
 export interface Extensions {
   /** Whether another extension, such as Marp, is installed. */
   isInstalled(id: string): boolean;
-  workerPath(name: "search"): string;
+  /** Starts the built workers (search; the vault parser has its own). */
+  readonly workers: WorkerLauncher;
 }

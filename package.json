@@ -3544,7 +3544,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck && pnpm --filter @workshop/host-node typecheck && pnpm --filter @workshop/dsh typecheck && pnpm --filter @workshop/app typecheck",
+    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck && pnpm --filter @workshop/host-node typecheck && pnpm --filter @workshop/host-web typecheck && pnpm --filter @workshop/dsh typecheck && pnpm --filter @workshop/app typecheck && pnpm --filter @workshop/web typecheck",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

@@ -2,13 +2,26 @@
  * Host services with no counterpart outside VS Code yet. Each answers the
  * way VS Code does when the feature is unavailable, so the plugins that use
  * them stay quiet instead of failing: no diff editor, no status bar and no
- * extra webview panels (the graph). Git is real (git.ts).
+ * extra webview panels (the graph). Git is real on Node (git.ts) and inert
+ * in a browser (noGit).
  */
 import type {
   DiffViews,
+  GitAccess,
   WorkbenchViews,
   HostNeed,
 } from "@workshop/markdown/portable";
+
+export const noGit: GitAccess = {
+  blameLine: async () => ({ status: "unavailable", repoGeneration: 0 }),
+  identity: async () => undefined,
+  repoGeneration: () => 0,
+  baseline: async () => ({ status: "unavailable" }),
+  onDidChange: () => () => {},
+  stage: async () => false,
+  toGitUri: () => undefined,
+  sourceOf: (uri) => ({ source: uri }),
+};
 
 export const noDiffViews: DiffViews = {
   onDidOpenDiff: () => () => {},

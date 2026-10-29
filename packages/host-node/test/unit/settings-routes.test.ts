@@ -4,13 +4,30 @@ import { createServer } from "node:http";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
-import type { ContributedSetting } from "@workshop/markdown/portable";
-import { createNodeSettings } from "../../src/host/settings";
+import type {
+  ContributedSetting,
+  HostSettings,
+} from "@workshop/markdown/portable";
+import { createNodePlatform } from "../../src/host/node-platform";
+import { createHostSettings, SETTINGS_FILE } from "../../src/host/settings";
 import {
   createSettingsRoutes,
   describeKey,
 } from "../../src/host/settings-routes";
 import { matchesSearch, type SettingItem } from "../../src/settings";
+
+/** Settings kept in `dir`, as the Node host keeps them. */
+async function nodeSettings(
+  contributed: readonly ContributedSetting[],
+  dir: string,
+): Promise<HostSettings> {
+  const { store } = createNodePlatform({ data: dir, workers: "" });
+  return createHostSettings({
+    contributed,
+    store,
+    saved: await store.read(SETTINGS_FILE),
+  });
+}
 
 const contributed: ContributedSetting[] = [
   {
@@ -78,7 +95,7 @@ test("a key's group is its plugin's title, else its first segment, else General"
 async function serve(t: test.TestContext) {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-settings-"));
   const file = path.join(dir, "settings.json");
-  const settings = createNodeSettings({ contributed, file });
+  const settings = await nodeSettings(contributed, dir);
   const routes = createSettingsRoutes(
     settings,
     titles,

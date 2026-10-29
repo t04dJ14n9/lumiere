@@ -27,6 +27,7 @@ function fakeGit(): GitAccess & { bump: () => void; generation: number } {
     async stage() {
       return false;
     },
+    sourceOf: (uri) => ({ source: uri }),
     toGitUri() {
       return undefined;
     },

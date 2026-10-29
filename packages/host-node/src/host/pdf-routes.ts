@@ -5,7 +5,8 @@
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
-import { injectShim, pdfQuery, socketSource } from "./page";
+import { injectShim, socketSource } from "./page";
+import { pdfQuery } from "./page-query";
 import { PdfPages, type PdfPage } from "./pdf-pages";
 import { resolveContainedNote } from "./paths";
 import { serveStatic } from "./static";

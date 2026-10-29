@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { pathToFileUriString } from "../../../src/plugins/ideContext/file-uri";
+import { pathToFileUriString } from "../../../src/host/ide-context-file-uri";
 
 test("file URI conversion supports drive, UNC and native paths with reserved characters", () => {
   assert.equal(

@@ -1,6 +1,7 @@
 /** The shell's state hooks: theme, vaults and files, server events, menu. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, type FileEntry, type ServerEvent } from "./api";
+import type { FileEntry, ServerEvent } from "./api";
+import { backend } from "./backend";
 import { onMenuCommand, type MenuCommand } from "./tauri";
 import { applyShellTheme, onThemeChange } from "./theme";
 
@@ -52,7 +53,7 @@ export function useVaults(report: Errors["report"]): VaultState {
   const [generation, setGeneration] = useState(0);
 
   const reload = useCallback(async () => {
-    const list = await api.vaults();
+    const list = await backend().vaults.list();
     setOpen(list.open);
     setRecent(list.recent);
     setCurrent((shown) =>
@@ -66,7 +67,11 @@ export function useVaults(report: Errors["report"]): VaultState {
       return;
     }
     let live = true;
-    report(api.files(current).then((listed) => live && setFiles(listed)));
+    report(
+      backend()
+        .vaults.files(current)
+        .then((listed) => live && setFiles(listed)),
+    );
     return () => {
       live = false;
     };
@@ -99,7 +104,7 @@ export function useVaults(report: Errors["report"]): VaultState {
 export function useServerEvents(listener: (event: ServerEvent) => void): void {
   const latest = useRef(listener);
   latest.current = listener;
-  useEffect(() => api.events((event) => latest.current(event)), []);
+  useEffect(() => backend().events((event) => latest.current(event)), []);
 }
 
 export function useMenuCommands(

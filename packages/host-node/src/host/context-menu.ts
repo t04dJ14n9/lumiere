@@ -81,6 +81,16 @@ export interface ContextMenuOptions {
   readonly log: (message: string) => void;
 }
 
+/** The items of a `menus.json` (written at build time); anything else is dropped. */
+export function parseMenus(value: unknown): readonly MenuContribution[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is MenuContribution =>
+          typeof item?.command === "string" && typeof item?.title === "string",
+      )
+    : [];
+}
+
 /** Answer every page's right-clicks; returns the way to stop. */
 export function registerContextMenus(options: ContextMenuOptions): () => void {
   const listening = new Map<LivePanel, () => void>();

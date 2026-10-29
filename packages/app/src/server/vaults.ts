@@ -6,6 +6,7 @@ import { mkdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { listVault } from "@workshop/host-node";
+import { fileKind } from "../shared/file-kind";
 
 /** Files listed per vault; a larger vault's tree is cut short. */
 const MAX_FILES = 20_000;
@@ -83,7 +84,7 @@ export class Vaults {
       await this.add(resolved);
       return;
     }
-    const kind = kindOf(resolved);
+    const kind = fileKind(resolved);
     if (kind !== "note" && kind !== "pdf") {
       throw new Error(`Not a note: ${target}`);
     }
@@ -112,7 +113,7 @@ export class Vaults {
       MAX_FILES,
     );
     return files
-      .map((file) => ({ path: file.path, kind: kindOf(file.path) }))
+      .map((file) => ({ path: file.path, kind: fileKind(file.path) }))
       .sort((a, b) => a.path.localeCompare(b.path));
   }
 
@@ -137,19 +138,6 @@ export class Vaults {
     await mkdir(path.dirname(this.file), { recursive: true });
     await writeFile(this.file, JSON.stringify(this.recent, null, 2));
   }
-}
-
-function kindOf(file: string): FileEntry["kind"] {
-  const extension = path.extname(file).toLowerCase();
-  if (extension === ".md" || extension === ".markdown") {
-    return "note";
-  }
-  if (extension === ".pdf") {
-    return "pdf";
-  }
-  return /^\.(png|jpe?g|gif|webp|svg|avif)$/.test(extension)
-    ? "image"
-    : "other";
 }
 
 async function realPath(target: string): Promise<string | undefined> {

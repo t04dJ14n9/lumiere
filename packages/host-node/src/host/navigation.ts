@@ -3,9 +3,6 @@
  * it names) works as in VS Code; opening one is the embedder's to do: an open
  * note's page reveals the target itself, any other file opens in a new tab.
  */
-import { mkdir, stat } from "node:fs/promises";
-import * as path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   RevealRouter,
   type HostSettings,
@@ -15,14 +12,16 @@ import {
 } from "@workshop/markdown/portable";
 import { questionId, type LivePanel } from "./panel";
 import type { PanelHub } from "./panels";
-import { assertContained, createEmptyFile, OutsideWorkspace } from "./paths";
+import { OutsideWorkspace, type HostFiles } from "./platform";
 import { presentingPanel } from "./ui-services";
 import type { HostIdentity } from "./services";
+import { joinUri, parentUri } from "./uris";
 
 /** How long a new tab's page may take to open before its reveal is dropped. */
 const OPEN_TIMEOUT_MS = 15_000;
 
-export function createNodeNavigation(
+export function createHostNavigation(
+  files: HostFiles,
   panels: PanelHub,
   settings: HostSettings,
   identity: HostIdentity,
@@ -47,7 +46,7 @@ export function createNodeNavigation(
       return answer === "Open";
     },
     resolve: (request) =>
-      resolveLink({
+      resolveLink(files, {
         ...request,
         newNoteFolder:
           request.newNoteFolder ??
@@ -56,12 +55,12 @@ export function createNodeNavigation(
     async open(
       ...[root, uri, fragment, , at, intent]: Parameters<Navigation["open"]>
     ) {
-      await requireInside(root, uri);
+      await requireInside(files, root, uri);
       const destination: NavigationTarget = {
         fragment,
         ...(at === undefined ? {} : { at }),
       };
-      await openTarget({ panels, reveals, uri, destination, intent });
+      await openTarget({ files, panels, reveals, uri, destination, intent });
     },
   };
 }
@@ -70,69 +69,69 @@ type ResolveRequest = Parameters<Navigation["resolve"]>[0];
 
 /** The file a link names, or the note created for it; undefined when there is none. */
 export async function resolveLink(
+  files: HostFiles,
   request: ResolveRequest,
 ): Promise<string | undefined> {
   const { root, source, path: link, create, folderNote, intent } = request;
-  const base = fileURLToPath(root);
   let target = !link
-    ? fileURLToPath(source)
-    : path.join(
-        link.startsWith("/") || create
-          ? base
-          : path.dirname(fileURLToPath(source)),
+    ? source
+    : joinUri(
+        files,
+        link.startsWith("/") || create ? root : parentUri(files, source),
         link.replace(/^\//, ""),
       );
-  await requireInside(root, pathToFileURL(target).toString());
-  const info = await stat(target).catch(() => undefined);
+  await requireInside(files, root, target);
+  const info = await files.stat(target);
   if (intent?.token.cancelled) {
     return undefined;
   }
-  if (info?.isDirectory()) {
+  if (info?.kind === "folder") {
     if (!folderNote) {
       return undefined;
     }
-    target = path.join(target, folderNote);
-    await requireInside(root, pathToFileURL(target).toString());
+    target = joinUri(files, target, folderNote);
+    await requireInside(files, root, target);
   }
   if (info) {
-    return pathToFileURL(target).toString();
+    return target;
   }
   return create && !intent?.token.cancelled
-    ? createNote({ base, root, request, target })
+    ? createNote(files, { root, request, target })
     : undefined;
 }
 
-async function createNote(options: {
-  base: string;
-  root: string;
-  request: ResolveRequest;
-  target: string;
-}): Promise<string> {
-  const { base, root, request } = options;
+async function createNote(
+  files: HostFiles,
+  options: { root: string; request: ResolveRequest; target: string },
+): Promise<string> {
+  const { root, request } = options;
   let target = options.target;
   const link = request.path;
   if (!link.startsWith("/")) {
     const folder = request.newNoteFolder ?? "";
     const parent =
       folder === "."
-        ? path.dirname(fileURLToPath(request.source))
-        : path.join(base, folder);
-    target = path.join(parent, link);
+        ? parentUri(files, request.source)
+        : joinUri(files, root, folder);
+    target = joinUri(files, parent, link);
   }
   if (!/\.(?:md|markdown)$/i.test(target)) {
     target += ".md";
   }
-  const uri = pathToFileURL(target).toString();
-  await requireInside(root, uri);
-  await mkdir(path.dirname(target), { recursive: true });
-  // O_EXCL and O_NOFOLLOW: an existing file, or a symlink planted in its place, is not written.
-  await createEmptyFile(target);
-  return uri;
+  await requireInside(files, root, target);
+  await files.mkdir(parentUri(files, target));
+  // An existing file, or a symlink planted in its place, is not written.
+  await files.create(target);
+  return target;
 }
 
-async function requireInside(root: string, uri: string): Promise<void> {
+async function requireInside(
+  files: HostFiles,
+  root: string,
+  uri: string,
+): Promise<void> {
   try {
-    await assertContained(root, uri);
+    await files.contain(root, uri);
   } catch (error) {
     if (error instanceof OutsideWorkspace) {
       throw new Error("That link points outside the vault", { cause: error });
@@ -142,6 +141,7 @@ async function requireInside(root: string, uri: string): Promise<void> {
 }
 
 interface OpenTarget {
+  files: HostFiles;
   panels: PanelHub;
   reveals: RevealRouter;
   uri: string;
@@ -150,7 +150,7 @@ interface OpenTarget {
 }
 
 async function openTarget(options: OpenTarget): Promise<void> {
-  const { panels, reveals, uri, destination } = options;
+  const { files, panels, reveals, uri, destination } = options;
   const intent = options.intent ?? reveals.begin();
   const hasDestination =
     destination.fragment !== "" || destination.at !== undefined;
@@ -160,7 +160,7 @@ async function openTarget(options: OpenTarget): Promise<void> {
     // switch before revealing, because revealing focuses the target editor
     // and would otherwise make `shown` look like it was already presenting.
     if (shown !== presentingPanel(panels)) {
-      tellOpen(panels, uri, destination.fragment);
+      tellOpen(panels, files.toPath(uri), destination.fragment);
       panels.activate(shown.id);
     }
     if (hasDestination) {
@@ -169,7 +169,7 @@ async function openTarget(options: OpenTarget): Promise<void> {
     return;
   }
   const opened = nextPanelFor(panels, uri);
-  tellOpen(panels, uri, destination.fragment);
+  tellOpen(panels, files.toPath(uri), destination.fragment);
   const panel = await opened;
   if (panel && hasDestination && !intent.token.cancelled) {
     panels.activate(panel.id);
@@ -177,12 +177,9 @@ async function openTarget(options: OpenTarget): Promise<void> {
   }
 }
 
-function tellOpen(panels: PanelHub, uri: string, fragment: string): void {
-  presentingPanel(panels)?.tell({
-    type: "open",
-    path: fileURLToPath(uri),
-    fragment,
-  });
+/** The embedder opens a file by its path. */
+function tellOpen(panels: PanelHub, path: string, fragment: string): void {
+  presentingPanel(panels)?.tell({ type: "open", path, fragment });
 }
 
 /** The next panel opened for `uri`, or undefined if none opens in time. */
@@ -197,7 +194,8 @@ function nextPanelFor(
       }
     });
     const timer = setTimeout(() => finish(undefined), OPEN_TIMEOUT_MS);
-    timer.unref?.();
+    // Node keeps a process alive for a timer; a browser has no unref.
+    (timer as { unref?: () => void }).unref?.();
     function finish(panel: LivePanel | undefined): void {
       clearTimeout(timer);
       stop();

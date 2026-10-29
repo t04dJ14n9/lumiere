@@ -18,13 +18,15 @@ import {
   discoverGitRoot,
   RepositoryWatch,
   runBlameLine,
-  type GitAccess,
-  type GitBaselineResult,
-  type GitBlameLineResult,
   type GitBlameRunner,
-  type GitBlameSnapshot,
-  type GitIdentity,
-  type GitRef,
+} from "@workshop/markdown/node";
+import type {
+  GitAccess,
+  GitBaselineResult,
+  GitBlameLineResult,
+  GitBlameSnapshot,
+  GitIdentity,
+  GitRef,
 } from "@workshop/markdown/portable";
 import { GitBlobs, type BlobLocation } from "./git-blobs";
 import { findGit } from "./git-program";
@@ -153,6 +155,11 @@ export class NodeGitAccess implements GitAccess {
   /** `git:` URIs are VS Code's git extension's; nothing here opens them. */
   toGitUri(): string | undefined {
     return undefined;
+  }
+
+  /** Nothing here makes `git:` URIs, so every URI is its own source. */
+  sourceOf(uri: string): { source: string; ref?: string } {
+    return { source: uri };
   }
 
   /** Stop watching every repository, also one a question still running finds. */

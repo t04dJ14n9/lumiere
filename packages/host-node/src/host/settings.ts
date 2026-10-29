@@ -2,10 +2,8 @@
  * Lumière's settings outside VS Code. VS Code reads them from its settings files with
  * the extension's contributed defaults; here the defaults come from the same
  * contributions, copied into the bundle, and a reader's changes are kept in
- * one JSON file. There are no folder or language scopes.
+ * one JSON file in the host's store. There are no folder or language scopes.
  */
-import { readFileSync } from "node:fs";
-import { writeAtomic } from "./paths";
 import type { Disposer } from "@workshop/core";
 import {
   EffectiveConfiguration,
@@ -14,17 +12,23 @@ import {
   type HostSettings,
   type SettingsAccess,
 } from "@workshop/markdown/portable";
+import type { HostStore } from "./platform";
 
 const PREFIX = "lumiere.markdown.";
 
-export interface NodeSettingsOptions {
+/** The reader's changes, in the host's store. */
+export const SETTINGS_FILE = "settings.json";
+
+export interface HostSettingsOptions {
   /** The extension's contributed settings (`contributes.configuration`). */
   readonly contributed: readonly ContributedSetting[];
   /** Where the reader's changes are kept. */
-  readonly file: string;
+  readonly store: HostStore;
+  /** The changes as the store held them at start (`SETTINGS_FILE`). */
+  readonly saved: string | undefined;
 }
 
-export function createNodeSettings(options: NodeSettingsOptions): HostSettings {
+export function createHostSettings(options: HostSettingsOptions): HostSettings {
   const values = new SettingValues(options);
   const effective = new EffectiveConfiguration({
     get: (key) => values.get(PREFIX + key),
@@ -51,14 +55,14 @@ class SettingValues {
   private readonly listeners = new Set<() => void>();
   private writing: Promise<void> = Promise.resolve();
 
-  constructor(private readonly options: NodeSettingsOptions) {
+  constructor(private readonly options: HostSettingsOptions) {
     this.defaults = new Map(
       options.contributed.map((setting) => [
         setting.key,
         setting.schema.default,
       ]),
     );
-    this.overrides = readOverrides(options.file);
+    this.overrides = readOverrides(options.saved);
   }
 
   get(key: string): unknown {
@@ -113,7 +117,10 @@ class SettingValues {
     } else {
       next[key] = value;
     }
-    await writeAtomic(this.options.file, JSON.stringify(next, null, 2) + "\n");
+    await this.options.store.write(
+      SETTINGS_FILE,
+      JSON.stringify(next, null, 2) + "\n",
+    );
     this.overrides = next;
     for (const listener of this.listeners) {
       listener();
@@ -126,9 +133,12 @@ function fullKey(key: string): string {
 }
 
 /** A missing or unreadable file means no changes; a damaged one is not fatal. */
-function readOverrides(file: string): Record<string, unknown> {
+function readOverrides(text: string | undefined): Record<string, unknown> {
+  if (text === undefined) {
+    return {};
+  }
   try {
-    const value: unknown = JSON.parse(readFileSync(file, "utf8"));
+    const value: unknown = JSON.parse(text);
     return typeof value === "object" && value !== null && !Array.isArray(value)
       ? (value as Record<string, unknown>)
       : {};

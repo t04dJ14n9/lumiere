@@ -1,9 +1,10 @@
 /**
- * Choosing a vault: the native folder picker in the desktop app, a path
- * field in a browser, and the vaults opened before.
+ * Choosing a vault: a folder picker where the window has one (the desktop
+ * app, the web app), a path field in a browser on a server, and the vaults
+ * opened before.
  */
 import { useState } from "react";
-import { inDesktopApp } from "../tauri";
+import { backend } from "../backend";
 
 export interface VaultPickerProps {
   readonly recent: readonly string[];
@@ -15,15 +16,17 @@ export interface VaultPickerProps {
 
 export function VaultPicker({ recent, onOpen, onCancel }: VaultPickerProps) {
   const [typed, setTyped] = useState("");
+  const { pickFolder, typesPaths } = backend();
   return (
     <section className="vault-picker" aria-label="Open a vault">
       <h1>Lumière</h1>
       <p>Open a folder of Markdown notes. An Obsidian vault works as it is.</p>
-      {inDesktopApp() ? (
+      {pickFolder && (
         <button type="button" className="primary" onClick={() => onOpen()}>
           Open Folder…
         </button>
-      ) : (
+      )}
+      {!pickFolder && typesPaths && (
         <form
           onSubmit={(event) => {
             event.preventDefault();

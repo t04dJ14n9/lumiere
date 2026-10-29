@@ -9,9 +9,10 @@ import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import {
   sideResources,
-  diffSource,
   diffResourcesHost,
 } from "../../../src/plugins/resources/diff-resources";
+import { gitSource as diffSource } from "../../../src/host/git-source";
+import { realContains } from "../../../src/host/real-contains";
 import {
   diffImageUrl,
   diffResourceRoots,
@@ -89,8 +90,12 @@ for (const directory of ["100% done", "release%20notes"]) {
           assert.equal(uri, image);
           return { mtime: 7, symbolicLink: false };
         },
+        // VS Code resolves file: links on the local disk.
+        realContains,
       },
       git: {
+        // VS Code's own parser: these sides are named by git: URIs.
+        sourceOf: diffSource,
         toGitUri(uri, ref) {
           assert.equal(uri, image);
           assert.equal(ref, "HEAD");
@@ -134,6 +139,7 @@ test("images resolve separately against each note and Git revision with existing
       read: async () => new Uint8Array(),
       stat: async () => ({ mtime: 7, symbolicLink: false }),
     },
+    git: { sourceOf: diffSource },
   });
   const resource = await sideResources(vaults, files, {
     uri: source,

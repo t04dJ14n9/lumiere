@@ -1,6 +1,7 @@
 /**
- * The shell's view of the server (src/server/api.ts): vaults, files,
- * opening, and the event stream. Same origin, so the token cookie goes along.
+ * The window's view of a Lumière server (src/server/api.ts): vaults, files,
+ * opening, commands and the event stream (`httpApi`, part of http-backend.ts).
+ * Same origin, so the token cookie goes along.
  */
 
 export interface VaultList {
@@ -43,34 +44,47 @@ const post = (url: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-export const api = {
-  vaults: () => request<VaultList>("/api/vaults"),
-  addVault: (path: string) => post("/api/vaults", { path }),
-  closeVault: (path: string) =>
-    request<VaultList>("/api/vaults", {
-      method: "DELETE",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ path }),
-    }),
-  files: async (vault: string) =>
-    (
-      await request<{ files: FileEntry[] }>(
-        `/api/files?vault=${encodeURIComponent(vault)}`,
-      )
-    ).files,
-  /** A note or folder from outside the shell (a menu, a dropped path). */
-  open: (path: string) => post("/api/open", { path }),
-  /** Lumière's contributed commands currently available in the Command Palette. */
-  commands: async () =>
-    (await request<{ commands: PaletteCommand[] }>("/lumiere/commands"))
-      .commands,
-  runCommand: (command: string) => post("/lumiere/commands", { command }),
+export const httpApi = {
+  vaults: {
+    list: () => request<VaultList>("/api/vaults"),
+    add: (path: string) => post("/api/vaults", { path }),
+    close: (path: string) =>
+      request<VaultList>("/api/vaults", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ path }),
+      }),
+    files: async (vault: string) =>
+      (
+        await request<{ files: FileEntry[] }>(
+          `/api/files?vault=${encodeURIComponent(vault)}`,
+        )
+      ).files,
+    open: (path: string) => post("/api/open", { path }),
+  },
+  commands: {
+    list: async () =>
+      (await request<{ commands: PaletteCommand[] }>("/lumiere/commands"))
+        .commands,
+    run: (command: string) => post("/lumiere/commands", { command }),
+  },
   events(listener: (event: ServerEvent) => void): () => void {
     const source = new EventSource("/api/events");
     source.onmessage = (message: MessageEvent<string>) =>
       listener(JSON.parse(message.data) as ServerEvent);
     return () => source.close();
   },
+};
+
+export const api = {
+  vaults: () => httpApi.vaults.list(),
+  addVault: (path: string) => httpApi.vaults.add(path),
+  closeVault: (path: string) => httpApi.vaults.close(path),
+  files: (vault: string) => httpApi.vaults.files(vault),
+  open: (path: string) => httpApi.vaults.open(path),
+  commands: () => httpApi.commands.list(),
+  runCommand: (command: string) => httpApi.commands.run(command),
+  events: (listener: (event: ServerEvent) => void) => httpApi.events(listener),
 };
 
 /** Whether a path names a Markdown note or PDF that the app can open in a tab. */

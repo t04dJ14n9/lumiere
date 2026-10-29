@@ -53,6 +53,11 @@ Paths are checked as VS Code's host checks them (`paths.ts`): inside the
 workspace after `..` is resolved, and still inside through symbolic links.
 The workspace may not be the filesystem root.
 
+The host itself is shared with host-web: `@workshop/host-node/core`
+(`src/core.ts`) starts the plugins on a `HostPlatform` (`src/host/platform.ts`)
+and reaches no Node built-in, which `test/unit/core-layers.test.ts` checks.
+`startLumiere` gives it Node's platform (`src/host/node-platform.ts`).
+
 ## The contracts it defines
 
 | Module | Between | What |

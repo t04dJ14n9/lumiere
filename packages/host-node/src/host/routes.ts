@@ -14,13 +14,14 @@ import {
   settingsUnavailableIn,
 } from "@workshop/markdown/portable";
 import { NODE_HOST_OFFERS } from "./inert";
-import { injectShim, pageQuery, socketSource } from "./page";
+import { injectShim, socketSource } from "./page";
+import { pageQuery } from "./page-query";
 import type { PageSocket, PanelUrls } from "./panel";
 import { assertContained, fileUriToPath, resolveContainedNote } from "./paths";
 import type { LumiereHost } from "./start";
 import { createPdfRoutes, NO_PDF_ROUTES, type PdfRoutes } from "./pdf-routes";
 import { serveFile, serveStatic } from "./static";
-import { createCommandRoutes } from "./command-palette";
+import { createCommandRoutes } from "./command-routes";
 import { createSettingsRoutes } from "./settings-routes";
 import { createViewRoutes } from "./view-routes";
 

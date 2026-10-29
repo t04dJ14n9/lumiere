@@ -23,6 +23,7 @@ function fakeGit() {
     baseline: async () => ({ status: "unavailable" }),
     stage: async () => false,
     toGitUri: () => undefined,
+    sourceOf: (uri) => ({ source: uri }),
     repoGeneration: () => generation,
     identity: async () => ({ userName: "Ada", userEmail: "ada@example.com" }),
     onDidChange(listener) {

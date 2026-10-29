@@ -4,7 +4,8 @@
  * `/lumiere/commands`.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, type PaletteCommand } from "../api";
+import type { PaletteCommand } from "../api";
+import { backend } from "../backend";
 import type { CommandHandlers } from "../commands";
 import type { MenuCommand } from "../tauri";
 
@@ -89,7 +90,7 @@ export function CommandPalette({
       id: item.command,
       title: item.title,
       category: item.category ?? "Lumière",
-      run: () => report(api.runCommand(item.command)),
+      run: () => report(backend().commands?.run(item.command) ?? Promise.resolve()),
     }));
     return [...contributed, ...shellPaletteEntries(handlers)];
   }, [editorCommands, handlers, report]);
@@ -136,8 +137,7 @@ function useEditorCommands(
     }
     let live = true;
     report(
-      api
-        .commands()
+      (backend().commands?.list() ?? Promise.resolve([]))
         .then((listed) => live && setCommands(listed))
         .catch(() => live && setCommands([])),
     );

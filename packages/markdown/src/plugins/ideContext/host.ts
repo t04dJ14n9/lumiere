@@ -4,38 +4,11 @@ import { contributionId } from "../../shared/setting-schema";
 import { buildMwIdeContextPacket } from "./adapter";
 import { copyIdeContext, sendIdeContext } from "./delivery";
 import type { IdeContextTargetSetting } from "@workshop/agents/ide-context";
-import * as os from "node:os";
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-const { readdir: readTempDir } = fs;
-import * as fssync from "node:fs";
+import type { IdeContextTemp } from "../../shared/host";
 import {
   publishIdeContextTemp,
   renewLeaseAtomic,
 } from "@workshop/agents/ide-context";
-import type { TempFs } from "@workshop/agents/ide-context";
-
-/** Node fs adapter for temp publish. */
-const nodeTempFs: TempFs = {
-  mkdir: async (p, o) => {
-    await fs.mkdir(p, { recursive: true, mode: o?.mode });
-  },
-  writeFile: (p, data, o) => fs.writeFile(p, data, { mode: o?.mode }),
-  rename: (a, b) => fs.rename(a, b),
-  readFile: (p) => fs.readFile(p),
-  unlink: (p) => fs.unlink(p),
-  listNames: (p) => readTempDir(p),
-  stat: async (p) => {
-    const s = await fs.stat(p);
-    return {
-      mtimeMs: s.mtimeMs,
-      size: s.size,
-      isFile: () => s.isFile(),
-      isDirectory: () => s.isDirectory(),
-    };
-  },
-  renameSync: (a, b) => fssync.renameSync(a, b),
-};
 
 export const ideContextHost: Plugin = {
   name: "ideContext",
@@ -134,8 +107,14 @@ async function runSend(ctx: Context): Promise<void> {
     inform: (m) => ctx.dialogs.inform(m),
     publishTemp: publishIdeContextTemp,
     renewLease: renewLeaseAtomic,
-    tempFs: nodeTempFs,
-    tempDir: path.join(os.tmpdir(), "agent-ide-context"),
+    // Only where an agent reads files (VS Code); elsewhere Codex gets the clipboard.
+    ...temporaryFiles(ctx.agentHost.ideContextTemp),
     owner: "markdownWorkshop",
   });
+}
+
+function temporaryFiles(temp: IdeContextTemp | undefined) {
+  return temp
+    ? { tempFs: temp.fs, tempDir: temp.dir, tempFileUri: temp.fileUri }
+    : {};
 }

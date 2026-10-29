@@ -1,179 +1,38 @@
 /**
- * Start Lumière's Markdown plugins outside VS Code: the same bootstrap VS
- * Code runs, over Node host services. Lumière's plugin tree is its own (on
- * its own Cordis); nothing from an embedder's plugin context enters it.
+ * Start Lumière's Markdown plugins in a Node process (DSH, the app's server):
+ * the shared host (start-host.ts) on Node's platform (node-platform.ts).
  */
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
-import { createRoot, type Logger, type RootContext } from "@workshop/core";
-import {
-  bootstrap,
-  MARKDOWN_EDITOR,
-  pluginRank,
-  type ContributedSetting,
-  type HostSettings,
-} from "@workshop/markdown/portable";
-import {
-  createCommandPalette,
-  type CommandContribution,
-  type CommandPalette,
-} from "./command-palette";
-import {
-  ContextKeys,
-  registerContextMenus,
-  type MenuContribution,
-} from "./context-menu";
-import { NoteDocuments } from "./documents";
+import type { ContributedSetting } from "@workshop/markdown/portable";
+import type { CommandContribution } from "./command-palette";
+import { parseMenus, type MenuContribution } from "./context-menu";
 import { NodeGitAccess } from "./git";
-import { PanelHub } from "./panels";
+import { createNodePlatform } from "./node-platform";
 import {
-  createHostCommands,
-  createNodeHostServices,
-  type HostIdentity,
-  type NodeHostCommands,
-} from "./services";
-import { TreeHub } from "./trees";
-import { createNodeVaultSystem } from "./vault";
+  startHost,
+  type HostStartOptions,
+  type LumiereHost,
+} from "./start-host";
 
-export interface StartOptions {
-  readonly identity: HostIdentity;
+export type { LumiereHost } from "./start-host";
+
+export interface StartOptions extends HostStartOptions {
   /** The built editor (`packages/markdown/dist`); its workers parse the vault. */
   readonly markdown: string;
-  /** Lumière's settings and defaults, from the extension's `contributes`. */
-  readonly contributed: readonly ContributedSetting[];
-  /** Lumière's right-click menu items (`menus.json`, written at build time). */
-  readonly menus?: readonly MenuContribution[];
-  /** Lumière's Command Palette items (`commands.json`, written at build time). */
-  readonly commands?: readonly CommandContribution[];
   /** Where settings, state and vault snapshots are kept. */
   readonly data: string;
-  readonly logger: Logger;
 }
 
-export interface LumiereHost {
-  readonly panels: PanelHub;
-  /** The plugins' tree views (Outline, Backlinks…), for the embedder to show. */
-  readonly trees: TreeHub;
-  /** Lumière's settings, for the embedder's settings page. */
-  readonly settings: HostSettings;
-  /** Lumière's Command Palette commands, filtered by active editor and settings. */
-  readonly commands?: CommandPalette;
-  /** A workspace a note was opened from; vaults are found inside these. */
-  addRoot(root: string): void;
-  stop(): Promise<void>;
-}
-
-export async function startLumiere(
-  options: StartOptions,
-): Promise<LumiereHost> {
-  const roots = new Set<string>();
-  const documents = new NoteDocuments();
-  const panels = new PanelHub(documents);
-  const log = (message: string) => options.logger.warn(message);
-  const keys = new ContextKeys();
-  const commands = createHostCommands(log, keys);
-  const trees = new TreeHub(commands);
-  const git = new NodeGitAccess({ roots: () => [...roots] });
-  const { settings, root } = await bootstrapPlugins({
-    options,
-    git,
-    documents,
-    panels,
-    trees,
-    commands,
-    roots: () => [...roots],
-    log,
-  });
-  const stopMenus = registerContextMenus({
-    panels,
-    contributions: options.menus ?? [],
-    keys,
-    commands,
-    viewType: MARKDOWN_EDITOR.viewType,
-    log,
-  });
-  return {
-    panels,
-    trees,
-    settings,
-    commands: createCommandPalette({
-      contributions: options.commands ?? [],
-      keys,
-      settings,
-      panels,
-      commands,
-      viewType: MARKDOWN_EDITOR.viewType,
-      log,
-    }),
-    addRoot: (item) => {
-      roots.add(item.replace(/\/+$/, ""));
-    },
-    stop: () => stopHost({ stopMenus, panels, root, git, documents }),
-  };
-}
-
-async function bootstrapPlugins({
-  options,
-  git,
-  documents,
-  panels,
-  trees,
-  commands,
-  roots,
-  log,
-}: {
-  readonly options: StartOptions;
-  readonly git: NodeGitAccess;
-  readonly documents: NoteDocuments;
-  readonly panels: PanelHub;
-  readonly trees: TreeHub;
-  readonly commands: NodeHostCommands;
-  readonly roots: () => readonly string[];
-  readonly log: (message: string) => void;
-}): Promise<{ readonly settings: HostSettings; readonly root: RootContext }> {
-  const host = createNodeHostServices({
-    git,
-    commands,
-    trees,
-    identity: options.identity,
-    documents,
-    panels,
-    roots,
-    contributed: options.contributed,
-    markdownDist: options.markdown,
+export function startLumiere(options: StartOptions): Promise<LumiereHost> {
+  const platform = createNodePlatform({
     data: options.data,
-    log,
+    workers: path.join(options.markdown, "workers"),
   });
-  const vault = createNodeVaultSystem({
-    documents,
-    settings: host.settings,
-    roots,
-    storage: options.data,
-    parserWorker: path.join(options.markdown, "workers", "vault.cjs"),
-    warn: log,
+  return startHost(platform, {
+    ...options,
+    git: (roots) => new NodeGitAccess({ roots }),
   });
-  const root: RootContext = createRoot({
-    rank: pluginRank,
-    logger: options.logger,
-  });
-  await bootstrap(host, vault, root);
-  return { settings: host.settings, root };
-}
-
-/** Pages and their menus first, then the plugins, then the notes. */
-async function stopHost(parts: {
-  readonly stopMenus: () => void;
-  readonly panels: PanelHub;
-  readonly root: RootContext;
-  readonly git: NodeGitAccess;
-  readonly documents: NoteDocuments;
-}): Promise<void> {
-  parts.stopMenus();
-  parts.panels.dispose();
-  await parts.root.dispose();
-  // After the plugins, which stop listening first.
-  parts.git.dispose();
-  await parts.documents.dispose();
 }
 
 /** Contributed settings from a `contributed.json` written at build time; none if missing. */
@@ -192,14 +51,7 @@ export async function readMenus(
   file: string,
 ): Promise<readonly MenuContribution[]> {
   try {
-    const value: unknown = JSON.parse(await readFile(file, "utf8"));
-    return Array.isArray(value)
-      ? value.filter(
-          (item): item is MenuContribution =>
-            typeof item?.command === "string" &&
-            typeof item?.title === "string",
-        )
-      : [];
+    return parseMenus(JSON.parse(await readFile(file, "utf8")));
   } catch {
     return [];
   }

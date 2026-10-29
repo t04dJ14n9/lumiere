@@ -6,6 +6,7 @@ import {
   contains,
   containedResource,
 } from "../../../src/plugins/resources/containment";
+import { realContains } from "../../../src/host/real-contains";
 test("resource containment rejects sibling prefixes, traversal and different authorities", () => {
   assert.equal(contains("file:///vault", "file:///vault/note.md"), true);
   for (const uri of [
@@ -29,14 +30,25 @@ test("realpath checks reject symlink escapes while permitting contained files", 
       pathToFileURL(temp + "/vault").href,
       pathToFileURL(temp + "/vault/note.md").href,
       false,
+      { realContains },
     );
     await assert.rejects(
       containedResource(
         pathToFileURL(temp + "/vault").href,
         pathToFileURL(temp + "/vault/escape.md").href,
         true,
+        { realContains },
       ),
       /symlink escapes/,
+    );
+    // Without real paths (a browser host), any link is refused.
+    await assert.rejects(
+      containedResource(
+        pathToFileURL(temp + "/vault").href,
+        pathToFileURL(temp + "/vault/escape.md").href,
+        true,
+      ),
+      /Virtual symbolic/,
     );
     await assert.rejects(
       containedResource(
@@ -56,8 +68,29 @@ test("virtual resource checks reject symlinked ancestor directories", async () =
       "vscode-remote://host/vault",
       "vscode-remote://host/vault/link/note.md",
       false,
-      async (uri) => ({ symbolicLink: uri.endsWith("/link") }),
+      { inspect: async (uri) => ({ symbolicLink: uri.endsWith("/link") }) },
     ),
     /Virtual symbolic/,
   );
+});
+
+test("resource containment resolves dot segments as path.posix.relative does", async () => {
+  const { relative } = await import("node:path/posix");
+  for (const [root, uri] of [
+    ["file:///vault", "file:///vault/a/../b.md"],
+    ["file:///vault/", "file:///vault/./b.md"],
+    ["file:///vault", "file:///vault//b.md"],
+    ["file:///vault", "file:///vaults/b.md"],
+    ["file:///vault/sub", "file:///vault/sub/../../vault/sub/x"],
+    ["file:///vault/sub", "file:///vault/x/../sub"],
+    ["file:///", "file:///anything/at/all"],
+  ] as const) {
+    const base = decodeURIComponent(new URL(root).pathname).replace(/\/$/, "");
+    const rel = relative(
+      base || "/",
+      decodeURIComponent(new URL(uri).pathname),
+    );
+    const expected = !rel.startsWith("../") && rel !== "..";
+    assert.equal(contains(root, uri), expected, `${root} ${uri}`);
+  }
 });

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SettingItem } from "@workshop/host-node/settings";
 import type { UiStateHandle } from "../ui-state";
 import type { ColorTheme } from "../../shared/ui-state";
-import { settings } from "../settings";
+import { backend } from "../backend";
 import {
   COLOR_THEME_KEY,
   colorThemeItem,
@@ -125,7 +125,7 @@ function useSettings(
   );
   useEffect(() => {
     if (visible) {
-      report(settings.list().then(setLumiere));
+      report(backend().settings.list().then(setLumiere));
     }
   }, [visible, report]);
   const items = useMemo(
@@ -140,21 +140,24 @@ function useSettings(
         });
         return;
       }
-      settings.change({ key: item.key, ...change }).then(
-        (updated) => {
-          setLumiere((current) =>
-            current.map((other) =>
-              other.key === updated.key ? updated : other,
-            ),
-          );
-          setProblems(({ [item.key]: _, ...rest }) => rest);
-        },
-        (error: unknown) =>
-          setProblems((current) => ({
-            ...current,
-            [item.key]: error instanceof Error ? error.message : String(error),
-          })),
-      );
+      backend()
+        .settings.change({ key: item.key, ...change })
+        .then(
+          (updated) => {
+            setLumiere((current) =>
+              current.map((other) =>
+                other.key === updated.key ? updated : other,
+              ),
+            );
+            setProblems(({ [item.key]: _, ...rest }) => rest);
+          },
+          (error: unknown) =>
+            setProblems((current) => ({
+              ...current,
+              [item.key]:
+                error instanceof Error ? error.message : String(error),
+            })),
+        );
     },
     [ui],
   );

@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  isEmbeddingMessage,
+  parseConnectMessage,
   parseOpenMessage,
   parseThemeMessage,
+  isEmbeddingMessage,
+  isPortMessage,
 } from "../../src/embedding";
 
 test("a theme message keeps only theme variables with harmless values", () => {
@@ -73,4 +75,22 @@ test("the shown message is told apart from the others", async () => {
   ]) {
     assert.equal(isShownMessage(other), false, JSON.stringify(other));
   }
+});
+
+test("a channel is asked for and handed over only for the page's own panel", () => {
+  assert.deepEqual(parseConnectMessage({ lumiere: "connect", panel: "p1" }), {
+    lumiere: "connect",
+    panel: "p1",
+  });
+  assert.equal(
+    parseConnectMessage({ lumiere: "connect", panel: 7 }),
+    undefined,
+  );
+  assert.equal(
+    parseConnectMessage({ lumiere: "open", panel: "p1" }),
+    undefined,
+  );
+  assert.equal(isPortMessage({ lumiere: "port", panel: "p1" }, "p1"), true);
+  assert.equal(isPortMessage({ lumiere: "port", panel: "p2" }, "p1"), false);
+  assert.equal(isEmbeddingMessage({ lumiere: "port", panel: "p1" }), true);
 });
