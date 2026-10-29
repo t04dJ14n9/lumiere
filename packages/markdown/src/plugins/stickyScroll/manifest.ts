@@ -17,7 +17,7 @@ export default defineManifest({
   description:
     "Pin ancestor Markdown headings at the top while scrolling in Live Preview and Source mode. Click a pinned heading to return to it.",
   kind: "feature",
-  defaultEnabled: false,
+  defaultEnabled: true,
   surfaces: ["webview"],
   capabilities: ["editorChrome", "navigation"],
   config,

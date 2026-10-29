@@ -16,6 +16,7 @@ import { revealBlockMotion } from "./motion";
 import { freezeRevealDuringVisual } from "./visual-reveal";
 import { normalCaretAfterHostEdits } from "./normal-caret";
 import { installVimKeyRouting } from "./key-routing";
+import { installExAddressLeadingSpaceFix } from "./ex-address-space";
 import { vimLineKeyboard } from "./keyboard";
 import { insertIntoClickedSource } from "./click-insert";
 import {
@@ -55,6 +56,8 @@ export const vimWebview: Plugin<Infer<typeof config>> = {
     registerShortcutConsumer(ctx);
     registerNativeActions(ctx);
     registerExCommands(ctx);
+    // Real Vim accepts `: 123`; vim-core does not — eat spaces after `:`.
+    ctx.effect(() => installExAddressLeadingSpaceFix());
     registerVimExtension(ctx);
     // BH-021: default <C-p>→k steals Quick Open and races suggest Ctrl+P.
     releaseQuickOpenFromVim(ctx);

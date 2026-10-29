@@ -15,7 +15,7 @@ the field, overlay, scroll listener and margins.
 
 ## Files
 
-- `manifest.ts`: opt-in enablement and maximum row setting.
+- `manifest.ts`: on-by-default enablement and maximum row setting.
 - `model.ts`: section index, ancestor selection and document state field.
 - `view.ts`: measured overlay, heading buttons and scroll margins.
 - `webview.ts`: owned registration, configuration updates and jump history.
@@ -29,7 +29,7 @@ the field, overlay, scroll listener and margins.
 Injects `editor`; provides no services and listens to/emits no kernel events.
 Uses the editor's extension registration and navigation history.
 
-- `lumiere.markdown.plugins.stickyScroll.enabled`: **false** by default.
+- `lumiere.markdown.plugins.stickyScroll.enabled`: **true** by default.
 - `lumiere.markdown.stickyScroll.maxLines`: **5**, range 1–6, rounded down.
 
 Settings apply immediately, per resource, through the existing plugin settings

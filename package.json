@@ -2976,7 +2976,7 @@
           },
           "lumiere.markdown.plugins.stickyScroll.enabled": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "scope": "resource",
             "description": "Pin ancestor Markdown headings at the top while scrolling in Live Preview and Source mode. Click a pinned heading to return to it."
           },
