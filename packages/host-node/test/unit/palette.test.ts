@@ -68,6 +68,18 @@ test("colours no role covers follow the palette's light or dark", () => {
     vscodeVariables(palette(true))["--vscode-charts-red"],
     "#f14c4c",
   );
+  assert.equal(
+    vscodeVariables(palette(false))[
+      "--vscode-gitlens-trailingLineForegroundColor"
+    ],
+    "#99999959",
+  );
+  assert.equal(
+    vscodeVariables(palette(true))[
+      "--vscode-gitlens-trailingLineForegroundColor"
+    ],
+    "#99999959",
+  );
 });
 
 test("an empty role leaves the variable to the editor's own fallback", () => {
