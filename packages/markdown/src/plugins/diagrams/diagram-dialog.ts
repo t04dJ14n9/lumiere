@@ -1,3 +1,5 @@
+import { cloneDiagramSvg } from "./clone-svg";
+
 interface Point {
   x: number;
   y: number;
@@ -331,8 +333,9 @@ function createDialogParts(
   area.className = "media-area";
   area.setAttribute("aria-label", "Mermaid diagram");
   area.tabIndex = 0;
-  const clone = svg.cloneNode(true) as SVGSVGElement;
-  clone.removeAttribute("id");
+  // Mermaid theme CSS is scoped to `#svgId …`; stripping the id makes fills
+  // compute to black in the lightbox. Assign a unique id and rewrite styles.
+  const clone = cloneDiagramSvg(svg);
   clone.style.maxWidth = "none";
   area.append(clone);
   const status = document.createElement("p");

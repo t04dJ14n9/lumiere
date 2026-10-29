@@ -186,7 +186,7 @@ export class CellProjection {
   ): void {
     this.cellEditor?.source.remember(text);
     const changes = projectedChanges(
-      this.grid.block.source,
+      this.grid.tableSource(),
       position,
       text,
       this.grid.start(),
@@ -269,7 +269,7 @@ export class CellProjection {
       return;
     }
     this.cellEditor.update(
-      this.grid.block.source,
+      this.grid.tableSource(),
       this.grid.model.rows[this.active.row]![this.active.column]!,
       this.environment.vim !== undefined,
       this.grid.model.alignments[this.active.column] ?? null,

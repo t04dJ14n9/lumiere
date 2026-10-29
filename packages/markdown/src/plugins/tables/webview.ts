@@ -28,6 +28,7 @@ import { tableCommands } from "./manifest";
 import { insertTable, tableOperation } from "./commands";
 import { vimTableEntry } from "./vim-entry";
 import { listenForTableWheel } from "./scroll-input";
+import { extendTableRangeForWidths } from "./column-widths";
 import { cellPointerOffset } from "./cell-pointer";
 export const tablesWebview: Plugin = {
   name: "tables",
@@ -151,6 +152,21 @@ function registerTableRenderer(
       nodes: ["Table"],
       editing: "widget",
       match: (node) => node.name === "Table",
+      range: (node, state) => {
+        if (node.to >= state.doc.length) {
+          return { from: node.from, to: node.to };
+        }
+        const next = state.doc.lineAt(Math.min(state.doc.length, node.to + 1));
+        if (next.from !== node.to + 1) {
+          return { from: node.from, to: node.to };
+        }
+        return extendTableRangeForWidths(
+          next.text,
+          node.from,
+          node.to,
+          next.to,
+        );
+      },
       widget: (block) => new TableWidget(block, 0, environment),
     }),
   );

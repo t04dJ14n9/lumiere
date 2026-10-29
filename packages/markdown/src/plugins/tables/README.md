@@ -24,6 +24,11 @@ The widget ignores events, so CodeMirror never hears a wheel over it; another
 passive listener reports vertical table wheel input through the editor's
 public scroll-input event, which cancels saved-view scroll restoration.
 
+Column widths can be dragged from the right edge of a cell (not the `⠶` move grip).
+Widths persist in source as an HTML comment on the line immediately after the table:
+`<!-- lumiere-col-widths: 120,80,200 -->`. GFM has no column-width syntax; this is a
+Lumière round-trip convention (Obsidian ordinary MD Live Preview has no col-resize).
+
 Tall wide tables also show a sticky mirror of the table's horizontal
 scrollbar (BH-016) while the native bar is below the note viewport, so
 columns stay reachable without scrolling to the foot; the mirror hides once
@@ -90,6 +95,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `toolbar.ts`: add-row/column controls and contextual menu lifetime. Horizontal pans on the add-row strip scroll `.table-scroll` and do not insert (BH-019); a true click still adds a row.
 - `menu.ts`: menu items and their operation/focus targets.
 - `handles.ts`: row/column grips, drag feedback and drop handling.
+- `column-widths.ts`: trailing `<!-- lumiere-col-widths: … -->` parse/join and remap on column ops (GFM has no width syntax).
+- `column-widths.test.ts`: apply, persist/reload and remap unit tests.
+- `column-resize.ts`: drag the cell's right edge (`col-resize`) to set width; clear of the top move grip.
 - `hit-test.ts`: cell and axis hit testing.
 - `commands.ts`: command IDs to table operations.
 - `state.ts`: active-table registry, projection annotation and selection/action facets.
