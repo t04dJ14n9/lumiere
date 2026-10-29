@@ -133,9 +133,16 @@ const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
       (view as { message: string | undefined }).message = message;
     },
     reveal: async (node, options) => {
-      if (view.visible) {
-        await view.reveal(node, { select: true, focus: false, ...options });
+      if (!view.visible) {
+        return;
       }
+      // A parent opened by reveal must be recorded. Collapse refreshes this
+      // node, and VS Code applies the new collapsibleState only when it
+      // changed. Leaves omit `expanded` and stay non-collapsible.
+      if (options?.expand && node.expanded !== undefined) {
+        expansion.set(node.id, true);
+      }
+      await view.reveal(node, { select: true, focus: false, ...options });
     },
     expand: async (node) => {
       if (!view.visible) {

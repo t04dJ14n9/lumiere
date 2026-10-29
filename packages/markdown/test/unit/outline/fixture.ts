@@ -38,6 +38,16 @@ export async function outlineFixture(
   const expands: TreeNode[] = [];
   const collapses: TreeNode[] = [];
   let refreshCount = 0;
+  // VS Code keeps a node open when refresh does not change collapsibleState.
+  // Reveal-expand opens it visually; only expand() records the provider flag
+  // that a later collapse can change.
+  const providerExpanded = new Map<string, boolean>();
+  const visuallyOpen = new Set<string>();
+  const openLabels = new Map<string, string>();
+  const providerFlag = (node: TreeNode) =>
+    providerExpanded.has(node.id)
+      ? providerExpanded.get(node.id) === true
+      : node.expanded === true;
   const warnings: unknown[] = [];
   const settingsWrites: unknown[][] = [];
   const resources = new Map<string, boolean>();
@@ -62,12 +72,25 @@ export async function outlineFixture(
       },
       async reveal(node, options) {
         reveals.push({ node, options });
+        openLabels.set(node.id, node.label);
+        if (options?.expand) {
+          visuallyOpen.add(node.id);
+        }
       },
       async expand(node) {
         expands.push(node);
+        openLabels.set(node.id, node.label);
+        providerExpanded.set(node.id, true);
+        visuallyOpen.add(node.id);
       },
       async collapse(node) {
         collapses.push(node);
+        openLabels.set(node.id, node.label);
+        const wasExpanded = providerFlag(node);
+        providerExpanded.set(node.id, false);
+        if (wasExpanded) {
+          visuallyOpen.delete(node.id);
+        }
       },
       get visible() {
         return visible;
@@ -166,6 +189,14 @@ export async function outlineFixture(
     collapses,
     get refreshCount() {
       return refreshCount;
+    },
+    isOpen(label: string) {
+      for (const id of visuallyOpen) {
+        if (openLabels.get(id) === label) {
+          return true;
+        }
+      }
+      return false;
     },
     warnings,
     resources,

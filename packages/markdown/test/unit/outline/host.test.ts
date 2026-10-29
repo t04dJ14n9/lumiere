@@ -262,8 +262,13 @@ test("Expand All visits every level and preserves selection and focus", async (t
   await tick();
   await fixture.fake.commands.get(EXPAND_ALL_COMMAND)!();
   assert.deepEqual(
+    fixture.expands.map((node) => node.label),
+    ["One", "Two", "Three", "Four", "Five"],
+    "each parent is recorded open so a later collapse can close it",
+  );
+  assert.deepEqual(
     fixture.reveals.map((reveal) => reveal.node.label),
-    ["One", "Two", "Three", "Four", "Five", "Six", "Other"],
+    ["Six", "Other"],
   );
   for (const reveal of fixture.reveals) {
     assert.deepEqual(reveal.options, {
@@ -388,6 +393,19 @@ test("Expand All is folded back to the active path on the next follow", async (t
     "the next follow closes branches Expand All opened",
   );
   assert.equal(fixture.reveals.at(-1)?.node.label, "A1a");
+  assert.equal(fixture.isOpen("A"), true);
+  assert.equal(fixture.isOpen("A1"), true);
+  assert.equal(fixture.isOpen("A1a"), true);
+  assert.equal(
+    fixture.isOpen("A2"),
+    false,
+    "sibling opened by Expand All collapses",
+  );
+  assert.equal(
+    fixture.isOpen("B"),
+    false,
+    "other chapter opened by Expand All collapses",
+  );
 });
 
 test("Toggle Markdown Outline targets the view's hide command and restores it with focus", async (t) => {

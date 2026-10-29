@@ -106,25 +106,41 @@ export class OutlineView {
   }
 
   async expandAll(): Promise<void> {
-    // The next follow reasserts the single open path, even inside the same section.
-    this.lastAccordionKey = undefined;
     const revision = this.revision;
-    // Native reveal expands at most three levels. Visiting every node also
-    // expands deep Markdown outlines while preserving selection and focus.
-    for (const node of this.options.source.allNodes()) {
-      if (
-        this.isDisposed ||
-        revision !== this.revision ||
-        !this.options.tree.visible
-      ) {
-        return;
+    try {
+      for (const node of this.options.source.allNodes()) {
+        if (
+          this.isDisposed ||
+          revision !== this.revision ||
+          !this.options.tree.visible
+        ) {
+          return;
+        }
+        await this.openForExpandAll(node);
       }
-      await this.options.tree.reveal(node, {
-        expand: true,
-        select: false,
-        focus: false,
-      });
+    } finally {
+      // The tree is fully open. Forget the last accordion path so the next
+      // follow closes every other branch, even inside the same section.
+      this.lastAccordionKey = undefined;
     }
+  }
+
+  /**
+   * Parents go through `expand`, which records them open. A later collapse
+   * then changes collapsibleState. `reveal({ expand: true })` alone opens the
+   * chevron without changing that state, and VS Code leaves it open.
+   */
+  private async openForExpandAll(node: TreeNode): Promise<void> {
+    if (this.options.source.children(node).length > 0) {
+      await this.options.tree.expand(node);
+      return;
+    }
+    // Native reveal expands at most three levels, so each leaf is visited too.
+    await this.options.tree.reveal(node, {
+      expand: true,
+      select: false,
+      focus: false,
+    });
   }
 
   private async applyAccordion(active: TreeNode): Promise<void> {
