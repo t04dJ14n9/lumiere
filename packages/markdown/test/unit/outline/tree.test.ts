@@ -57,6 +57,33 @@ test("repeated headings are distinct active items, and replacing a note clears i
   assert.equal(source.activeNode(0), undefined);
 });
 
+test("parents start collapsed by default; pathTo lists ancestors then self", () => {
+  const text = "# Parent\n## Child\n### Deep\nbody\n## Sibling\n";
+  const source = new OutlineSource();
+  source.set("memory:///A.md", text);
+  const roots = source.roots();
+  assert.equal(roots[0]?.expanded, false);
+  const deep = source.activeNode(text.indexOf("body"))!;
+  assert.equal(deep.label, "Deep");
+  assert.deepEqual(
+    source.pathTo(deep).map((node) => node.label),
+    ["Parent", "Child", "Deep"],
+  );
+  assert.equal(source.pathTo(deep).at(-1)?.id, deep.id);
+});
+
+test("parentsStartExpanded true restores expand-all-parents build", () => {
+  const source = new OutlineSource();
+  source.parentsStartExpanded = true;
+  source.set("memory:///A.md", "# Parent\n## Child\n");
+  assert.equal(source.roots()[0]?.expanded, true);
+  assert.equal(
+    source.children(source.roots()[0]!).some((node) => node.expanded === true),
+    false,
+    "leaf Child has no expanded flag",
+  );
+});
+
 test("notes without headings and cursors in frontmatter have no active heading", () => {
   const source = new OutlineSource();
   source.set("memory:///A.md", "text\n```md\n# Code\n```\n");

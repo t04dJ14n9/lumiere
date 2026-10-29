@@ -11,6 +11,8 @@ export class OutlineSource implements TreeSource {
   private outline: OutlineHeading[] = [];
   private coordinates = new SourceCoordinates("");
   private readonly byId = new Map<string, OutlineHeading>();
+  /** When true, parents emit `expanded: true` (expandMode `all`). Default false = accordion. */
+  parentsStartExpanded = false;
 
   get isEmpty(): boolean {
     return this.outline.length === 0;
@@ -58,11 +60,23 @@ export class OutlineSource implements TreeSource {
     return parent ? this.node(parent) : undefined;
   }
 
+  pathTo(node: TreeNode): TreeNode[] {
+    const path: TreeNode[] = [];
+    let current: TreeNode | undefined = node;
+    while (current) {
+      path.unshift(current);
+      current = this.parent(current);
+    }
+    return path;
+  }
+
   private node(heading: OutlineHeading): TreeNode {
     return {
       id: heading.id,
       label: heading.title,
-      ...(heading.children.length > 0 && { expanded: true }),
+      ...(heading.children.length > 0 && {
+        expanded: this.parentsStartExpanded,
+      }),
       command: { id: OPEN_COMMAND, args: [this.uri, heading.offset] },
     };
   }
