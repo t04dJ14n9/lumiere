@@ -10,8 +10,6 @@ import type { NodeHostCommands } from "./services";
 import { evaluateWhen } from "./when";
 
 const CONFIG_PREFIX = "config.lumiere.markdown.";
-const MAX_BODY = 16 * 1024;
-
 /** One command from `package.json`, with its `commandPalette` when-clause (`assets.mjs`). */
 export interface CommandContribution {
   readonly command: string;
@@ -102,4 +100,3 @@ export function createCommandPalette(
     },
   };
 }
-

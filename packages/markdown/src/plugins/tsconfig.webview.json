@@ -9,6 +9,7 @@
     "**/manifest.ts",
     "**/protocol.ts",
     "**/api.ts",
+    "**/vim-continue.ts",
     "**/*.d.ts"
   ]
 }

@@ -203,7 +203,11 @@ test.describe("the caret stays out of the Properties block", () => {
       const line2 = view.state.doc.line(2);
       view.dispatch({
         selection: { anchor: line2.to, head: line2.to },
-        changes: { from: line2.from, to: line2.to, insert: "title: SourceEdited" },
+        changes: {
+          from: line2.from,
+          to: line2.to,
+          insert: "title: SourceEdited",
+        },
       });
     });
     await expect

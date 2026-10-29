@@ -36,7 +36,11 @@ export function useOpening(
   const { reload, select, refreshFiles } = vaults;
   const closeVault = useCallback(
     (folder: string) =>
-      report(backend().vaults.close(folder).then(() => reload())),
+      report(
+        backend()
+          .vaults.close(folder)
+          .then(() => reload()),
+      ),
     [reload, report],
   );
   const openPath = useCallback(
@@ -89,9 +93,9 @@ function chooseVault(
     report(host.vaults.add(folder));
   } else if (host.pickFolder) {
     report(
-      host.pickFolder().then((chosen) =>
-        chosen ? host.vaults.add(chosen) : undefined,
-      ),
+      host
+        .pickFolder()
+        .then((chosen) => (chosen ? host.vaults.add(chosen) : undefined)),
     );
   } else if (host.typesPaths) {
     setPickingVault(true);

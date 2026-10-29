@@ -26,12 +26,19 @@ import type {} from "../editor/api";
 import type { LocalSuggestions, Suggest, SuggestionTrigger } from "./api";
 import { CancelToken } from "../../shared/rpc/lifecycle";
 import { protocol, type Suggestion } from "./protocol";
+import { registerCompletionHooks } from "../../shared/completion-hooks";
 import { allowsSuggestions, completionEdit } from "./completion";
+
+registerCompletionHooks({ completionStatus, moveCompletionSelection });
+
 export const suggestWebview: Plugin = {
   name: "suggest",
   inject: { required: ["editor", "rpc"] },
   provides: ["suggest"],
   apply(ctx) {
+    ctx.effect(() =>
+      registerCompletionHooks({ completionStatus, moveCompletionSelection }),
+    );
     registerSources(ctx);
     registerCompletions(ctx);
   },

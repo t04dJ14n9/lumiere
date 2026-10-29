@@ -172,7 +172,9 @@ export class MemoryVaultIndex implements VaultIndex {
         this.table.set(vaultFile(entry));
       }
     }
-    this.links.resolveSources(this.affectedBy(...added));
+    if (added.length > 0 && this.notes.size > 0) {
+      this.links.resolveSources(this.affectedBy(...added));
+    }
   }
 
   /** Forget every file not in `keep`, without events. */
@@ -184,7 +186,9 @@ export class MemoryVaultIndex implements VaultIndex {
         removed.push(path);
       }
     }
-    this.links.resolveSources(this.affectedBy(...removed));
+    if (removed.length > 0 && this.notes.size > 0) {
+      this.links.resolveSources(this.affectedBy(...removed));
+    }
   }
 
   /** A file was created, or its size or time changed. */

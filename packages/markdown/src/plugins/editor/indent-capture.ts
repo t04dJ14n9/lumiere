@@ -1,4 +1,4 @@
-import { completionStatus } from "@codemirror/autocomplete";
+import { activeCompletionStatus } from "../../shared/completion-hooks";
 import type { Extension } from "@codemirror/state";
 import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import {
@@ -74,7 +74,7 @@ function captureIndentationKeys(view: EditorView, event: KeyboardEvent): void {
     return;
   }
   // Suggest owns Tab while a completion is open (Obsidian parity).
-  if (event.key === "Tab" && completionStatus(view.state) === "active") {
+  if (event.key === "Tab" && activeCompletionStatus(view.state) === "active") {
     return;
   }
   const ran = action === "indent" ? indentTab(view) : outdentTab(view);

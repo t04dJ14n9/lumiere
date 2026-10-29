@@ -41,11 +41,15 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   inject: { required: ["editor", "commands", "render"] },
   provides: ["livePreview"],
   apply(ctx, config) {
-    const service = registerEngine(ctx, config.mode);
-    ctx.provide("livePreview", service);
-    registerRenderInvalidation(ctx, service);
-    registerFallbackBlocks(ctx);
-    registerModeCommand(ctx, service);
+    // One extension flush for engine + fallback block renderers (4 extends).
+    const batch = ctx.editor.batch ?? ((fn) => fn());
+    batch(() => {
+      const service = registerEngine(ctx, config.mode);
+      ctx.provide("livePreview", service);
+      registerRenderInvalidation(ctx, service);
+      registerFallbackBlocks(ctx);
+      registerModeCommand(ctx, service);
+    });
   },
 };
 

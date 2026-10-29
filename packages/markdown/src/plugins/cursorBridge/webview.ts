@@ -17,23 +17,25 @@ const MAC = /Mac|iPhone|iPad/u.test(globalThis.navigator?.userAgent ?? "");
 export const cursorBridgeWebview: Plugin = {
   name: "cursorBridge",
   inject: { required: ["editor", "rpc"] },
-  async apply(ctx) {
+  apply(ctx) {
     const { rpc, editor } = ctx;
-    const inCursor = await rpc
+    void rpc
       .call(protocol, "isCursor", {})
-      .catch(() => false);
-    if (!inCursor) {
-      return;
-    }
-    ctx.effect(() =>
-      keepCursorKeysInEditor(editor.view, (mode) => {
-        void rpc
-          .call(protocol, "handOff", { mode })
-          .catch((error: unknown) =>
-            ctx.logger.warn("Cursor hand-off failed", error),
-          );
-      }),
-    );
+      .catch(() => false)
+      .then((inCursor) => {
+        if (!inCursor || !ctx.isLive) {
+          return;
+        }
+        ctx.effect(() =>
+          keepCursorKeysInEditor(editor.view, (mode) => {
+            void rpc
+              .call(protocol, "handOff", { mode })
+              .catch((error: unknown) =>
+                ctx.logger.warn("Cursor hand-off failed", error),
+              );
+          }),
+        );
+      });
   },
 };
 

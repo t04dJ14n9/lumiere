@@ -30,6 +30,8 @@ export async function bootstrap(
   } = {},
   logging = webviewLogging((record) => rpc.notify(protocol, "log", record)),
 ) {
+  // Overlap Properties/Sources chunk fetch with the host ready round-trip.
+  const earlyChrome = preloadChromeFeatures();
   const init = await rpc.call(protocol, "ready", {});
   performance.mark("mw:ready");
   logging.configure(init.debugLogging);
@@ -61,7 +63,7 @@ export async function bootstrap(
   // preset; paint structure starts only at first-paint rAF (wave 13 — not
   // the closed #288 wait-for-chrome-resolve serialize).
   const chromeChunks =
-    init.preset === "obsidian" ? preloadChromeFeatures() : Promise.resolve();
+    init.preset === "obsidian" ? earlyChrome : Promise.resolve();
   const startPaint =
     init.preset === "obsidian"
       ? () => preloadPaintFeatures(init.features, true)

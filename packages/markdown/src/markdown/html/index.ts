@@ -5,7 +5,7 @@ import MarkdownIt from "markdown-it";
 import type { MarkdownIt as MarkdownItInstance } from "markdown-it";
 import footnote from "markdown-it-footnote";
 import mark from "markdown-it-mark";
-import { frontmatter } from "../properties";
+import { headerParts } from "../properties/header-parts";
 import type { RenderOptions, RendererOptions } from "./types";
 export type { RenderOptions, RendererOptions } from "./types";
 export {
@@ -56,7 +56,7 @@ export function createRenderer(options: RendererOptions = {}) {
         options.strictLineBreaks === undefined
           ? defaultBreaks
           : !options.strictLineBreaks;
-      const properties = options.fragment ? null : frontmatter(source);
+      const properties = options.fragment ? null : headerParts(source);
       const environment = { ...options };
       if (options.referenceDefinitions) {
         md.parse(options.referenceDefinitions, environment);

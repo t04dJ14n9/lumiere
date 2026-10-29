@@ -1,3 +1,5 @@
+import { inSlices, inSlicesBatch, waitUpTo } from "./indexer-slices";
+export { waitUpTo } from "./indexer-slices";
 import type { Disposer } from "@workshop/core";
 import { isMarkdownPath } from "../../shared/vault-path";
 import { exclusionMatcher, isIgnoredPath } from "./exclusion";
@@ -30,7 +32,6 @@ export const OVERLAY_DELAY_MS = 50;
  */
 export const INITIAL_READY_BUDGET_MS = 500;
 /** Long start-up work runs in slices of about this long, between other events. */
-const SLICE_MS = 8;
 
 export interface IndexerOptions {
   root: string;
@@ -62,6 +63,9 @@ export class VaultIndexer {
   private disposed = false;
   private reconciling = false;
   private isExcluded: (path: string) => boolean;
+  /** Resolves as soon as the initial file list is in the index. */
+  private fileListReady: Promise<void>;
+  private markFileListReady!: () => void;
   /** The first comparison with the file system, which may run after `ready`. */
   private reconciled: Promise<void> = Promise.resolve();
   /** The save in progress, which the next save waits for. */
@@ -74,6 +78,9 @@ export class VaultIndexer {
       root: options.root,
       folderNote,
       linkFormat,
+    });
+    this.fileListReady = new Promise<void>((resolve) => {
+      this.markFileListReady = resolve;
     });
     this.queue = this.createQueue();
     this.ready = this.start();
@@ -170,12 +177,14 @@ export class VaultIndexer {
     if (hasCachedFiles) {
       await this.loadCached();
     }
-    this.reconciled = this.reconcile().catch((error) =>
-      this.options.onError?.("Could not list the vault", error),
-    );
+    this.reconciled = this.reconcile()
+      .catch((error) =>
+        this.options.onError?.("Could not list the vault", error),
+      )
+      .finally(() => this.markFileListReady());
     if (!hasCachedFiles) {
       await waitUpTo(
-        this.reconciled,
+        this.fileListReady,
         this.options.delays?.ready ?? INITIAL_READY_BUDGET_MS,
       );
     }
@@ -187,10 +196,17 @@ export class VaultIndexer {
    */
   private async loadCached(): Promise<void> {
     const cached = Object.entries(this.snapshot.files);
-    await inSlices(cached, ([path, file]) =>
-      this.index.addFiles([
-        this.entry({ uri: file.uri, path, mtime: file.mtime, size: file.size }),
-      ]),
+    await inSlicesBatch(cached, (batch) =>
+      this.index.addFiles(
+        batch.map(([path, file]) =>
+          this.entry({
+            uri: file.uri,
+            path,
+            mtime: file.mtime,
+            size: file.size,
+          }),
+        ),
+      ),
     );
     await inSlices(cached, ([path, file]) => {
       const metadata = file.hash
@@ -217,21 +233,39 @@ export class VaultIndexer {
         this.onFileEvent(event),
       );
       const files = listing.files.filter((file) => !isIgnoredPath(file.path));
-      const present = new Set(files.map((file) => file.path));
-      for (const path of this.queue.overlayPaths()) {
-        present.add(path);
+      if (
+        this.index.files().length > 0 ||
+        Object.keys(this.snapshot.files).length > 0
+      ) {
+        const present = new Set(files.map((file) => file.path));
+        for (const path of this.queue.overlayPaths()) {
+          present.add(path);
+        }
+        this.index.removeFilesExcept(present);
+        this.forgetMissing(present);
       }
-      this.index.removeFilesExcept(present);
-      this.forgetMissing(present);
-      await inSlices(files, (file) => {
+      const toParse: string[] = [];
+      await inSlicesBatch(files, (batch) => {
         if (this.disposed) {
           return;
         }
-        this.index.addFiles([this.entry(file)]);
-        if (this.needsParse(file)) {
-          this.queue.enqueue(file.path);
+        this.index.addFiles(batch.map((file) => this.entry(file)));
+        for (const file of batch) {
+          if (this.needsParse(file)) {
+            toParse.push(file.path);
+          }
         }
       });
+      this.markFileListReady();
+      if (toParse.length > 0 && !this.disposed) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      for (const path of toParse) {
+        if (this.disposed) {
+          break;
+        }
+        this.queue.enqueue(path);
+      }
       if (!this.disposed && this.queue.isIdle) {
         this.drained();
       }
@@ -399,34 +433,5 @@ export class VaultIndexer {
   private cancel(key: string): void {
     clearTimeout(this.timers.get(key));
     this.timers.delete(key);
-  }
-}
-
-/** Wait for `work` up to `budgetMs`, then let it continue in the background. */
-export function waitUpTo(work: Promise<void>, budgetMs: number): Promise<void> {
-  if (budgetMs <= 0) {
-    return Promise.resolve();
-  }
-  return new Promise((resolve) => {
-    const timer = setTimeout(resolve, budgetMs);
-    void work.finally(() => {
-      clearTimeout(timer);
-      resolve();
-    });
-  });
-}
-
-/** Run `step` over items, yielding to other events every few milliseconds. */
-async function inSlices<T>(
-  items: readonly T[],
-  step: (item: T) => void,
-): Promise<void> {
-  let sliceStart = Date.now();
-  for (const item of items) {
-    step(item);
-    if (Date.now() - sliceStart > SLICE_MS) {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      sliceStart = Date.now();
-    }
   }
 }

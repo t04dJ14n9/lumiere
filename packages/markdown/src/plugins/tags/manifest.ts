@@ -1,7 +1,11 @@
 import { Schema } from "@workshop/core";
 import { MARKDOWN_EDITOR, whenActive } from "../../shared/editor-provider";
 import { defineManifest } from "../../shared/manifest";
-import { NESTED_CONTEXT, SORT_FREQUENCY_CONTEXT, VIEW_ID } from "./tree";
+import { contributionId } from "../../shared/setting-schema";
+
+const VIEW_ID = contributionId("tags");
+const SORT_FREQUENCY_CONTEXT = `${VIEW_ID}.sortFrequency`;
+const NESTED_CONTEXT = `${VIEW_ID}.nested`;
 
 export const config = Schema.object({
   viewSort: Schema.union(["name", "frequency"])

@@ -4,12 +4,12 @@ import type {} from "../editor/api";
 import { continueLine, continueList } from "./commands";
 import { renumberOnEdit } from "./renumber";
 import { pasteIntoListItem } from "./paste";
-import { installVimListContinue } from "./vim-continue";
+import { setVimListContinueHandler } from "../../shared/vim-hooks";
 export const smartListsWebview: Plugin = {
   name: "smartLists",
   inject: { required: ["editor"] },
   apply(ctx) {
-    ctx.effect(() => installVimListContinue());
+    ctx.effect(() => setVimListContinueHandler(continueList));
     ctx.effect(() =>
       ctx.editor.extend([
         keymap.of([{ key: "Enter", run: continueList, shift: continueLine }]),

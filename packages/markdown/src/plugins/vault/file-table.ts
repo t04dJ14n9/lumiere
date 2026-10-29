@@ -1,4 +1,3 @@
-import { extensionOf, lookupKey, stemOf } from "../../shared/vault-path";
 import type { VaultFile } from "./api";
 
 /** What the host knows about a file before the index adds derived fields. */
@@ -11,11 +10,24 @@ export interface FileEntry {
 }
 
 export function vaultFile(entry: FileEntry): VaultFile {
+  const slash = entry.path.lastIndexOf("/");
+  const name = slash < 0 ? entry.path : entry.path.slice(slash + 1);
+  const dot = name.lastIndexOf(".");
+  const extension = dot > 0 ? name.slice(dot + 1) : "";
+  const basename = dot > 0 ? name.slice(0, dot) : name;
   return {
     ...entry,
-    basename: stemOf(entry.path),
-    extension: extensionOf(entry.path),
+    basename,
+    extension,
   };
+}
+
+function fileLookupKey(file: VaultFile): string {
+  const ext = file.extension;
+  if (ext === "md" || ext === "markdown" || /^(?:md|markdown)$/i.test(ext)) {
+    return file.basename.toLowerCase();
+  }
+  return (ext ? `${file.basename}.${ext}` : file.basename).toLowerCase();
 }
 
 /**
@@ -55,7 +67,7 @@ export class FileTable {
   }
 
   withKey(key: string): readonly VaultFile[] {
-    return this.byKey.get(key) ?? [];
+    return this.byKey.get(key) ?? EMPTY_FILES;
   }
 
   /** True when a folder at this path contains at least one file. */
@@ -73,8 +85,13 @@ export class FileTable {
     this.delete(file.path);
     this.byPath.set(file.path, file);
     this.byLowerPath.set(file.path.toLowerCase(), file);
-    const key = lookupKey(file.path);
-    this.byKey.set(key, [...this.withKey(key), file]);
+    const key = fileLookupKey(file);
+    const list = this.byKey.get(key);
+    if (list) {
+      list.push(file);
+    } else {
+      this.byKey.set(key, [file]);
+    }
     delete this.sorted;
   }
 
@@ -87,7 +104,7 @@ export class FileTable {
     if (this.byLowerPath.get(path.toLowerCase()) === file) {
       this.byLowerPath.delete(path.toLowerCase());
     }
-    const key = lookupKey(path);
+    const key = fileLookupKey(file);
     const rest = this.withKey(key).filter((other) => other !== file);
     if (rest.length > 0) {
       this.byKey.set(key, rest);
@@ -98,3 +115,5 @@ export class FileTable {
     return file;
   }
 }
+
+const EMPTY_FILES: readonly VaultFile[] = [];

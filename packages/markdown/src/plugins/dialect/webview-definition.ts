@@ -1,11 +1,14 @@
 import type { Plugin } from "@workshop/core";
 import { markdownParser } from "../../markdown/dialect/parser";
 import { markdownLanguageSupport } from "../../markdown/dialect/language";
-import { metadata } from "../../markdown/metadata";
 import { createRenderer, type RendererOptions } from "../../markdown/html";
 import type {} from "./api";
 
-/** Webview dialect: parser, CM language, metadata and HTML renderer. */
+/**
+ * Webview dialect: parser, CM language and HTML renderer. Full-document
+ * metadata extraction (which pulls in the YAML runtime) stays out of the
+ * initial editor bundle until lazy feature chunks load.
+ */
 export function dialectPlugin(options: RendererOptions = {}): Plugin {
   return {
     name: "dialect",
@@ -14,7 +17,11 @@ export function dialectPlugin(options: RendererOptions = {}): Plugin {
       ctx.provide("markdown", {
         parser: markdownParser,
         language: markdownLanguageSupport,
-        metadata,
+        metadata: () => {
+          throw new Error(
+            "markdown.metadata is not available on the core dialect service",
+          );
+        },
         renderer: createRenderer(options),
       });
     },
