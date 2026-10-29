@@ -3,7 +3,9 @@
  *
  *   host                              viewer
  *    │  ◄──────────── ready               the page has loaded
- *    │  load { load, data } ────►         the PDF bytes, numbered
+ *    │  load { load, data | url } ──►     the PDF bytes, numbered: in the
+ *    │                                    message, or at a URL on the host
+ *    │                                    (PdfDelivery)
  *    │  ◄──────────── patch { version, load, patch }
  *    │                                    what changed in the viewer's state:
  *    │                                    outline, selection (for a region,
@@ -125,15 +127,22 @@ export type ViewerMessage =
   | { type: "zen"; exit: boolean }
   | { type: "error"; message: string };
 
+/**
+ * How one load's bytes reach the viewer: transferred in the message (VS
+ * Code's webviews take an ArrayBuffer), or at a same-origin URL that serves
+ * exactly the bytes the host hashed, for a host whose page channel carries
+ * only text.
+ */
+export type PdfDelivery = { data: ArrayBuffer } | { url: string };
+
 export type HostMessage =
-  | {
+  | ({
       type: "load";
       /** This load's number: see the invariants above. */
       load: number;
-      data: ArrayBuffer;
       settings: ViewSettings;
       position?: ReadingPosition;
-    }
+    } & PdfDelivery)
   /** `top`: with no box, show the page from this many points below its top. */
   | {
       type: "goTo";

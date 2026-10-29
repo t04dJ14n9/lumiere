@@ -119,3 +119,8 @@ test("Alt alone on a rendered link is an edit-caret click, not open or multi-cur
     false,
   );
 });
+
+test("allowsLinkClick permits plain clicks on rendered HTML <a> links (table cells, callouts, embeds)", () => {
+  assert.equal(allowsLinkClick(click({}), { tagName: "A" }), true);
+  assert.equal(allowsLinkClick(click({}), { tagName: "SPAN" }), false);
+});

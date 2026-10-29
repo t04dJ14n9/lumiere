@@ -5,7 +5,7 @@ import {
   type CellPosition,
 } from "../../markdown/tables/model";
 import { tableSourceChanges } from "./source-edits";
-import { CellEditor } from "./cell-editor";
+import { CellEditor, type CellSelection } from "./cell-editor";
 import type { Action, TableEnvironment } from "./environment";
 import {
   activeTables,
@@ -44,7 +44,7 @@ export class CellProjection {
     private readonly actions: ProjectionActions,
   ) {}
 
-  open(position: CellPosition, selection?: number | "all"): void {
+  open(position: CellPosition, selection?: CellSelection): void {
     const cell = this.grid.model.rows[position.row]?.[position.column];
     const element = this.grid.contentElement(position);
     if (!cell || !element) {

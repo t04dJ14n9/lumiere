@@ -10,43 +10,22 @@ import {
   SETTINGS_COMMAND_IDS,
   VIEW_COMMAND_IDS,
   VIEW_CONTROL_COMMAND_IDS,
-  viewControlCommandId,
-} from "./registered-commands";
+} from "../../../shared/command-ids";
 
 type Choice = vscode.QuickPickItem & {
   action?: ViewerAction;
   command?: string;
 };
 
-/** Layout and scrolling commands use exactly the same actions as the viewer's View group. */
+/**
+ * The View picker. Layout and scrolling commands are registered with the
+ * other view actions (`registerViewCommands`), with exactly the same actions
+ * as the viewer's View group.
+ */
 export function registerViewControls(panels: PdfPanels): vscode.Disposable {
-  const register = (name: string, action: ViewerAction) =>
-    vscode.commands.registerCommand(viewControlCommandId(name), () =>
-      panels.active?.act(action),
-    );
-  return vscode.Disposable.from(
-    register("actualSize", { action: "actualSize" }),
-    ...PAGE_LAYOUTS.map((item) =>
-      register(item.command, {
-        action: "setPageLayout",
-        pageLayout: item.value,
-      }),
-    ),
-    ...SCROLL_MODES.map((item) =>
-      register(item.command, {
-        action: "setScrollMode",
-        scrollMode: item.value,
-      }),
-    ),
-    ...SCROLL_DIRECTIONS.map((item) =>
-      register(item.command, {
-        action: "setScrollDirection",
-        scrollDirection: item.value,
-      }),
-    ),
-    vscode.commands.registerCommand(VIEW_CONTROL_COMMAND_IDS.selectView, () =>
-      selectView(panels),
-    ),
+  return vscode.commands.registerCommand(
+    VIEW_CONTROL_COMMAND_IDS.selectView,
+    () => selectView(panels),
   );
 }
 

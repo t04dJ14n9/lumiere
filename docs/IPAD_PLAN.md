@@ -342,6 +342,15 @@ to its file. The touch work in section 3 is in:
 - a note's images, videos and embedded PDFs load: the app's router
   (`VaultRouter.swift`) serves vault files at `/_lumiere/vault/<id>/<path>`
   through Capacitor's file handler, with their types and byte ranges.
+- in the web app too: its service worker serves a note's page and the files
+  it shows (`lumiere/file?panel=&uri=`, with byte ranges), asking the window
+  for them, which reads only from the note's vault. Chromium puts no blob:
+  page under the worker, so the worker serves the page itself; that also
+  lets a note open offline in Chromium. Checked in headless Chromium and
+  WebKit.
+- the first note opened in a vault finds the vault's files: host-web makes
+  the vault a root before the note's panel opens. From IndexedDB (Safari,
+  Firefox) the first note found nothing in a subfolder.
 - one tap is enough: the editor's controls that only hovering revealed
   (Edit on a block, Copy on code, table handles) no longer take the first
   tap, which WebKit spends on a hover that reveals something; with no note
@@ -366,8 +375,6 @@ Not done yet:
 - the editor's transparent caret (CodeMirror's drawn selection) makes
   WebKit hide its selection handles, so a selection cannot be dragged
   wider on the iPad.
-- images and PDFs embedded in notes in the web app (their `lumiere/file`
-  URLs need an answer there: its service worker);
 - the Pencil (P1): only the sketch format exists (`packages/ink`).
 
 Who does what:

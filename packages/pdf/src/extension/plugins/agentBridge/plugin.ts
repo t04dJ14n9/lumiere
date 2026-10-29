@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { AGENT_BRIDGE_COMMAND_IDS } from "../pdf/registered-commands";
+import { AGENT_BRIDGE_COMMAND_IDS } from "../../../shared/command-ids";
 import { PdfEnvelopePublisher } from "./envelope";
 import { AgentHandoff } from "./handoff";
 import { LastPdf } from "./last-pdf";

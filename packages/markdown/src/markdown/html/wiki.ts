@@ -24,7 +24,7 @@ export function wiki(md: MarkdownIt): void {
   md.renderer.rules.wiki_link = (tokens, index) => {
     const token = tokens[index]!;
     const link = token.meta as unknown as WikiTarget;
-    return `<a class="internal-link" data-wiki="true"${attr("href", link.target)}>${escape(link.label)}</a>`;
+    return `<a class="internal-link" data-wiki="true"${attr("data-href", link.target)}${attr("href", link.target)}>${escape(link.label)}</a>`;
   };
   md.renderer.rules.wiki_embed = (tokens, index) => {
     const link = tokens[index]!.meta as unknown as WikiTarget;

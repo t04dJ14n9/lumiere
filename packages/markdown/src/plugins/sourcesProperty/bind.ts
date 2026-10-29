@@ -33,7 +33,14 @@ function listen(
     return;
   }
   button.dataset.sourceBound = "1";
-  button.addEventListener("click", run, { signal });
+  button.addEventListener(
+    "click",
+    (event) => {
+      event.stopPropagation();
+      run();
+    },
+    { signal },
+  );
 }
 
 function showAll(

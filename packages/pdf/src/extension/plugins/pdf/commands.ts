@@ -7,7 +7,7 @@ import {
 } from "../../../shared/pdf-location";
 import { resolvePdfCandidates } from "../../../shared/pdf-target-resolution";
 import { VIEW_TYPE, type PdfPanels } from "./panels";
-import { OPEN_LOCATION_COMMAND_ID } from "./registered-commands";
+import { OPEN_LOCATION_COMMAND_ID } from "../../../shared/command-ids";
 
 /** PDF: Open Location, which makes the viewer a navigation target for links and other extensions. */
 export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {

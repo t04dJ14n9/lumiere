@@ -98,15 +98,16 @@ for Markdown in This Workspace** writes a workspace editor association, which
 takes precedence over Cursor's editor for notes opened afterwards; reopen
 tabs that were already open.
 
-Cursor's **Markdown** button opens the note in the plain text editor and
-remembers that per file. `lumiere.markdown.editor.reclaimTextEditor`
-(`auto`, on only in Cursor) reopens such a note in Lumière and
-closes the text tab, for notes the workspace association routes here.
-It leaves diffs, Git views, untitled files and anything opened with **Open
-as Text** alone. Asking for the text editor a second time within 10 seconds
-keeps it (the tab hold also arms the Open-as-Text bypass so selection
-reclaim cannot steal that tab), which is how **Reopen Editor With… › Text
-Editor** still works.
+Tools also open notes in a new plain text tab: a Markdown link in a chat,
+or a review card's open arrow. `lumiere.markdown.editor.reclaimTextEditor`
+(`auto`, on only in Cursor) reopens such a note in Lumière and closes the
+text tab, for notes the workspace association routes here; it does the
+same for a note switched into Cursor's own Markdown editor. A note you put
+in the text editor stays there: **Reopen Editor With… › Text Editor**,
+Cursor's **Markdown** button, **Open as Text** and **Toggle Text Editor**
+keep it until its last text tab closes, including across a window reload,
+and a find or a jump inside it does not move it. Diffs, Git views and
+untitled files are left alone.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless
@@ -134,15 +135,16 @@ pnpm install
 pnpm check          # format, lint, types, unit tests, generated contributions
 pnpm test:browser   # webview smoke tests in Chromium
 pnpm test:vscode    # native suite in an isolated VS Code profile (local only, not in CI)
-pnpm check:full     # check, test:browser and test:vscode: run before every push
+pnpm check:full     # check, test:browser and test:vscode, in that order
 pnpm package        # VSIX; checks THIRD_PARTY_NOTICES.md is current
 ```
 
-**Before every push run the full local check, `pnpm check:full`** (on headless
-Linux: `xvfb-run -a pnpm check:full`). It runs `pnpm check`, `pnpm test:browser`
-and `pnpm test:vscode`. GitHub Actions does not run the real-VS Code specs
-(`test/vscode`): they were flaky under load, so they are a required local
-pre-push check instead.
+**Before every push run `pnpm check` and `pnpm test:browser`. Before merging a
+pull request, and before pushing a change to editor integration, run the full
+local check, `pnpm check:full`** (on headless Linux:
+`xvfb-run -a pnpm check:full`), which adds `pnpm test:vscode`. GitHub Actions
+does not run the real-VS Code specs (`test/vscode`): they were flaky under
+load. AGENTS.md says what counts as editor integration.
 
 Read [AGENTS.md](AGENTS.md) before changing code. [DESIGN.md](DESIGN.md)
 describes the architecture, [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
@@ -164,7 +166,7 @@ request and on pushes to `main`. Each job, and how to run it locally:
 | `audit (advisory)` | `pnpm audit --prod`; a warning, never a failure | `pnpm audit --prod` |
 
 The real-VS Code specs (`pnpm test:vscode`) are not a CI job: run them locally
-before every push (see Develop). Cursor cannot run in CI either, so test it by
+before merging (see Develop). Cursor cannot run in CI either, so test it by
 hand with
 `VSCODE_EXECUTABLE=<cursor executable> xvfb-run -a pnpm test:vscode`. CI never
 uses API keys or other secrets. Dependabot proposes grouped npm and

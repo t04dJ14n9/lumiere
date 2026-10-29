@@ -31,7 +31,7 @@ export class TableContent {
         signal: entry.abort.signal,
         sourceLine: this.view.state.doc.lineAt(offset).number - 1,
         measure: () => {
-          if (this.live) {
+          if (this.live && element.isConnected) {
             this.view.requestMeasure();
           }
         },

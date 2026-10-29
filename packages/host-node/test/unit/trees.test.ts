@@ -115,3 +115,10 @@ test("a huge tree is cut short instead of taking the host down", async () => {
   assert.equal(snapshot?.items.length, 5000);
   assert.equal(snapshot?.truncated, true);
 });
+
+test("visibility set before a tree registers is preserved on the registered handle", () => {
+  const { trees } = hub();
+  trees.setVisible("outline", true);
+  const handle = trees.tree("outline", outline());
+  assert.equal(handle.visible, true);
+});

@@ -15,7 +15,8 @@
   menu, and the keyboard stays down until you tap the note. PDFs open in
   tabs in Lumière's PDF viewer, in the web app too, and a note's images,
   videos and embedded PDFs show. One tap is enough on the editor's
-  buttons.
+  buttons. The window takes Liquid Glass: the note runs edge to edge
+  under floating glass capsules and panels.
 - **Lumière desktop and the web app**: a lighter tab bar, with tabs as soft
   pills. Plugins that need what the app cannot give them (Git, VS Code)
   are off there.
@@ -33,12 +34,8 @@
   ⇧⌘] / ⇧⌘[ step through them. ⌘B and ⌥⌘B hide the files and the
   outline. Open Folder… uses the native picker, and
   Markdown files open from Finder or the command line. Unsaved notes are written when you quit. The same window
-  also runs in a browser (`packages/app`). PDFs do not open there yet.
-- **Lumière desktop**: a vault's Obsidian community plugins run only after
-  you say yes, once per vault, as in Obsidian (Keep Them Off or Trust and
-  Turn On). The answer is remembered; the community plugins marketplace asks
-  again. DeepSeek Harness runs no vault plugins, and VS Code and Cursor
-  follow workspace trust.
+  also runs in a browser (`packages/app`). PDFs open in tabs in Lumière
+  PDF's viewer, from the files, Finder or the command line.
 - Outside VS Code (the desktop app, DeepSeek Harness), right-clicking in a
   note shows Lumière's menu as in VS Code: Copy Link for Agent with text
   selected, formatting and highlight colours, then Cut, Copy and Paste.

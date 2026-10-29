@@ -24,6 +24,10 @@ test("the selection layer is drawn above line backgrounds and blended, not dimmi
     base,
     /body\.vscode-light #app \.cm-editor :is\(\.cm-selectionLayer, \.mw-selection-layer\),[^{]*\{\s*mix-blend-mode: multiply;/,
   );
+  assert.match(
+    base,
+    /#app \.cm-editor :is\(\.cm-selectionLayer, \.mw-selection-layer\):empty \{\s*display: none;\s*\}/,
+  );
 });
 
 test("the selection is a see-through accent tint: 33% on dark, 20% on light", () => {

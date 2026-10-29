@@ -5,7 +5,7 @@ import type { SyntaxNode, Tree } from "@lezer/common";
 import { documentTree } from "./document-tree";
 import { inlineHtmlEnd } from "./inline-html";
 import { embedsImage } from "../../markdown/images";
-import type { BlockRenderer, InlineRenderer } from "./api";
+import type { BlockRenderer, InlineContext, InlineRenderer } from "./api";
 export const blockRenderers = Facet.define<
   BlockRenderer,
   readonly BlockRenderer[]
@@ -111,4 +111,72 @@ function collectInlineChains(
     }
   }
   return chains;
+}
+
+export interface PersistentInlineEntry {
+  name: string;
+  from: number;
+  to: number;
+  node: SyntaxNode;
+}
+const persistentNodesCache = new WeakMap<
+  Tree,
+  Map<string, readonly PersistentInlineEntry[]>
+>();
+
+export function cachedPersistentNodes(
+  tree: Tree,
+  persistent: ReadonlySet<string>,
+): readonly PersistentInlineEntry[] {
+  const key = [...persistent].sort().join("|");
+  let byKey = persistentNodesCache.get(tree);
+  if (!byKey) {
+    byKey = new Map();
+    persistentNodesCache.set(tree, byKey);
+  }
+  const existing = byKey.get(key);
+  if (existing) {
+    return existing;
+  }
+  const found: PersistentInlineEntry[] = [];
+  tree.iterate({
+    enter: (node) => {
+      if (!persistent.has(node.name)) {
+        return;
+      }
+      found.push({
+        name: node.name,
+        from: node.from,
+        to: node.to,
+        node: node.node,
+      });
+      return false;
+    },
+  });
+  byKey.set(key, found);
+  return found;
+}
+
+export function decoratePersistentOffViewport(
+  state: EditorState,
+  builder: InlineContext,
+  visibleRanges: readonly { from: number; to: number }[],
+): void {
+  const allRenderers = state.facet(inlineRenderers);
+  const persistent = new Set(
+    allRenderers.filter((r) => r.persistent).flatMap((r) => r.nodes),
+  );
+  if (persistent.size === 0) {
+    return;
+  }
+  for (const entry of cachedPersistentNodes(
+    state.field(documentTree),
+    persistent,
+  )) {
+    if (!visibleRanges.some((v) => entry.from < v.to && entry.to > v.from)) {
+      allRenderers
+        .find((r) => r.nodes.includes(entry.name))
+        ?.decorate(entry.node, builder);
+    }
+  }
 }

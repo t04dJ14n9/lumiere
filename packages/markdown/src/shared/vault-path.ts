@@ -50,7 +50,7 @@ export function stemOf(path: string): string {
 }
 
 export function isMarkdownPath(path: string): boolean {
-  return extensionOf(path).toLowerCase() === "md";
+  return /^(?:md|markdown)$/i.test(extensionOf(path));
 }
 
 /**
@@ -137,5 +137,5 @@ export function decodeLinkPath(link: string): string {
  * `[[Note.md]]` and `[[Note]]` are the same missing note.
  */
 export function withoutNoteExtension(path: string): string {
-  return path.replace(/\.md$/iu, "");
+  return path.replace(/\.(?:md|markdown)$/iu, "");
 }

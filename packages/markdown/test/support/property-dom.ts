@@ -99,8 +99,10 @@ export class PropertyElement extends EventTarget {
   closest(selector: string) {
     return this.nearest(selector);
   }
-  contains(element: PropertyElement) {
-    return element === this || this.children.includes(element);
+  contains(element: PropertyElement): boolean {
+    return (
+      element === this || this.children.some((child) => child.contains(element))
+    );
   }
   replaceWith(element: PropertyElement) {
     if (this.parentElement) {

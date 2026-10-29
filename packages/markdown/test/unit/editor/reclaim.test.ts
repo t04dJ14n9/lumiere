@@ -52,9 +52,10 @@ test("auto reclaims only in Cursor; on and off are explicit", () => {
   assert.equal(reclaimEnabled({ mode: "off", appName: "Cursor" }), false);
 });
 
-test("Cursor's switch from this editor or its own to text is reclaimed", () => {
-  assert.equal(shouldReclaim(swap("workbench", "text"), context), true);
-  assert.equal(shouldReclaim(swap("other", "text"), context), true);
+test("a switch in place to the text editor is the reader's choice and stays", () => {
+  // Reopen Editor With… › Text Editor from Lumière, Cursor's Markdown button.
+  assert.equal(shouldReclaim(swap("workbench", "text"), context), false);
+  assert.equal(shouldReclaim(swap("other", "text"), context), false);
 });
 
 test("a note Cursor remembers as text is reclaimed when it opens", () => {
@@ -106,8 +107,9 @@ test("only notes the workspace routes to Lumière are reclaimed", () => {
     false,
   );
   assert.equal(associatedWith(undefined, note, viewType), false);
+  assert.equal(shouldReclaim(swap("none", "text"), context), true);
   assert.equal(
-    shouldReclaim(swap("workbench", "text"), {
+    shouldReclaim(swap("none", "text"), {
       ...context,
       associated: () => false,
     }),
@@ -128,19 +130,19 @@ test("diffs and other files are left alone", () => {
     );
   }
   assert.equal(
-    shouldReclaim(swap("workbench", "text", "untitled:Untitled-1"), context),
+    shouldReclaim(swap("none", "text", "untitled:Untitled-1"), context),
     false,
   );
   assert.equal(
-    shouldReclaim(swap("workbench", "text", "git:/vault/Note.md"), context),
+    shouldReclaim(swap("none", "text", "git:/vault/Note.md"), context),
     false,
   );
   assert.equal(
-    shouldReclaim(swap("workbench", "text", "file:///vault/a.ts"), context),
+    shouldReclaim(swap("none", "text", "file:///vault/a.ts"), context),
     false,
   );
   assert.equal(
-    shouldReclaim(swap("workbench", "text"), { ...context, enabled: false }),
+    shouldReclaim(swap("none", "text"), { ...context, enabled: false }),
     false,
   );
 });
@@ -150,9 +152,9 @@ test("notes opened as text on purpose, or just reclaimed, keep the text editor",
   const bypass = new Bypass(() => now, 10_000);
   bypass.allow(note);
   const withBypass = { ...context, bypassed: (uri: string) => bypass.has(uri) };
-  assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), false);
+  assert.equal(shouldReclaim(swap("none", "text"), withBypass), false);
   now = 10_001;
-  assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), true);
+  assert.equal(shouldReclaim(swap("none", "text"), withBypass), true);
 });
 
 test("a tab landing during the post-reclaim hold stays native", () => {
@@ -173,6 +175,15 @@ test("a tab landing during the post-reclaim hold stays native", () => {
     }),
     false,
   );
+  assert.equal(
+    shouldHoldNativeAfterReclaim({
+      recentTransfer: true,
+      reclaimable: true,
+      hasSelectionTarget: true,
+    }),
+    false,
+    "a search or reference jump carrying a selection target must still reclaim within the cooldown",
+  );
 });
 
 test("a pending handoff lease suppresses reclaim until released", () => {
@@ -182,9 +193,9 @@ test("a pending handoff lease suppresses reclaim until released", () => {
     ...context,
     bypassed: (uri: string) => lease.has(uri),
   };
-  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  assert.equal(shouldReclaim(swap("none", "text"), withLease), false);
   pending.release();
-  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
+  assert.equal(shouldReclaim(swap("none", "text"), withLease), true);
 });
 
 test("overlapping tokens keep the lease until every owner releases", () => {
@@ -196,13 +207,13 @@ test("overlapping tokens keep the lease until every owner releases", () => {
     ...context,
     bypassed: (uri: string) => lease.has(uri),
   };
-  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  assert.equal(shouldReclaim(swap("none", "text"), withLease), false);
   second.release();
   assert.equal(lease.has(note), true);
-  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  assert.equal(shouldReclaim(swap("none", "text"), withLease), false);
   first.release();
   assert.equal(lease.has(note), false);
-  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
+  assert.equal(shouldReclaim(swap("none", "text"), withLease), true);
 });
 
 test("session clear preserves pending tokens until they are promoted", () => {

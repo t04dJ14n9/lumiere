@@ -44,6 +44,34 @@ test("files in a mounted folder are read, listed and stat'ed by URI", async () =
   });
 });
 
+test("a file is a Blob, read as it is used where its folder can, else whole", async () => {
+  const files = mounted();
+  const whole = await files.readBlob(uri("Welcome.md"));
+  assert.equal(await whole.text(), "# Welcome");
+  await assert.rejects(files.readBlob(uri("Missing.md")), {
+    code: "FileNotFound",
+  });
+  const video = new Blob([new Uint8Array(1000)], { type: "video/webm" });
+  const lazy = new MemoryFileSystem();
+  let reads = 0;
+  files.mount(
+    "/vaults/Videos",
+    Object.assign(lazy, {
+      read: async () => {
+        reads++;
+        return new Uint8Array();
+      },
+      readBlob: async (path: string) =>
+        path === "clip.webm" ? video : Promise.reject(new Error(path)),
+    }),
+  );
+  assert.equal(
+    await files.readBlob(pathToFileURL("/vaults/Videos/clip.webm").href),
+    video,
+  );
+  assert.equal(reads, 0, "the folder's own Blob, not a read of the file");
+});
+
 test("saving needs an existing file, creating never overwrites, and watchers hear both", async () => {
   const files = mounted();
   const heard: string[] = [];

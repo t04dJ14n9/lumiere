@@ -9,6 +9,7 @@ import {
   editingImage,
   escapeImage,
   imageKeyFromEvent,
+  imagesOf,
   inspectButtonBesideImage,
   runSelectedImageKey,
   selectedImage,
@@ -221,4 +222,24 @@ test("runSelectedImageKey Escape clears a selected outline (BH-006 path)", () =>
   } as unknown as EditorView;
   assert.equal(runSelectedImageKey(view, "Escape"), true);
   assert.equal(state.field(selectedImage), null);
+});
+
+test("imagesOf excludes CodeMirror cm-widgetBuffer and direct .cm-line images", () => {
+  const cmLine = el(["cm-line"]);
+  const embedHost = el([IMAGE_EMBED]);
+  const widgetBuffer = el(["cm-widgetBuffer"], { parentElement: cmLine });
+  const realImg = el(["note-image"], { parentElement: embedHost });
+  const view = {
+    contentDOM: {
+      querySelectorAll(sel: string) {
+        assert.equal(sel, "img");
+        return [widgetBuffer, realImg];
+      },
+    },
+    posAtDOM() {
+      return 5;
+    },
+  } as unknown as EditorView;
+  const result = imagesOf(view, { from: 0, to: 10 });
+  assert.deepEqual(result, [realImg]);
 });

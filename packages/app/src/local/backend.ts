@@ -20,7 +20,7 @@ import type { ServerEvent } from "../shell/api";
 import type { OpenedEditor, WindowBackend } from "../shell/backend";
 import { fileKind } from "../shared/file-kind";
 import { parseUiChange, readUiState, type UiState } from "../shared/ui-state";
-import type { TextFile, VaultTrust } from "../shared/vault-trust";
+import type { TextFile } from "./json-file";
 import type { LocalVaults } from "./vaults";
 
 /** What a host without Node offers the plugins: no Git, no extra panels. */
@@ -30,7 +30,6 @@ export interface LocalBackendParts {
   readonly host: LumiereHost;
   readonly files: Mounts;
   readonly vaults: LocalVaults;
-  readonly trust: VaultTrust;
   /** The window's layout and theme. */
   readonly layout: TextFile;
   readonly events: EventHub;
@@ -39,17 +38,20 @@ export interface LocalBackendParts {
 }
 
 export function createLocalBackend(parts: LocalBackendParts): WindowBackend {
-  const { host, files, vaults, trust, pages } = parts;
+  const { host, files, vaults, pages } = parts;
   return {
     vaults: {
       list: async () => vaults.list(),
       add: (path) => vaults.add(path),
+      close: (path) => vaults.close(path),
       files: (vault) => vaults.files(vault),
       open: (path) => vaults.show(path),
     },
-    trust: {
-      questions: async () => trust.questions(),
-      decide: (vault, allowed) => trust.decide(vault, allowed),
+    commands: {
+      list: async () => host.commands?.list() ?? [],
+      run: async (command) => {
+        await host.commands?.run(command);
+      },
     },
     events: (listener) => parts.events.listen(listener),
     ui: layoutIn(parts.layout),

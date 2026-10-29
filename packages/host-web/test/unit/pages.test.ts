@@ -9,9 +9,12 @@ function fakeHost() {
   const sockets: PageSocket[] = [];
   let urls: PanelUrls | undefined;
   const roots: string[] = [];
+  /** The roots when the panel opened, which its plugins look the vault up in. */
+  const rootsAtOpen: string[] = [];
   return {
     sockets,
     roots,
+    rootsAtOpen,
     urls: () => urls!,
     host: {
       panels: {
@@ -19,6 +22,7 @@ function fakeHost() {
           uri: string;
           urls: (id: string) => PanelUrls;
         }) => {
+          rootsAtOpen.push(...roots);
           urls = request.urls("panel-1");
           return {
             id: "panel-1",
@@ -74,6 +78,56 @@ test("a note's page is a blob document that asks for a channel, with the shim fi
   );
   assert.deepEqual(fake.roots, ["file:///vaults/Notes"]);
   page.dispose();
+});
+
+test("the note's vault is a root before its panel opens, so the editor finds the vault", async () => {
+  const fake = fakeHost();
+  const page = await openEditorPage(
+    fake.host as never,
+    { uri: "file:///vaults/Notes/Welcome.md", root: "file:///vaults/Notes" },
+    URLS,
+  );
+  assert.deepEqual(fake.rootsAtOpen, ["file:///vaults/Notes"]);
+  page.dispose();
+});
+
+test("an embedder may serve the page itself, until the tab closes", async () => {
+  const fake = fakeHost();
+  const served: string[] = [];
+  let disposed = 0;
+  const page = await openEditorPage(
+    fake.host as never,
+    { uri: "file:///vaults/Notes/Welcome.md", root: "file:///vaults/Notes" },
+    {
+      ...URLS,
+      servePage: (html) => {
+        served.push(html);
+        return {
+          url: "https://lumiere.example/app/lumiere/page/1",
+          dispose: () => void disposed++,
+        };
+      },
+    },
+  );
+  assert.equal(page.url, "https://lumiere.example/app/lumiere/page/1");
+  assert.equal(served.length, 1);
+  assert.match(served[0]!, /<meta name="lumiere-transport" content="channel">/);
+  assert.match(served[0]!, /<meta name="lumiere-panel" content="panel-1">/);
+  page.dispose();
+  assert.equal(disposed, 1);
+});
+
+test("an embedder that does not serve a page gets a blob document", async () => {
+  const fake = fakeHost();
+  const page = await openEditorPage(
+    fake.host as never,
+    { uri: "file:///vaults/Notes/Welcome.md", root: "file:///vaults/Notes" },
+    { ...URLS, servePage: () => undefined },
+  );
+  assert.match(page.url, /^blob:/);
+  assert.match(await (await fetch(page.url)).text(), /lumiere-panel/);
+  page.dispose();
+  await assert.rejects(fetch(page.url), "closing the tab frees the page");
 });
 
 test("the channel carries frames both ways, and closing the tab closes the panel's socket", async () => {

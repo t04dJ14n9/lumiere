@@ -278,7 +278,10 @@ function registerEditorControls(
       ]),
     ]);
     // A note opens with the caret at 0, which is inside the block.
-    view.dispatch({ selection: view.state.selection });
+    if (frontmatterBodyStart(view.state.doc) !== undefined) {
+      ctx.editor.flush?.();
+      view.dispatch({ selection: view.state.selection });
+    }
     return stop;
   });
 }
@@ -409,12 +412,6 @@ function registerDisclosure(
   );
   void ctx.rpc
     .call(protocol, "collapsed", {})
-    .then((collapsed) => {
-      if (!signal.aborted) {
-        editing.receiveCollapsed(collapsed);
-      }
-    })
-    .catch((error) =>
-      ctx.logger.warn("Property disclosure unavailable", error),
-    );
+    .then((c) => !signal.aborted && editing.receiveCollapsed(c))
+    .catch((err) => ctx.logger.warn("Property disclosure unavailable", err));
 }

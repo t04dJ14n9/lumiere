@@ -459,3 +459,43 @@ test("recorded macro inserts into the outer document after a cell document jump"
     page.locator('.cm-editor[data-caret-mode="normal"]'),
   ).toHaveCount(1);
 });
+
+test("Tab, Shift+Tab, Enter, h and grid selection keep w/b/e/l working in normal mode", async ({
+  page,
+}) => {
+  const table = [
+    "Above",
+    "| 区域 | A | next word |",
+    "| --- | --- | --- |",
+    "| 国内 | B | tail cell |",
+    "Below",
+  ].join("\n");
+  await open(page, table, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await press(page, "j");
+  await expectCell(page, 0, 0, "区域", 0);
+
+  // Tab in Vim normal mode places a collapsed caret at 0 so w works immediately.
+  await page.keyboard.press("Tab");
+  await expectCell(page, 0, 1, "A", 0);
+  await press(page, "w");
+  await expectCell(page, 0, 2, "next word", 0);
+  await press(page, "w");
+  await expectCell(page, 0, 2, "next word", 5);
+
+  // h across cell boundaries lands on the last cluster (offset 0 of 1-char "A" and offset 1 of "区域").
+  await press(page, "0h");
+  await expectCell(page, 0, 1, "A", 0);
+  await press(page, "h");
+  await expectCell(page, 0, 0, "区域", 1);
+  await press(page, "l");
+  await expectCell(page, 0, 1, "A", 0);
+
+  // Enter in Vim normal mode places a collapsed caret at 0 on the next row so w works immediately.
+  await page.keyboard.press("Enter");
+  await expectCell(page, 1, 1, "B", 0);
+  await press(page, "w");
+  await expectCell(page, 1, 2, "tail cell", 0);
+});

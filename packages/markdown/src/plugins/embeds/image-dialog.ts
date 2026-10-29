@@ -35,7 +35,11 @@ class ImageInspector {
     this.dialog.close();
     this.dialog.remove();
     delete this.dialog;
-    if (restoreFocus && this.options.trigger.isConnected) {
+    if (
+      restoreFocus &&
+      this.options.trigger.isConnected &&
+      Number(getComputedStyle(this.options.trigger).opacity) > 0
+    ) {
       this.options.trigger.focus();
     }
   }
@@ -104,6 +108,15 @@ class ImageInspector {
       (event) => {
         event.preventDefault();
         this.close();
+      },
+      { signal },
+    );
+    dialog.addEventListener(
+      "click",
+      (event) => {
+        if (event.target === dialog) {
+          this.close();
+        }
       },
       { signal },
     );

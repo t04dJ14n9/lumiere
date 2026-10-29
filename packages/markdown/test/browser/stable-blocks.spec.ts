@@ -313,3 +313,63 @@ test("line numbers stay level with their lines when the editor font changes", as
     }
   }
 });
+
+test("Go code block highlights keywords, types, struct keys, and constants with distinct non-grey colors", async ({
+  page,
+}) => {
+  const goDoc = [
+    "# Go Highlighting",
+    "",
+    "```go",
+    "func HandleStatus(resp *Response) error {",
+    "    if resp.Status != StatusCode_OK {",
+    "        return &RpcError{",
+    "            Code:   ErrCode_Overload,",
+    "            Detail: errors.New(resp.Message),",
+    "        }",
+    "    }",
+    "    return nil",
+    "}",
+    "```",
+  ].join("\n");
+  await open(page, goDoc);
+  // Simulate Cursor Dark setting --vscode-symbolIcon-keywordForeground to plain #cccccc
+  await page.addStyleTag({
+    content:
+      ":root { --vscode-symbolIcon-keywordForeground: #cccccc !important; --vscode-editor-foreground: #cccccc !important; }",
+  });
+  await expect(page.locator(".cm-content .token.keyword").first()).toHaveText(
+    "func",
+  );
+  await expect(page.locator(".cm-content .token.type").first()).toHaveText(
+    "Response",
+  );
+  await expect(
+    page.locator(".cm-content .token.property", { hasText: "Code" }),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(".cm-content .token.constant", { hasText: "StatusCode_OK" }),
+  ).toHaveCount(1);
+
+  const colors = await page.evaluate(() => {
+    const colorOf = (selector: string) => {
+      const el = document.querySelector(selector);
+      return el ? getComputedStyle(el).color : null;
+    };
+    return {
+      keyword: colorOf(".cm-content .token.keyword"),
+      type: colorOf(".cm-content .token.type"),
+      property: colorOf(".cm-content .token.property"),
+      constant: colorOf(".cm-content .token.constant"),
+      func: colorOf(".cm-content .token.function"),
+    };
+  });
+  // None of the semantic tokens may collapse to plain #cccccc (rgb(204, 204, 204))
+  for (const [name, color] of Object.entries(colors)) {
+    expect(color, `${name} should exist`).not.toBeNull();
+    expect(color, `${name} must not collapse to #cccccc`).not.toBe(
+      "rgb(204, 204, 204)",
+    );
+  }
+  expect(new Set(Object.values(colors)).size).toBeGreaterThanOrEqual(4);
+});

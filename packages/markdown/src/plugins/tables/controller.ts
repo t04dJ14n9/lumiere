@@ -22,20 +22,21 @@ import { TableToolbar } from "./toolbar";
 import { TableHandles } from "./handles";
 import { activeTables, tableSelectionChanges } from "./state";
 import { TableStickyHScroll } from "./sticky-hscroll";
-import { forwardTableWheel } from "./wheel-scroll";
+import { bindTableFocus } from "./focus-lifetime";
+import { followDiagonalWheel } from "./diagonal-wheel";
 
 /** Wires table interactions and reconciles snapshots from the outer document. */
 export class TableController {
   private readonly grid: TableGrid;
   private readonly projection: CellProjection;
-  private readonly selected: TableSelection;
-  private readonly keyboard: TableKeyboard;
-  private readonly clipboard: TableClipboard;
-  private readonly toolbar: TableToolbar;
+  private selected!: TableSelection;
+  private keyboard!: TableKeyboard;
+  private clipboard!: TableClipboard;
+  private toolbar!: TableToolbar;
   private readonly handles: TableHandles;
-  private sticky: TableStickyHScroll;
+  private readonly sticky: TableStickyHScroll;
   private readonly events = new AbortController();
-  private requested?: CellPosition;
+  private requested?: CellPosition | undefined;
 
   constructor(
     root: HTMLElement,
@@ -45,7 +46,32 @@ export class TableController {
   ) {
     this.grid = new TableGrid(root, outer, block, environment);
     this.projection = this.createProjection(environment);
-    this.selected = new TableSelection(
+    const wired = this.wireCollaborators(environment);
+    this.selected = wired.selected;
+    this.clipboard = wired.clipboard;
+    this.toolbar = wired.toolbar;
+    this.keyboard = wired.keyboard;
+    this.registerEvents();
+    followDiagonalWheel(
+      this.grid.scroll,
+      () => this.grid.outer.scrollDOM,
+      this.events.signal,
+    );
+    bindTableFocus({
+      root,
+      contentDOM: outer.contentDOM,
+      signal: this.events.signal,
+      clear: () => this.clearActiveTable(),
+    });
+    this.grid.wrapper.append(this.toolbar.controls());
+    this.grid.render();
+    this.handles = this.createHandles();
+    this.handles.refresh();
+    this.sticky = new TableStickyHScroll(this.grid.scroll, outer.scrollDOM);
+  }
+
+  private wireCollaborators(environment: TableEnvironment) {
+    const selected = new TableSelection(
       this.grid,
       this.projection,
       {
@@ -54,52 +80,33 @@ export class TableController {
       },
       environment.position,
     );
-    this.clipboard = new TableClipboard(
+    const clipboard = new TableClipboard(
       this.grid,
       this.projection,
-      this.selected,
+      selected,
       environment,
     );
-    this.toolbar = new TableToolbar(
+    const request = (position: CellPosition) =>
+      void (this.requested = position);
+    const toolbar = new TableToolbar(
       this.grid,
       {
         range: () => this.selected.range,
         active: () => this.projection.active,
         open: (position) => this.projection.open(position),
-        request: (position) => {
-          this.requested = position;
-        },
+        request,
         execute: (operation, focus) => this.execute(operation, focus),
         selectAll: () => this.selected.selectAll(),
       },
-      this.clipboard,
+      clipboard,
       environment.openMenu,
     );
-    this.keyboard = new TableKeyboard(
-      this.grid,
-      this.projection,
-      this.selected,
-      {
-        request: (position) => {
-          this.requested = position;
-        },
-        deactivate: () => activeTables.delete(this.grid.outer),
-        menu: (position, point) => this.toolbar.showMenu(position, point),
-      },
-    );
-    this.registerEvents();
-    this.registerFocus();
-    this.registerScrolling(environment.scrollNote);
-    this.grid.wrapper.append(this.toolbar.controls());
-    this.grid.render();
-    this.handles = this.createHandles();
-    this.handles.refresh();
-    this.sticky = this.createSticky();
-    this.grid.root.prepend(this.sticky.root);
-  }
-
-  private createSticky(): TableStickyHScroll {
-    return new TableStickyHScroll(this.grid.scroll, this.grid.outer.scrollDOM);
+    const keyboard = new TableKeyboard(this.grid, this.projection, selected, {
+      request,
+      deactivate: () => activeTables.delete(this.grid.outer),
+      menu: (position, point) => this.toolbar.showMenu(position, point),
+    });
+    return { selected, clipboard, toolbar, keyboard };
   }
 
   private createProjection(environment: TableEnvironment): CellProjection {
@@ -125,11 +132,7 @@ export class TableController {
     return this.selected.range;
   }
   set range(range: CellRange | undefined) {
-    if (range) {
-      this.selected.range = range;
-    } else {
-      delete this.selected.range;
-    }
+    this.selected.range = range;
   }
   close(): void {
     this.projection.close();
@@ -170,15 +173,11 @@ export class TableController {
       "pointerdown",
       (event) => {
         if (
+          root.isConnected &&
           event.target instanceof Node &&
-          !root.contains(event.target) &&
-          activeTables.get(outer) === this
+          !root.contains(event.target)
         ) {
-          activeTables.delete(outer);
-          this.close();
-          delete this.selected.range;
-          this.highlight();
-          outer.state.facet(tableSelectionChanges)(false);
+          this.clearActiveTable();
         }
       },
       { capture: true, signal: this.events.signal },
@@ -199,50 +198,6 @@ export class TableController {
         this.keyboard.keyDown(event);
       },
       { signal: this.events.signal },
-    );
-  }
-
-  private registerFocus(): void {
-    const root = this.grid.root;
-    root.addEventListener("focusin", () => root.classList.add("has-focus"), {
-      signal: this.events.signal,
-    });
-    root.addEventListener(
-      "focusout",
-      () => {
-        // Menu invocation removes its DOM before queuing the command. Give
-        // that command a turn to restore cell focus before closing the editor.
-        queueMicrotask(() =>
-          queueMicrotask(() => {
-            if (root.contains(document.activeElement)) {
-              return;
-            }
-            root.classList.remove("has-focus");
-            if (activeTables.get(this.grid.outer) === this) {
-              activeTables.delete(this.grid.outer);
-              this.close();
-              delete this.selected.range;
-              this.highlight();
-              this.grid.outer.state.facet(tableSelectionChanges)(false);
-            }
-          }),
-        );
-      },
-      { signal: this.events.signal },
-    );
-  }
-
-  private registerScrolling(scrollNote: TableEnvironment["scrollNote"]): void {
-    this.grid.root.addEventListener(
-      "wheel",
-      (event) =>
-        forwardTableWheel(
-          event,
-          this.grid.outer.scrollDOM,
-          this.grid.outer.defaultLineHeight,
-          scrollNote,
-        ),
-      { passive: false, signal: this.events.signal },
     );
   }
 
@@ -276,11 +231,15 @@ export class TableController {
     );
   }
 
-  update(block: RenderBlock, outer: EditorView): void {
-    const keepFocus =
-      !!this.editor?.hasFocus ||
-      (!!this.editor &&
-        this.editor.dom.contains(this.grid.root.ownerDocument.activeElement));
+  update(block: RenderBlock, outer: EditorView, force = false): void {
+    if (this.canSkipUpdate(block, outer, force)) {
+      this.grid.block = block;
+      return;
+    }
+    const activeEl = this.grid.root.ownerDocument.activeElement;
+    const keepFocus = Boolean(
+      this.editor?.hasFocus || this.editor?.dom.contains(activeEl),
+    );
     if (block.source !== this.grid.block.source) {
       this.handles.cancel();
       this.selected.drag.cancel();
@@ -291,33 +250,16 @@ export class TableController {
     if (!model) {
       return;
     }
+    const previousModel = this.grid.model;
     const shapeChanged =
-      model.rows.length !== this.grid.model.rows.length ||
-      model.alignments.length !== this.grid.model.alignments.length;
-    let moved: CellPosition | undefined;
-    if (shapeChanged && this.active && !this.requested) {
-      const previous =
-        this.grid.model.rows[this.active.row]![this.active.column]!;
-      // When the cell itself is gone (undo removed its row or column), the
-      // caret stays in the table, in the nearest remaining cell.
-      moved =
-        cellAtOffset(
-          model,
-          difference(this.grid.block.source, block.source).mapPos(
-            previous.from,
-            1,
-          ),
-        ) ??
-        (this.editor
-          ? {
-              row: Math.min(this.active.row, model.rows.length - 1),
-              column: Math.min(this.active.column, model.alignments.length - 1),
-            }
-          : undefined);
-    }
+      model.rows.length !== previousModel.rows.length ||
+      model.alignments.length !== previousModel.alignments.length;
+    const moved = shapeChanged
+      ? this.relocatedCell(model, block.source)
+      : undefined;
     this.grid.block = block;
     this.grid.model = model;
-    this.refreshCells(shapeChanged, moved);
+    this.refreshCells(shapeChanged, moved, previousModel, force);
     this.projection.update();
     if (this.requested) {
       const next = this.requested;
@@ -328,19 +270,56 @@ export class TableController {
     }
     this.highlight();
     this.handles.refresh();
-    this.remeasureSticky();
   }
 
-  private remeasureSticky(): void {
-    if (this.sticky && this.grid.outer.scrollDOM) {
-      // Note scroller is stable per editor; re-measure after layout changes.
-      this.sticky.measure();
+  private canSkipUpdate(
+    b: RenderBlock,
+    outer: EditorView,
+    force: boolean,
+  ): boolean {
+    const same =
+      !force &&
+      b.source === this.grid.block.source &&
+      outer === this.grid.outer;
+    return (
+      same &&
+      !this.requested &&
+      !b.source.includes("[^") &&
+      !b.source.includes("^[")
+    );
+  }
+
+  private relocatedCell(
+    model: typeof this.grid.model,
+    next: string,
+  ): CellPosition | undefined {
+    if (!this.active || this.requested) {
+      return undefined;
     }
+    const prev = this.grid.model.rows[this.active.row]![this.active.column]!;
+    const mapped = difference(this.grid.block.source, next).mapPos(
+      prev.from,
+      1,
+    );
+    return (
+      cellAtOffset(model, mapped) ??
+      (this.editor
+        ? {
+            row: Math.min(this.active.row, model.rows.length - 1),
+            column: Math.min(this.active.column, model.alignments.length - 1),
+          }
+        : undefined)
+    );
   }
 
-  private refreshCells(shapeChanged: boolean, moved?: CellPosition): void {
+  private refreshCells(
+    shapeChanged: boolean,
+    moved: CellPosition | undefined,
+    previousModel: typeof this.grid.model,
+    force: boolean,
+  ): void {
     if (!shapeChanged) {
-      this.grid.refresh(this.active);
+      this.grid.refresh(this.active, previousModel, force);
       return;
     }
     delete this.selected.range;
@@ -352,6 +331,36 @@ export class TableController {
     }
   }
 
+  private clearActiveTable(notify = true): void {
+    if (activeTables.get(this.grid.outer) === this) {
+      activeTables.delete(this.grid.outer);
+      this.close();
+      delete this.selected.range;
+      this.highlight();
+      if (notify) {
+        this.grid.outer.state.facet(tableSelectionChanges)(false);
+      }
+    }
+  }
+
+  suspend(releaseActive = false): void {
+    this.handles.cancel();
+    this.selected.drag.cancel();
+    this.toolbar.close();
+    // The active table's cell editor stays alive while CodeMirror unmounts
+    // the widget past the viewport, so scrolling does not rebuild cell
+    // Markdown on the way by. Real teardown passes releaseActive.
+    if (!releaseActive && activeTables.get(this.grid.outer) === this) {
+      return;
+    }
+    this.grid.root.classList.remove("has-focus");
+    delete this.requested;
+    this.close();
+    delete this.selected.range;
+    this.highlight();
+    this.clearActiveTable(false);
+  }
+
   execute(operation: TableOperation, focus: CellPosition): void {
     const source = operateTable(this.grid.model, operation);
     if (source === this.grid.block.source) {
@@ -361,14 +370,15 @@ export class TableController {
     const next = parseTable(source);
     this.close();
     delete this.selected.range;
-    if (next) {
-      this.requested = {
-        row: Math.max(0, Math.min(focus.row, next.rows.length - 1)),
-        column: Math.max(0, Math.min(focus.column, next.alignments.length - 1)),
-      };
-    } else {
-      delete this.requested;
-    }
+    this.requested = next
+      ? {
+          row: Math.max(0, Math.min(focus.row, next.rows.length - 1)),
+          column: Math.max(
+            0,
+            Math.min(focus.column, next.alignments.length - 1),
+          ),
+        }
+      : undefined;
     this.grid.replace(source);
     if (!next) {
       this.grid.outer.focus();
@@ -376,14 +386,11 @@ export class TableController {
   }
 
   destroy(): void {
+    this.suspend(true);
     this.selected.drag.destroy();
     this.handles.destroy();
     this.sticky.destroy();
-    this.toolbar.close();
     this.events.abort();
-    if (activeTables.get(this.grid.outer) === this) {
-      activeTables.delete(this.grid.outer);
-    }
     this.projection.cellEditor?.destroy();
     this.grid.disposeContent();
   }
