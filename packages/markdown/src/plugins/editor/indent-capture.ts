@@ -1,4 +1,4 @@
-import { activeCompletionStatus } from "./completion-hooks";
+import { activeCompletionStatus } from "../../shared/completion-hooks";
 import type { Extension } from "@codemirror/state";
 import { ViewPlugin, type EditorView, type KeyBinding } from "@codemirror/view";
 import {

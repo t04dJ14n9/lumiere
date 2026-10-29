@@ -1,4 +1,3 @@
-import { extensionOf, lookupKey, stemOf } from "../../shared/vault-path";
 import type { VaultFile } from "./api";
 
 /** What the host knows about a file before the index adds derived fields. */
@@ -105,7 +104,7 @@ export class FileTable {
     if (this.byLowerPath.get(path.toLowerCase()) === file) {
       this.byLowerPath.delete(path.toLowerCase());
     }
-    const key = lookupKey(path);
+    const key = fileLookupKey(file);
     const rest = this.withKey(key).filter((other) => other !== file);
     if (rest.length > 0) {
       this.byKey.set(key, rest);

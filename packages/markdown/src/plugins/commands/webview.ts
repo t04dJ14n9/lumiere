@@ -1,4 +1,4 @@
-import { moveActiveCompletionSelection } from "../editor/completion-hooks";
+import { moveActiveCompletionSelection } from "../../shared/completion-hooks";
 import { keymap } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
 import { protocol } from "./protocol";
@@ -8,7 +8,7 @@ import { keepHistoryKeysInEditor, leavesNativeHistory } from "./history-keys";
 import { keepToggleTextEditorKey } from "./toggle-text-editor-keys";
 import { keepQuickOpenKey } from "./quick-open-keys";
 import { keepCloseKey } from "./close-keys";
-import { isVimInsertMode, runVimInsertCtrlW } from "../editor/vim-hooks";
+import { isVimInsertMode, runVimInsertCtrlW } from "../../shared/vim-hooks";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {

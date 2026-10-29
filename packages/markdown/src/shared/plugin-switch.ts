@@ -60,79 +60,111 @@ export class PluginSwitch {
     managed: readonly string[],
     wanted: readonly WantedPlugin[],
   ): Promise<ReadonlySet<string>> {
-    const byName = new Map(wanted.map((entry) => [entry.plugin.name, entry]));
-    const stops: Promise<void>[] = [];
-    const starts: WantedPlugin[] = [];
-    const updates: Promise<void>[] = [];
-    const affected = new Set<string>();
-
-    for (const name of managed) {
-      const next = byName.get(name);
-      const current = this.running.get(name);
-      if (!next) {
-        if (current) {
-          this.running.delete(name);
-          stops.push(current.handle.dispose());
-          affected.add(name);
-        }
-        continue;
-      }
-      const signature = next.signature ?? "";
-      if (!current) {
-        starts.push(next);
-        affected.add(name);
-      } else if (current.signature !== signature) {
-        current.signature = signature;
-        updates.push(current.handle.update(next.config));
-        affected.add(name);
-      }
+    const plan = planReconcile(managed, wanted, this.running);
+    if (plan.updates.length) {
+      await Promise.all(plan.updates);
     }
-
-    if (updates.length) {
-      await Promise.all(updates);
-    }
-    if (stops.length) {
-      await Promise.all(stops);
+    if (plan.stops.length) {
+      await Promise.all(plan.stops);
     }
     // Start service providers before optional consumers so plugins like tables
     // and math bind optional services (formatting, links, vim) on first plug
     // without tearing down and restarting their fiber mid-phase.
-    const optionalWanted = new Set<string>();
-    for (const entry of starts) {
-      for (const opt of entry.plugin.inject?.optional ?? []) {
-        optionalWanted.add(opt);
-      }
-    }
-    const providers: WantedPlugin[] = [];
-    const consumers: WantedPlugin[] = [];
-    for (const entry of starts) {
-      if (entry.plugin.provides?.some((p) => optionalWanted.has(p))) {
-        providers.push(entry);
-      } else {
-        consumers.push(entry);
-      }
-    }
-    const providerHandles = providers.map((entry) => {
-      const handle = this.root.plugin(entry.plugin, entry.config);
-      this.running.set(entry.plugin.name, {
-        handle,
-        signature: entry.signature ?? "",
-      });
-      return handle as PluginHandle<unknown> & { idle?(): Promise<unknown> };
-    });
+    const { providers, consumers } = partitionStarts(plan.starts);
+    await this.startProvidersThenConsumers(providers, consumers);
+    return plan.affected;
+  }
+
+  private async startProvidersThenConsumers(
+    providers: readonly WantedPlugin[],
+    consumers: readonly WantedPlugin[],
+  ): Promise<void> {
+    const providerHandles = providers.map((entry) => this.startOne(entry));
     if (providerHandles.length > 0 && consumers.length > 0) {
       await Promise.all(providerHandles.map((h) => h.idle?.()));
       if (!this.live) {
-        return affected;
+        return;
       }
     }
     for (const entry of consumers) {
-      const handle = this.root.plugin(entry.plugin, entry.config);
-      this.running.set(entry.plugin.name, {
-        handle,
-        signature: entry.signature ?? "",
-      });
+      this.startOne(entry);
     }
-    return affected;
   }
+
+  private startOne(
+    entry: WantedPlugin,
+  ): PluginHandle<unknown> & { idle?(): Promise<unknown> } {
+    const handle = this.root.plugin(entry.plugin, entry.config);
+    this.running.set(entry.plugin.name, {
+      handle,
+      signature: entry.signature ?? "",
+    });
+    return handle as PluginHandle<unknown> & { idle?(): Promise<unknown> };
+  }
+}
+
+type Running = {
+  handle: PluginHandle<unknown>;
+  signature: string;
+};
+
+function planReconcile(
+  managed: readonly string[],
+  wanted: readonly WantedPlugin[],
+  running: Map<string, Running>,
+): {
+  stops: Promise<void>[];
+  starts: WantedPlugin[];
+  updates: Promise<void>[];
+  affected: Set<string>;
+} {
+  const byName = new Map(wanted.map((entry) => [entry.plugin.name, entry]));
+  const stops: Promise<void>[] = [];
+  const starts: WantedPlugin[] = [];
+  const updates: Promise<void>[] = [];
+  const affected = new Set<string>();
+  for (const name of managed) {
+    const next = byName.get(name);
+    const current = running.get(name);
+    if (!next) {
+      if (current) {
+        running.delete(name);
+        stops.push(current.handle.dispose());
+        affected.add(name);
+      }
+      continue;
+    }
+    const signature = next.signature ?? "";
+    if (!current) {
+      starts.push(next);
+      affected.add(name);
+    } else if (current.signature !== signature) {
+      current.signature = signature;
+      updates.push(current.handle.update(next.config));
+      affected.add(name);
+    }
+  }
+  return { stops, starts, updates, affected };
+}
+
+function partitionStarts(starts: readonly WantedPlugin[]): {
+  providers: WantedPlugin[];
+  consumers: WantedPlugin[];
+} {
+  const optionalWanted = new Set<string>();
+  for (const entry of starts) {
+    for (const opt of entry.plugin.inject?.optional ?? []) {
+      optionalWanted.add(opt);
+    }
+  }
+  const providers: WantedPlugin[] = [];
+  const consumers: WantedPlugin[] = [];
+  for (const entry of starts) {
+    if (entry.plugin.provides?.some((p) => optionalWanted.has(p))) {
+      providers.push(entry);
+    } else {
+      consumers.push(entry);
+    }
+  }
+  return { providers, consumers };
 }

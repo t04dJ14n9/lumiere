@@ -90,7 +90,8 @@ export function CommandPalette({
       id: item.command,
       title: item.title,
       category: item.category ?? "Lumière",
-      run: () => report(backend().commands?.run(item.command) ?? Promise.resolve()),
+      run: () =>
+        report(backend().commands?.run(item.command) ?? Promise.resolve()),
     }));
     return [...contributed, ...shellPaletteEntries(handlers)];
   }, [editorCommands, handlers, report]);

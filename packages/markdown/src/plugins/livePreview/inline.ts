@@ -21,6 +21,7 @@ import {
 } from "../../webview/ui/pointer-selection";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
+import { bareUrlTarget, linkClass } from "./link-style";
 import { decorateBlockId } from "./block-id";
 import { decorateHighlightColour, highlightClass } from "./highlight-colour";
 import { decorateCodeLines } from "./code-lines";
@@ -293,26 +294,8 @@ class InlineDecorations implements InlineContext {
       return;
     }
     // Revealed syntax stays faint, as in Obsidian, so the text reads first.
-    const emptyAtxHeading =
-      name === "HeaderMark" &&
-      parent.name.startsWith("ATXHeading") &&
-      this.state.doc.lineAt(from).text.trim() ===
-        this.state.sliceDoc(from, to).trim();
-    if (
-      ["QuoteMark", "HeaderMark"].includes(name)
-        ? this.lineRevealed(from) || emptyAtxHeading
-        : this.revealed(parent.from, parent.to)
-    ) {
-      this.mark(from, to, "md-syntax-mark");
-      // Obsidian atxHeaderRE = /^(#+)(?: |$)/ includes at most one delimiter space.
-      if (
-        name === "HeaderMark" &&
-        parent.name.startsWith("ATXHeading") &&
-        from === parent.from &&
-        this.state.sliceDoc(to, to + 1) === " "
-      ) {
-        this.mark(to, to + 1, "md-header-space");
-      }
+    if (this.syntaxRevealed(name, from, to, parent)) {
+      this.markRevealedSyntax(name, from, to, parent);
       return;
     }
     // A setext underline is its own line; Obsidian keeps it, faint.
@@ -320,14 +303,58 @@ class InlineDecorations implements InlineContext {
       this.mark(from, to, "md-setext-mark");
       return;
     }
-    this.hide(
-      from,
-      to +
-        (["HeaderMark", "QuoteMark"].includes(name) &&
-        this.state.sliceDoc(to, to + 1) === " "
-          ? 1
-          : 0),
+    const trail =
+      ["HeaderMark", "QuoteMark"].includes(name) &&
+      this.state.sliceDoc(to, to + 1) === " "
+        ? 1
+        : 0;
+    this.hide(from, to + trail);
+  }
+
+  private emptyAtxHeading(
+    name: string,
+    from: number,
+    to: number,
+    parent: SyntaxNodeRef["node"],
+  ): boolean {
+    return (
+      name === "HeaderMark" &&
+      parent.name.startsWith("ATXHeading") &&
+      this.state.doc.lineAt(from).text.trim() ===
+        this.state.sliceDoc(from, to).trim()
     );
+  }
+
+  private syntaxRevealed(
+    name: string,
+    from: number,
+    to: number,
+    parent: SyntaxNodeRef["node"],
+  ): boolean {
+    if (["QuoteMark", "HeaderMark"].includes(name)) {
+      return (
+        this.lineRevealed(from) || this.emptyAtxHeading(name, from, to, parent)
+      );
+    }
+    return this.revealed(parent.from, parent.to);
+  }
+
+  private markRevealedSyntax(
+    name: string,
+    from: number,
+    to: number,
+    parent: SyntaxNodeRef["node"],
+  ): void {
+    this.mark(from, to, "md-syntax-mark");
+    // Obsidian atxHeaderRE = /^(#+)(?: |$)/ includes at most one delimiter space.
+    if (
+      name === "HeaderMark" &&
+      parent.name.startsWith("ATXHeading") &&
+      from === parent.from &&
+      this.state.sliceDoc(to, to + 1) === " "
+    ) {
+      this.mark(to, to + 1, "md-header-space");
+    }
   }
 }
 
@@ -407,33 +434,4 @@ export const hybridInline = ViewPlugin.fromClass(HybridInline, {
   },
 });
 
-/**
- * A Markdown link's classes. A rendered label pointing outside the vault
- * (any `scheme:` address) carries Obsidian's external-link mark. Internal
- * misses get `is-unresolved`, same as rendered wikilinks.
- */
-export function linkClass(
-  isRendered: boolean,
-  href: string,
-  unresolved = false,
-): string {
-  if (!isRendered) {
-    return "md-link";
-  }
-  if (/^[a-z][a-z\d+.-]*:/i.test(href)) {
-    return "md-link md-link-rendered md-link-external";
-  }
-  return unresolved
-    ? "md-link md-link-rendered is-unresolved"
-    : "md-link md-link-rendered";
-}
-
-/** The address a bare URL opens: GFM links `www.` to https and plain addresses to mail. */
-export function bareUrlTarget(text: string): string {
-  if (/^[a-z][a-z\d+.-]*:/i.test(text)) {
-    return text;
-  }
-  return text.includes("@") && !text.includes("/")
-    ? `mailto:${text}`
-    : `https://${text}`;
-}
+export { bareUrlTarget, linkClass } from "./link-style";

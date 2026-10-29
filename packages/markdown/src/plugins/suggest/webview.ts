@@ -26,7 +26,7 @@ import type {} from "../editor/api";
 import type { LocalSuggestions, Suggest, SuggestionTrigger } from "./api";
 import { CancelToken } from "../../shared/rpc/lifecycle";
 import { protocol, type Suggestion } from "./protocol";
-import { registerCompletionHooks } from "../editor/completion-hooks";
+import { registerCompletionHooks } from "../../shared/completion-hooks";
 import { allowsSuggestions, completionEdit } from "./completion";
 
 registerCompletionHooks({ completionStatus, moveCompletionSelection });

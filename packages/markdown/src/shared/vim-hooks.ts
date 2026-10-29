@@ -48,7 +48,6 @@ export function setVimListContinueHandler(
 }
 
 export function getVimListContinueHandler():
-  | ((view: EditorView) => boolean)
-  | undefined {
+  ((view: EditorView) => boolean) | undefined {
   return listContinueHandler;
 }

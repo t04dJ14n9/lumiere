@@ -21,7 +21,7 @@ import { insertIntoClickedSource } from "./click-insert";
 import {
   getVimListContinueHandler,
   setVimInsertCtrlWHandler,
-} from "../editor/vim-hooks";
+} from "../../shared/vim-hooks";
 import type {} from "../livePreview/api";
 
 /** Live caret profile for the panel; reconfigure updates without remounting Vim. */

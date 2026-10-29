@@ -50,7 +50,9 @@ export interface HostStartOptions {
   readonly commands?: readonly CommandContribution[];
   readonly logger: Logger;
   /** Blame and the change gutter, when the platform provides Git. */
-  readonly git?: (roots: () => readonly string[]) => GitAccess & { dispose?(): void };
+  readonly git?: (
+    roots: () => readonly string[],
+  ) => GitAccess & { dispose?(): void };
   /** A canvas to draw on, where the embedder has one (the iPad's PencilKit). */
   readonly ink?: InkService;
 }

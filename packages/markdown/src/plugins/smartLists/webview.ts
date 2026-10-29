@@ -4,7 +4,7 @@ import type {} from "../editor/api";
 import { continueLine, continueList } from "./commands";
 import { renumberOnEdit } from "./renumber";
 import { pasteIntoListItem } from "./paste";
-import { setVimListContinueHandler } from "../editor/vim-hooks";
+import { setVimListContinueHandler } from "../../shared/vim-hooks";
 export const smartListsWebview: Plugin = {
   name: "smartLists",
   inject: { required: ["editor"] },

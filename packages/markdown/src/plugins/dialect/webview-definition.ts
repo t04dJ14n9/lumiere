@@ -18,7 +18,9 @@ export function dialectPlugin(options: RendererOptions = {}): Plugin {
         parser: markdownParser,
         language: markdownLanguageSupport,
         metadata: () => {
-          throw new Error("markdown.metadata is not available on the core dialect service");
+          throw new Error(
+            "markdown.metadata is not available on the core dialect service",
+          );
         },
         renderer: createRenderer(options),
       });

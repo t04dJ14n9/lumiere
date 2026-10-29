@@ -35,7 +35,7 @@ import {
   deleteCharBackward,
   selectAll,
 } from "@codemirror/commands";
-import { isVimInsertMode } from "./vim-hooks";
+import { isVimInsertMode } from "../../shared/vim-hooks";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
