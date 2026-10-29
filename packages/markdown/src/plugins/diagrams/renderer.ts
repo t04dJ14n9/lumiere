@@ -141,7 +141,19 @@ export class DiagramRenderer {
         startOnLoad: false,
         securityLevel: "strict",
         htmlLabels: trusted,
-        flowchart: { htmlLabels: trusted },
+        flowchart: { htmlLabels: trusted, useMaxWidth: false },
+        sequence: { useMaxWidth: false },
+        gitGraph: { useMaxWidth: false },
+        er: { useMaxWidth: false },
+        gantt: { useMaxWidth: true },
+        journey: { useMaxWidth: true },
+        class: { useMaxWidth: true },
+        state: { useMaxWidth: true },
+        pie: { useMaxWidth: true },
+        themeVariables: {
+          fontFamily:
+            "var(--font-mermaid, var(--vscode-editor-font-family, inherit))",
+        },
         suppressErrorRendering: true,
         theme,
       });
