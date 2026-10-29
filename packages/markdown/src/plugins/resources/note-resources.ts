@@ -61,7 +61,10 @@ export class NoteResources implements Resources {
     return {
       kind,
       source: file.uri,
-      url: resourceUrl(file.uri) + `?v=${stat.mtime}`,
+      url: (() => {
+        const base = resourceUrl(file.uri);
+        return `${base}${base.includes("?") ? "&" : "?"}v=${stat.mtime}`;
+      })(),
       ...(text === undefined ? {} : { text }),
       ...(baseSnapshot ?? {}),
     };
@@ -92,7 +95,7 @@ export class NoteResources implements Resources {
 }
 
 export function resourceKind(path: string): Resource["kind"] {
-  if (/\.md$/i.test(path)) {
+  if (/\.(?:md|markdown)$/i.test(path)) {
     return "note";
   }
   if (/\.base$/i.test(path)) {
@@ -114,7 +117,7 @@ function buildBaseVaultSnapshot(
   const entries: BaseNoteEntry[] = [];
   let thisEntry: BaseNoteEntry | undefined;
   for (const file of vault.files()) {
-    if (file.extension.toLowerCase() !== "md" || file.excluded) {
+    if (!/^(?:md|markdown)$/i.test(file.extension) || file.excluded) {
       continue;
     }
     const entry = buildNoteEntry(vault, file);

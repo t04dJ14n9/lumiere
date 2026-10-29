@@ -356,3 +356,51 @@ test("clicking a Mermaid internal-link node opens its target note without reveal
     .toBe("Biology");
   await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
 });
+
+test("wide Mermaid diagram reserves top height so language and action badges do not overlap SVG", async ({
+  page,
+}) => {
+  const mermaid = [
+    "above the diagram",
+    "",
+    "```mermaid",
+    "sequenceDiagram",
+    "  autonumber",
+    "  actor Dev as 开发者",
+    "  participant Console as 活动控制台",
+    "  participant Git as 部署仓 Git",
+    "  participant Argo as Argo CD",
+    "  participant K8s as 集群: GameDeployment",
+    "  Dev->>Console: CreateActivity",
+    "  Console->>Git: Commit manifest",
+    "  Git-->>Argo: Webhook sync",
+    "  Argo->>K8s: Apply GameDeployment",
+    "```",
+  ].join("\n");
+  await open(page, mermaid);
+  const svg = page.locator('pre[data-fence="mermaid"] svg');
+  await expect(svg).toBeVisible({ timeout: 15_000 });
+  await page.locator(".hybrid-block").first().hover();
+  const geometry = await page.evaluate(() => {
+    const svgEl = document.querySelector('pre[data-fence="mermaid"] svg')!;
+    const langEl = document.querySelector(".hybrid-block .code-language")!;
+    const copyEl = document.querySelector(".hybrid-block .copy-code")!;
+    const editEl = document.querySelector(".hybrid-block .edit-block")!;
+    const svgRect = svgEl.getBoundingClientRect();
+    const langRect = langEl.getBoundingClientRect();
+    const copyRect = copyEl.getBoundingClientRect();
+    const editRect = editEl.getBoundingClientRect();
+    return {
+      svgTop: svgRect.top,
+      langBottom: langRect.bottom,
+      copyBottom: copyRect.bottom,
+      editBottom: editRect.bottom,
+      maxBadgeBottom: Math.max(
+        langRect.bottom,
+        copyRect.bottom,
+        editRect.bottom,
+      ),
+    };
+  });
+  expect(geometry.svgTop - geometry.maxBadgeBottom).toBeGreaterThanOrEqual(4);
+});

@@ -6,8 +6,6 @@ import type { DiagnosticSink, WorkspaceFiles } from "../workspace-files";
 export interface HostWorkspace {
   folders(): readonly string[];
   isTrusted(): boolean;
-  /** Whether code that came with a vault may run there. */
-  readonly vaultCode: VaultCodeTrust;
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
   /**
@@ -27,25 +25,6 @@ export interface HostWorkspace {
   readonly diagnostics: DiagnosticSink;
   /** Show a file in a text editor beside the current one (Marp export). */
   revealTextEditor(uri: string): Promise<void>;
-}
-
-/**
- * Whether code a vault brings with it (Obsidian community plugins) may run.
- * Such code can read and change everything the editor can, so the owner
- * decides per vault. VS Code answers with workspace trust, which it asks for
- * itself; other hosts ask once per vault, as Obsidian does, and keep the
- * answer. Vaults are named by their root URI.
- */
-export interface VaultCodeTrust {
-  /** The owner's answer for this vault; undefined until they give one. */
-  answer(vaultRoot: string): boolean | undefined;
-  /**
-   * Ask the owner about this vault, even if they said no before, and
-   * resolve with their answer. `plugins` names what would run, if anything.
-   */
-  request(vaultRoot: string, plugins: readonly string[]): Promise<boolean>;
-  /** Hear an answer arrive or change, for any vault. */
-  onDidChange(listener: () => void): Disposer;
 }
 
 /** Workspace-scoped storage that outlives the window. */

@@ -12,11 +12,12 @@ whether or not the caret is in them, and puts the language label and Copy
 button (`fence-flair.ts`) in the hidden opening fence line, positioned so the
 line keeps the height of the text it replaces. Only fences of a language a code
 processor accepts are replaced by a rendered widget; that registration is
-renewed whenever the processors change. Prism's core and language registry load
-on the first labelled fence. Each requested language loads its own components,
-dependencies, embedded syntax and grammar extensions, in dependency order;
-aliases and concurrent requests share a promise. Rendered Markdown code also
-loads languages named by its nested fences. Editable
+renewed whenever the processors change. CodeMirror 6 Lezer parsers (`@lezer/*`
+and `@codemirror/lang-sql`) and Prism fallback grammars load on demand on the
+first labelled fence. Each requested language loads its Lezer parser (or Prism
+components for languages without an official Lezer parser); aliases and
+concurrent requests share a promise. Rendered Markdown code also loads
+languages named by its nested fences. Editable
 highlighting caches token ranges by fence position, text and language and maps
 existing decorations during composition. Rendered code (embeds, callouts,
 processor output) gets copy controls and labels from render passes, which own
@@ -31,12 +32,12 @@ click handlers, original text and late-result guards.
 - `code-source.test.ts`: unit tests for rebuilding while reveal is frozen.
 - `fence-flair.ts`: label and Copy button in the hidden opening fence line.
 - `processor-view.ts`: code processor rendering and its fence widgets.
-- `code-highlight.ts`: Prism HTML highlighting and UTF-16 token ranges.
+- `code-highlight.ts`: Lezer AST + Prism fallback HTML highlighting and UTF-16 token ranges.
 - `language-loader.ts`: lazy grammar promises, alias sharing and retry after failure.
 - `language-loader.test.ts`: no-request, alias, concurrent-load and retry units.
 - `code-selection.ts`: highlighted DOM click to Markdown source coordinates.
 - `vendor.d.ts`: Prism bundle typing.
-- `test/unit/codeBlocks/languages.test.ts`: eager/lazy output parity and ESM chunk loading.
+- `test/unit/codeBlocks/languages.test.ts`: Lezer and Prism fallback output and ESM chunk loading.
 - `code.test.ts`: source-offset, fence reveal and fence info unit tests.
 - `codeBlocks.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 

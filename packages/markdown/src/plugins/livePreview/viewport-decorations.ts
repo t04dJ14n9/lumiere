@@ -5,7 +5,6 @@ import {
   EditorView,
   ViewPlugin,
   type DecorationSet,
-  type ViewUpdate,
 } from "@codemirror/view";
 import {
   isRevealFrozen,
@@ -17,26 +16,47 @@ import {
   DeferredBlockWidget,
   expandVisibleRanges,
   rangesIntersect,
-  VIEWPORT_BLOCK_MARGIN,
 } from "./deferred-block";
 import { changesMetadata } from "./invalidation";
-/** Viewport (+ margin) the block decorator treats as live. */
+
+/** Viewport (+ margin) the block decorator treats as live when explicitly set. */
 export const setBlockHotRanges =
   StateEffect.define<readonly { from: number; to: number }[]>();
 
+const FULL_DOC_HOT_RANGES = Symbol("fullDocHotRanges");
+
+type HotRanges = readonly { from: number; to: number }[] & {
+  [FULL_DOC_HOT_RANGES]?: true;
+};
+
+function fullDocumentHotRanges(docLength: number): HotRanges {
+  const ranges: HotRanges = [{ from: 0, to: docLength }];
+  Object.defineProperty(ranges, FULL_DOC_HOT_RANGES, {
+    value: true,
+    enumerable: false,
+  });
+  return ranges;
+}
+
+function isFullDocumentHotRanges(
+  ranges: readonly { from: number; to: number }[] | undefined,
+): boolean {
+  return Boolean(ranges && (ranges as HotRanges)[FULL_DOC_HOT_RANGES] === true);
+}
+
 /**
- * Ranges where block widgets mount for real. Defaults to the start of the
- * document so EditorState-only tests and the first paint before the view
- * reports `visibleRanges` only pay for the opening screen. The viewport
- * tracker updates this as the user scrolls; the caret range is always unioned
- * in at decorate time so reveal-on-focus still works below the fold.
+ * Ranges where block widgets mount in the DecorationSet.
+ *
+ * Matching Obsidian's `m8` StateField architecture, this defaults to the full
+ * document so CodeMirror 6's native viewport virtualizer calls `toDOM(view)`
+ * only for blocks inside `view.viewport` and reads `estimatedHeight` outside
+ * `view.viewport` — without dispatching transactions on scroll. Explicit
+ * `setBlockHotRanges` effects still scope live blocks to a custom band.
  */
 export const blockHotRanges = StateField.define<
   readonly { from: number; to: number }[]
 >({
-  create: (state) => [
-    { from: 0, to: Math.min(state.doc.length, VIEWPORT_BLOCK_MARGIN * 2) },
-  ],
+  create: (state) => fullDocumentHotRanges(state.doc.length),
   update(value, tr) {
     for (const effect of tr.effects) {
       if (effect.is(setBlockHotRanges)) {
@@ -46,6 +66,9 @@ export const blockHotRanges = StateField.define<
     if (!tr.docChanged) {
       return value;
     }
+    if (isFullDocumentHotRanges(value)) {
+      return fullDocumentHotRanges(tr.state.doc.length);
+    }
     return value.map((range) => ({
       from: tr.changes.mapPos(range.from, 1),
       to: tr.changes.mapPos(range.to, -1),
@@ -54,11 +77,13 @@ export const blockHotRanges = StateField.define<
 });
 
 /**
- * Decorations for Live Preview blocks, scoped to the viewport (+ margin).
+ * Decorations for Live Preview blocks.
  *
- * Blocks intersecting the expanded visible ranges (or the caret) mount real
- * feature widgets. Everything else keeps a cheap `DeferredBlockWidget` so the
- * height map stays stable without running render passes below the fold.
+ * By default every indexed block gets its `GuardedWidget` replacement and
+ * CodeMirror 6's own viewport virtualizer mounts `toDOM()` only inside
+ * `view.viewport` (never dispatching transactions on scroll). When an explicit
+ * `setBlockHotRanges` band is active, blocks outside that band mount a
+ * `DeferredBlockWidget`.
  */
 export function blockDecorations(report: (error: unknown) => void) {
   const build = (state: EditorState): DecorationSet =>
@@ -95,9 +120,10 @@ export function blockDecorations(report: (error: unknown) => void) {
 }
 
 function liveBand(state: EditorState): readonly { from: number; to: number }[] {
-  const hot =
-    state.field(blockHotRanges, false) ??
-    expandVisibleRanges([], state.doc.length);
+  const hot = state.field(blockHotRanges, false);
+  if (!hot || isFullDocumentHotRanges(hot)) {
+    return fullDocumentHotRanges(state.doc.length);
+  }
   const selection = state.selection.ranges.map((range) => ({
     from: Math.max(0, range.from - 64),
     to: Math.min(state.doc.length, range.to + 64),
@@ -123,7 +149,10 @@ function decorateForBand(
   report: (error: unknown) => void,
   band: readonly { from: number; to: number }[] = liveBand(state),
 ): Range<Decoration>[] {
-  if (rangesIntersect(block.from, block.to, band)) {
+  if (
+    isFullDocumentHotRanges(band) ||
+    rangesIntersect(block.from, block.to, band)
+  ) {
     return blockDecoration(state, block, report);
   }
   if (block.renderer.showSource?.(state, block)) {
@@ -137,57 +166,9 @@ function decorateForBand(
   ];
 }
 
-const blockViewportTracker = ViewPlugin.define(() => {
-  let queued = false;
-  return {
-    update(update: ViewUpdate) {
-      if (!update.viewportChanged && !update.docChanged) {
-        return;
-      }
-      const next = expandVisibleRanges(
-        update.view.visibleRanges,
-        update.state.doc.length,
-      );
-      const prev = update.state.field(blockHotRanges, false);
-      if (prev && sameRanges(prev, next)) {
-        return;
-      }
-      if (queued) {
-        return;
-      }
-      queued = true;
-      const view = update.view;
-      queueMicrotask(() => {
-        queued = false;
-        if (!view.dom.isConnected) {
-          return;
-        }
-        const latest = expandVisibleRanges(
-          view.visibleRanges,
-          view.state.doc.length,
-        );
-        const current = view.state.field(blockHotRanges, false);
-        if (current && sameRanges(current, latest)) {
-          return;
-        }
-        view.dispatch({ effects: setBlockHotRanges.of(latest) });
-      });
-    },
-  };
-});
-
-function sameRanges(
-  left: readonly { from: number; to: number }[],
-  right: readonly { from: number; to: number }[],
-): boolean {
-  if (left.length !== right.length) {
-    return false;
-  }
-  return left.every(
-    (range, index) =>
-      range.from === right[index]!.from && range.to === right[index]!.to,
-  );
-}
+const blockViewportTracker = ViewPlugin.define(() => ({}));
 
 /** Hot-range field + viewport tracker; install beside `blockDecorations`. */
 export const blockViewportSupport = [blockHotRanges, blockViewportTracker];
+
+export { expandVisibleRanges };

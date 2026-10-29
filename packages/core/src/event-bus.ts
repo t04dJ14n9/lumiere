@@ -60,9 +60,30 @@ export class EventBus {
       void this.awaited(l, args);
     }
   }
-  async serial(name: keyof Events, args: unknown[]): Promise<void> {
-    for (const l of [...(this.listeners.get(name) ?? [])]) {
-      await this.awaited(l, args);
+  serial(name: keyof Events, args: unknown[]): Promise<void> {
+    const list = [...(this.listeners.get(name) ?? [])];
+    for (let i = 0; i < list.length; i++) {
+      const l = list[i]!;
+      const value = this.invoke(l, args);
+      if (isPromiseLike(value)) {
+        return this.finishSerial(list, i, value, args);
+      }
+    }
+    return RESOLVED_SERIAL;
+  }
+  private async finishSerial(
+    list: readonly Listener[],
+    index: number,
+    pending: PromiseLike<unknown>,
+    args: unknown[],
+  ): Promise<void> {
+    try {
+      await pending;
+    } catch (error) {
+      list[index]!.logger.error("Event listener failed", error);
+    }
+    for (let i = index + 1; i < list.length; i++) {
+      await this.awaited(list[i]!, args);
     }
   }
   async parallel(name: keyof Events, args: unknown[]): Promise<void> {
@@ -93,6 +114,19 @@ export class EventBus {
     }
     return value;
   }
+}
+
+const RESOLVED_SERIAL: Promise<void> & { readonly sync?: true } = Object.assign(
+  Promise.resolve(),
+  { sync: true as const },
+);
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    value !== null &&
+    (typeof value === "object" || typeof value === "function") &&
+    typeof (value as { then?: unknown }).then === "function"
+  );
 }
 
 function compareOwners(left: string, right: string): number {

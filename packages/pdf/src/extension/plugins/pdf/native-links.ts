@@ -5,7 +5,7 @@ import { parseLocationFragment } from "../../../shared/pdf-location";
 import { registerSourceLinks, type LinkRun } from "./source-links";
 import { deliverNativeLocation } from "./native-delivery";
 import { VIEW_TYPE, type PdfPanels } from "./panels";
-import { OPEN_NATIVE_LINK_COMMAND_ID } from "./registered-commands";
+import { OPEN_NATIVE_LINK_COMMAND_ID } from "../../../shared/command-ids";
 
 export function registerNativeLinks(panels: PdfPanels): vscode.Disposable {
   const cancellations = new WeakMap<LinkRun, () => void>();

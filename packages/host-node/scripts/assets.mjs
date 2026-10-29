@@ -1,5 +1,7 @@
 // What every embedder of host-node ships beside its own code, built into `out`:
 //   markdown/          the built editor and its workers (packages/markdown/dist)
+//   pdf/               the PDF viewer page (packages/pdf/dist/webview), whose
+//                      PDF engine is the editor's markdown/webview/pdfium.wasm
 //   page/shim.js       the page's stand-in for VS Code's webview API (src/page)
 //   contributed.json   Lumière's settings and defaults, from package.json
 //   menus.json         Lumière's right-click menu items, with their titles
@@ -32,6 +34,7 @@ export async function buildHostAssets({ out, production }) {
       filter: (source) => (production ? !source.endsWith(".map") : true),
     },
   );
+  await buildPdfViewer({ out, production });
   await esbuild.build({
     entryPoints: [path.join(here, "src/page/shim.ts")],
     outfile: path.join(out, "page", "shim.js"),
@@ -68,6 +71,22 @@ export async function buildHostAssets({ out, production }) {
       title: titles.get(item.command) ?? item.command,
     }));
   await writeFile(path.join(out, "menus.json"), JSON.stringify(menus));
+  const paletteWhen = new Map(
+    (manifest.contributes.menus?.commandPalette ?? [])
+      .filter((item) => typeof item.command === "string")
+      .map((item) => [item.command, item.when]),
+  );
+  const commands = (manifest.contributes.commands ?? [])
+    .filter((item) => item.command.startsWith("lumiere.markdown."))
+    .map((item) => ({
+      command: item.command,
+      title: item.title,
+      ...(item.category ? { category: item.category } : {}),
+      ...(paletteWhen.has(item.command)
+        ? { when: paletteWhen.get(item.command) }
+        : {}),
+    }));
+  await writeFile(path.join(out, "commands.json"), JSON.stringify(commands));
   return { version: manifest.version, repository: manifest.repository };
 }
 
@@ -85,3 +104,27 @@ export const nodeHostBuild = {
     js: 'import { createRequire as __lumiereRequire } from "node:module"; const require = __lumiereRequire(import.meta.url);',
   },
 };
+
+/**
+ * The PDF viewer page. Its engine is not copied: the editor ships the same
+ * one (both packages pin one @embedpdf/pdfium), and pdf-routes.ts serves it.
+ *
+ * @param {{ out: string, production: boolean }} options
+ */
+async function buildPdfViewer({ out, production }) {
+  execFileSync(
+    process.execPath,
+    ["scripts/build.mjs", ...(production ? ["--production"] : [])],
+    { cwd: path.join(root, "packages", "pdf"), stdio: "inherit" },
+  );
+  await cp(
+    path.join(root, "packages", "pdf", "dist", "webview"),
+    path.join(out, "pdf"),
+    {
+      recursive: true,
+      filter: (source) =>
+        !source.endsWith("pdfium.wasm") &&
+        (production ? !source.endsWith(".map") : true),
+    },
+  );
+}

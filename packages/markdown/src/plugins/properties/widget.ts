@@ -12,6 +12,7 @@ import { bindPropertyLists } from "./lists";
 import { bindPropertyControls } from "./controls";
 import { keepSelectAllInField } from "./select-all";
 import { propertiesHeightFromMarkup } from "./estimated-height";
+import { releaseReserveOnceMounted } from "../../webview/ui/markdown-block-reserve";
 
 const lifetimes = new WeakMap<HTMLElement, () => void>();
 
@@ -58,6 +59,7 @@ export class PropertyWidget extends WidgetType {
         ? undefined
         : new ResizeObserver(() => {
             if (wrapper.isConnected) {
+              releaseReserveOnceMounted(view, wrapper, container);
               view.requestMeasure();
             }
           });
@@ -68,19 +70,7 @@ export class PropertyWidget extends WidgetType {
       controls();
       selectAll();
     });
-    // Tall sheets (e.g. 100+ Sources) must enter the height map before the
-    // first scroll/PageDown; otherwise the body paints blank under an
-    // overflowing one-line reserve. minHeight keeps the estimate until
-    // measure / ResizeObserver see the finished wrap.
-    const reserve = this.estimatedHeight;
-    if (reserve > 0 && wrapper.style) {
-      wrapper.style.minHeight = `${reserve}px`;
-    }
-    queueMicrotask(() => {
-      if (wrapper.isConnected) {
-        view.requestMeasure();
-      }
-    });
+    reserveUntilMeasured(view, wrapper, container, this.estimatedHeight);
     return wrapper;
   }
   override updateDOM(
@@ -105,15 +95,12 @@ export class PropertyWidget extends WidgetType {
         this.context,
       );
     if (ok) {
-      const reserve = this.estimatedHeight;
-      if (reserve > 0 && dom.style) {
-        dom.style.minHeight = `${reserve}px`;
-      }
-      queueMicrotask(() => {
-        if (dom.isConnected) {
-          view.requestMeasure();
-        }
-      });
+      reserveUntilMeasured(
+        view,
+        dom,
+        dom.firstElementChild as HTMLElement,
+        this.estimatedHeight,
+      );
     }
     return ok;
   }
@@ -151,4 +138,24 @@ export class PropertyWidget extends WidgetType {
     );
     return this.cachedMarkup;
   }
+}
+
+/**
+ * Hold a sheet's estimated height until CodeMirror has measured it in the
+ * page, then let it go. Tall sheets (100+ Sources) must enter the height map
+ * before the first scroll or PageDown, or the body paints blank under them.
+ * Kept for good, the estimate pads a sheet set in smaller text and hides a
+ * larger one's growth from the height map, so the line numbers below it
+ * drift from their lines after a font size change.
+ */
+export function reserveUntilMeasured(
+  view: EditorView,
+  wrapper: HTMLElement,
+  sheet: HTMLElement,
+  reserve: number,
+): void {
+  if (reserve > 0 && wrapper.style) {
+    wrapper.style.minHeight = `${reserve}px`;
+  }
+  releaseReserveOnceMounted(view, wrapper, sheet);
 }

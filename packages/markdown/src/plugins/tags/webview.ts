@@ -144,10 +144,13 @@ function registerTagControls(
     cleanups.clear();
   });
   ctx.on("render/postProcess", (pass) => {
-    const events = new AbortController();
     const controls = [
       ...pass.container.querySelectorAll<HTMLButtonElement>("button[data-tag]"),
     ];
+    if (controls.length === 0) {
+      return;
+    }
+    const events = new AbortController();
     const stop = () => {
       events.abort();
       for (const button of controls) {

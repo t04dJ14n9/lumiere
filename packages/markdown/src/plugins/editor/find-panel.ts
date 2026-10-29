@@ -79,7 +79,8 @@ export class FindPanel implements Panel {
             this.navigation.cancel();
           }
         },
-        { capture: true, signal: this.inputLifetime.signal },
+        // Passive, so scrolling with the panel open does not wait for it.
+        { capture: true, passive: true, signal: this.inputLifetime.signal },
       );
     }
   }

@@ -20,6 +20,13 @@ export interface PanelShell {
   resource(uri: string): string;
   onDispose(listener: () => void): Disposer;
   onState(listener: () => void): Disposer;
+  /** Report the editor's current selection offsets to VS Code's CustomTextEditorNavigation. */
+  reportSelection?(selection: { anchor: number; head: number }): void;
+  /** Bind view state capture/restore handlers for VS Code's CustomTextEditorNavigation. */
+  bindViewState?(handlers: {
+    capture(): Promise<unknown>;
+    restore(state: unknown): Promise<void>;
+  }): Disposer;
 }
 
 /** An open editor panel, as other host code sees it. */

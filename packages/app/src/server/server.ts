@@ -10,19 +10,22 @@ import {
 } from "node:http";
 import * as path from "node:path";
 import type { Duplex } from "node:stream";
+import { pathToFileURL } from "node:url";
 import type { Logger } from "@workshop/core";
 import {
   BASE,
   createEditorRoutes,
+  readCommands,
   readContributed,
   readMenus,
   serveStatic,
   startLumiere,
+  type LumiereHost,
 } from "@workshop/host-node";
 import { createApi, type Api } from "./api";
+import { withAppDefaults } from "./defaults";
 import { admit } from "./auth";
 import { UiStore } from "./ui-state";
-import { fileVaultTrust } from "./vault-trust";
 import { Vaults } from "./vaults";
 
 export interface ServerSetup {
@@ -46,26 +49,8 @@ export interface RunningServer {
 }
 
 export async function startServer(setup: ServerSetup): Promise<RunningServer> {
-  const markdown = path.join(setup.assets, "markdown");
-  const trust = fileVaultTrust(path.join(setup.data, "trust.json"));
-  await trust.load();
-  const lumiere = await startLumiere({
-    identity: { appName: "Lumière", uriScheme: "lumiere" },
-    markdown,
-    contributed: await readContributed(
-      path.join(setup.assets, "contributed.json"),
-    ),
-    menus: await readMenus(path.join(setup.assets, "menus.json")),
-    data: setup.data,
-    logger: setup.logger,
-    vaultCode: trust,
-  });
-  const editor = createEditorRoutes(lumiere, {
-    markdown,
-    shim: path.join(setup.assets, "page", "shim.js"),
-  });
-  const [vaults, ui] = await loadState(setup);
-  const api = createApi({ vaults, ui, trust, version: setup.version });
+  const { lumiere, editor } = await startEditor(setup);
+  const api = createApi(...(await loadState(setup, lumiere)), setup.version);
   const shell = path.join(setup.assets, "shell");
   let port = setup.port;
   const auth = () => ({ token: setup.token, port });
@@ -85,8 +70,6 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
   });
   port = await listen(server, setup.host, setup.port);
   let stopping: Promise<void> | undefined;
-  // Take no more requests, end the streams and sockets pages hold, and
-  // write unsaved notes before waiting on anything else.
   const stop = async () => {
     const closed = new Promise<void>((resolve) =>
       server.close(() => resolve()),
@@ -108,10 +91,41 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
   };
 }
 
+/** Lumière's plugins, and the routes that serve their pages (notes and PDFs). */
+async function startEditor(setup: ServerSetup) {
+  const markdown = path.join(setup.assets, "markdown");
+  const lumiere = await startLumiere({
+    identity: { appName: "Lumière", uriScheme: "lumiere" },
+    markdown,
+    contributed: withAppDefaults(
+      await readContributed(path.join(setup.assets, "contributed.json")),
+    ),
+    menus: await readMenus(path.join(setup.assets, "menus.json")),
+    commands: await readCommands(path.join(setup.assets, "commands.json")),
+    data: setup.data,
+    logger: setup.logger,
+  });
+  const editor = createEditorRoutes(lumiere, {
+    markdown,
+    shim: path.join(setup.assets, "page", "shim.js"),
+    pdf: path.join(setup.assets, "pdf"),
+    log: (message) => setup.logger.warn(message),
+  });
+  return { lumiere, editor };
+}
+
 /** The vaults (the recent ones, and those given at start) and the window's layout. */
-async function loadState(setup: ServerSetup): Promise<[Vaults, UiStore]> {
+async function loadState(
+  setup: ServerSetup,
+  lumiere: LumiereHost,
+): Promise<[Vaults, UiStore]> {
   const vaults = new Vaults(path.join(setup.data, "vaults.json"));
   await vaults.load();
+  vaults.onEvent((event) => {
+    if (event.type === "vaults" && event.added) {
+      lumiere.addRoot(pathToFileURL(event.added).toString());
+    }
+  });
   for (const vault of setup.vaults) {
     await vaults.add(vault);
   }

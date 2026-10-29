@@ -1,6 +1,7 @@
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
+import { destroyElement, untilDestroyed } from "./element-lifetime";
 import type { SourceSpan } from "./markdown-widget";
 import { selectRenderedSource } from "./source-selection";
 
@@ -14,7 +15,6 @@ export type InlineClick = { select: (source: string) => SourceSpan } | "none";
 
 /** Rendered inline content owns its pass even when rendering resolves after removal. */
 export class MarkdownInline extends WidgetType {
-  private readonly disposeDOM = new WeakMap<HTMLElement, () => void>();
   constructor(
     readonly source: string,
     private readonly render: RenderService,
@@ -44,7 +44,7 @@ export class MarkdownInline extends WidgetType {
         { signal: events.signal },
       );
     }
-    this.disposeDOM.set(node, () => {
+    untilDestroyed(node, () => {
       live = false;
       events.abort();
       void pass?.dispose();
@@ -99,8 +99,7 @@ export class MarkdownInline extends WidgetType {
     });
   }
   override destroy(node: HTMLElement): void {
-    this.disposeDOM.get(node)?.();
-    this.disposeDOM.delete(node);
+    destroyElement(node);
   }
 }
 

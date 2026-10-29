@@ -21,6 +21,10 @@ export class RenderedReferences {
     if (pass.ancestry.includes("footnote-preview")) {
       return;
     }
+    if (!pass.source.includes("[^") && !pass.source.includes("^[")) {
+      pass.displaySource = pass.source;
+      return;
+    }
     const document =
       pass.documentText === undefined
         ? this.document()
@@ -37,7 +41,11 @@ export class RenderedReferences {
   }
 
   mount(pass: RenderPass): void {
-    for (const { id, note } of this.references.get(pass) ?? []) {
+    const items = this.references.get(pass);
+    if (!items || items.length === 0) {
+      return;
+    }
+    for (const { id, note } of items) {
       const sup = pass.container.querySelector<HTMLElement>(
         `[data-mw-footnote="${id}"]`,
       );

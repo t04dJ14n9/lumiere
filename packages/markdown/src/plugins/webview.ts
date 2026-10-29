@@ -39,5 +39,3 @@ export { cursorBridgeWebview } from "./cursorBridge/webview";
 export { markersWebview } from "./markers/webview";
 
 export { gitBlameWebview } from "./gitBlame/webview";
-export { obsidianCompatWebview } from "./obsidianCompat/webview";
-export { obsidianMarketplaceWebview } from "./obsidianMarketplace/webview";

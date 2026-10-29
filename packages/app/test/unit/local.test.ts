@@ -105,12 +105,12 @@ test(
     const { backend, data } = await localWindow(t);
     assert.equal((await backend.ui.load()).theme, "system");
     assert.equal((await backend.ui.save({ theme: "dark" })).theme, "dark");
-    assert.equal(
-      JSON.parse(
-        new TextDecoder().decode(await data.read("window/window.json")),
-      ).theme,
-      "dark",
+    await backend.ui.save({ folders: { "/vaults/Notes": ["Daily"] } });
+    const kept = JSON.parse(
+      new TextDecoder().decode(await data.read("window/window.json")),
     );
+    assert.equal(kept.theme, "dark", "each change keeps the others");
+    assert.deepEqual(kept.folders, { "/vaults/Notes": ["Daily"] });
     const items = await backend.settings.list();
     assert.ok(items.length > 50);
     assert.equal(

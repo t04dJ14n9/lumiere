@@ -1,9 +1,9 @@
 import {
   folderOf,
-  isMarkdownPath,
   lookupKey,
   nameOf,
   relativeVaultPath,
+  withoutNoteExtension,
 } from "../../shared/vault-path";
 import type { VaultFile } from "./api";
 import type { FileTable } from "./file-table";
@@ -34,8 +34,4 @@ export function linkText(
 
 function isUniqueName(files: FileTable, target: VaultFile): boolean {
   return files.withKey(lookupKey(target.path)).length === 1;
-}
-
-function withoutNoteExtension(path: string): string {
-  return isMarkdownPath(path) ? path.slice(0, -3) : path;
 }

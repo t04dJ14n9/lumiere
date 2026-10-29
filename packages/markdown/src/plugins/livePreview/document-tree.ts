@@ -1,146 +1,169 @@
-import { StateEffect, StateField, type Text } from "@codemirror/state";
 import { ViewPlugin, type EditorView, type ViewUpdate } from "@codemirror/view";
-import { TreeFragment, type ChangedRange, type Tree } from "@lezer/common";
-import { markdownParser, parseMarkdown } from "../../markdown/dialect";
-import { VIEWPORT_BLOCK_MARGIN } from "./deferred-block";
+import {
+  documentTree,
+  FIRST_PAINT_PARSE_CHARS,
+  parseForFirstPaint,
+  replaceDocumentTree,
+} from "./api";
+import { backgroundUpdate } from "../editor/api";
+import { DocumentParse } from "./document-parse";
+
+export {
+  documentTree,
+  FIRST_PAINT_PARSE_CHARS,
+  parseForFirstPaint,
+  replaceDocumentTree,
+};
 
 /**
- * How much of a large note we parse before the first paint. Matches the Live
- * Preview hot band (opening viewport + margin) so block/inline decorations for
- * the first screen do not wait on a full-document Lezer walk. A ViewPlugin
- * replaces this with a complete tree on idle / the next frames.
+ * Characters past the viewport parsed together with it, so the next few
+ * scroll steps find their syntax ready and do not each publish a tree.
  */
-export const FIRST_PAINT_PARSE_CHARS = VIEWPORT_BLOCK_MARGIN * 2;
+export const PARSE_AHEAD_CHARS = 10000;
+/** The longest background slice; a shorter idle period ends it sooner. */
+const IDLE_SLICE_MS = 5;
+/** Run a slice at least this often, even while the page never idles. */
+const IDLE_TIMEOUT_MS = 50;
 
-/** Swap in a completed (or otherwise rebuilt) document tree after first paint. */
-export const replaceDocumentTree = StateEffect.define<Tree>();
-
-/** Reuse unchanged syntax without making distant headings or footnotes viewport-dependent. */
-export const documentTree = StateField.define<Tree>({
-  create: (state) => parseForFirstPaint(state.doc),
-  update(tree, transaction) {
-    for (const effect of transaction.effects) {
-      if (effect.is(replaceDocumentTree)) {
-        return effect.value;
-      }
-    }
-    if (!transaction.docChanged) {
-      return tree;
-    }
-    // Prefix trees are not fragment-safe across arbitrary edits — reparse with
-    // the same first-paint budget (idle completer will expand again).
-    if (tree.length < transaction.startState.doc.length) {
-      return parseForFirstPaint(transaction.newDoc);
-    }
-    const changes: ChangedRange[] = [];
-    transaction.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
-      changes.push({ fromA, toA, fromB, toB });
-    });
-    let fragments = TreeFragment.applyChanges(
-      TreeFragment.addTree(tree),
-      changes,
-    );
-    if (changes[0]!.fromA <= transaction.startState.doc.line(1).to) {
-      // A moved horizontal rule may now open frontmatter. Its meaning depends
-      // on being at document start, which reusable Markdown nodes do not track.
-      const end = Math.min(
-        transaction.newDoc.length,
-        transaction.newDoc.line(1).to + 1,
-      );
-      fragments = fragments.flatMap((fragment) =>
-        fragment.to <= end
-          ? []
-          : [
-              new TreeFragment(
-                Math.max(fragment.from, end),
-                fragment.to,
-                fragment.tree,
-                fragment.offset,
-                true,
-                fragment.openEnd,
-              ),
-            ],
-      );
-    }
-    return parseMarkdown(transaction.newDoc, fragments);
-  },
-});
-
-/**
- * After the first frame, finish the full-document tree when create() only
- * parsed the opening band. Public CM6 pattern: cheap first paint, then
- * `ensure`-style completion off the critical path.
- */
-export const documentTreeCompleter = ViewPlugin.fromClass(
-  class {
-    private done = false;
-    constructor(view: EditorView) {
-      // Defer past the first paint frame so full-doc Lezer work cannot contend
-      // with glyphs (#289: growing sync first-paint parse regressed TTI).
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => this.schedule(view));
-      });
-    }
-    update(update: ViewUpdate) {
-      if (this.done) {
-        return;
-      }
-      if (update.state.field(documentTree).length >= update.state.doc.length) {
-        this.done = true;
-        return;
-      }
-      if (update.docChanged) {
-        this.schedule(update.view);
-      }
-    }
-    private schedule(view: EditorView) {
-      const run = () => {
-        if (!view.dom.isConnected || this.done) {
-          return;
-        }
-        const current = view.state.field(documentTree);
-        if (current.length >= view.state.doc.length) {
-          this.done = true;
-          return;
-        }
-        const full = parseMarkdown(view.state.doc);
-        this.done = true;
-        view.dispatch({ effects: replaceDocumentTree.of(full) });
-      };
-      const idle = (
-        globalThis as unknown as {
-          requestIdleCallback?: (
-            cb: () => void,
-            opts?: { timeout: number },
-          ) => number;
-        }
-      ).requestIdleCallback;
-      if (typeof idle === "function") {
-        // After first paint, finish soon — heading reveal via the
-        // Frontmatter placeholder waits on a complete fence node.
-        idle(run, { timeout: 32 });
-      } else {
-        requestAnimationFrame(() => requestAnimationFrame(run));
-      }
-    }
-  },
-);
-
-/** Parse only the opening band for large notes; full parse otherwise. */
-export function parseForFirstPaint(
-  doc: Text,
-  budget = FIRST_PAINT_PARSE_CHARS,
-): Tree {
-  if (doc.length <= budget) {
-    return parseMarkdown(doc);
-  }
-  // End on a line boundary so we do not split a block mid-line.
-  const at = Math.min(budget, doc.length);
-  const line = doc.lineAt(at);
-  const end = Math.min(
-    doc.length,
-    line.number < doc.lines ? line.to + 1 : line.to,
-  );
-  // Do not use parseMarkdown's Text WeakMap — the prefix string is not the doc.
-  return markdownParser.parse(doc.sliceString(0, end));
+/** Runs background slices; each gets a time budget in milliseconds. */
+export interface IdleScheduler {
+  request(slice: (budget: number) => void): () => void;
 }
+
+/** What the parser reads from and writes to its editor. */
+export type ParsedView = Pick<EditorView, "state" | "viewport" | "dispatch">;
+
+/**
+ * Keeps Live Preview's tree of a large note ahead of the viewport and
+ * finishes it in the background.
+ *
+ * While the tree is a prefix, a viewport that passes its end has the parse
+ * resumed at once, up to the viewport and a margin: those lines need their
+ * syntax this frame. The rest is parsed in short idle slices, scrolling or
+ * not, and published when complete. An edit hands everything parsed so far
+ * to the next document version, so nothing restarts from the top.
+ */
+export class DocumentTreeParser {
+  private parse: DocumentParse;
+  private cancelSlice: (() => void) | undefined;
+  private isCatchUpQueued = false;
+  private isDestroyed = false;
+
+  constructor(
+    private readonly view: ParsedView,
+    private readonly scheduler: IdleScheduler = browserIdleScheduler(),
+  ) {
+    this.parse = DocumentParse.from(
+      view.state.doc,
+      view.state.field(documentTree),
+    );
+    this.keepUp();
+  }
+
+  update(update: ViewUpdate): void {
+    const tree = update.state.field(documentTree);
+    if (update.docChanged || tree !== this.parse.tree) {
+      const fragments =
+        this.parse.doc === update.startState.doc
+          ? this.parse.fragmentsAfter(update.changes, update.state.doc)
+          : [];
+      this.parse = DocumentParse.from(update.state.doc, tree, fragments);
+    }
+    this.keepUp();
+  }
+
+  destroy(): void {
+    this.isDestroyed = true;
+    this.cancelSlice?.();
+    this.cancelSlice = undefined;
+  }
+
+  private keepUp(): void {
+    if (this.parse.isComplete) {
+      this.cancelSlice?.();
+      this.cancelSlice = undefined;
+      return;
+    }
+    if (this.view.viewport.to > this.parse.tree.length) {
+      this.queueCatchUp();
+    }
+    this.scheduleSlice();
+  }
+
+  /** A view update cannot dispatch, so the catch-up runs right after it. */
+  private queueCatchUp(): void {
+    if (this.isCatchUpQueued) {
+      return;
+    }
+    this.isCatchUpQueued = true;
+    queueMicrotask(() => {
+      this.isCatchUpQueued = false;
+      this.catchUpWithViewport();
+    });
+  }
+
+  private catchUpWithViewport(): void {
+    const { to } = this.view.viewport;
+    if (
+      this.isDestroyed ||
+      this.view.state.field(documentTree, false) !== this.parse.tree ||
+      to <= this.parse.tree.length
+    ) {
+      return;
+    }
+    this.parse.coverTo(to + PARSE_AHEAD_CHARS);
+    this.publish();
+  }
+
+  private scheduleSlice(): void {
+    if (this.cancelSlice || this.isDestroyed) {
+      return;
+    }
+    this.cancelSlice = this.scheduler.request((budget) => {
+      this.cancelSlice = undefined;
+      if (this.isDestroyed || this.parse.isComplete) {
+        return;
+      }
+      if (this.parse.work(performance.now() + budget)) {
+        this.publish();
+      } else {
+        this.scheduleSlice();
+      }
+    });
+  }
+
+  private publish(): void {
+    this.view.dispatch({
+      effects: replaceDocumentTree.of(this.parse.tree),
+      annotations: backgroundUpdate.of(true),
+    });
+  }
+}
+
+/** Idle callbacks where the browser has them; short timeouts otherwise. */
+function browserIdleScheduler(): IdleScheduler {
+  if (typeof requestIdleCallback === "function") {
+    return {
+      request(slice) {
+        const handle = requestIdleCallback(
+          (deadline) =>
+            slice(
+              deadline.didTimeout
+                ? IDLE_SLICE_MS
+                : Math.min(IDLE_SLICE_MS, deadline.timeRemaining()),
+            ),
+          { timeout: IDLE_TIMEOUT_MS },
+        );
+        return () => cancelIdleCallback(handle);
+      },
+    };
+  }
+  return {
+    request(slice) {
+      const handle = setTimeout(() => slice(IDLE_SLICE_MS), 0);
+      return () => clearTimeout(handle);
+    },
+  };
+}
+
+export const documentTreeParser = ViewPlugin.fromClass(DocumentTreeParser);

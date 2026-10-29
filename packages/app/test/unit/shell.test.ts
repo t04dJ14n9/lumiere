@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { editorUrl, relativeTo } from "../../src/shell/api";
-import { buildTree } from "../../src/shell/tree";
+import { buildTree, foldersAbove } from "../../src/shell/tree";
+import {
+  foldersOf,
+  revealFile,
+  toggleFolder,
+  withFolders,
+} from "../../src/shell/tree-state";
 
 test("the file tree nests folders and keeps the server's order", () => {
   const root = buildTree([
@@ -27,6 +33,54 @@ test("the file tree nests folders and keeps the server's order", () => {
   );
 });
 
+test("the folders that hold a file, from the vault down", () => {
+  assert.deepEqual(foldersAbove("a/b/c.md"), ["a", "a/b"]);
+  assert.deepEqual(foldersAbove("top.md"), []);
+});
+
+test("a folder opens and closes on a click, the others as they were", () => {
+  const open = new Set(["a"]);
+  const opened = toggleFolder(open, "b");
+  assert.deepEqual([...opened], ["a", "b"]);
+  assert.deepEqual([...toggleFolder(opened, "a")], ["b"]);
+  assert.deepEqual([...open], ["a"], "the set it was given is not changed");
+});
+
+test("the shown note opens the folders that hold it and keeps the others", () => {
+  const open = new Set(["other"]);
+  const revealed = revealFile(open, "a/b/note.md");
+  assert.deepEqual([...revealed].sort(), ["a", "a/b", "other"]);
+  assert.equal(
+    revealFile(revealed, "a/b/next.md"),
+    revealed,
+    "nothing to open: the same set, so nothing is saved",
+  );
+  assert.equal(revealFile(open, "top.md"), open, "a note at the top: nothing");
+  const closedAbove = toggleFolder(revealed, "a");
+  assert.deepEqual(
+    [...revealFile(closedAbove, "a/b/note.md")].sort(),
+    ["a", "a/b", "other"],
+    "a folder closed above it opens again",
+  );
+});
+
+test("the saved layout keeps each vault's open folders apart", () => {
+  const saved = withFolders({ "/v1": ["x"] }, "/v2", new Set(["b", "a"]));
+  assert.deepEqual(saved, { "/v1": ["x"], "/v2": ["a", "b"] });
+  assert.deepEqual([...foldersOf(saved, "/v2")], ["a", "b"]);
+  assert.deepEqual([...foldersOf(saved, "/v3")], [], "a new vault: all closed");
+  assert.deepEqual(
+    withFolders(saved, "/v2", new Set()),
+    { "/v1": ["x"] },
+    "a vault with nothing open is left out",
+  );
+  assert.deepEqual(
+    [...foldersOf({}, "constructor")],
+    [],
+    "only the vaults it keeps",
+  );
+});
+
 test("editor URLs carry the note's absolute path and its vault", () => {
   const url = new URL(
     editorUrl("/Users/me/notes", "daily/2026 10 22.md"),
@@ -40,6 +94,13 @@ test("editor URLs carry the note's absolute path and its vault", () => {
   assert.equal(url.searchParams.get("root"), "/Users/me/notes");
   const windows = new URL(editorUrl("C:\\notes\\", "a/b.md"), "http://x");
   assert.equal(windows.searchParams.get("path"), "C:\\notes\\a\\b.md");
+});
+
+test("a PDF opens in host-node's PDF viewer page, with the same query", () => {
+  const url = new URL(editorUrl("/Users/me/notes", "papers/A.PDF"), "http://x");
+  assert.equal(url.pathname, "/lumiere/pdf");
+  assert.equal(url.searchParams.get("path"), "/Users/me/notes/papers/A.PDF");
+  assert.equal(url.searchParams.get("root"), "/Users/me/notes");
 });
 
 test("an absolute path back to vault-relative, only inside the vault", () => {
@@ -88,4 +149,14 @@ test("a revealed node opens the folders above it and nothing else", async () => 
     false,
     "the plugin's choice by default",
   );
+});
+
+test("only Markdown note and PDF paths (.md, .markdown, .pdf) open in tabs", async () => {
+  const { isNotePath } = await import("../../src/shell/api");
+  assert.equal(isNotePath("/vault/daily/today.md"), true);
+  assert.equal(isNotePath("/vault/guide.markdown"), true);
+  assert.equal(isNotePath("/vault/UPPER.MD"), true);
+  assert.equal(isNotePath("/vault/paper.pdf"), true);
+  assert.equal(isNotePath("/vault/image.png"), false);
+  assert.equal(isNotePath("/vault/data.csv"), false);
 });

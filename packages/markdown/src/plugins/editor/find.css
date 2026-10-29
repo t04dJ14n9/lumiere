@@ -5,7 +5,7 @@
 }
 .mw-find {
   position: absolute;
-  top: 6px;
+  top: calc(6px + var(--lumiere-inset-top, 0px));
   right: 16px;
   z-index: 20;
   display: flex;

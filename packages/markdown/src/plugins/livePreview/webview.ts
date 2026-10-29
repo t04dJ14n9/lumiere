@@ -19,11 +19,14 @@ import {
   refreshRender,
 } from "./blocks";
 import { blockDecorations, blockViewportSupport } from "./viewport-decorations";
-import { documentTree, documentTreeCompleter } from "./document-tree";
+import { documentTree, documentTreeParser } from "./document-tree";
 import { frontmatterPlaceholderRenderer } from "./frontmatter-placeholder";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
-import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import {
+  evictMarkdownBlockDomPool,
+  MarkdownBlock,
+} from "../../webview/ui/markdown-widget";
 import { markdownBlockWidthTracker } from "../../webview/ui/markdown-block-height";
 import {
   escapeBlock,
@@ -100,9 +103,13 @@ function registerEngine(
 
 function registerRenderInvalidation(ctx: Context, service: LivePreview): void {
   const view = ctx.editor.view;
-  ctx.on("render/changed", () =>
-    view.dispatch({ effects: refreshRender.of(null) }),
-  );
+  ctx.on("render/changed", () => {
+    evictMarkdownBlockDomPool(ctx.render);
+    const effect = refreshRender.of(null);
+    if (!ctx.editor.dispatchEffect?.(effect)) {
+      view.dispatch({ effects: effect });
+    }
+  });
   ctx.on("editor/modeRestored", (next) => service.setMode(next));
 }
 
@@ -147,7 +154,7 @@ function registerModeCommand(ctx: Context, service: LivePreview): void {
 function engineExtensions(ctx: Context) {
   return [
     documentTree,
-    documentTreeCompleter,
+    documentTreeParser,
     markdownBlockWidthTracker,
     renderRevision,
     pointerSelectionTracking,

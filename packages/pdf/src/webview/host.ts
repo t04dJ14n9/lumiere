@@ -6,6 +6,7 @@ import type { HostMessage, ViewerPatch } from "../shared/messages";
 import { createOutbox, type OutgoingMessage } from "./outbox";
 import { prepareReadingPosition } from "./reading-position";
 import { HostInbox } from "../shared/host-inbox";
+import { createLoadReceiver, fetchPdfBytes } from "./load";
 
 declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
 
@@ -40,8 +41,19 @@ export function listenToHost(
   return inbox.listen(next, generation);
 }
 
-/** Start the conversation. `onLoad` receives each PDF the host sends. */
+/**
+ * Start the conversation. `onLoad` receives each PDF the host sends. A load
+ * retires the previous viewer's inbox at once, even while its bytes are
+ * still on their way, so navigation sent after it waits for the new viewer.
+ */
 export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
+  const receiveBytes = createLoadReceiver(
+    {
+      open: onLoad,
+      fail: (message) => postToHost({ type: "error", message }),
+    },
+    fetchPdfBytes,
+  );
   window.addEventListener(
     "message",
     (event: MessageEvent<HostMessage | undefined>) => {
@@ -51,34 +63,13 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
       }
       if (message.type === "load") {
         inbox.beginLoad();
-        const data = asArrayBuffer(message.data);
         outbox.loaded(message.load);
         prepareReadingPosition(message.settings, message.position);
-        if (data) {
-          onLoad(data);
-        } else {
-          postToHost({
-            type: "error",
-            message: "The PDF data from the extension is not readable.",
-          });
-        }
+        receiveBytes(message);
       } else {
         inbox.receive(message);
       }
     },
   );
   postToHost({ type: "ready" });
-}
-
-function asArrayBuffer(value: unknown): ArrayBuffer | undefined {
-  if (value instanceof ArrayBuffer) {
-    return value;
-  }
-  if (!ArrayBuffer.isView(value)) {
-    return undefined;
-  }
-  return value.buffer.slice(
-    value.byteOffset,
-    value.byteOffset + value.byteLength,
-  ) as ArrayBuffer;
 }

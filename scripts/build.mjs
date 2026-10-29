@@ -12,6 +12,7 @@ import path from "node:path";
 import * as esbuild from "esbuild";
 import { lazyBridgeServer } from "../packages/pdf/scripts/lazy-bridge-server.mjs";
 import { lazyYaml } from "../packages/markdown/scripts/lazy-yaml.mjs";
+import { keepsBasenameCreate } from "./bundle-checks.mjs";
 
 const production = process.argv.includes("--production");
 const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
@@ -71,7 +72,7 @@ for (const name of products) {
 // was dropped (wrong @workshop/markdown resolution / stale foreign worktree).
 const extensionJs = await readFile(path.join(dist, "extension.js"), "utf8");
 // A development build spaces the property (`create: r.wiki ||`), a production one does not.
-if (!/create:\s*\w+\.wiki\s*\|\|/.test(extensionJs)) {
+if (!keepsBasenameCreate(extensionJs)) {
   throw new Error(
     "dist/extension.js missing Markdown basename create path (expected create:<wiki>||...)",
   );

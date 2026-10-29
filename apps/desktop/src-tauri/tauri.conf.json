@@ -32,6 +32,13 @@
         "description": "Markdown note",
         "role": "Editor",
         "mimeType": "text/markdown"
+      },
+      {
+        "ext": ["pdf"],
+        "name": "PDF",
+        "description": "PDF document",
+        "role": "Viewer",
+        "mimeType": "application/pdf"
       }
     ]
   }
