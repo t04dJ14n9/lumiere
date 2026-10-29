@@ -42,6 +42,13 @@ test("editor URLs carry the note's absolute path and its vault", () => {
   assert.equal(windows.searchParams.get("path"), "C:\\notes\\a\\b.md");
 });
 
+test("a PDF opens in host-node's PDF viewer page, with the same query", () => {
+  const url = new URL(editorUrl("/Users/me/notes", "papers/A.PDF"), "http://x");
+  assert.equal(url.pathname, "/lumiere/pdf");
+  assert.equal(url.searchParams.get("path"), "/Users/me/notes/papers/A.PDF");
+  assert.equal(url.searchParams.get("root"), "/Users/me/notes");
+});
+
 test("an absolute path back to vault-relative, only inside the vault", () => {
   assert.equal(relativeTo("/v", "/v/a/b.md"), "a/b.md");
   assert.equal(relativeTo("/v/", "/v/a.md"), "a.md");
@@ -88,4 +95,14 @@ test("a revealed node opens the folders above it and nothing else", async () => 
     false,
     "the plugin's choice by default",
   );
+});
+
+test("only Markdown note and PDF paths (.md, .markdown, .pdf) open in tabs", async () => {
+  const { isNotePath } = await import("../../src/shell/api");
+  assert.equal(isNotePath("/vault/daily/today.md"), true);
+  assert.equal(isNotePath("/vault/guide.markdown"), true);
+  assert.equal(isNotePath("/vault/UPPER.MD"), true);
+  assert.equal(isNotePath("/vault/paper.pdf"), true);
+  assert.equal(isNotePath("/vault/image.png"), false);
+  assert.equal(isNotePath("/vault/data.csv"), false);
 });

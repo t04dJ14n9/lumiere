@@ -46,6 +46,9 @@ export function createEditorService(options: {
     focus() {
       view.focus();
     },
+    batch: (fn) => registry.batch(fn),
+    flush: () => registry.flush(),
+    dispatchEffect: (effect) => registry.dispatchEffect(effect),
     extend(extension, options) {
       return registry.register(
         options?.owner ?? "editor",

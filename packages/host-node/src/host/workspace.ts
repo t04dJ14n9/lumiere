@@ -7,7 +7,6 @@ import type {
   DiagnosticSink,
   Extensions,
   HostWorkspace,
-  VaultCodeTrust,
   WorkerLauncher,
   WorkspaceFiles,
   WorkspaceStorage,
@@ -22,25 +21,17 @@ export interface HostWorkspaceOptions {
   readonly files: HostFiles;
   /** The workspace roots, as file URIs. */
   readonly roots: () => readonly string[];
-  /**
-   * The embedder's answer to whether a vault's own code may run (it asks
-   * its owner, as the app does); see inert.ts for one that cannot ask.
-   */
-  readonly vaultCode: VaultCodeTrust;
 }
 
 export function createHostWorkspace({
   files,
   roots,
-  vaultCode,
 }: HostWorkspaceOptions): HostWorkspace {
   const inside = (uri: string) => containInRoots(files, roots(), uri);
   return {
     folders: roots,
-    // The owner opened these folders in their own app: remote images and
-    // media load. Code that came with a vault is a separate question.
+    // The host runs only what its owner installed and opened.
     isTrusted: () => true,
-    vaultCode,
     read: async (uri) => {
       await inside(uri);
       return files.readBytes(uri);

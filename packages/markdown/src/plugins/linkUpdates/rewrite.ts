@@ -13,6 +13,7 @@ import {
   nameOf,
   relativeVaultPath,
   splitLinktext,
+  withoutNoteExtension,
   type LinkSyntax,
 } from "../../shared/vault-path";
 
@@ -87,7 +88,7 @@ function targetText(
     return preferred;
   }
   const withoutNote = (path: string) =>
-    isMarkdownPath(path) ? path.slice(0, -3) : path;
+    isMarkdownPath(path) ? withoutNoteExtension(path) : path;
   if (context.format === "relative") {
     return withoutNote(relativeVaultPath(folderOf(source), target));
   }

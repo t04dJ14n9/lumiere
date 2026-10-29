@@ -16,8 +16,11 @@ export function prepareFootnotes(
   sourceLine: number,
   nonce: string,
 ) {
+  if (!source.includes("[^") && !source.includes("^[")) {
+    return { replacements: [], displaySource: source };
+  }
   const registry = footnotes(document);
-  const local = footnotes(Text.of(source.split("\n")));
+  let local: ReturnType<typeof footnotes> | undefined;
   const base = document.line(Math.min(document.lines, sourceLine + 1)).from;
   const replacements: FootnoteReplacement[] = [];
   markdownParser.parse(source).iterate({
@@ -30,7 +33,9 @@ export function prepareFootnotes(
         node.name === "FootnoteRef"
           ? registry.definitions.find((note) => note.label === label)
           : (registry.references.get(base + node.from) ??
-            local.references.get(node.from));
+            (local ??= footnotes(Text.of(source.split("\n")))).references.get(
+              node.from,
+            ));
       if (!note) {
         return false;
       }

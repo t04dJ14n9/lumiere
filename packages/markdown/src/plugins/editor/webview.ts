@@ -86,12 +86,16 @@ export const editorWebview: Plugin<EditorConfig> = {
     ctx.effect(() => () => view.destroy());
     registerSettings(ctx, view, settings);
     ctx.effect(() => ctx.document.attach(view));
-    const contributions = new ViewContributions(view);
-    const registry = new ExtensionRegistry(ctx.rankOf, (extensions) =>
-      presentation.keepPlace(view, () =>
-        view.dispatch({ effects: pluginExtensions.reconfigure(extensions) }),
-      ),
+    const registry = new ExtensionRegistry(
+      ctx.rankOf,
+      (extensions, effects = []) =>
+        presentation.keepPlace(view, () =>
+          view.dispatch({
+            effects: [pluginExtensions.reconfigure(extensions), ...effects],
+          }),
+        ),
     );
+    const contributions = new ViewContributions(view, () => registry.flush());
     const editor = createEditorService({
       view,
       registry,
@@ -102,6 +106,7 @@ export const editorWebview: Plugin<EditorConfig> = {
       onModeChanged: (mode) =>
         view.dispatch({ effects: modeClass.reconfigure(modeAttributes(mode)) }),
     });
+    ctx.on("editor/batchExtensions", (fn) => registry.batch(fn));
     ctx.provide("editor", editor);
     provideMenu(ctx);
     registerActionMenus(ctx);
@@ -119,16 +124,7 @@ export const editorWebview: Plugin<EditorConfig> = {
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
     registerEditKeyOwnership(ctx, view);
     registerFindKeyOwnership(ctx, view);
-    ctx.effect(() =>
-      reportWebviewFocus(window, (hasFocus) =>
-        ctx.rpc.notify(
-          protocol,
-          "focusChanged",
-          { hasFocus },
-          { coalesce: true },
-        ),
-      ),
-    );
+    registerWebviewFocus(ctx);
     view.focus();
   },
 };
@@ -255,10 +251,15 @@ function reportSelection(ctx: Context) {
   const rpc = ctx.rpc;
   return EditorView.updateListener.of((update) => {
     if (update.selectionSet || update.focusChanged) {
+      const { main } = update.state.selection;
       rpc.notify(
         protocol,
         "selectionChanged",
-        { hasSelection: !update.state.selection.main.empty },
+        {
+          hasSelection: !main.empty,
+          anchor: main.anchor,
+          head: main.head,
+        },
         { coalesce: true },
       );
     }
@@ -384,6 +385,19 @@ function registerReveal(ctx: Context, view: EditorView): void {
           revealUnchanged(applied, view.state)
         );
       },
+    ),
+  );
+}
+
+function registerWebviewFocus(ctx: Context): void {
+  ctx.effect(() =>
+    reportWebviewFocus(window, (hasFocus) =>
+      ctx.rpc.notify(
+        protocol,
+        "focusChanged",
+        { hasFocus },
+        { coalesce: true },
+      ),
     ),
   );
 }

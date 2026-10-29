@@ -13,6 +13,7 @@ import {
   type PortMessage,
 } from "@workshop/host-node/embedding";
 import { backend, type OpenedEditor } from "../backend";
+import { forwardFrameShortcuts } from "../commands";
 import type { NoteTab } from "../tabs";
 import { currentThemeMessage, onThemeChange } from "../theme";
 
@@ -26,7 +27,9 @@ export interface EditorFrameProps {
 export function EditorFrame({ tab, visible, onOpen }: EditorFrameProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const opened = useOpenedEditor(tab);
+  const stopKeys = useRef<() => void>(() => {});
   useEffect(() => onThemeChange(() => sendTheme(frame.current)), []);
+  useEffect(() => () => stopKeys.current(), []);
   // The shown tab's note is the active one (Outline follows it), and it
   // takes the keyboard.
   useEffect(() => {
@@ -69,6 +72,8 @@ export function EditorFrame({ tab, visible, onOpen }: EditorFrameProps) {
       title={tab.path}
       allow="clipboard-read; clipboard-write"
       onLoad={() => {
+        stopKeys.current();
+        stopKeys.current = forwardFrameShortcuts(frame.current?.contentWindow);
         sendTheme(frame.current);
         if (visible) {
           show(frame.current);

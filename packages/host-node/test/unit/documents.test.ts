@@ -242,3 +242,40 @@ test("a save after typing pauses that fails is reported, and the text stays", as
   assert.equal(document.isDirty, true);
   await documents.dispose().catch(() => {});
 });
+
+test("retaining a dirty note while release() is saving keeps the document open", async (t) => {
+  const { uri, cleanup } = await note("initial");
+  const documents = new NoteDocuments(NODE_NOTES, 60_000);
+  t.after(() => documents.dispose());
+  t.after(cleanup);
+
+  let finishWillSave: (() => void) | undefined;
+  documents.onWillSave(
+    () =>
+      new Promise<void>((resolve) => {
+        finishWillSave = resolve;
+      }),
+  );
+
+  const closed: string[] = [];
+  documents.onClosed((item) => closed.push(item));
+
+  const doc = await documents.open(uri);
+  documents.retain(uri);
+  await documents.apply(doc, [{ from: 0, to: 7, insert: "updated" }]);
+  assert.equal(doc.isDirty, true);
+
+  let released = false;
+  const releasing = documents.release(uri).then(() => {
+    released = true;
+  });
+  await until(() => finishWillSave !== undefined);
+
+  documents.retain(uri);
+
+  finishWillSave!();
+  await releasing;
+  assert.equal(released, true);
+  assert.deepEqual(closed, []);
+  assert.equal(documents.text(uri), "updated");
+});

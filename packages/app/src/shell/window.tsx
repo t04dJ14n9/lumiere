@@ -10,7 +10,7 @@ import { App } from "./App";
 import { installBackend, type WindowBackend } from "./backend";
 
 export type { OpenedEditor, WindowBackend } from "./backend";
-export type { FileEntry, ServerEvent, TrustQuestion, VaultList } from "./api";
+export type { FileEntry, ServerEvent, VaultList } from "./api";
 
 export function startWindow(root: HTMLElement, backend: WindowBackend): void {
   installBackend(backend);

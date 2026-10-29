@@ -8,19 +8,20 @@
 import type { SettingChange, SettingItem } from "@workshop/host-node/settings";
 import type { TreeEvent, TreeSnapshot } from "@workshop/host-node/views";
 import type { UiState } from "../shared/ui-state";
-import type { FileEntry, ServerEvent, TrustQuestion, VaultList } from "./api";
+import type { FileEntry, PaletteCommand, ServerEvent, VaultList } from "./api";
 
 export interface WindowBackend {
   readonly vaults: {
     list(): Promise<VaultList>;
     add(path: string): Promise<unknown>;
+    close(path: string): Promise<unknown>;
     files(vault: string): Promise<readonly FileEntry[]>;
     /** A note or folder from outside the window (a menu, a dropped path). */
     open(path: string): Promise<unknown>;
   };
-  readonly trust: {
-    questions(): Promise<readonly TrustQuestion[]>;
-    decide(vault: string, allowed: boolean): Promise<unknown>;
+  readonly commands?: {
+    list(): Promise<readonly PaletteCommand[]>;
+    run(command: string): Promise<unknown>;
   };
   events(listener: (event: ServerEvent) => void): () => void;
   readonly ui: {

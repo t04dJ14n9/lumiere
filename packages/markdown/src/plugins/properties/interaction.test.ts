@@ -609,3 +609,65 @@ test("YAML field commits carry source text through the editor and reject stale h
     "The property changed. Reopen it and try again.",
   );
 });
+
+test("clicking .source-title inside .property-complex opens YAML textarea even when wrapped in .cm-content[contenteditable=true]", (t) => {
+  const document = installPropertyDOM(t);
+  const cmContent = new PropertyElement(document);
+  cmContent.className = "cm-content";
+  cmContent.contentEditable = "true";
+  const container = new PropertyElement(document);
+  const valueCell = new PropertyElement(document);
+  const display = new PropertyElement(document);
+  display.className = "property-complex";
+  const editBtn = new PropertyElement(document);
+  editBtn.tagName = "BUTTON";
+  const sourceTitle = new PropertyElement(document);
+  sourceTitle.className = "source-title";
+  const sourceLink = new PropertyElement(document);
+  sourceLink.tagName = "A";
+  const textarea = new PropertyNativeInput(document);
+  textarea.tagName = "TEXTAREA";
+  textarea.hidden = true;
+  textarea.dataset = { propertyInput: "sources", propertyKind: "yaml" };
+  textarea.value = "- id: src-1\n  title: Original\n";
+
+  display.append(sourceTitle);
+  display.append(sourceLink);
+  display.append(editBtn);
+  display.find = (sel) => (sel === "[data-property-edit]" ? editBtn : null);
+  valueCell.append(display);
+  valueCell.append(textarea);
+  valueCell.find = (sel) =>
+    sel === "[data-property-display]" ? display : null;
+  container.append(valueCell);
+  cmContent.append(container);
+
+  // In a real browser, closest("[contenteditable='true']") on sourceTitle walks up to cmContent!
+  sourceTitle.nearest = () => cmContent;
+  sourceLink.nearest = () => sourceLink;
+
+  new PropertyField({
+    container: html(container),
+    input: html(textarea),
+    source: "---\nsources:\n  - id: src-1\n    title: Original\n---\n",
+    editor: {
+      source: "current",
+      set: () => true,
+    },
+  });
+
+  // Clicking an interactive link inside display must NOT open the YAML editor.
+  const linkClick = new Event("click", { bubbles: true, cancelable: true });
+  Object.defineProperty(linkClick, "target", { value: sourceLink });
+  display.dispatchEvent(linkClick);
+  assert.equal(display.hidden, false);
+  assert.equal(textarea.hidden, true);
+
+  // Clicking .source-title MUST ignore ancestor .cm-content[contenteditable=true] and open YAML editor.
+  const titleClick = new Event("click", { bubbles: true, cancelable: true });
+  Object.defineProperty(titleClick, "target", { value: sourceTitle });
+  display.dispatchEvent(titleClick);
+  assert.equal(display.hidden, true);
+  assert.equal(textarea.hidden, false);
+  assert.equal(document.activeElement, textarea);
+});

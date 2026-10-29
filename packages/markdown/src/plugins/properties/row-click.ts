@@ -46,7 +46,6 @@ function blankValueHit(row: HTMLElement, target: Element): boolean {
   }
   return [
     "metadata-property-value",
-    "property-complex",
     "property-list",
     "multi-select-container",
     "property-empty",

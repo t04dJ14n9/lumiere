@@ -14,6 +14,7 @@ class Bullet extends WidgetType {
     return bullet;
   }
 }
+const bulletWidget = new Bullet();
 
 /** A list item's indentation, drawn as fixed steps independent of source spacing. */
 class ListIndent extends WidgetType {
@@ -62,7 +63,11 @@ export function markerWidth(marker: string, isTask: boolean): string {
  * muted markers, and wrapped text hangs under the item's text.
  * Items inside quotes keep the quote's own layout.
  */
-export function decorateListItem(node: SyntaxNodeRef, cx: InlineContext): void {
+export function decorateListItem(
+  node: SyntaxNodeRef,
+  cx: InlineContext,
+  visible?: { from: number; to: number },
+): void {
   const mark = node.node.getChild("ListMark");
   if (node.name !== "ListItem" || !mark) {
     return;
@@ -76,12 +81,14 @@ export function decorateListItem(node: SyntaxNodeRef, cx: InlineContext): void {
   const text = cx.state.sliceDoc(mark.from, mark.to);
   const isTask = Boolean(mark.nextSibling?.getChild("TaskMarker"));
   const style = `--list-depth: ${depth}; --list-marker: ${markerWidth(text, isTask)}`;
-  cx.line(line.from, "md-list-line", { style });
-  if (leading.length > 0) {
-    cx.replace(line.from, node.from, new ListIndent(depth));
+  if (!visible || (line.to >= visible.from && line.from <= visible.to)) {
+    cx.line(line.from, "md-list-line", { style });
+    if (leading.length > 0) {
+      cx.replace(line.from, node.from, new ListIndent(depth));
+    }
+    decorateMarker(cx, mark, text, isTask);
   }
-  decorateMarker(cx, mark, text, isTask);
-  decorateContinuations(node.node, cx, style);
+  decorateContinuations(node.node, cx, style, visible);
 }
 
 /**
@@ -102,6 +109,7 @@ function decorateContinuations(
   item: SyntaxNode,
   cx: InlineContext,
   style: string,
+  visible?: { from: number; to: number },
 ): void {
   const first = cx.state.doc.lineAt(item.from);
   const content = contentColumn(cx.state.sliceDoc(first.from, first.to));
@@ -110,8 +118,13 @@ function decorateContinuations(
     if (child.name !== "Paragraph" && child.name !== "Task") {
       continue;
     }
-    let line = cx.state.doc.lineAt(child.from);
-    while (line.from <= child.to) {
+    const start = visible ? Math.max(child.from, visible.from) : child.from;
+    const end = visible ? Math.min(child.to, visible.to) : child.to;
+    if (start > end) {
+      continue;
+    }
+    let line = cx.state.doc.lineAt(start);
+    while (line.from <= end) {
       const spaces = /^[ \t]*/.exec(line.text)![0].length;
       if (line.from !== first.from && spaces > 0) {
         if (spaces > content) {
@@ -166,7 +179,7 @@ function decorateMarker(
     return;
   }
   if (!cx.revealed(mark.from, mark.to)) {
-    cx.replace(mark.from, end, new Bullet());
+    cx.replace(mark.from, end, bulletWidget);
     return;
   }
   // Revealed, as in Obsidian: a dim `-` in the bullet's place, so the text

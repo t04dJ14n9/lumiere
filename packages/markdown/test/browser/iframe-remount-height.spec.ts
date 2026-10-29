@@ -109,7 +109,11 @@ test("off-viewport iframe height percent attr keeps near painted height", async 
     };
   });
 
-  // Bare browser iframe may be short; the reserve must still beat line×24 and
-  // treat 100% as viewport-relative (~640), not as 100 CSS pixels.
-  expect(result.afterRebuild, JSON.stringify(result)).toBeGreaterThan(400);
+  // A percent height in a block of auto height paints at the iframe's
+  // default size; once painted, that height is the block's, not the guess
+  // (which reads 100% as the pane, see markdown-block-height.test.ts).
+  expect(
+    Math.abs(result.afterRebuild - result.measured),
+    JSON.stringify(result),
+  ).toBeLessThan(result.measured * 0.3);
 });

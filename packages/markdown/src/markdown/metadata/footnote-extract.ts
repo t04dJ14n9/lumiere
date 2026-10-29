@@ -1,3 +1,4 @@
+import type { Tree } from "@lezer/common";
 import { markdownParser as language, parseMarkdown } from "../dialect/parser";
 import type { Text } from "@codemirror/state";
 import { footnoteDefinitions } from "./footnote-definitions";
@@ -21,16 +22,14 @@ export interface Footnotes {
   references: Map<number, Footnote>;
 }
 
-export function extractFootnotes(
-  doc: Text,
-  tree = parseMarkdown(doc),
-): Footnotes {
+export function extractFootnotes(doc: Text, existingTree?: Tree): Footnotes {
   const source = doc.toString();
   if (!source.includes("[^") && !source.includes("^[")) {
     const empty: Footnotes = { definitions: [], references: new Map() };
 
     return empty;
   }
+  const tree = existingTree ?? parseMarkdown(doc);
   const definitions = footnoteDefinitions(doc, tree);
   const candidates = collectFootnoteCandidates({
     text: source,

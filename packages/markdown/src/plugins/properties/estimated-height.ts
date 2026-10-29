@@ -112,7 +112,12 @@ function valueColumnHeight(row: string): number {
   if (row.includes("mod-unknown") || row.includes("mod-okf-provenance")) {
     return VALUE_MIN;
   }
-  if (row.includes("metadata-input-yaml")) {
+  if (
+    row.includes("metadata-input-yaml") &&
+    !row.includes(
+      '<textarea hidden class="metadata-input-longtext metadata-input-yaml"',
+    )
+  ) {
     return YAML_FIELD;
   }
   const list = listHeight(row);

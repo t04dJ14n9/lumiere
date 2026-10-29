@@ -7,6 +7,12 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* The block CodeMirror measures. It keeps the sheet's bottom margin inside
+   it, so the height map, and the line numbers below, count that space too;
+   collapsed through the wrapper, the 2rem was left out. */
+.hybrid-properties {
+  display: flow-root;
+}
 .properties {
   /* Obsidian: --metadata-padding size-4-2 0 + margin-block-end 2rem; --font-smaller */
   padding: 8px 0 0;
@@ -379,7 +385,7 @@
   margin: 0;
 }
 .properties [hidden] {
-  display: none;
+  display: none !important;
 }
 .source-rows {
   display: flex;
@@ -415,11 +421,22 @@
   font-size: 0.85em;
 }
 
+.source-rows:empty::before {
+  content: "Empty";
+  color: var(--muted);
+}
 .property-complex {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  cursor: text;
+}
+.property-complex-edit {
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 4px;
 }
 .metadata-input-yaml {
   max-height: 240px;

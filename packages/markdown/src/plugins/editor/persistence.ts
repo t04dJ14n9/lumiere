@@ -1,12 +1,30 @@
+import { syntaxTree } from "@codemirror/language";
+import type { Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import type { Context, Infer, Logger } from "@workshop/core";
 import type { ViewContributions } from "./contributions";
-import type { EditorService } from "./api";
+import { backgroundUpdate, type EditorService } from "./api";
 import { protocol, viewState } from "./protocol";
 import type { createViewState } from "./view-state";
 
 type SavedView = Infer<typeof viewState>;
 type Presentation = ReturnType<typeof createViewState>;
+
+/**
+ * Whether an update carries effects the view state may hold (folds, say).
+ * Background work does not: CodeMirror's own parse changes the syntax
+ * tree, and other plugins mark theirs with `backgroundUpdate`.
+ */
+export const hasPersistedEffects = (update: {
+  startState: EditorView["state"];
+  state: EditorView["state"];
+  transactions: readonly Pick<Transaction, "effects" | "annotation">[];
+}): boolean =>
+  syntaxTree(update.startState) === syntaxTree(update.state) &&
+  update.transactions.some(
+    (tx) => tx.effects.length > 0 && !tx.annotation(backgroundUpdate),
+  );
+
 interface PersistenceConfig {
   saved?: unknown;
   persist?: (state: SavedView) => void;
@@ -49,26 +67,20 @@ export function registerViewPersistence(
   ctx.effect(() =>
     editor.extend(
       EditorView.updateListener.of((update) => {
-        if (
-          update.selectionSet ||
-          update.docChanged ||
-          update.transactions.some(
-            (transaction) => transaction.effects.length > 0,
-          )
-        ) {
+        if (update.selectionSet || update.docChanged) {
           config.persist?.(state.capture());
+          checkpoint();
+          return;
+        }
+        if (hasPersistedEffects(update)) {
           checkpoint();
         }
       }),
     ),
   );
   ctx.effect(() => {
-    const save = () => {
-      config.persist?.(state.capture());
-      checkpoint();
-    };
-    view.scrollDOM.addEventListener("scroll", save);
-    return () => view.scrollDOM.removeEventListener("scroll", save);
+    view.scrollDOM.addEventListener("scroll", checkpoint, { passive: true });
+    return () => view.scrollDOM.removeEventListener("scroll", checkpoint);
   });
   restoreInitialView(state, editor.source, config.saved, ctx.logger);
 }
@@ -82,17 +94,28 @@ function geometricPersistence(
   const { state, config } = persistence;
   const view = editor.view;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const save = () =>
+  let pending = false;
+  const save = () => {
+    clearTimeout(timer);
+    timer = undefined;
+    pending = false;
     config.persist?.(presentation.captureViewState(view, state.capture()));
+  };
   ctx.effect(() => {
     const window = view.dom.ownerDocument.defaultView;
     window?.addEventListener("pagehide", save);
     return () => {
-      clearTimeout(timer);
       window?.removeEventListener("pagehide", save);
+      if (pending) {
+        save();
+      } else {
+        clearTimeout(timer);
+        timer = undefined;
+      }
     };
   });
   return () => {
+    pending = true;
     clearTimeout(timer);
     timer = setTimeout(save, 150);
   };

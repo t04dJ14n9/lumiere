@@ -6,9 +6,9 @@
 import type {
   AgentHost,
   ContributedSetting,
+  GitAccess,
   HostCommands,
   HostServices,
-  VaultCodeTrust,
 } from "@workshop/markdown/portable";
 import type { NoteDocuments } from "./documents";
 import { noDiffViews, noGit, noViews } from "./inert";
@@ -54,8 +54,8 @@ export interface HostServicesOptions {
   readonly commands: HostCommands;
   /** The plugins' tree views, which the embedder shows (trees.ts). */
   readonly trees: TreeHub;
-  /** Whether a vault's own code (Obsidian community plugins) may run. */
-  readonly vaultCode: VaultCodeTrust;
+  /** Blame and the change gutter, from the `git` command line (git.ts). */
+  readonly git?: GitAccess;
 }
 
 export function createHostServices(options: HostServicesOptions): HostServices {
@@ -77,14 +77,13 @@ export function createHostServices(options: HostServicesOptions): HostServices {
     workspace: createHostWorkspace({
       files,
       roots,
-      vaultCode: options.vaultCode,
     }),
     storage: createWorkspaceStorage(store, options.saved.state),
     extensions: createExtensions(platform.workers),
     navigation: createHostNavigation(files, panels, settings, options.identity),
     customEditors: panels,
     agentHost: createAgentHost(options.identity, platform),
-    git: noGit,
+    git: options.git ?? noGit,
     diffViews: noDiffViews,
   };
 }
@@ -93,12 +92,19 @@ export function createHostServices(options: HostServicesOptions): HostServices {
  * Commands the plugins register run here. VS Code's own commands
  * (`setContext`, `workbench.*`) have no meaning here and do nothing.
  */
+export interface NodeHostCommands extends HostCommands {
+  has(id: string): boolean;
+}
+
 export function createHostCommands(
   log: (message: string) => void,
   keys: ContextKeys,
-): HostCommands {
+): NodeHostCommands {
   const commands = new Map<string, (...args: unknown[]) => unknown>();
   return {
+    has(id) {
+      return commands.has(id);
+    },
     register(id, run) {
       commands.set(id, run);
       return () => {

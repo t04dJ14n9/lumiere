@@ -7,7 +7,7 @@ import * as fssync from "node:fs";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
 import manifest from "./manifest";
-import { IDE_CONTEXT_COMMAND_IDS } from "../pdf/registered-commands";
+import { IDE_CONTEXT_COMMAND_IDS } from "../../../shared/command-ids";
 import { buildPdfIdeContextPacket } from "./adapter";
 import {
   copyIdeContext,

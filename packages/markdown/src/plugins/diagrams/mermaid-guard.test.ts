@@ -322,3 +322,67 @@ test("wireMermaidInternalLinks binds click, modifier keys, keyboard, and abort c
   abort.abort();
   assert.equal(nodeA.listeners.click?.length ?? 0, 0);
 });
+
+test("DiagramRenderer initializes mermaid only when theme or trust changes", async () => {
+  const { default: mermaid } = await import("mermaid");
+  const { DiagramRenderer } = await import("./renderer");
+  const origInit = mermaid.initialize;
+  const origRender = mermaid.render;
+  let initCalls = 0;
+  let renderCalls = 0;
+  mermaid.initialize = (() => {
+    initCalls++;
+  }) as typeof mermaid.initialize;
+  mermaid.render = (async (id: string) => {
+    renderCalls++;
+    return { svg: `<svg id="${id}"></svg>`, bindFunctions: undefined };
+  }) as unknown as typeof mermaid.render;
+
+  let trusted = false;
+  const renderer = new DiagramRenderer(
+    { debug() {}, warn() {}, error() {} },
+    {
+      isTrusted: () => trusted,
+      allow: () => {
+        trusted = true;
+      },
+    },
+  );
+  try {
+    const renderOne = (
+      renderer as unknown as {
+        renderMermaidSvg: (src: string) => Promise<string>;
+      }
+    ).renderMermaidSvg.bind(renderer);
+    await renderOne("flowchart LR\nA-->B");
+    await renderOne("flowchart LR\nC-->D");
+    assert.equal(renderCalls, 2);
+    assert.equal(initCalls, 1);
+
+    trusted = true;
+    await renderOne("flowchart LR\nE-->F");
+    assert.equal(initCalls, 2);
+    await renderOne("flowchart LR\nG-->H");
+    assert.equal(initCalls, 2);
+  } finally {
+    mermaid.initialize = origInit;
+    mermaid.render = origRender;
+    renderer.dispose();
+  }
+});
+
+test("svgDimensions reads viewBox dimensions and falls back to bounding box", async () => {
+  const { svgDimensions } = await import("./diagram-dialog");
+  const withViewBox = el("svg");
+  withViewBox.setAttribute("viewBox", "0 0 640 360");
+  assert.deepEqual(svgDimensions(withViewBox as unknown as Element), {
+    width: 640,
+    height: 360,
+  });
+
+  const withoutViewBox = el("svg");
+  assert.deepEqual(svgDimensions(withoutViewBox as unknown as Element), {
+    width: 800,
+    height: 600,
+  });
+});

@@ -89,7 +89,9 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `caret.css`: theme colours, cursor shapes, blinking and movement transitions.
 - `caret.test.ts`: native and modal cursor mapping units.
 - Browser and real-editor specs: `test/browser/vim-caret.spec.ts` (settings), `test/browser/vim-caret-geometry.spec.ts` (graphemes, ligatures, lifecycle), `test/browser/vim-caret-vscodevim.spec.ts` (VSCodeVim's pixel rules and timings), `test/vscode/vim-caret.spec.ts` and `test/vscode/vim-caret-vscodevim.spec.ts` (against the built-in caret).
-- `api.ts`: editor, panel, menu, view-state and event contracts.
+- `api.ts`: editor, panel, menu, view-state and event contracts; the
+  `backgroundUpdate` annotation, which marks a transaction that only publishes
+  background work (Live Preview's finished parse) so persistence skips it.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
@@ -119,8 +121,11 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `clipboard.ts`: validated clipboard RPC client.
 - `contributions.ts`: feature-owned view-state validation and restoration.
 - `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.
-- `view-state.ts`: geometric scroll anchoring and presentation restoration.
-- `view-state.test.ts`: widget scroll input cancels queued restore corrections per panel.
+- `persistence.test.ts`: which updates save view state.
+- `view-state.ts`: geometric scroll anchoring and presentation restoration; a restored line stays pinned until the reader scrolls anywhere in the scroller.
+- `view-state.test.ts`: the reader's scroll and input end the pin, the pin's own corrections do not, and every listener is passive.
+- `keep-below-still.ts`: when a rendered block across the top edge resizes, holds its bottom, so the text below stays still.
+- `keep-below-still.test.ts`: which block is held, and by how much the view scrolls.
 - `view-transfer.ts`: flushed, version-checked native view transfers.
 - `extensions.test.ts`: ordering, owner tie-breaks and retained state units.
 - `settings.test.ts`: indentation settings and compartment preservation units.
@@ -155,13 +160,16 @@ like an Obsidian vault, where notes always open in the editor.
 
 `editor.reclaimTextEditor` (`auto`/`on`/`off`, auto meaning on in Cursor
 only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
-here that shows up in the plain text or Cursor Markdown editor, as Cursor's
-**Preview | Markdown** switch does, is warmed and reopened in this editor.
-Clean text tabs are closed; dirty text tabs keep their native document and undo.
+here that a tool opens in a new text tab (a chat link, a review card), or that
+switches into Cursor's own Markdown editor, is warmed and reopened in this
+editor. Clean text tabs are closed; dirty text tabs keep their native document
+and undo. A note the reader put in the text editor (a switch in place, Open as
+Text, asking twice) is kept there until its last text tab closes; the kept
+notes are saved in workspace state, so a reload keeps them too.
 **Toggle Text Editor** (Ctrl/Cmd+E) switches the active note between Lumière
 and the host's default text editor via `vscode.openWith` (`default` ↔
-`lumiere.markdown.editor`). Opening as text still sets the reclaim bypass so
-Cursor does not yank the note back for 10 s. After `openWith`, the previous
+`lumiere.markdown.editor`). Opening as text sets the reclaim bypass, and the
+text tab it opens is then kept as the reader's. After `openWith`, the previous
 view's tab for the same URI is closed in the active group (clean tabs only),
 so the toggle leaves one tab rather than Lumière + Text Editor side by side
 (BH-011 / BH-003). This is **not** Obsidian's Ctrl/Cmd+E (Live Preview ↔
@@ -169,7 +177,7 @@ Source); Source mode stays on the unbound **Toggle Live Preview/Source Mode**
 command. Selection and caret are not restored across the switch
 (`vscode.openWith` carries no range).
 
-**Open as Text** keeps the text editor for 10 s. A just-reclaimed note also
+**Open as Text** keeps the text editor. A just-reclaimed note also
 ignores repeated tab notifications for 10 s; an explicit native command jump
 can still navigate to the next hunk during that interval.
 

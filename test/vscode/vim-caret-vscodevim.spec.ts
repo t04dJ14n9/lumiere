@@ -111,6 +111,8 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
     "editor.cursorBlinking": "solid",
     "editor.cursorSmoothCaretAnimation": "off",
     "lumiere.markdown.plugins.vim.enabled": true,
+    // Measured against VS Code's own caret, not the default Obsidian one (#138).
+    "lumiere.markdown.vim.caretStyle": "vscodevim",
   };
   const style = (cursorStyle: string) =>
     writeFileSync(

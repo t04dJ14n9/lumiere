@@ -288,6 +288,8 @@ test("Vim carets match the built-in editor's block, line and underline in the re
     "editor.cursorBlinking": "solid",
     "editor.cursorSmoothCaretAnimation": "off",
     "lumiere.markdown.plugins.vim.enabled": true,
+    // Measured against VS Code's own caret, not the default Obsidian one (#138).
+    "lumiere.markdown.vim.caretStyle": "vscodevim",
   };
   const style = (cursorStyle: string) =>
     writeFileSync(

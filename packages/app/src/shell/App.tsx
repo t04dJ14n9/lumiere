@@ -4,10 +4,10 @@
  * editor pages. The server owns vaults, files and the saved layout
  * (src/server); the editor pages own editing (host-node).
  */
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useShortcuts, type CommandHandlers } from "./commands";
+import { CommandPalette } from "./components/CommandPalette";
 import { ErrorBanner } from "./components/ErrorBanner";
-import { TrustDialog } from "./components/TrustDialog";
 import { VaultPicker } from "./components/VaultPicker";
 import { Workspace } from "./components/Workspace";
 import {
@@ -27,7 +27,6 @@ import {
 } from "./tabs";
 import { closeWindow } from "./tauri";
 import { setColorTheme } from "./theme";
-import { useTrustQuestions } from "./trust";
 import { useUiState, type UiStateHandle } from "./ui-state";
 
 export function App() {
@@ -36,14 +35,17 @@ export function App() {
   const vaults = useVaults(errors.report);
   const ui = useUiState(errors.report);
   const [tabs, dispatch] = useReducer(tabsReducer, noTabs);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const opening = useOpening(vaults, dispatch, errors.report);
-  const trust = useTrustQuestions(errors.report);
-  useServerEvents((event) => {
-    opening.onServerEvent(event);
-    trust.onServerEvent(event);
-  });
+  useServerEvents(opening.onServerEvent);
   useEffect(() => setColorTheme(ui.state.theme), [ui.state.theme]);
-  const commands = windowCommands({ tabs, dispatch, ui, opening });
+  const commands = windowCommands({
+    tabs,
+    dispatch,
+    ui,
+    opening,
+    onTogglePalette: () => setPaletteOpen((open) => !open),
+  });
   useMenuCommands(commands);
   useShortcuts(commands);
 
@@ -51,8 +53,7 @@ export function App() {
   return (
     <>
       <ErrorBanner message={errors.message} onDismiss={errors.dismiss} />
-      <TrustDialog question={trust.question} onAnswer={trust.answer} />
-      {showsWorkspace ? (
+      {showsWorkspace && !opening.pickingVault ? (
         <Workspace
           vault={vaults.current}
           vaults={vaults}
@@ -61,13 +62,23 @@ export function App() {
           opening={opening}
           ui={ui}
           report={errors.report}
+          onCommandPalette={() => setPaletteOpen(true)}
         />
       ) : (
         <VaultPicker
           recent={vaults.recent}
           onOpen={(folder) => opening.openVault(folder)}
+          onCancel={
+            showsWorkspace ? () => opening.cancelPickVault() : undefined
+          }
         />
       )}
+      <CommandPalette
+        open={paletteOpen}
+        handlers={commands}
+        onClose={() => setPaletteOpen(false)}
+        report={errors.report}
+      />
     </>
   );
 }
@@ -77,15 +88,18 @@ function windowCommands({
   dispatch,
   ui,
   opening,
+  onTogglePalette,
 }: {
   readonly tabs: TabsState;
   readonly dispatch: (action: TabsAction) => void;
   readonly ui: UiStateHandle;
   readonly opening: Opening;
+  readonly onTogglePalette: () => void;
 }): CommandHandlers {
   return {
     "open-vault": () => opening.openVault(),
     "open-settings": () => dispatch({ type: "openSettings" }),
+    "command-palette": onTogglePalette,
     "close-tab": () => {
       const id = tabToClose(tabs);
       if (id) {

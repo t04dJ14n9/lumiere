@@ -142,3 +142,32 @@ test("a vault reached through a symlink is known by its real path", async (t) =>
   });
   assert.deepEqual(vaults.list().open, [path.join(dir, "real")]);
 });
+
+test("closing an open vault removes it from open and keeps it in recent", async (t) => {
+  const dir = await scratch(t);
+  await mkdir(path.join(dir, "a"));
+  await mkdir(path.join(dir, "b"));
+  const vaults = new Vaults(path.join(dir, "vaults.json"));
+  await vaults.add(path.join(dir, "a"));
+  await vaults.add(path.join(dir, "b"));
+  const events: VaultEvent[] = [];
+  vaults.onEvent((event) => events.push(event));
+
+  await vaults.close(path.join(dir, "a"));
+  assert.deepEqual(vaults.list().open, [path.join(dir, "b")]);
+  assert.deepEqual(vaults.list().recent, [
+    path.join(dir, "b"),
+    path.join(dir, "a"),
+  ]);
+  assert.deepEqual(events, [{ type: "vaults", open: [path.join(dir, "b")] }]);
+});
+
+test("showing a PDF opens it, while an unsupported file is refused", async (t) => {
+  const dir = await scratch(t);
+  await writeFile(path.join(dir, "doc.pdf"), "");
+  await writeFile(path.join(dir, "image.png"), "");
+  const vaults = new Vaults(path.join(dir, "vaults.json"));
+  await vaults.show(path.join(dir, "doc.pdf"));
+  assert.deepEqual(vaults.list().open, [dir]);
+  await assert.rejects(vaults.show(path.join(dir, "image.png")), /Not a note/);
+});

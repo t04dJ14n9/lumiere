@@ -20,6 +20,8 @@ import { protocol as videoProtocol } from "../../src/plugins/onlineVideos/protoc
 import { protocol as resourcesProtocol } from "../../src/plugins/resources/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 import { setTitle } from "../../src/plugins/inlineTitle/widget";
+import { markdownParser } from "../../src/markdown/dialect";
+import { calibrationNote } from "../quality/calibration-note";
 export class BrowserHost {
   text: string;
   saved: string;
@@ -393,10 +395,29 @@ export class BrowserHost {
     this.session.changed();
   }
 }
+/**
+ * The quality checks' calibration, timed in the page (see
+ * test/quality/calibration.ts): the fastest warm parse of a fixed note.
+ */
+function calibrationParseMs(): number {
+  const text = calibrationNote();
+  for (let warm = 0; warm < 5; warm++) {
+    markdownParser.parse(text);
+  }
+  let fastest = Infinity;
+  for (let run = 0; run < 9; run++) {
+    const started = performance.now();
+    markdownParser.parse(text);
+    fastest = Math.min(fastest, performance.now() - started);
+  }
+  return fastest;
+}
 declare global {
   interface Window {
     harness: BrowserHost;
     BrowserHost: typeof BrowserHost;
+    calibrationParseMs: typeof calibrationParseMs;
   }
 }
 window.BrowserHost = BrowserHost;
+window.calibrationParseMs = calibrationParseMs;

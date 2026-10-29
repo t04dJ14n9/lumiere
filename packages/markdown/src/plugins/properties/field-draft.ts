@@ -71,7 +71,18 @@ export class PropertyField {
     delete this.input.dataset.propertyEditing;
     setInputText(this.input, this.original);
     setInputValidity(this.input, "");
+    this.closeDisplay();
     this.editor?.refresh?.();
+  }
+
+  private closeDisplay(): void {
+    const display = this.input.parentElement?.querySelector<HTMLElement>(
+      "[data-property-display]",
+    );
+    if (display) {
+      this.input.hidden = true;
+      display.hidden = false;
+    }
   }
 
   private parsedValue(): PropertyValue | undefined {
@@ -164,13 +175,34 @@ export class PropertyField {
       return;
     }
     edit.hidden = !this.editor;
-    edit.addEventListener("click", (event) => {
+    const selection =
+      this.input.dataset.propertyKind === "yaml" ? "end" : "all";
+    const openEditor = (event: Event) => {
       event.preventDefault();
       event.stopPropagation();
       display.hidden = true;
       this.input.hidden = false;
-      focusInput(this.input, "all");
-    });
+      focusInput(this.input, selection);
+    };
+    edit.addEventListener("click", openEditor);
+    if (this.editor) {
+      display.addEventListener("click", (event) => {
+        const interactive =
+          event.target instanceof Element
+            ? event.target.closest(
+                "a, button, input, textarea, [contenteditable='true'], summary, [role=button]",
+              )
+            : null;
+        if (
+          !(event.target instanceof Element) ||
+          (interactive && display.contains(interactive)) ||
+          this.input.ownerDocument?.getSelection?.()?.isCollapsed === false
+        ) {
+          return;
+        }
+        openEditor(event);
+      });
+    }
   }
 
   private registerEvents(): void {
@@ -197,6 +229,7 @@ export class PropertyField {
     this.input.addEventListener("blur", () => {
       if (this.commit()) {
         delete this.input.dataset.propertyEditing;
+        this.closeDisplay();
         this.editor?.refresh?.();
       }
     });
@@ -255,6 +288,7 @@ export class PropertyField {
     event.preventDefault();
     event.stopPropagation();
     if (this.commit()) {
+      this.closeDisplay();
       this.row()?.focus();
     }
     return true;

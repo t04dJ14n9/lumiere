@@ -46,8 +46,7 @@ export class VaultConfig {
         void this.refreshApp();
       }),
     );
-    await this.types.refresh();
-    await this.refreshApp();
+    await Promise.all([this.types.refresh(), this.refreshApp()]);
   }
 
   async dispose(): Promise<void> {

@@ -5,7 +5,9 @@
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ContributedSetting } from "@workshop/markdown/portable";
+import type { CommandContribution } from "./command-palette";
 import { parseMenus, type MenuContribution } from "./context-menu";
+import { NodeGitAccess } from "./git";
 import { createNodePlatform } from "./node-platform";
 import {
   startHost,
@@ -27,7 +29,10 @@ export function startLumiere(options: StartOptions): Promise<LumiereHost> {
     data: options.data,
     workers: path.join(options.markdown, "workers"),
   });
-  return startHost(platform, options);
+  return startHost(platform, {
+    ...options,
+    git: (roots) => new NodeGitAccess({ roots }),
+  });
 }
 
 /** Contributed settings from a `contributed.json` written at build time; none if missing. */
@@ -47,6 +52,24 @@ export async function readMenus(
 ): Promise<readonly MenuContribution[]> {
   try {
     return parseMenus(JSON.parse(await readFile(file, "utf8")));
+  } catch {
+    return [];
+  }
+}
+
+/** Command Palette items from a `commands.json` written at build time; none if missing. */
+export async function readCommands(
+  file: string,
+): Promise<readonly CommandContribution[]> {
+  try {
+    const value: unknown = JSON.parse(await readFile(file, "utf8"));
+    return Array.isArray(value)
+      ? value.filter(
+          (item): item is CommandContribution =>
+            typeof item?.command === "string" &&
+            typeof item?.title === "string",
+        )
+      : [];
   } catch {
     return [];
   }
