@@ -700,6 +700,11 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.insertSketch",
+        "title": "Insert Sketch",
+        "category": "Lumi\u00e8re"
+      },
+      {
         "command": "lumiere.markdown.insertTable",
         "title": "Insert Table",
         "category": "Lumière"
@@ -1953,6 +1958,10 @@
           "command": "lumiere.markdown.toggleSpellcheck"
         },
         {
+          "command": "lumiere.markdown.insertSketch",
+          "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.sketch && lumiere.markdown.sketch.canDraw"
+        },
+        {
           "command": "lumiere.markdown.insertTable",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.tables"
         },
@@ -2247,6 +2256,11 @@
           "submenu": "lumiere.markdown.menu.insert",
           "when": "webviewId == 'lumiere.markdown.editor'",
           "group": "formatting@3"
+        },
+        {
+          "command": "lumiere.markdown.insertSketch",
+          "when": "webviewId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.sketch && webviewSection == 'markdownContent' && lumiere.markdown.sketch.canDraw",
+          "group": "sketch@1"
         },
         {
           "command": "lumiere.pdf.lookUp",
@@ -2935,6 +2949,12 @@
             "default": true,
             "scope": "resource",
             "description": "Render query blocks as live vault search results."
+          },
+          "lumiere.markdown.plugins.sketch.enabled": {
+            "type": "boolean",
+            "default": true,
+            "scope": "resource",
+            "description": "Draw with Apple Pencil in a note: insert a sketch, and tap one to edit it."
           },
           "lumiere.markdown.plugins.smartLists.enabled": {
             "type": "boolean",

@@ -3,7 +3,7 @@
  * or the app in a browser (backend.ts). The window and the server share an
  * origin, so the token cookie goes along with every request.
  */
-import { editorUrl, httpApi } from "./api";
+import { editorUrl, httpApi, httpInk } from "./api";
 import type { WindowBackend } from "./backend";
 import { httpSettings } from "./settings";
 import { inDesktopApp, pickFolder } from "./tauri";
@@ -23,6 +23,8 @@ export function httpBackend(): WindowBackend {
         dispose: () => {},
       }),
     },
+    // The server draws on the window's canvas (main.tsx, ink.ts).
+    insertSketch: () => httpInk.insertSketch(),
     // A browser on a server has no picker that gives a path: one is typed.
     ...(inDesktopApp() ? { pickFolder } : { typesPaths: true }),
   };

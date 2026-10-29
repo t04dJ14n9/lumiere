@@ -112,6 +112,9 @@ importers:
       '@workshop/host-web':
         specifier: workspace:*
         version: link:../../packages/host-web
+      '@workshop/ink':
+        specifier: workspace:*
+        version: link:../../packages/ink
       '@workshop/markdown':
         specifier: workspace:*
         version: link:../../packages/markdown
@@ -129,6 +132,9 @@ importers:
       '@workshop/host-web':
         specifier: workspace:*
         version: link:../host-web
+      '@workshop/ink':
+        specifier: workspace:*
+        version: link:../ink
       '@workshop/markdown':
         specifier: workspace:*
         version: link:../markdown
@@ -299,6 +305,9 @@ importers:
       '@workshop/core':
         specifier: workspace:*
         version: link:../core
+      '@workshop/ink':
+        specifier: workspace:*
+        version: link:../ink
       dompurify:
         specifier: 3.4.17
         version: 3.4.17

@@ -25,8 +25,12 @@ import {
 import { createApi, type Api } from "./api";
 import { withAppDefaults } from "./defaults";
 import { admit } from "./auth";
+import { WindowInk } from "./ink";
 import { UiStore } from "./ui-state";
 import { Vaults } from "./vaults";
+
+/** The sketch plugin's command (packages/markdown/src/plugins/sketch). */
+const INSERT_SKETCH_COMMAND = "lumiere.markdown.insertSketch";
 
 export interface ServerSetup {
   readonly host: string;
@@ -49,8 +53,17 @@ export interface RunningServer {
 }
 
 export async function startServer(setup: ServerSetup): Promise<RunningServer> {
-  const { lumiere, editor } = await startEditor(setup);
-  const api = createApi(...(await loadState(setup, lumiere)), setup.version);
+  // The plugins draw on the window's canvas, through the API.
+  const ink = new WindowInk();
+  const { lumiere, editor } = await startEditor(setup, ink);
+  const [vaults, ui] = await loadState(setup, lumiere);
+  const api = createApi({
+    vaults,
+    ui,
+    ink,
+    insertSketch: () => insertSketch(lumiere, setup.logger),
+    version: setup.version,
+  });
   const shell = path.join(setup.assets, "shell");
   let port = setup.port;
   const auth = () => ({ token: setup.token, port });
@@ -75,6 +88,7 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
       server.close(() => resolve()),
     );
     api.close();
+    ink.close();
     editor.close();
     server.closeAllConnections();
     await lumiere.stop();
@@ -92,7 +106,7 @@ export async function startServer(setup: ServerSetup): Promise<RunningServer> {
 }
 
 /** Lumière's plugins, and the routes that serve their pages (notes and PDFs). */
-async function startEditor(setup: ServerSetup) {
+async function startEditor(setup: ServerSetup, ink: WindowInk) {
   const markdown = path.join(setup.assets, "markdown");
   const lumiere = await startLumiere({
     identity: { appName: "Lumière", uriScheme: "lumiere" },
@@ -104,6 +118,7 @@ async function startEditor(setup: ServerSetup) {
     commands: await readCommands(path.join(setup.assets, "commands.json")),
     data: setup.data,
     logger: setup.logger,
+    ink,
   });
   const editor = createEditorRoutes(lumiere, {
     markdown,
@@ -112,6 +127,13 @@ async function startEditor(setup: ServerSetup) {
     log: (message) => setup.logger.warn(message),
   });
   return { lumiere, editor };
+}
+
+/** Insert Sketch in the note last focused; the drawing comes back through POST /api/ink. */
+function insertSketch(lumiere: LumiereHost, logger: Logger): void {
+  lumiere.run(INSERT_SKETCH_COMMAND).catch((error: unknown) => {
+    logger.warn("Insert Sketch failed", error);
+  });
 }
 
 /** The vaults (the recent ones, and those given at start) and the window's layout. */

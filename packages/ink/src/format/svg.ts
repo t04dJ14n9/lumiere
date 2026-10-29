@@ -63,29 +63,67 @@ export function sketchFromSvg(svg: string): Sketch {
   return checkedPencilKit(decodeSketch(elementText(element)));
 }
 
-/** One stroke as SVG: a path, or a group of pieces when its opacity varies. */
-export function strokeSvg(stroke: InkStroke): string {
+/**
+ * What a stroke fills, as the SVG and the web canvas both draw it: one
+ * piece, or (pencil shading) pieces of nearly equal opacity that meet
+ * exactly. Undefined for a stroke with no points.
+ */
+export interface StrokeFills {
+  /** `#rrggbb`: a colour's alpha is folded into the pieces' opacity. */
+  readonly rgb: string;
+  /** A marker multiplies with what is under it. */
+  readonly multiplies: boolean;
+  /** Whether the opacity varies along the stroke, so it is drawn in pieces. */
+  readonly isShaded: boolean;
+  readonly pieces: readonly FillPiece[];
+}
+
+export interface FillPiece {
+  /** SVG path data, filled with the nonzero rule. */
+  readonly path: string;
+  readonly opacity: number;
+}
+
+export function strokeFills(stroke: InkStroke): StrokeFills | undefined {
   if (stroke.points.length === 0) {
-    return "";
+    return undefined;
   }
   const { rgb, alpha } = splitColor(stroke.color);
-  const blend =
-    stroke.tool === "marker" ? ` style="mix-blend-mode:multiply"` : "";
+  const multiplies = stroke.tool === "marker";
   const range = opacityRange(stroke.points);
   if (range.highest - range.lowest <= OPACITY_STEP / 2) {
     const outline = strokePieces(stroke.points, () => 0)[0]?.outline ?? [];
-    return path(outlinePathData(outline), {
-      rgb,
+    const piece = {
+      path: outlinePathData(outline),
       opacity: alpha * range.mean,
-      blend,
-    });
+    };
+    return { rgb, multiplies, isShaded: false, pieces: [piece] };
   }
-  const pieces = strokePieces(stroke.points, opacityKey).map((piece) =>
-    path(outlinePathData(piece.outline), {
-      opacity: alpha * piece.key * OPACITY_STEP,
-    }),
+  const pieces = strokePieces(stroke.points, opacityKey).map((piece) => ({
+    path: outlinePathData(piece.outline, piece.corners),
+    opacity: alpha * piece.key * OPACITY_STEP,
+  }));
+  return { rgb, multiplies, isShaded: true, pieces };
+}
+
+/** One stroke as SVG: a path, or a group of pieces when its opacity varies. */
+export function strokeSvg(stroke: InkStroke): string {
+  const fills = strokeFills(stroke);
+  if (!fills) {
+    return "";
+  }
+  const { rgb, pieces } = fills;
+  const blend = fills.multiplies ? ` style="mix-blend-mode:multiply"` : "";
+  if (!fills.isShaded) {
+    const [piece] = pieces;
+    return piece
+      ? path(piece.path, { rgb, opacity: piece.opacity, blend })
+      : "";
+  }
+  const paths = pieces.map((piece) =>
+    path(piece.path, { opacity: piece.opacity }),
   );
-  return `<g fill="${rgb}"${blend}>${pieces.join("")}</g>`;
+  return `<g fill="${rgb}"${blend}>${paths.join("")}</g>`;
 }
 
 /** Without spreading the points into `Math.min`, which a long stroke overflows. */

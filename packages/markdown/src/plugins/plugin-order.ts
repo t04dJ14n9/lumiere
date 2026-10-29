@@ -43,6 +43,8 @@ export const FEATURE_ORDER = [
   // Claims video links before embeds renders them as images.
   "onlineVideos",
   "embeds",
+  // Takes taps on sketches before embeds selects them as images.
+  "sketch",
   "tasks",
   "footnotes",
   "callouts",

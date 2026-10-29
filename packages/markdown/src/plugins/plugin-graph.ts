@@ -9,6 +9,7 @@
  */
 import type { Plugin, Services } from "@workshop/core";
 import { HOST_SERVICE_NAMES } from "../shared/host";
+import type {} from "@workshop/ink/service";
 
 type ServiceName = keyof Services;
 
@@ -18,6 +19,8 @@ export const ROOT_SERVICES: readonly ServiceName[] = [
   "vaultSystem",
   "rpc",
   "pluginStates",
+  // Only some hosts have a canvas (BootstrapOptions.ink).
+  "ink",
 ];
 
 /** What the graph reads from a plugin definition. */

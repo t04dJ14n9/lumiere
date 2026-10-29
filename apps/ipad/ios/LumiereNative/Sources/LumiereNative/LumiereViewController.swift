@@ -2,9 +2,10 @@ import Capacitor
 import UIKit
 
 /// Lumière's window on the iPad: Capacitor's web view, with Lumière's native
-/// plugins, the window's commands from the menu bar, the keyboard and the
-/// edit menu, and the on-screen keyboard counted as a safe area, so the
-/// window shrinks above it and the note being edited stays in view.
+/// plugins (vault files, the window's commands, the PencilKit canvas), the
+/// window's commands from the menu bar, the keyboard and the edit menu, and
+/// the on-screen keyboard counted as a safe area, so the window shrinks
+/// above it and the note being edited stays in view.
 open class LumiereViewController: CAPBridgeViewController, WindowCommandPerforming {
     private let windowCommands = WindowCommandsPlugin()
     private let vaults = VaultStore.standard()
@@ -21,6 +22,7 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(VaultFileSystemPlugin(store: vaults))
         bridge?.registerPluginInstance(windowCommands)
+        bridge?.registerPluginInstance(InkPlugin())
         keyboard = KeyboardInset(controller: self)
         longPressMenu = webView.map(LongPressEditMenu.init(webView:))
         windowControls = webView.map { WindowControlsInset(view: view, webView: $0) }
@@ -46,8 +48,10 @@ open class LumiereViewController: CAPBridgeViewController, WindowCommandPerformi
             // WebKit is showing its menu: the long-press one stays down.
             longPressMenu?.menuBuilt()
         }
-        EditMenu.build(with: builder) { [weak self] in
-            self?.windowCommands.sendPageMenu()
-        }
+        EditMenu.build(
+            with: builder,
+            more: { [weak self] in self?.windowCommands.sendPageMenu() },
+            insertSketch: { [weak self] in self?.windowCommands.sendInsertSketch() }
+        )
     }
 }

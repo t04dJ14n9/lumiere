@@ -1,7 +1,8 @@
 /**
  * The buttons at the end of the tab strip, as VS Code puts them in its title
  * bar: show or hide the files sidebar and the outline, open the Command
- * Palette, and open Settings.
+ * Palette, and open Settings. Where the host can draw (the iPad), a pencil
+ * first starts a sketch in the shown note, as the markup button does in Notes.
  */
 import type { Panels } from "../panels";
 
@@ -9,16 +10,29 @@ export interface LayoutButtonsProps {
   readonly panels: Panels;
   readonly onSettings: () => void;
   readonly onCommandPalette?: (() => void) | undefined;
+  /** Insert Sketch, when the host can draw and a note is shown. */
+  readonly onSketch?: (() => void) | undefined;
 }
 
 export function LayoutButtons({
   panels,
   onSettings,
   onCommandPalette,
+  onSketch,
 }: LayoutButtonsProps) {
   const { sidebar, outline } = panels;
   return (
     <div className="layout-buttons">
+      {onSketch && (
+        <button
+          type="button"
+          title="Insert Sketch"
+          aria-label="Insert Sketch"
+          onClick={onSketch}
+        >
+          <PencilIcon />
+        </button>
+      )}
       {onCommandPalette && (
         <button
           type="button"
@@ -106,6 +120,19 @@ function PanelIcon({
         x2={side === "left" ? 6 : 10}
         y2="13.5"
         stroke="currentColor"
+      />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M11.2 2.3l2.5 2.5-8 8-3.2.7.7-3.2zM9.8 3.7l2.5 2.5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
       />
     </svg>
   );

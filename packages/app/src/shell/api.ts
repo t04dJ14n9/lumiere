@@ -1,7 +1,7 @@
 /**
  * The window's view of a Lumière server (src/server/api.ts): vaults, files,
- * opening, commands and the event stream (`httpApi`, part of http-backend.ts).
- * Same origin, so the token cookie goes along.
+ * opening, commands, drawings and the event stream (`httpApi`, part of
+ * http-backend.ts). Same origin, so the token cookie goes along.
  */
 
 export interface VaultList {
@@ -26,7 +26,17 @@ export type ServerEvent =
       readonly open: readonly string[];
       readonly added?: string;
     }
-  | { readonly type: "open"; readonly vault: string; readonly path: string };
+  | { readonly type: "open"; readonly vault: string; readonly path: string }
+  /** A drawing started or ended waiting; read it with `httpInk.waiting`. */
+  | { readonly type: "ink" };
+
+/** A drawing the server's plugins wait for (src/server/ink.ts). */
+export interface InkWaiting {
+  readonly id: string;
+  readonly title: string;
+  /** The sketch to start from, as `encodeSketch`'s JSON. */
+  readonly sketch: string;
+}
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -74,6 +84,20 @@ export const httpApi = {
       listener(JSON.parse(message.data) as ServerEvent);
     return () => source.close();
   },
+};
+
+/** Drawings for the server's plugins, on the window's canvas (ink.ts). */
+export const httpInk = {
+  waiting: async (): Promise<InkWaiting | undefined> => {
+    const body = await request<Partial<InkWaiting>>("/api/ink");
+    return typeof body.id === "string" ? (body as InkWaiting) : undefined;
+  },
+  /** The drawing as `encodeSketch`'s JSON; undefined when it was cancelled. */
+  answer: (id: string, sketch: string | undefined) =>
+    post("/api/ink", sketch === undefined ? { id } : { id, sketch }),
+  /** Start Insert Sketch in the note last focused. */
+  insertSketch: () => post("/api/sketch", {}),
+  events: httpApi.events,
 };
 
 export const api = {

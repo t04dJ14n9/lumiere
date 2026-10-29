@@ -56,6 +56,16 @@ The layout (the panels, and each vault's open folders) and Color Theme are
 kept by the server (`/api/ui`), because the window's own storage does not
 last: its port changes every launch.
 
+Sketches are drawn on the window's canvas (`@workshop/ink/canvas`), while
+the plugins that ask for them run in the server. The server's `ink` service
+(`src/server/ink.ts`) keeps the drawing waiting, as a vault's question
+about its plugins waits: the window hears `{"type":"ink"}`, reads the
+drawing with `GET /api/ink`, opens its canvas over everything, and posts
+the drawing (or nothing, when cancelled) to `POST /api/ink`
+(`src/shell/ink.ts`). A window reloaded mid-drawing opens it again. The
+pencil beside the layout buttons starts Insert Sketch in the note last
+focused (`POST /api/sketch`); Lumière's right-click menu has it too.
+
 From the desktop app the window uses only the folder picker, menu commands
 and the app's light or dark appearance (`tauri.ts`). In a browser it falls
 back to a path field.
@@ -86,6 +96,11 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 | `POST /api/open` `{"path"}` | show a note or folder (Finder, a second launch) |
 | `GET /api/events` | server-sent events: vaults changed, a note to open |
 | `GET /api/ui`, `POST /api/ui` | the window's layout, open folders and Color Theme (`src/shared/ui-state.ts`) |
+| `GET /api/events` | server-sent events: vaults changed, a note to open, a vault's plugins waiting for an answer (`{"type":"trust"}`), a drawing started or ended waiting (`{"type":"ink"}`) |
+| `GET /api/ui`, `POST /api/ui` | the window's layout and Color Theme (`src/shared/ui-state.ts`) |
+| `GET /api/trust`, `POST /api/trust` `{"vault","allowed"}` | the vaults waiting for an answer, with the plugins they turn on; the owner's answer, accepted only for a vault that asked |
+| `GET /api/ink`, `POST /api/ink` `{"id","sketch"?}` | the drawing the plugins wait for (`{"id","title","sketch"}`, the sketch as its file's metadata JSON), or `{}`; the window's drawing, or none when cancelled, accepted only for the drawing waiting |
+| `POST /api/sketch` | start Insert Sketch in the note last focused |
 | `/lumiere/*` | the editor pages and tree views (`@workshop/host-node`) |
 
 ## Files
@@ -99,6 +114,11 @@ lumiere-server [--vault <dir>]... [--port <n>|0] [--host 127.0.0.1]
 - `src/shell/App.tsx`, `src/shell/components/`: the window.
 - `src/shell/opening.ts`: opening vaults and notes from the picker, menu, links and the server.
 - `src/shell/commands.ts`: the window's commands and VS Code's keys for them.
+- `src/server/vault-trust.ts`: the owner's answers about running a vault's plugins (`trust.json`), and the questions waiting.
+- `src/server/ink.ts`: the `ink` service: drawings waiting for the window's canvas.
+- `src/server/json-file.ts`: writing the data folder's JSON files without leaving half a file.
+- `src/shell/trust.ts`, `src/shell/components/TrustDialog.tsx`: asking the owner about a vault's plugins, one vault at a time.
+- `src/shell/ink.ts`: drawing what the server's plugins ask for, on the window's canvas.
 - `src/shell/settings.ts`, `src/shell/settings-view.ts`: the settings, and how the Settings tab lays them out.
 - `src/shell/ui-state.ts`, `src/shared/ui-state.ts`, `src/server/ui-state.ts`: the layout and Color Theme, kept by the server.
 - `src/shell/tabs.ts`, `src/shell/tree.ts`, `src/shell/tree-state.ts`: tabs and tree state, as pure functions.

@@ -19,6 +19,8 @@ export const INK_TOOLS = [
   "monoline",
   "watercolor",
   "crayon",
+  // iPadOS 26.
+  "reed",
 ] as const;
 
 export type InkTool = (typeof INK_TOOLS)[number];

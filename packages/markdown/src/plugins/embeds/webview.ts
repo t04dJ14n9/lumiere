@@ -15,7 +15,7 @@ import type { EditorView } from "@codemirror/view";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
-import { enhanceEmbeds } from "./post-process";
+import { enhanceEmbeds, forgetEmbedResources } from "./post-process";
 import {
   embedEditing,
   embedsImage,
@@ -201,6 +201,7 @@ class EmbedInline extends MarkdownInline {
 }
 
 function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
+  ctx.on("resources/changed", () => forgetEmbedResources(ctx.resources));
   ctx.on("render/postProcess", (pass) => {
     if (
       pass.container.querySelectorAll<HTMLElement>("[data-resource]").length ===

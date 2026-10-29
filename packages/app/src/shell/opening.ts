@@ -48,7 +48,7 @@ export function useOpening(
     (event: ServerEvent) => {
       if (event.type === "vaults") {
         report(reload().then(() => event.added && select(event.added)));
-      } else if (isNotePath(event.path)) {
+      } else if (event.type === "open" && isNotePath(event.path)) {
         select(event.vault);
         if (!vaults.files.some((entry) => entry.path === event.path)) {
           refreshFiles();

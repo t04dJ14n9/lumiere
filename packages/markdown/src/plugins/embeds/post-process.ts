@@ -381,7 +381,14 @@ function isPromise(
   return typeof (value as { then?: unknown }).then === "function";
 }
 
-function getCachedEmbedResource(
+/** Drop what embeds resolved with `resources`: the files may have changed. */
+export function forgetEmbedResources(
+  resources: EmbedOptions["resources"],
+): void {
+  embedResourceCaches.delete(resources);
+}
+
+export function getCachedEmbedResource(
   resources: EmbedOptions["resources"],
   key: string,
 ): Resource | undefined {
@@ -397,7 +404,7 @@ function getCachedEmbedResource(
   return cached;
 }
 
-function setCachedEmbedResource(
+export function setCachedEmbedResource(
   resources: EmbedOptions["resources"],
   key: string,
   resource: Resource,

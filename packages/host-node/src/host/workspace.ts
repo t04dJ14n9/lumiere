@@ -83,6 +83,9 @@ export function createWorkspaceFiles(
     writeText: async (uri, text) => {
       await inside(uri);
       await files.mkdir(parentUri(files, uri));
+      // `save` only replaces a file (host-web refuses a missing one), and
+      // `create` leaves an existing one as it is.
+      await files.create(uri);
       await files.save(uri, text);
     },
     list: async (uri) => {

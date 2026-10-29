@@ -3,6 +3,7 @@
  * the order they were used in (for ⌃⇥, which goes back to the last one).
  * Settings opens as a tab too, as in VS Code.
  */
+import { fileKind } from "../shared/file-kind";
 
 export interface NoteTab {
   readonly kind: "note";
@@ -19,6 +20,11 @@ export interface SettingsTab {
 }
 
 export type Tab = NoteTab | SettingsTab;
+
+/** Whether a sketch can go into this tab: a Markdown note, not a PDF or Settings. */
+export function takesSketch(tab: Tab | undefined): boolean {
+  return tab?.kind === "note" && fileKind(tab.path) === "note";
+}
 
 export interface TabsState {
   readonly tabs: readonly Tab[];

@@ -13,6 +13,7 @@ import {
   type GitAccess,
   type HostServices,
   type HostSettings,
+  type InkService,
 } from "@workshop/markdown/portable";
 import {
   createCommandPalette,
@@ -50,6 +51,8 @@ export interface HostStartOptions {
   readonly logger: Logger;
   /** Blame and the change gutter, when the platform provides Git. */
   readonly git?: (roots: () => readonly string[]) => GitAccess & { dispose?(): void };
+  /** A canvas to draw on, where the embedder has one (the iPad's PencilKit). */
+  readonly ink?: InkService;
 }
 
 export interface LumiereHost {
@@ -62,6 +65,11 @@ export interface LumiereHost {
   readonly commands?: CommandPalette;
   /** A workspace a note was opened from; vaults are found inside these. */
   addRoot(root: string): void;
+  /**
+   * Run one of the plugins' commands (`lumiere.markdown.*`), as a menu item
+   * does: for the embedder's own menus, such as the iPad's edit menu.
+   */
+  run(command: string): Promise<unknown>;
   stop(): Promise<void>;
 }
 
@@ -112,6 +120,7 @@ export async function startHost(
     addRoot: (item) => {
       roots.add(item.replace(/\/+$/, ""));
     },
+    run: (command) => commands.execute(command),
     stop: () => stopHost({ stopMenus, panels, root, git, documents }),
   };
 }
@@ -162,7 +171,7 @@ async function bootstrapPlugins({
     rank: pluginRank,
     logger: options.logger,
   });
-  await bootstrap(host, vault, root);
+  await bootstrap(host, vault, root, options.ink ? { ink: options.ink } : {});
   return { settings: host.settings, root };
 }
 

@@ -31,6 +31,11 @@ the worker cannot have, over `postMessage` with a port for the answer:
   only from an open vault that holds the panel's note (403 for anything
   else), as a Blob that a picked folder reads from disk as it is used; the
   worker answers whole files and single byte ranges, which video needs.
+Sketches are drawn on the web canvas (`@workshop/ink/canvas`), which
+`src/main.ts` hands host-web as its `ink` service: Insert Sketch (the pencil
+beside the layout buttons, or Lumière's right-click menu) and a click on a
+sketch open it over the window. A pen tablet draws with pressure; a mouse or
+trackpad with a line that thins as it speeds up.
 
 ## Files
 
@@ -60,5 +65,8 @@ the worker cannot have, over `postMessage` with a port for the answer:
   again.
 - Offline in Chromium, a PDF tab stays blank: its page is still a blob:
   document, which Chromium keeps from the service worker.
+- Images in notes do not show yet, sketches among them: a new sketch is
+  saved and embedded, and shows once images do.
+- PDFs do not open in tabs yet.
 - No Git. A vault's Obsidian community plugins run only after the reader
   says yes, once per vault, as in the desktop app.

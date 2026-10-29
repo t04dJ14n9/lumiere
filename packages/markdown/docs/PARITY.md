@@ -210,6 +210,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.toggleVim | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.toggleSpellcheck | Obsidian's Toggle spellcheck | Flips `plugins.spellcheck.enabled`, the Settings UI's own key | Unit tests (settings toggles) | not observed |
 | Command: lumiere.markdown.quickSwitcher | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertSketch | Apple Notes' drawings (Obsidian has none built in) | Opens the canvas where the host has one (the iPad), saves `*.sketch.svg` in the attachment folder and embeds it | Unit tests (sketch flows, placement) | not observed |
 | Command: lumiere.markdown.insertTable | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.tableInsertRowAbove | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.tableInsertRowBelow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -266,6 +267,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: lumiere.markdown.plugins.properties.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.quickSwitcher.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.search.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.sketch.enabled | not applicable | Turns Insert Sketch and tap-to-edit off; sketches still show as images | Unit tests (sketch host) | not observed |
 | Setting: lumiere.markdown.plugins.smartLists.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.spellcheck.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.suggest.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

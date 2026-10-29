@@ -28,6 +28,15 @@ declare module "@workshop/core" {
   interface Services {
     resources: Resources;
   }
+  interface Events {
+    /**
+     * Vault files a note shows were rewritten (a sketch saved, say): what
+     * was resolved before points at their old versions. Listeners drop it;
+     * the emitter then emits `render/changed` to show the new ones.
+     * @mode emit
+     */
+    "resources/changed": () => void;
+  }
 }
 
 export interface DiffResources {

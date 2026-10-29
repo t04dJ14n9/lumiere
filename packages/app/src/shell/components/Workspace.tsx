@@ -10,7 +10,7 @@ import { backend } from "../backend";
 import type { VaultState } from "../hooks";
 import type { Opening } from "../opening";
 import { emptyNotePrompt, type Panels } from "../panels";
-import type { TabsAction, TabsState } from "../tabs";
+import { takesSketch, type TabsAction, type TabsState } from "../tabs";
 import type { UiStateHandle } from "../ui-state";
 import { EditorFrame } from "./EditorFrame";
 import { FileTree } from "./FileTree";
@@ -67,6 +67,7 @@ export function Workspace(props: WorkspaceProps) {
               panels={panels}
               onSettings={() => dispatch({ type: "openSettings" })}
               onCommandPalette={onCommandPalette}
+              onSketch={sketchAction(tabs, report)}
             />
           }
         />
@@ -82,6 +83,16 @@ export function Workspace(props: WorkspaceProps) {
       {!narrow && outline}
     </div>
   );
+}
+
+/** Insert Sketch for the shown note, where the backend can draw and a note shows. */
+function sketchAction(
+  tabs: TabsState,
+  report: (work: Promise<unknown>) => void,
+): (() => void) | undefined {
+  const insert = backend().insertSketch;
+  const shown = tabs.tabs.find((tab) => tab.id === tabs.active);
+  return insert && takesSketch(shown) ? () => report(insert()) : undefined;
 }
 
 function TabBodies({

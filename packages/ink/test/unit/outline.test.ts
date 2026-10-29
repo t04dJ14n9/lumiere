@@ -104,6 +104,23 @@ test("pieces meet at a shared point with the same offsets, and only the ends are
   assert.ok(Math.max(...dark.outline.map(([x]) => x)) > 40, "round end");
 });
 
+test("drawn pieces keep the shared cut's corners, so they meet without a waist", () => {
+  const points = [0, 1, 2, 3, 4].map((index) =>
+    point(index * 10, 0, { width: 4, opacity: index < 2 ? 0.3 : 0.8 }),
+  );
+  const pieces = strokePieces(points, (p) => Math.round(p.opacity * 10));
+  for (const piece of pieces) {
+    const data = outlinePathData(piece.outline, piece.corners);
+    // Straight along the cut at x = 20, from one side's offset to the other.
+    assert.match(data, /L20 2/);
+    assert.match(data, /L20 -2/);
+    // Never through the middle of the cut, which pinched the stroke there.
+    assert.doesNotMatch(data, / 20 0[QLZ]/);
+  }
+  // A whole stroke has no cut and no corners.
+  assert.deepEqual(strokePieces(points, () => 0)[0]?.corners, []);
+});
+
 test("path data is one closed curve with rounded numbers", () => {
   const data = outlinePathData(strokeOutline(horizontalStroke([3, 3]).points));
   assert.match(data, /^M[-\d. ]+(Q[-\d. ]+)+Z$/);

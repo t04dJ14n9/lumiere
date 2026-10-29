@@ -101,3 +101,18 @@ test("next and previous step through the tabs in order, wrapping", () => {
   state = tabsReducer(state, { type: "step", by: -1 });
   assert.equal(state.active, tabId("/v", "b.md"));
 });
+
+test("a sketch goes into a Markdown note, not a PDF or Settings", async () => {
+  const { takesSketch } = await import("../../src/shell/tabs");
+  const note = (path: string) => ({
+    kind: "note" as const,
+    id: path,
+    vault: "/v",
+    path,
+  });
+  assert.equal(takesSketch(note("Daily/2026-10-26.md")), true);
+  assert.equal(takesSketch(note("Notes/Plan.markdown")), true);
+  assert.equal(takesSketch(note("Attachments/Field handbook.pdf")), false);
+  assert.equal(takesSketch({ kind: "settings", id: SETTINGS_TAB }), false);
+  assert.equal(takesSketch(undefined), false);
+});
