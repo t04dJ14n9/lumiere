@@ -20,7 +20,10 @@ test("selected images keep an outline and hosts get Obsidian resize-corner chrom
 
   const host = rule(embedsCss, ".image-embed");
   assert.match(host, /position:\s*relative/);
-  assert.match(host, /width:\s*fit-content/);
+  // Wide-block host: pane-constrained so overflow-x can scroll (not fit-content).
+  assert.match(host, /width:\s*100%/);
+  assert.match(host, /contain:\s*inline-size/);
+  assert.match(host, /overflow-x:\s*auto/);
 
   const corner = rule(embedsCss, ".image-embed .image-resize-corner");
   assert.match(corner, /width:\s*30px/);
