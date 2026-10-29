@@ -6,7 +6,7 @@
 
 ## Summary
 
-Make Markdown Outline behave like the Claude blog “Tree” scroll-spy by default: start collapsed, keep only the active ancestor path expanded, collapse every other branch. Drive expand/collapse through host tree APIs (no full refresh on caret moves). Keep follow-cursor on and the outline view visible in the primary sidebar (Cursor-like). Expose accordion vs expand-all-parents as a setting. Turn current-line git blame off by default.
+Make Markdown Outline behave like the Claude blog “Tree” scroll-spy by default: start collapsed, keep only the active ancestor path expanded, collapse every other branch. Drive expand/collapse through host tree APIs (no full refresh on caret moves). Keep follow-cursor on and the outline view visible in the primary sidebar (Cursor-like). Expose accordion vs expand-all-parents as a setting. Turn current-line git blame off by default; when enabled, use a milder GitLens-matching ghost color.
 
 Reference behavior inspected on https://claude.dev/blog/solving-code-review-at-anthropic/ (claude.com mirror 404s). Claude’s rail is a custom DOM tree; Lumière keeps the **native** VS Code/Cursor tree in the Explorer — chevrons remain a host difference.
 
@@ -36,7 +36,11 @@ Reference behavior inspected on https://claude.dev/blog/solving-code-review-at-a
 
 - `lumiere.markdown.plugins.gitBlame.enabled` / manifest `defaultEnabled`: **false**.
 - When off, neither the end-of-line authorship chip nor its hover/tooltip appears (same plugin gate as today).
-- Users can turn the plugin on in settings; no separate “milder color” change in this spec (tracked separately if needed).
+- Users can turn the plugin on in settings.
+- When on, the end-of-line ghost color must be **milder**, matching GitLens trailing-line blame:
+  - Prefer theme color `gitlens.trailingLineForegroundColor` when present.
+  - Else fall back to `#99999959` (GitLens default: gray `#999999` at ~35% alpha), then existing VS Code `git.blame.editorDecorationForeground` / description / muted chain only after that.
+  - Hover tooltip keeps normal editor-hover foreground (not the washed-out ghost color).
 
 ## Architecture
 
@@ -75,6 +79,11 @@ VS Code adapter implements these against the existing `TreeView` / element map (
 - Outline `config`: add `expandMode` enum `accordion` | `all`, default `accordion`, resource scope; sync into generated `package.json` contributions.
 - Git blame manifest: `defaultEnabled: false`; regenerate/update `package.json` `lumiere.markdown.plugins.gitBlame.enabled` default to `false`.
 
+### Git blame color (`gitBlame.css`)
+
+- `.mw-gb-ghost` color stack: `var(--vscode-gitlens-trailingLineForegroundColor, #99999959)` ahead of (or instead of relying solely on) `--vscode-git-blame-editorDecorationForeground`, so the ghost reads as quiet as GitLens even when the built-in git blame theme token is too strong.
+- Confirm both light and dark themes remain readable but secondary to note text.
+
 ### Host / Cordis note
 
 Any non-VS Code host that implements `TreeHandle` must implement `expand`/`collapse` or accordion degrades to no-op expansion (document in host README if applicable).
@@ -89,7 +98,6 @@ Any non-VS Code host that implements `TreeHandle` must implement `expand`/`colla
 
 - Custom webview / Claude-styled TOC (progress %, `└` glyphs, sticky rail chrome).
 - Changing sticky-scroll defaults (already on).
-- GitLens color parity for blame text (separate ask).
 - PDF outline accordion.
 - Removing native tree chevrons.
 
@@ -97,5 +105,5 @@ Any non-VS Code host that implements `TreeHandle` must implement `expand`/`colla
 
 - Fresh install: Markdown Outline visible beside Lumière notes, follow on, accordion default, parents collapsed until caret enters a section, only one branch open.
 - `expandMode: all` restores prior expand-all-parents feel.
-- Git blame off until the user enables the plugin.
+- Git blame off until the user enables the plugin; when enabled, ghost color matches GitLens mild trailing blame (`#99999959` / `gitlens.trailingLineForegroundColor`).
 - Accordion path changes do not full-refresh the tree solely to toggle expansion.
