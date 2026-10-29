@@ -5,6 +5,7 @@ import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import { outlineHost } from "../../../src/plugins/outline/host";
 import {
   COMMANDS_CONTEXT,
+  EXPAND_MODE_SETTING,
   FOLLOW_CURSOR_CONTEXT,
   FOLLOW_CURSOR_SETTING,
   VIEW_ID,
@@ -34,6 +35,9 @@ export async function outlineFixture(
     node: TreeNode;
     options: Parameters<TreeHandle["reveal"]>[1];
   }[] = [];
+  const expands: TreeNode[] = [];
+  const collapses: TreeNode[] = [];
+  let refreshCount = 0;
   const warnings: unknown[] = [];
   const settingsWrites: unknown[][] = [];
   const resources = new Map<string, boolean>();
@@ -48,10 +52,22 @@ export async function outlineFixture(
   const originalTree = fake.views.tree;
   fake.views.tree = (id, source, options) => {
     treeOptions = options;
+    const base = originalTree(id, source, options);
+    const originalRefresh = base.refresh.bind(base);
     return {
-      ...originalTree(id, source, options),
+      ...base,
+      refresh() {
+        refreshCount++;
+        originalRefresh();
+      },
       async reveal(node, options) {
         reveals.push({ node, options });
+      },
+      async expand(node) {
+        expands.push(node);
+      },
+      async collapse(node) {
+        collapses.push(node);
       },
       get visible() {
         return visible;
@@ -84,13 +100,19 @@ export async function outlineFixture(
       },
       access: {
         inspect(key, resource) {
+          if (key === EXPAND_MODE_SETTING) {
+            return {
+              value: fake.settings[key] ?? "accordion",
+              target: "user" as const,
+            };
+          }
           assert.equal(key, FOLLOW_CURSOR_SETTING);
           return {
             value:
               (resource && resources.get(resource)) ??
               fake.settings[key] ??
               true,
-            target: "user",
+            target: "user" as const,
           };
         },
         async update(key, value, resource) {
@@ -140,6 +162,11 @@ export async function outlineFixture(
     texts,
     opened,
     reveals,
+    expands,
+    collapses,
+    get refreshCount() {
+      return refreshCount;
+    },
     warnings,
     resources,
     settingsWrites,

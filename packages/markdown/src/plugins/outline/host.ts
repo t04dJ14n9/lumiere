@@ -3,6 +3,7 @@ import type { TreeHandle } from "../../shared/host";
 import type {} from "../editor/api";
 import type {} from "../vault/api";
 import {
+  expandMode,
   followsCursor,
   registerFollowCursor,
   registerOutlineActions,
@@ -40,6 +41,8 @@ export const outlineHost: Plugin = {
       logger: ctx.logger,
       followsCursor: () =>
         followsCursor(ctx.settings, editors.active()?.document.uri),
+      expandMode: () =>
+        expandMode(ctx.settings, editors.active()?.document.uri),
     });
     ctx.effect(() => () => view.dispose());
     registerOutlineCommandContext(ctx);

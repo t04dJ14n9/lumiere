@@ -11,8 +11,10 @@ The view parses the active panel's authoritative document text into nested
 headings and refreshes after edits. Follow Cursor defaults to on; its checked
 overflow action persists `outline.followCursor` through VS Code settings.
 When enabled, cursor movement, panel changes and view visibility reveal and
-select the current section without taking focus. Version and panel identity
-guards discard stale captures. Collapse All uses VS Code's native tree action;
+select the current section without taking focus. The default expand mode is
+accordion: only the active heading's ancestor path stays open, without
+rebuilding the tree. `all` starts every parent expanded and follow only
+selects. Version and panel identity guards discard stale captures. Collapse All uses VS Code's native tree action;
 Expand All reveals every node in order so deeply nested headings also expand.
 Clicking a heading opens the note at its offset; the links plugin's `navigate` then
 scrolls that offset to the vertical centre of the editor, as VS Code's Outline

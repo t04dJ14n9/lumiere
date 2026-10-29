@@ -1,5 +1,5 @@
 import type { Logger } from "@workshop/core";
-import type { TreeHandle } from "../../shared/host";
+import type { TreeHandle, TreeNode } from "../../shared/host";
 import type { EditorPanel, Editors } from "../editor/api";
 import { protocol as editorProtocol } from "../editor/protocol";
 import type { OutlineSource } from "./tree";
@@ -11,6 +11,7 @@ interface OutlineViewOptions {
   source: OutlineSource;
   editors: Pick<Editors, "active">;
   followsCursor(): boolean;
+  expandMode(): "accordion" | "all";
   logger: Logger;
 }
 
@@ -20,6 +21,8 @@ export class OutlineView {
   private sourceVersion = 0;
   private revision = 0;
   private followRequest = 0;
+  /** Ids of parents the last accordion apply left open, so a repeat path is a no-op. */
+  private lastAccordionKey: string | undefined;
   private isDisposed = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -45,6 +48,9 @@ export class OutlineView {
     this.options.tree.setMessage(
       this.options.source.isEmpty ? "No headings." : undefined,
     );
+    this.options.source.parentsStartExpanded =
+      this.options.expandMode() === "all";
+    this.lastAccordionKey = undefined;
     this.options.tree.refresh();
     void this.followCaret();
   }
@@ -69,7 +75,15 @@ export class OutlineView {
         return;
       }
       const node = this.options.source.activeNode(caret.head);
-      if (node) {
+      if (!node) {
+        return;
+      }
+      if (
+        this.options.followsCursor() &&
+        this.options.expandMode() === "accordion"
+      ) {
+        await this.applyAccordion(node);
+      } else {
         await this.options.tree.reveal(node, { select: true, focus: false });
       }
     } catch (error) {
@@ -92,6 +106,8 @@ export class OutlineView {
   }
 
   async expandAll(): Promise<void> {
+    // The next follow reasserts the single open path, even inside the same section.
+    this.lastAccordionKey = undefined;
     const revision = this.revision;
     // Native reveal expands at most three levels. Visiting every node also
     // expands deep Markdown outlines while preserving selection and focus.
@@ -108,6 +124,45 @@ export class OutlineView {
         select: false,
         focus: false,
       });
+    }
+  }
+
+  private async applyAccordion(active: TreeNode): Promise<void> {
+    const path = this.options.source.pathTo(active);
+    const expandIds = new Set<string>();
+    for (const node of path) {
+      if (this.options.source.children(node).length > 0) {
+        expandIds.add(node.id);
+      }
+    }
+    const key = [...expandIds].sort().join("\0");
+    if (key !== this.lastAccordionKey) {
+      this.lastAccordionKey = key;
+      await this.expandPath(path, expandIds);
+      await this.collapseOthers(expandIds);
+    }
+    await this.options.tree.reveal(active, { select: true, focus: false });
+  }
+
+  private async expandPath(
+    path: readonly TreeNode[],
+    expandIds: ReadonlySet<string>,
+  ): Promise<void> {
+    for (const node of path) {
+      if (expandIds.has(node.id)) {
+        await this.options.tree.expand(node);
+      }
+    }
+  }
+
+  private async collapseOthers(expandIds: ReadonlySet<string>): Promise<void> {
+    for (const node of this.options.source.allNodes()) {
+      if (
+        this.options.source.children(node).length > 0 &&
+        !expandIds.has(node.id)
+      ) {
+        await this.options.tree.collapse(node);
+      }
     }
   }
 
