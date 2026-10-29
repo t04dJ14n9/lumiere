@@ -39,6 +39,7 @@
   padding-inline-end: 2px;
   color: var(--vscode-editorLineNumber-foreground, var(--faint));
   font-family: var(--code-font);
+  /* fixed: match Obsidian/VS Code line-number gutter 12px UI size at every note text size */
   font-size: 12px;
   font-weight: normal;
   text-align: end;
