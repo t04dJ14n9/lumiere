@@ -6303,3 +6303,20 @@ their full height. A headless editor harness measured a small flowchart at
 `width="360"` inside a 911px note, and a wide one at `width="1512"` with
 `max-width: none`. Host GUI verify passed; the screenshots are on the pull
 request. Lightbox was outside that Host GUI pass.
+
+## Search open paints on the match — 2026-10-30
+
+#458 routes a Find in Files click through the text editor so the match
+range survives on an installed VSIX, then reclaims that tab into Lumière.
+The reclaim's reveal runs only after the webview has painted, so Lumière's
+first content frame is the top of the note and the viewport then jumps to
+the match. On a long note the text editor is already scrolled to the hit;
+Lumière replaces it, shows line 1, and only afterwards scrolls.
+
+The range is captured while that open is in flight and sent with the
+webview's ready payload. The editor selects and centers it before the first
+frame. The later reveal still runs, and finds the match already in view.
+A caret at offset 0 is still not a match. The jump and the settled open
+are `docs/pr-screenshots/459/02-before-lumiere-top.png` and
+`06-after-long-first-paint.png` (the other files in that directory are the
+plain-text `sources` shots).

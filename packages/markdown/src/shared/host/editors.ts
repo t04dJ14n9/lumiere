@@ -14,6 +14,14 @@ export interface PanelShell {
   readonly trusted: boolean;
   /** A native source selection was present while this panel was opened. */
   readonly openedFromNativeSelection?: boolean;
+  /**
+   * Search match already known when the panel resolved, so the webview's
+   * first paint can show it instead of the top of the note.
+   */
+  readonly openingSelection?: {
+    readonly anchor: number;
+    readonly head: number;
+  };
   active(): boolean;
   reveal(): void;
   dispose(): void;

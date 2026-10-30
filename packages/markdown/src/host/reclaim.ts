@@ -19,7 +19,7 @@ import { warmMarkdownDocument } from "./document-warm";
 import { readerText } from "./reader-text";
 import type { NativeNavigation } from "./navigation";
 import type { NavigationIntent } from "../shared/host";
-import { withNativeSelectionOpen } from "./native-selection-open";
+import { openRange, withNativeSelectionOpen } from "./native-selection-open";
 import {
   createReclaimScheduler,
   nativeSelectionRange as readNativeSelectionRange,
@@ -355,12 +355,7 @@ async function reopen(
       viewColumn: column,
       preview: native.isPreview,
     });
-  await withNativeSelectionOpen(
-    uri,
-    column,
-    () => request.to !== undefined && request.at !== undefined,
-    open,
-  );
+  await withNativeSelectionOpen(uri, column, () => openRange(request), open);
   if (navigation && request.intent && request.at !== undefined) {
     request.delivering = true;
     refreshRequestSelection(native, uri, request);

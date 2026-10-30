@@ -182,7 +182,9 @@ ignores repeated tab notifications for 10 s; an explicit native command jump
 can still navigate to the next hunk during that interval.
 
 Native text-to-custom transfers carry the selection's start into the exact
-destination panel, using LF-normalized offsets for CRLF documents. Command
+destination panel, using LF-normalized offsets for CRLF documents. The range
+is also the editor's opening selection, so the first paint is already on the
+match instead of the top of the note. Command
 selection changes also handle reused text tabs. Late native activation captures
 the initial selection even while `openWith` is in flight. Delivery waits for that panel's
 link-navigation readiness and uses its existing focus, centered scroll and
