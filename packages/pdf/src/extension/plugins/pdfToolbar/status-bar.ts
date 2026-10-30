@@ -1,11 +1,24 @@
 import * as vscode from "vscode";
 import {
-  parseToolbarMode,
+  pageColorsLabel,
+  parsePageColors,
+  resolveEffective,
+  type PageColorsSetting,
+  type ThemeKind,
+} from "../../../shared/page-colors";
+import {
+  parseVsCodeToolbarMode,
   showStatusBarButtons,
 } from "../../../shared/toolbar-settings";
-import { pageLabel, zoomLabel } from "../../../shared/view-state";
+import {
+  pageLabel,
+  zoomLabel,
+  type ViewState,
+} from "../../../shared/view-state";
 import type { PdfPanels } from "../pdf/panels";
 import {
+  HISTORY_COMMAND_IDS,
+  TOOLBAR_COMMAND_IDS,
   VIEW_COMMAND_IDS,
   VIEW_CONTROL_COMMAND_IDS,
 } from "../../../shared/command-ids";
@@ -28,12 +41,27 @@ type Item = {
 
 /**
  * Status bar entries, in their order from left to right (see
- * `STATUS_BAR_ORDER`): find, View (zoom, layout and scrolling), "Page 4 /
- * 15" (click to go to a page), previous page, next page, "Fit Width
- * (164%)" (click to pick a zoom), zoom out, zoom in. The buttons show only
+ * `STATUS_BAR_ORDER`): history, find, View, page colors, "Page 4 / 15",
+ * previous/next page, zoom label and buttons. Optional buttons show only
  * when `toolbar.statusBarButtons` asks for them.
  */
 const ITEMS: Item[] = [
+  {
+    id: "historyBack",
+    name: "PDF History Back",
+    text: "$(arrow-left)",
+    tooltip: "Back to previous location",
+    command: HISTORY_COMMAND_IDS.historyBack,
+    button: true,
+  },
+  {
+    id: "historyForward",
+    name: "PDF History Forward",
+    text: "$(arrow-right)",
+    tooltip: "Forward to next location",
+    command: HISTORY_COMMAND_IDS.historyForward,
+    button: true,
+  },
   {
     id: "find",
     name: "PDF Find",
@@ -48,6 +76,13 @@ const ITEMS: Item[] = [
     text: "$(layout) View",
     tooltip: "Choose zoom, page layout and scrolling",
     command: VIEW_CONTROL_COMMAND_IDS.selectView,
+  },
+  {
+    id: "pageColors",
+    name: "PDF Page Colors",
+    text: "",
+    tooltip: "Cycle page colors: Follow → Normal → Dark",
+    command: TOOLBAR_COMMAND_IDS.cyclePageColors,
   },
   {
     id: "page",
@@ -97,6 +132,65 @@ const ITEMS: Item[] = [
   },
 ];
 
+function themeKind(): ThemeKind {
+  return vscode.window.activeColorTheme.kind as ThemeKind;
+}
+
+function pageColorsSetting(): PageColorsSetting {
+  return parsePageColors(
+    vscode.workspace.getConfiguration("lumiere.pdf").get("pageColors"),
+  );
+}
+
+function pageColorsText(setting: PageColorsSetting): string {
+  const label = pageColorsLabel(setting);
+  if (setting !== "follow") {
+    return `$(color-mode) ${label}`;
+  }
+  const effective = resolveEffective(setting, themeKind());
+  return `$(color-mode) Follow (${pageColorsLabel(effective)})`;
+}
+
+type EntryState = {
+  view: ViewState;
+  panel: PdfPanels["active"];
+  colors: PageColorsSetting;
+};
+
+function refreshEntry(
+  entry: vscode.StatusBarItem,
+  item: Item,
+  state: EntryState,
+): void {
+  const { view, panel, colors } = state;
+  switch (item.id) {
+    case "page":
+      entry.text = pageLabel(view);
+      return;
+    case "zoom":
+      entry.text = zoomLabel(view);
+      return;
+    case "pageColors":
+      entry.text = pageColorsText(colors);
+      entry.tooltip = `Page colors: ${pageColorsLabel(colors)} (click to cycle)`;
+      return;
+    case "previousPage":
+      entry.command = view.canGoBack ? item.command : undefined;
+      return;
+    case "nextPage":
+      entry.command = view.canGoForward ? item.command : undefined;
+      return;
+    case "historyBack":
+      entry.command = panel?.canHistoryBack ? item.command : undefined;
+      return;
+    case "historyForward":
+      entry.command = panel?.canHistoryForward ? item.command : undefined;
+      return;
+    default:
+      return;
+  }
+}
+
 export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
   private readonly subscription: vscode.Disposable;
@@ -120,34 +214,25 @@ export class StatusBar implements vscode.Disposable {
 
   update(): void {
     const view = this.panels.active?.view;
+    const panel = this.panels.active;
     const configuration = vscode.workspace.getConfiguration(SECTION);
     const shown =
       view !== undefined &&
-      parseToolbarMode(configuration.get("mode")) === "chrome";
+      parseVsCodeToolbarMode(configuration.get("mode")) === "chrome";
     const buttons =
       shown &&
       showStatusBarButtons(
         configuration.get("statusBarButtons"),
         vscode.env.appName,
       );
+    const colors = pageColorsSetting();
     for (const item of ITEMS) {
       const entry = this.items.get(item.id)!;
       if (!shown || (item.button && !buttons)) {
         entry.hide();
         continue;
       }
-      if (item.id === "page") {
-        entry.text = pageLabel(view);
-      }
-      if (item.id === "zoom") {
-        entry.text = zoomLabel(view);
-      }
-      if (item.id === "previousPage") {
-        entry.command = view.canGoBack ? item.command : undefined;
-      }
-      if (item.id === "nextPage") {
-        entry.command = view.canGoForward ? item.command : undefined;
-      }
+      refreshEntry(entry, item, { view: view!, panel, colors });
       entry.show();
     }
   }

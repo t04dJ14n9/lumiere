@@ -24,7 +24,7 @@
   "viewsWelcome": [
     {
       "view": "lumiere.pdf.outline",
-      "contents": "Reading the outline\u2026",
+      "contents": "Reading the outline…",
       "when": "lumiere.pdf.outlineLoading"
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "command": "lumiere.pdf.changeSetting",
-      "title": "Change Setting\u2026",
+      "title": "Change Setting…",
       "category": "PDF"
     },
     {
@@ -62,17 +62,17 @@
     },
     {
       "command": "lumiere.pdf.setDefaultZoom",
-      "title": "Set Default Zoom\u2026",
+      "title": "Set Default Zoom…",
       "category": "PDF"
     },
     {
       "command": "lumiere.pdf.setDefaultPageLayout",
-      "title": "Set Default Page Layout\u2026",
+      "title": "Set Default Page Layout…",
       "category": "PDF"
     },
     {
       "command": "lumiere.pdf.setDefaultScrollMode",
-      "title": "Set Default Scrolling\u2026",
+      "title": "Set Default Scrolling…",
       "category": "PDF"
     },
     {
@@ -111,7 +111,7 @@
     },
     {
       "command": "lumiere.pdf.openLocation",
-      "title": "Open Location\u2026",
+      "title": "Open Location…",
       "category": "PDF"
     },
     {
@@ -121,7 +121,7 @@
     },
     {
       "command": "lumiere.pdf.goToOutlineItem",
-      "title": "Go to Outline Item\u2026",
+      "title": "Go to Outline Item…",
       "category": "PDF"
     },
     {
@@ -143,7 +143,7 @@
     },
     {
       "command": "lumiere.pdf.copyMcpSetup",
-      "title": "Copy MCP Setup for Claude Code / Codex\u2026",
+      "title": "Copy MCP Setup for Claude Code / Codex…",
       "category": "PDF"
     },
     {
@@ -162,7 +162,7 @@
     },
     {
       "command": "lumiere.pdf.goToPage",
-      "title": "Go to Page\u2026",
+      "title": "Go to Page…",
       "category": "PDF",
       "icon": "$(list-ordered)"
     },
@@ -180,7 +180,7 @@
     },
     {
       "command": "lumiere.pdf.selectZoom",
-      "title": "Zoom\u2026",
+      "title": "Zoom…",
       "category": "PDF",
       "icon": "$(search-fuzzy)"
     },
@@ -222,9 +222,16 @@
     },
     {
       "command": "lumiere.pdf.selectToolbarMode",
-      "title": "Choose Toolbar Location\u2026",
+      "title": "Choose Toolbar Location…",
       "category": "PDF",
       "icon": "$(layout)"
+    },
+    {
+      "command": "lumiere.pdf.cyclePageColors",
+      "title": "Cycle Page Colors",
+      "category": "PDF",
+      "icon": "$(color-mode)",
+      "enablement": "lumiere.pdf.pdfActive"
     },
     {
       "command": "lumiere.pdf.actualSize",
@@ -235,7 +242,7 @@
     },
     {
       "command": "lumiere.pdf.selectView",
-      "title": "View\u2026",
+      "title": "View…",
       "category": "PDF",
       "icon": "$(layout)",
       "enablement": "lumiere.pdf.pdfActive"
@@ -250,7 +257,7 @@
     },
     {
       "command": "lumiere.pdf.twoPageSpread",
-      "title": "Two Pages (1\u20132, 3\u20134)",
+      "title": "Two Pages (1–2, 3–4)",
       "category": "PDF",
       "icon": "$(book)",
       "enablement": "lumiere.pdf.pdfActive",
@@ -258,7 +265,7 @@
     },
     {
       "command": "lumiere.pdf.twoPageCover",
-      "title": "Two Pages with Cover (1, 2\u20133)",
+      "title": "Two Pages with Cover (1, 2–3)",
       "category": "PDF",
       "icon": "$(book)",
       "enablement": "lumiere.pdf.pdfActive",
@@ -317,7 +324,7 @@
     },
     {
       "command": "lumiere.pdf.ideContext.send",
-      "title": "Send IDE Context to Agent\u2026",
+      "title": "Send IDE Context to Agent…",
       "category": "Lumière PDF"
     }
   ],
@@ -340,51 +347,6 @@
       }
     ],
     "editor/title": [
-      {
-        "command": "lumiere.pdf.historyBack",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
-        "group": "navigation@8"
-      },
-      {
-        "command": "lumiere.pdf.historyForward",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
-        "group": "navigation@9"
-      },
-      {
-        "command": "lumiere.pdf.find",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-        "group": "navigation@10"
-      },
-      {
-        "command": "lumiere.pdf.zoomOut",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-        "group": "navigation@11"
-      },
-      {
-        "command": "lumiere.pdf.zoomIn",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-        "group": "navigation@12"
-      },
-      {
-        "command": "lumiere.pdf.fitPage",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit == 'width'",
-        "group": "navigation@13"
-      },
-      {
-        "command": "lumiere.pdf.fitWidth",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit != 'width'",
-        "group": "navigation@13"
-      },
-      {
-        "command": "lumiere.pdf.selectRegionTool",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool != 'region'",
-        "group": "navigation@14"
-      },
-      {
-        "command": "lumiere.pdf.selectTextTool",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool == 'region'",
-        "group": "navigation@14"
-      },
       {
         "command": "lumiere.pdf.find",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
@@ -496,9 +458,19 @@
         "group": "4_pdfView@11"
       },
       {
-        "command": "lumiere.pdf.selectView",
-        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-        "group": "navigation@15"
+        "command": "lumiere.pdf.cyclePageColors",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "4_pdfView@1.5"
+      },
+      {
+        "command": "lumiere.pdf.historyBack",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfPage@0"
+      },
+      {
+        "command": "lumiere.pdf.historyForward",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "1_pdfPage@0.5"
       }
     ],
     "commandPalette": [
@@ -790,17 +762,13 @@
         "default": "chrome",
         "enum": [
           "chrome",
-          "slim",
-          "floating",
           "none"
         ],
         "enumDescriptions": [
-          "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
-          "A slim bar along the top of the viewer.",
-          "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
-          "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+          "VS Code status bar entries for page, zoom, View, page colors and navigation.",
+          "No status-bar PDF entries: keyboard shortcuts, menus and the command palette only."
         ],
-        "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+        "markdownDescription": "Where the page, zoom, find and page-colors controls of the PDF viewer appear. Slim and floating viewer bars were removed. Every control also has a command and a keyboard shortcut."
       },
       "lumiere.pdf.toolbar.statusBarButtons": {
         "type": "string",
@@ -811,16 +779,16 @@
           "never"
         ],
         "enumDescriptions": [
-          "In Cursor, which keeps extension buttons in the editor title bar's \"\u2026\" menu: yes. In VS Code: no.",
+          "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
           "Always show the buttons.",
           "Only the page, zoom and View."
         ],
-        "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+        "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows history, previous and next page, zoom out and in, and find buttons around the page and zoom."
       },
       "lumiere.pdf.agentBridge.enabled": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex\u2026** gives the command that connects those agents."
+        "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
       },
       "lumiere.pdf.view.defaultZoom": {
         "type": [
@@ -843,7 +811,7 @@
             "maximum": 400
           }
         ],
-        "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25\u2013400)."
+        "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25–400)."
       },
       "lumiere.pdf.view.pageLayout": {
         "type": "string",
@@ -855,8 +823,8 @@
         ],
         "enumDescriptions": [
           "One page per row.",
-          "Pair pages 1\u20132, 3\u20134, and so on.",
-          "Cover page alone, then pair pages 2\u20133, 4\u20135, and so on."
+          "Pair pages 1–2, 3–4, and so on.",
+          "Cover page alone, then pair pages 2–3, 4–5, and so on."
         ],
         "markdownDescription": "Page layout for PDFs without a saved view."
       },
@@ -890,7 +858,7 @@
       "lumiere.pdf.keyboardShortcuts": {
         "type": "boolean",
         "default": true,
-        "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/\u2318+G (Go to Line elsewhere), Ctrl/\u2318+0 (focus the side bar), Ctrl/\u2318+= and Ctrl/\u2318+- (zoom the window) and Ctrl/\u2318+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+        "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/⌘+G (Go to Line elsewhere), Ctrl/⌘+0 (focus the side bar), Ctrl/⌘+= and Ctrl/⌘+- (zoom the window) and Ctrl/⌘+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
       },
       "lumiere.pdf.view.restoreOnReopen": {
         "type": "boolean",
@@ -904,6 +872,21 @@
         ],
         "default": null,
         "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
+      },
+      "lumiere.pdf.pageColors": {
+        "type": "string",
+        "default": "follow",
+        "enum": [
+          "follow",
+          "normal",
+          "dark"
+        ],
+        "enumDescriptions": [
+          "Match the editor color theme kind: dark themes get dark paper; light themes stay normal.",
+          "White paper (classic PDF rendering).",
+          "Dark paper with recolored text and vectors; embedded images stay as-is. Scanned pages stay largely bright."
+        ],
+        "markdownDescription": "PDF page surface colors. **Follow** tracks `#window.activeColorTheme#` kind. Dark paper needs a PDFium color-scheme hook on EmbedPDF (see embedpdf#679); when unavailable, rendering stays Normal. No CSS invert."
       }
     }
   },

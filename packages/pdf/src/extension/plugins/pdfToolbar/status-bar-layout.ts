@@ -10,8 +10,11 @@
  * width.
  */
 export type StatusBarEntryId =
+  | "historyBack"
+  | "historyForward"
   | "find"
   | "view"
+  | "pageColors"
   | "page"
   | "previousPage"
   | "nextPage"
@@ -20,17 +23,17 @@ export type StatusBarEntryId =
   | "zoomIn";
 
 /**
- * Left to right. Page and zoom are rightmost, so they are the last of the
- * viewer's entries to disappear. Each label ("Page 4 / 15", "Fit Width
- * (164%)") is left of its buttons: a label changes width as the reader
- * pages or zooms, moving everything to its left, and a button the reader
- * clicks again must still be where it was. Paging never changes the zoom
- * (fit zooms use the document's largest page), so the page buttons may sit
- * left of the zoom label.
+ * Left to right. Former chrome title actions (history) sit left of find.
+ * Page colors is near View, left of page/zoom so page+zoom stay rightmost.
+ * Each label is left of its buttons so a width change does not move a
+ * button the reader clicks again.
  */
 export const STATUS_BAR_ORDER: readonly StatusBarEntryId[] = [
+  "historyBack",
+  "historyForward",
   "find",
   "view",
+  "pageColors",
   "page",
   "previousPage",
   "nextPage",

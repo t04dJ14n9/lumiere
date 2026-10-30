@@ -1047,6 +1047,13 @@
         "icon": "$(layout)"
       },
       {
+        "command": "lumiere.pdf.cyclePageColors",
+        "title": "Cycle Page Colors",
+        "category": "PDF",
+        "icon": "$(color-mode)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
         "command": "lumiere.pdf.actualSize",
         "title": "Actual Size (100%)",
         "category": "PDF",
@@ -2563,51 +2570,6 @@
           "group": "navigation"
         },
         {
-          "command": "lumiere.pdf.historyBack",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
-          "group": "navigation@8"
-        },
-        {
-          "command": "lumiere.pdf.historyForward",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
-          "group": "navigation@9"
-        },
-        {
-          "command": "lumiere.pdf.find",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@10"
-        },
-        {
-          "command": "lumiere.pdf.zoomOut",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@11"
-        },
-        {
-          "command": "lumiere.pdf.zoomIn",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@12"
-        },
-        {
-          "command": "lumiere.pdf.fitPage",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit == 'width'",
-          "group": "navigation@13"
-        },
-        {
-          "command": "lumiere.pdf.fitWidth",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit != 'width'",
-          "group": "navigation@13"
-        },
-        {
-          "command": "lumiere.pdf.selectRegionTool",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool != 'region'",
-          "group": "navigation@14"
-        },
-        {
-          "command": "lumiere.pdf.selectTextTool",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool == 'region'",
-          "group": "navigation@14"
-        },
-        {
           "command": "lumiere.pdf.find",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
           "group": "0_pdfFind@1"
@@ -2718,9 +2680,19 @@
           "group": "4_pdfView@11"
         },
         {
-          "command": "lumiere.pdf.selectView",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@15"
+          "command": "lumiere.pdf.cyclePageColors",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@1.5"
+        },
+        {
+          "command": "lumiere.pdf.historyBack",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@0"
+        },
+        {
+          "command": "lumiere.pdf.historyForward",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@0.5"
         }
       ]
     },
@@ -3481,17 +3453,13 @@
             "default": "chrome",
             "enum": [
               "chrome",
-              "slim",
-              "floating",
               "none"
             ],
             "enumDescriptions": [
-              "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
-              "A slim bar along the top of the viewer.",
-              "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
-              "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+              "VS Code status bar entries for page, zoom, View, page colors and navigation.",
+              "No status-bar PDF entries: keyboard shortcuts, menus and the command palette only."
             ],
-            "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+            "markdownDescription": "Where the page, zoom, find and page-colors controls of the PDF viewer appear. Slim and floating viewer bars were removed. Every control also has a command and a keyboard shortcut."
           },
           "lumiere.pdf.toolbar.statusBarButtons": {
             "type": "string",
@@ -3506,7 +3474,7 @@
               "Always show the buttons.",
               "Only the page, zoom and View."
             ],
-            "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+            "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows history, previous and next page, zoom out and in, and find buttons around the page and zoom."
           },
           "lumiere.pdf.agentBridge.enabled": {
             "type": "boolean",
@@ -3595,6 +3563,21 @@
             ],
             "default": null,
             "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
+          },
+          "lumiere.pdf.pageColors": {
+            "type": "string",
+            "default": "follow",
+            "enum": [
+              "follow",
+              "normal",
+              "dark"
+            ],
+            "enumDescriptions": [
+              "Match the editor color theme kind: dark themes get dark paper; light themes stay normal.",
+              "White paper (classic PDF rendering).",
+              "Dark paper with recolored text and vectors; embedded images stay as-is. Scanned pages stay largely bright."
+            ],
+            "markdownDescription": "PDF page surface colors. **Follow** tracks `#window.activeColorTheme#` kind. Dark paper needs a PDFium color-scheme hook on EmbedPDF (see embedpdf#679); when unavailable, rendering stays Normal. No CSS invert."
           }
         }
       }

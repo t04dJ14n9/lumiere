@@ -64,3 +64,16 @@ test("paging moves neither page button: the page label is left of them", () => {
     assert.ok(!rightOf(id).includes("page"), id);
   }
 });
+
+test("page colors sits near view, left of page and zoom", () => {
+  const order = [...STATUS_BAR_ORDER];
+  assert.ok(order.indexOf("view") < order.indexOf("pageColors"));
+  assert.ok(order.indexOf("pageColors") < order.indexOf("page"));
+  assert.ok(order.indexOf("pageColors") < order.indexOf("zoom"));
+});
+
+test("history sits left of find (moved from chrome title actions)", () => {
+  const order = [...STATUS_BAR_ORDER];
+  assert.ok(order.indexOf("historyBack") < order.indexOf("find"));
+  assert.ok(order.indexOf("historyForward") < order.indexOf("find"));
+});

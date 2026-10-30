@@ -15,6 +15,8 @@ import {
   type RenderTask,
 } from "../shared/bitmap-cache";
 import { DOCUMENT_ID } from "./plugins";
+import { currentPageColors, onPageColorsChange } from "./page-colors";
+import { PAGE_COLORS_ENGINE_AVAILABLE } from "../shared/page-colors-engine";
 
 /**
  * The decoded low bitmaps, held while they are cached: a picture that is
@@ -56,6 +58,11 @@ export function PageBitmaps({
   children: React.ReactNode;
 }): React.JSX.Element {
   const { provides } = useRenderCapability();
+  const [pageColors, setPageColors] = useState(currentPageColors);
+  useEffect(
+    () => onPageColorsChange(() => setPageColors(currentPageColors())),
+    [],
+  );
   const cache = useMemo(
     () =>
       provides
@@ -63,12 +70,13 @@ export function PageBitmaps({
             (pageIndex, scaleFactor, dpr) =>
               provides.forDocument(DOCUMENT_ID).renderPage({
                 pageIndex,
-                options: { scaleFactor, dpr },
+                options: renderOptions(scaleFactor, dpr, pageColors),
               }) as unknown as RenderTask,
             urls,
           )
         : undefined,
-    [provides],
+    // Rebuild when page colors change so open bitmaps refresh.
+    [provides, pageColors],
   );
   useEffect(() => () => cache?.dispose(), [cache]);
   usePrefetch(cache, pdf.pages.length, scroller);
@@ -302,4 +310,24 @@ function requestBitmaps(
     live = false;
     cancels.forEach((cancel) => cancel());
   };
+}
+
+/** EmbedPDF render options; pageColors only when the pinned engine exposes it. */
+function renderOptions(
+  scaleFactor: number,
+  dpr: number,
+  pageColors: "normal" | "dark",
+): Record<string, unknown> {
+  const options: Record<string, unknown> = { scaleFactor, dpr };
+  if (PAGE_COLORS_ENGINE_AVAILABLE && pageColors === "dark") {
+    options.pageColors = {
+      background: "#1e1e1e",
+      text: "#e8e6e3",
+      pathFill: "#e8e6e3",
+      pathStroke: "#e8e6e3",
+      textFill: "#e8e6e3",
+      textStroke: "#e8e6e3",
+    };
+  }
+  return options;
 }

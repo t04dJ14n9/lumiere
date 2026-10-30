@@ -60,6 +60,7 @@ export const HISTORY_COMMAND_IDS = {
 
 export const TOOLBAR_COMMAND_IDS = {
   selectToolbarMode: "lumiere.pdf.selectToolbarMode",
+  cyclePageColors: "lumiere.pdf.cyclePageColors",
 } as const;
 
 export const LOOK_UP_COMMAND_IDS = {

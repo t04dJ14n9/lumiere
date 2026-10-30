@@ -8,13 +8,12 @@ import { StatusBarAfterZen, type StatusBarSetting } from "./status-bar";
 /**
  * Zen mode for PDFs: VS Code's own Zen Mode (hidden sidebar, status bar and
  * panels, full screen, the reader's `zenMode.*` settings), plus the viewer's
- * part of it. The viewers are told while it lasts, so the controls that VS
- * Code hides in zen (the editor title actions, the status bar) are a floating
- * bar instead, with an Exit zen button. Core has no way to ask "is zen on?",
- * so there are two commands, chosen by the `inZenMode` context key in menus
- * and keybindings; the viewer reports when full-screen zen ends without them
- * (Ctrl+K Z, the Command Palette). Leaving zen gives back the status bar,
- * which Cursor otherwise keeps hidden (see `StatusBarAfterZen`).
+ * part of it. Viewers are told while it lasts so full-screen zen exit can be
+ * reported; PDF controls stay on the status bar / command palette (no
+ * floating overlay). Core has no way to ask "is zen on?", so there are two
+ * commands, chosen by the `inZenMode` context key in menus and keybindings.
+ * Leaving zen gives back the status bar, which Cursor otherwise keeps hidden
+ * (see `StatusBarAfterZen`).
  */
 export const pdfZenPlugin: Plugin = {
   name: manifest.id,
