@@ -7,6 +7,16 @@ import {
   TEXT_MIDLINE,
 } from "./viewer-support";
 
+/** EmbedPDF highlight marks use multiply blend rectangles inside the page. */
+async function highlightMarkCount(page: import("@playwright/test").Page) {
+  return page.evaluate(
+    () =>
+      document.querySelectorAll(
+        '.page [style*="mix-blend-mode: multiply"], .page [style*="mix-blend-mode:multiply"]',
+      ).length,
+  );
+}
+
 test("Annotate mode exposes toolkit and Escape returns to text", async ({
   page,
 }) => {
@@ -24,57 +34,26 @@ test("highlight tool can mark text", async ({ page }) => {
   await open(page, "?toolbar=chrome");
   await sendAction(page, { action: "setTool", tool: "annotate" });
   await sendAction(page, { action: "setAnnotationTool", tool: "highlight" });
+  const baseline = await highlightMarkCount(page);
   const at = await pagePoint(page, 1);
   await page.mouse.move(...at(74, TEXT_MIDLINE));
   await page.mouse.down();
-  await page.mouse.move(...at(205, TEXT_MIDLINE));
+  await page.mouse.move(...at(205, TEXT_MIDLINE), { steps: 10 });
   await page.mouse.up();
-  await expect
-    .poll(async () =>
-      page.evaluate(
-        () =>
-          document.querySelectorAll(
-            "[data-annotation-id], .annotation-layer svg, .annotation-layer canvas, [class*='annotation']",
-          ).length,
-      ),
-    )
-    .toBeGreaterThan(0);
+  await expect.poll(() => highlightMarkCount(page)).toBeGreaterThan(baseline);
 });
 
 test("annotation undo clears an in-session highlight", async ({ page }) => {
   await open(page, "?toolbar=chrome");
   await sendAction(page, { action: "setTool", tool: "annotate" });
   await sendAction(page, { action: "setAnnotationTool", tool: "highlight" });
-  const baseline = await page.evaluate(
-    () =>
-      document.querySelectorAll(
-        "[data-annotation-id], .annotation-layer svg, .annotation-layer canvas",
-      ).length,
-  );
+  const baseline = await highlightMarkCount(page);
   const at = await pagePoint(page, 1);
   await page.mouse.move(...at(74, TEXT_MIDLINE));
   await page.mouse.down();
-  await page.mouse.move(...at(205, TEXT_MIDLINE));
+  await page.mouse.move(...at(205, TEXT_MIDLINE), { steps: 10 });
   await page.mouse.up();
-  await expect
-    .poll(async () =>
-      page.evaluate(
-        () =>
-          document.querySelectorAll(
-            "[data-annotation-id], .annotation-layer svg, .annotation-layer canvas",
-          ).length,
-      ),
-    )
-    .toBeGreaterThan(baseline);
+  await expect.poll(() => highlightMarkCount(page)).toBeGreaterThan(baseline);
   await sendAction(page, { action: "annotationUndo" });
-  await expect
-    .poll(async () =>
-      page.evaluate(
-        () =>
-          document.querySelectorAll(
-            "[data-annotation-id], .annotation-layer svg, .annotation-layer canvas",
-          ).length,
-      ),
-    )
-    .toBe(baseline);
+  await expect.poll(() => highlightMarkCount(page)).toBe(baseline);
 });
