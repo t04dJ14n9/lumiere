@@ -1,6 +1,7 @@
 import type { PdfDocumentObject } from "@embedpdf/models";
 import { PagePointerProvider } from "@embedpdf/plugin-interaction-manager/react";
 import { SearchLayer } from "@embedpdf/plugin-search/react";
+import { AnnotationLayer } from "@embedpdf/plugin-annotation/react";
 import { SelectionLayer } from "@embedpdf/plugin-selection/react";
 import React from "react";
 import type { PageRect } from "../shared/geometry";
@@ -67,6 +68,11 @@ export function Page({
         scale={scale}
         highlight={highlight}
         region={region}
+      />
+      <AnnotationLayer
+        documentId={DOCUMENT_ID}
+        pageIndex={pageIndex}
+        scale={scale}
       />
       <TextSelection {...layer} />
     </PagePointerProvider>
