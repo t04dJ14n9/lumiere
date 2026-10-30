@@ -39,6 +39,9 @@
     "onCommand:vscodeEmbedPdf.bridge.envelope",
     "onLanguage:markdown"
   ],
+  "enabledApiProposals": [
+    "customTextEditorNavigation"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
