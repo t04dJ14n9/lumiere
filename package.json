@@ -2934,12 +2934,6 @@
             "scope": "resource",
             "description": "Smart lists in the Markdown editor."
           },
-          "lumiere.markdown.plugins.sourcesProperty.enabled": {
-            "type": "boolean",
-            "default": true,
-            "scope": "resource",
-            "description": "Show OKF sources as stacked rows with open links (typed Properties UI)."
-          },
           "lumiere.markdown.plugins.spellcheck.enabled": {
             "type": "boolean",
             "default": true,
@@ -3304,6 +3298,7 @@
             "minimum": 1,
             "maximum": 50,
             "default": 3,
+            "description": "How many list chips to show before a disclosure control. Applies to tags, aliases, cssclasses, and other lists.",
             "scope": "resource"
           },
           "lumiere.markdown.scratch.folder": {

@@ -89,12 +89,36 @@ export function renderProperties(
   return `<div class="properties metadata-container${options.collapsed ? " is-collapsed" : ""}"><div class="metadata-properties-heading" data-properties-heading tabindex="0" role="button" aria-expanded="${!options.collapsed}"><span class="metadata-collapse-indicator collapse-indicator collapse-icon">${propertyFlairIcon("collapse")}</span><span class="metadata-properties-title">Properties</span></div><div class="metadata-content"${options.collapsed ? " hidden" : ""}><div class="metadata-properties">${rows}</div><button type="button" class="metadata-add-button text-icon-button" data-property-add>${propertyFlairIcon("plus")} Add property</button></div><p class="property-message" aria-live="polite"></p></div>`;
 }
 
+function isPlainTextSources(key: string): boolean {
+  return key.toLowerCase() === "sources";
+}
+
+/**
+ * A string stays a string. Any other shape is shown as its YAML text inside
+ * the same text control, so the sheet never grows a Sources widget.
+ */
+function sourcesDisplayValue(
+  value: unknown,
+  draft: string | undefined,
+): unknown {
+  if (typeof value === "string" || value === null || value === undefined) {
+    return value;
+  }
+  return draft ?? value;
+}
+
 function propertyBody(
   key: string,
   value: unknown,
   options: PropertyRowOptions,
 ): string {
-  // OKF Sources (and other custom renderers): typed stacked UI with an on-demand YAML editor when draftable.
+  if (isPlainTextSources(key)) {
+    return editableValue(key, sourcesDisplayValue(value, options.draft), {
+      ...options,
+      kind: "text",
+    });
+  }
+  // Custom renderers: typed UI with an on-demand YAML editor when draftable.
   if (options.custom) {
     if (options.draft !== undefined) {
       return `<div class="property-complex" data-property-display>${options.custom}<button type="button" tabindex="-1" class="metadata-property-link-flair property-complex-edit" data-property-edit${attr("aria-label", `Edit ${key}`)}>${propertyFlairIcon("pencil")}</button></div>${editableYaml(key, options.draft).replace("<textarea ", "<textarea hidden ")}`;
@@ -128,12 +152,15 @@ function propertyTypeMeta(
   options: PropertyRowOptions,
 ): { okf: boolean; unknown: boolean; typeLabel: string; typeName: string } {
   const { kind } = options;
+  const namedText = isPlainTextSources(key);
   const okf =
+    !namedText &&
     !options.custom &&
     !options.editable &&
     options.draft !== undefined &&
     isOkfProvenance(key, value);
   const unknown =
+    !namedText &&
     !options.custom &&
     !options.editable &&
     !okf &&
@@ -141,10 +168,7 @@ function propertyTypeMeta(
     isUnknownPropertyValue(value);
   let typeLabel = propertyKindLabels[kind];
   let typeName: string = kind === "list" ? "multitext" : kind;
-  if (options.custom && key.toLowerCase() === "sources") {
-    typeLabel = "Sources";
-    typeName = "sources";
-  } else if (okf) {
+  if (okf) {
     const name = key.toLowerCase();
     typeLabel = name === "verified" ? "Verified" : "Generated";
     typeName = name === "verified" ? "verified" : "generated";
@@ -168,7 +192,10 @@ function propertyRow(
   );
   const warning = mismatchWarning(
     kind,
-    !unknown && !okf && !matchesPropertyKind(kind, value),
+    !isPlainTextSources(key) &&
+      !unknown &&
+      !okf &&
+      !matchesPropertyKind(kind, value),
   );
   const body = propertyBody(key, value, options);
   const icon = propertyIcon(key, value, unknown ? "unknown" : kind);

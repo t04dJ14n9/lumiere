@@ -64,7 +64,6 @@ import marp from "./marp/manifest";
 import okfCore from "./okfCore/manifest";
 import obsidianCompat from "./obsidianCompat/manifest";
 import graph from "./graph/manifest";
-import sourcesProperty from "./sourcesProperty/manifest";
 /**
  * Which plugins exist; nothing else. Their precedence is plugin-order.ts,
  * their dependencies plugin-graph.ts, and their lifecycle the kernel.
@@ -95,7 +94,6 @@ export const features: readonly Manifest[] = inPluginOrder(
     pagePreview,
     pasteHtml,
     properties,
-    sourcesProperty,
     search,
     smartLists,
     spellcheck,

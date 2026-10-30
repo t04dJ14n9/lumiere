@@ -36,8 +36,6 @@ export const FEATURE_ORDER = [
   // Table navigation claims override keys before Vim.
   "tables",
   "properties",
-  // Sources reads the properties renderer extension point.
-  "sourcesProperty",
   "inlineTitle",
   "pagePreview",
   // Claims video links before embeds renders them as images.

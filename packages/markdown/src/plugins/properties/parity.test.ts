@@ -74,6 +74,10 @@ test("reserved aliases and cssclasses types cannot be overridden by preferences"
     inferPropertyKind("CSSClasses", "wide", { cssclasses: "checkbox" }),
     "list",
   );
+  assert.equal(
+    inferPropertyKind("sources", ["paper"], { sources: "list" }),
+    "text",
+  );
 });
 
 test("row Delete removes, Escape returns to the document, and Backspace does not remove", () => {

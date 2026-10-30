@@ -17,6 +17,7 @@ const BUILTINS: Readonly<Record<string, WirePropertyType>> = Object.freeze({
   tags: "tags",
   aliases: "aliases",
   cssclasses: "multitext",
+  sources: "text",
 });
 
 export interface TypesDocument {

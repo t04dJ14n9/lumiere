@@ -28,7 +28,6 @@ export { sketchWebview } from "./sketch/webview";
 export { embedsWebview } from "./embeds/webview";
 export { pagePreviewWebview } from "./pagePreview/webview";
 export { propertiesWebview } from "./properties/webview";
-export { sourcesPropertyWebview } from "./sourcesProperty/webview";
 export { tablesWebview } from "./tables/webview";
 export { inlineTitleWebview } from "./inlineTitle/webview";
 export { tagsWebview } from "./tags/webview";
