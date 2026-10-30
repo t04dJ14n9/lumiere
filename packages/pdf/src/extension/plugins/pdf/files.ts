@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { PdfFiles } from "../../../shared/host";
-import { writeAtomicFile } from "../../../shared/atomic-write";
+import { writeAtomicFile } from "../../../host/atomic-write";
 
 /** PDF files through VS Code's file system, so remote and virtual files open too. */
 export const vscodePdfFiles: PdfFiles = {

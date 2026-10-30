@@ -160,8 +160,8 @@ export function useViewActions(
   navigation: Navigation,
   openSearch: () => void,
   setTool: (tool: ToolMode) => void,
-  setChoices: (choices: Partial<ViewChoices>) => void,
-  annotation: {
+  options: {
+    setChoices: (choices: Partial<ViewChoices>) => void;
     setAnnotationTool: (tool: AnnotationToolId | null) => void;
     undo: () => void;
     redo: () => void;
@@ -172,10 +172,10 @@ export function useViewActions(
     navigation,
     openSearch,
     setTool,
-    setAnnotationTool: annotation.setAnnotationTool,
-    annotationUndo: annotation.undo,
-    annotationRedo: annotation.redo,
-    setChoices,
+    setAnnotationTool: options.setAnnotationTool,
+    annotationUndo: options.undo,
+    annotationRedo: options.redo,
+    setChoices: options.setChoices,
     zoom,
     level: state.currentZoomLevel,
   };

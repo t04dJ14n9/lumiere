@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   open,
   sendAction,
@@ -8,7 +8,7 @@ import {
 } from "./viewer-support";
 
 /** EmbedPDF highlight marks use multiply blend rectangles inside the page. */
-async function highlightMarkCount(page: import("@playwright/test").Page) {
+async function highlightMarkCount(page: Page) {
   return page.evaluate(
     () =>
       document.querySelectorAll(

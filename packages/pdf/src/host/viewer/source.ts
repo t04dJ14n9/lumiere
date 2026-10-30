@@ -51,7 +51,9 @@ export class PdfSource {
   }
 
   async diskMatchesBase(): Promise<boolean> {
-    if (!this.sha256 || !this.files.hash) return true;
+    if (!this.sha256 || !this.files.hash) {
+      return true;
+    }
     try {
       return (await this.files.hash(this.uri)) === this.sha256;
     } catch {

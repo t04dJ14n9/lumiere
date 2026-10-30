@@ -1,6 +1,6 @@
 import { useAnnotationCapability } from "@embedpdf/plugin-annotation/react";
 import { useRegistry } from "@embedpdf/core/react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { PdfDocumentObject } from "@embedpdf/models";
 import {
   acceptAnnotationSave,
@@ -21,7 +21,7 @@ export function useAnnotationSaveSession(document: PdfDocumentObject): {
   const documentRef = useRef(document);
   documentRef.current = document;
 
-  const enqueueSave = (): void => {
+  const enqueueSave = useCallback((): void => {
     chain.current = chain.current.then(async () => {
       const state = annotationLoadState();
       const engine = registry?.getEngine();
@@ -41,10 +41,12 @@ export function useAnnotationSaveSession(document: PdfDocumentObject): {
         });
       }
     });
-  };
+  }, [registry]);
 
   useEffect(() => {
-    if (!annots) return;
+    if (!annots) {
+      return;
+    }
     return annots.onAnnotationEvent((event) => {
       if (
         event.type === "loaded" ||
@@ -55,7 +57,7 @@ export function useAnnotationSaveSession(document: PdfDocumentObject): {
       }
       enqueueSave();
     });
-  }, [annots, document.id, registry]);
+  }, [annots, document.id, enqueueSave]);
 
   return { retry: enqueueSave };
 }

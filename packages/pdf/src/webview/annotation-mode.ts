@@ -23,28 +23,20 @@ export function useAnnotationMode(documentId: string): {
   const { provides: history } = useHistoryCapability();
   const [annotationTool, setAnnotationToolState] =
     useState<AnnotationToolId | null>(null);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
+  const { canUndo, canRedo } = useAnnotationHistory(documentId, history);
 
   useEffect(() => {
-    if (!annots) return;
+    if (!annots) {
+      return;
+    }
     return annots.onActiveToolChange(({ documentId: id, tool }) => {
-      if (id !== documentId) return;
+      if (id !== documentId) {
+        return;
+      }
       const next = tool?.id;
       setAnnotationToolState(isAnnotationToolId(next) ? next : null);
     });
   }, [annots, documentId]);
-
-  useEffect(() => {
-    if (!history) return;
-    const scope = history.forDocument(documentId);
-    const refresh = (): void => {
-      setCanUndo(scope.canUndo(HISTORY_TOPIC) || scope.canUndo());
-      setCanRedo(scope.canRedo(HISTORY_TOPIC) || scope.canRedo());
-    };
-    refresh();
-    return scope.onHistoryChange(() => refresh());
-  }, [history, documentId]);
 
   const setAnnotationTool = useCallback(
     (tool: AnnotationToolId | null) => {
@@ -83,4 +75,25 @@ export function useAnnotationMode(documentId: string): {
     canUndo,
     canRedo,
   };
+}
+
+function useAnnotationHistory(
+  documentId: string,
+  history: ReturnType<typeof useHistoryCapability>["provides"],
+): { canUndo: boolean; canRedo: boolean } {
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  useEffect(() => {
+    if (!history) {
+      return;
+    }
+    const scope = history.forDocument(documentId);
+    const refresh = (): void => {
+      setCanUndo(scope.canUndo(HISTORY_TOPIC) || scope.canUndo());
+      setCanRedo(scope.canRedo(HISTORY_TOPIC) || scope.canRedo());
+    };
+    refresh();
+    return scope.onHistoryChange(() => refresh());
+  }, [history, documentId]);
+  return { canUndo, canRedo };
 }

@@ -27,6 +27,26 @@ export function AnnotationToolkit({
       role="group"
       aria-label="PDF annotation tools"
     >
+      <HistoryButtons canUndo={canUndo} canRedo={canRedo} run={run} />
+      <span className="separator" />
+      <ToolButtons annotationTool={annotationTool} run={run} />
+      <span className="separator" />
+      <ColorChips onColor={onColor} />
+    </span>
+  );
+}
+
+function HistoryButtons({
+  canUndo,
+  canRedo,
+  run,
+}: {
+  canUndo: boolean;
+  canRedo: boolean;
+  run: (action: ViewerAction) => void;
+}): React.JSX.Element {
+  return (
+    <>
       <button
         type="button"
         className="icon-button"
@@ -47,7 +67,19 @@ export function AnnotationToolkit({
       >
         <i className="codicon codicon-redo" aria-hidden="true" />
       </button>
-      <span className="separator" />
+    </>
+  );
+}
+
+function ToolButtons({
+  annotationTool,
+  run,
+}: {
+  annotationTool: AnnotationToolId | null;
+  run: (action: ViewerAction) => void;
+}): React.JSX.Element {
+  return (
+    <>
       {ANNOTATION_TOOL_IDS.map((id) => (
         <button
           key={id}
@@ -64,7 +96,17 @@ export function AnnotationToolkit({
           />
         </button>
       ))}
-      <span className="separator" />
+    </>
+  );
+}
+
+function ColorChips({
+  onColor,
+}: {
+  onColor: (color: string) => void;
+}): React.JSX.Element {
+  return (
+    <>
       {ANNOTATION_COLOR_PRESETS.map((color) => (
         <button
           key={color}
@@ -76,6 +118,6 @@ export function AnnotationToolkit({
           onClick={() => onColor(color)}
         />
       ))}
-    </span>
+    </>
   );
 }

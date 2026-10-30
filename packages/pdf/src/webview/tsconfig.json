@@ -5,6 +5,5 @@
     "jsx": "react-jsx",
     "types": []
   },
-  "include": ["./**/*.ts", "./**/*.tsx", "../shared/**/*.ts"],
-  "exclude": ["../shared/atomic-write.ts"]
+  "include": ["./**/*.ts", "./**/*.tsx", "../shared/**/*.ts"]
 }

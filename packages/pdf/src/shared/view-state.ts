@@ -109,8 +109,7 @@ export function parseViewState(value: unknown): ViewState | undefined {
     pageCount: report.pageCount,
     zoomPercent: Math.round(zoomPercent),
     fit: fit === "width" || fit === "page" ? fit : null,
-    tool:
-      tool === "region" ? "region" : tool === "annotate" ? "annotate" : "text",
+    tool: asToolMode(tool),
     pageLayout: report.pageLayout,
     scrollMode: report.scrollMode,
     scrollDirection: report.scrollDirection,
@@ -269,6 +268,14 @@ export function zoomLabel(view: ViewState): string {
     return `Fit Page (${view.zoomPercent}%)`;
   }
   return `${view.zoomPercent}%`;
+}
+
+/** Coerce a reported tool to a known mode; anything else is text. */
+function asToolMode(tool: unknown): ToolMode {
+  if (tool === "region" || tool === "annotate") {
+    return tool;
+  }
+  return "text";
 }
 
 function isCount(value: unknown): value is number {

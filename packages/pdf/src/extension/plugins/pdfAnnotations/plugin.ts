@@ -41,7 +41,9 @@ export const pdfAnnotationsPlugin: Plugin = {
       );
     };
 
-    for (const panel of panels.all) attach(panel);
+    for (const panel of panels.all) {
+      attach(panel);
+    }
     ctx.own(
       panels.onDidOpen((panel) => attach(panel)),
       "open listener",

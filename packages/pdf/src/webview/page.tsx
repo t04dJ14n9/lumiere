@@ -42,11 +42,52 @@ export function Page({
   region,
   onOpenPage,
 }: PageProps): React.JSX.Element {
-  const page = pageIndex + 1;
   const scale = width / Math.max(1, pdf.pages[pageIndex]?.size.width ?? width);
   const rotation = pageRotation(pdf, pageIndex);
-  const layer = { pageIndex, scale };
   const layers = (
+    <PageLayers
+      pdf={pdf}
+      pageIndex={pageIndex}
+      width={width}
+      height={height}
+      scale={scale}
+      rotation={rotation}
+      devicePixelRatio={devicePixelRatio}
+      highlight={highlight}
+      region={region}
+      onOpenPage={onOpenPage}
+    />
+  );
+  if (rotation === 0) {
+    return layers;
+  }
+  return (
+    <RotatedPage
+      pageIndex={pageIndex}
+      scale={scale}
+      size={{ width, height }}
+      rotation={rotation}
+    >
+      {layers}
+    </RotatedPage>
+  );
+}
+
+function PageLayers({
+  pdf,
+  pageIndex,
+  width,
+  height,
+  scale,
+  rotation,
+  devicePixelRatio,
+  highlight,
+  region,
+  onOpenPage,
+}: PageProps & { scale: number; rotation: number }): React.JSX.Element {
+  const page = pageIndex + 1;
+  const layer = { pageIndex, scale };
+  return (
     <PagePointerProvider
       documentId={DOCUMENT_ID}
       {...layer}
@@ -83,18 +124,6 @@ export function Page({
       />
       <TextSelection {...layer} />
     </PagePointerProvider>
-  );
-  return rotation === 0 ? (
-    layers
-  ) : (
-    <RotatedPage
-      pageIndex={pageIndex}
-      scale={scale}
-      size={{ width, height }}
-      rotation={rotation}
-    >
-      {layers}
-    </RotatedPage>
   );
 }
 

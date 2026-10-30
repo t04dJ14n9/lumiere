@@ -4,7 +4,7 @@ import { mkdtemp, readFile, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { writeAtomicFile } from "../../src/shared/atomic-write";
+import { writeAtomicFile } from "../../src/host/atomic-write";
 
 test("writeAtomicFile replaces target and returns sha256", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "lumiere-pdf-atomic-"));

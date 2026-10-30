@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { createPdfiumEngine } from "@embedpdf/engines/pdfium-direct-engine";
 import { PdfAnnotationSubtype, PdfBlendMode } from "@embedpdf/models";
-import { writeAtomicFile } from "../../src/shared/atomic-write";
+import { writeAtomicFile } from "../../src/host/atomic-write";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const wasmPath = path.join(
