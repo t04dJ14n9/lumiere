@@ -30,6 +30,7 @@ import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
+import { AnnotationToolkit } from "./annotation-toolbar";
 import { useAnnotationSaveSession } from "./annotation-session";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
@@ -67,7 +68,22 @@ export function Viewer({
           choices={choices}
           run={view.runAction}
           history={history}
+          annotationTool={view.annotation.annotationTool}
+          canUndo={view.annotation.canUndo}
+          canRedo={view.annotation.canRedo}
+          onAnnotationColor={view.annotation.setColor}
         />
+      )}
+      {tool === "annotate" && toolbar.mode !== "slim" && (
+        <div className="annotation-chrome-bar" role="toolbar" aria-label="PDF annotation bar">
+          <AnnotationToolkit
+            annotationTool={view.annotation.annotationTool}
+            canUndo={view.annotation.canUndo}
+            canRedo={view.annotation.canRedo}
+            run={view.runAction}
+            onColor={view.annotation.setColor}
+          />
+        </div>
       )}
       <div className="document" ref={view.documentArea}>
         {search.isOpen && (
