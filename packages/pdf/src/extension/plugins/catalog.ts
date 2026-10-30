@@ -3,6 +3,7 @@
  * @workshop/core), so this order only decides event and command precedence.
  *
  *   pdf          the viewer: custom editor, open editors, page/zoom/find, Open Location
+ *   pdfAnnotations conflict Reload/Keep mine and Retry for direct-to-PDF annotations
  *   pdfToolbar   where the controls are: status bar entries, the mode setting
  *   pdfOutline   the PDF Outline view in the Explorer
  *   pdfLookUp    macOS Look Up: a force click or the context menu opens the Dictionary
@@ -14,6 +15,7 @@
  */
 import { agentBridgePlugin } from "./agentBridge/plugin";
 import { ideContextPlugin } from "./ideContext/plugin";
+import { pdfAnnotationsPlugin } from "./pdfAnnotations/plugin";
 import { pdfPlugin } from "./pdf/plugin";
 import { pdfLookUpPlugin } from "./pdfLookUp/plugin";
 import { pdfSettingsPlugin } from "./pdfSettings/plugin";
@@ -26,6 +28,7 @@ import type { Plugin } from "@workshop/core";
 
 export const plugins: readonly Plugin[] = [
   pdfPlugin,
+  pdfAnnotationsPlugin,
   pdfHistoryPlugin,
   pdfToolbarPlugin,
   pdfOutlinePlugin,
