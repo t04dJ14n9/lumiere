@@ -29,10 +29,14 @@ import { SearchBar } from "./search-bar";
 import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
+import { useAnnotationMode } from "./annotation-mode";
+import { AnnotationToolkit } from "./annotation-toolbar";
+import { useAnnotationSaveSession } from "./annotation-session";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
 import { Toolbar } from "./toolbar";
+import type { ViewerAction } from "../shared/view-state";
 import { useViewActions, useViewReporting } from "./view-sync";
 import { useHostMessages } from "./host-messages";
 import { useWheelZoom } from "./wheel-zoom";
@@ -65,6 +69,19 @@ export function Viewer({
           choices={choices}
           run={view.runAction}
           history={history}
+          annotationTool={view.annotation.annotationTool}
+          canUndo={view.annotation.canUndo}
+          canRedo={view.annotation.canRedo}
+          onAnnotationColor={view.annotation.setColor}
+        />
+      )}
+      {tool === "annotate" && toolbar.mode !== "slim" && (
+        <AnnotationChromeBar
+          annotationTool={view.annotation.annotationTool}
+          canUndo={view.annotation.canUndo}
+          canRedo={view.annotation.canRedo}
+          run={view.runAction}
+          onColor={view.annotation.setColor}
         />
       )}
       <div className="document" ref={view.documentArea}>
@@ -84,6 +101,36 @@ export function Viewer({
           selection={view.selection}
         />
       </div>
+    </div>
+  );
+}
+
+function AnnotationChromeBar({
+  annotationTool,
+  canUndo,
+  canRedo,
+  run,
+  onColor,
+}: {
+  annotationTool: ReturnType<typeof useAnnotationMode>["annotationTool"];
+  canUndo: boolean;
+  canRedo: boolean;
+  run: (action: ViewerAction) => void;
+  onColor: (color: string) => void;
+}): React.JSX.Element {
+  return (
+    <div
+      className="annotation-chrome-bar"
+      role="toolbar"
+      aria-label="PDF annotation bar"
+    >
+      <AnnotationToolkit
+        annotationTool={annotationTool}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        run={run}
+        onColor={onColor}
+      />
     </div>
   );
 }
@@ -109,10 +156,15 @@ function useViewerState(pdf: PdfDocumentObject) {
   const [setting, setToolbar] = useState(currentToolbarSettings);
   const [zen, setZen] = useZen();
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
-  useViewReporting(navigation, tool, choices);
-  const runAction = useViewActions(navigation, search.open, setTool, (next) =>
-    setChoices((current) => ({ ...current, ...next })),
-  );
+  const annotation = useAnnotationMode(DOCUMENT_ID);
+  const annotationSave = useAnnotationSaveSession(pdf);
+  useViewReporting(navigation, tool, choices, annotation);
+  const runAction = useViewActions(navigation, search.open, setTool, {
+    setChoices: (next) => setChoices((current) => ({ ...current, ...next })),
+    setAnnotationTool: annotation.setAnnotationTool,
+    undo: annotation.undo,
+    redo: annotation.redo,
+  });
   useHostMessages({
     show: navigation.show,
     history,
@@ -125,6 +177,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     setMotionSetting,
     setChoices,
     setPageColors: rememberPageColors,
+    retryAnnotationSave: annotationSave.retry,
   });
   useViewerKeys({ selection, search, tool, setTool });
   return {
@@ -136,6 +189,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     search,
     documentArea,
     tool,
+    annotation,
     runAction,
     zen,
     toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
@@ -231,7 +285,7 @@ function useViewerKeys(state: {
   selection: Selection;
   search: ReturnType<typeof useSearch>;
   tool: string;
-  setTool: (tool: "text" | "region") => void;
+  setTool: (tool: "text" | "region" | "annotate") => void;
 }): void {
   const latest = useRef(state);
   latest.current = state;
@@ -253,7 +307,7 @@ function onEscape(state: {
   selection: Selection;
   search: ReturnType<typeof useSearch>;
   tool: string;
-  setTool: (tool: "text" | "region") => void;
+  setTool: (tool: "text" | "region" | "annotate") => void;
 }): void {
   const { search, selection, tool, setTool } = state;
   if (document.querySelector(".view-menu:popover-open")) {
@@ -261,6 +315,9 @@ function onEscape(state: {
   }
   if (search.isOpen) {
     search.close();
+  } else if (tool === "annotate") {
+    // Spec: Escape exits Annotate mode.
+    setTool("text");
   } else if (tool === "region" && !selection.region) {
     // With nothing selected, Escape puts down the Select Region tool.
     setTool("text");

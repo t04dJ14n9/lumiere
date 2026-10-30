@@ -6,7 +6,7 @@ import {
   type ViewerMessage,
   type ViewerPatch,
 } from "../../shared/messages";
-import type { PdfFiles, PdfWebview } from "../../shared/host";
+import type { PdfWebview } from "../../shared/host";
 import type { PdfLocation } from "../../shared/pdf-location";
 import type { HistorySnapshot } from "../../shared/pdf-history";
 import type { PdfSelection } from "../../shared/selection";
@@ -23,51 +23,18 @@ import { HistoryRequests } from "./history-requests";
 import { PdfNavigation } from "./navigation";
 import { viewerHtml } from "./page";
 import { PdfSelectionState, type SelectionSnapshot } from "./selection";
+import { AnnotationSave } from "./annotation-save";
 import { PdfSource } from "./source";
 import { createPdfViewId } from "./view-id";
+import type { ViewerPanelHost, ViewerPanelOptions } from "./panel-types";
+export type {
+  PluginMessage,
+  ViewerPanelHost,
+  ViewerPanelOptions,
+} from "./panel-types";
 
 /** How long Copy Link for Agent waits for the viewer to report its selection. */
 const SELECTION_REPORT_TIMEOUT_MS = 1000;
-
-/** Messages the panel leaves to plugins (see `PdfViewerPanels.handle`). */
-export type PluginMessage = Extract<
-  ViewerMessage,
-  {
-    type:
-      | "copyLinkForAgent"
-      | "toggleOutline"
-      | "floatingDock"
-      | "lookUp"
-      | "zen"
-      | "historyJump"
-      | "historyTraverse";
-  }
->;
-
-/** What a panel needs from its host beyond its page. */
-export interface ViewerPanelHost {
-  readonly files: PdfFiles;
-  /** Tell the reader something went wrong (VS Code: an error notification). */
-  error(message: string): void;
-  /** A web or mail link the reader clicked in the PDF. */
-  openExternal(url: string): Promise<void>;
-  /**
-   * A view action came from outside the viewer (a status bar entry, a title
-   * button, a picker), which left the keyboard focus there, where the arrow
-   * keys do nothing: give it back to the viewer.
-   */
-  refocus(): void;
-}
-
-export interface ViewerPanelOptions {
-  /** The toolbar layout for the first paint. */
-  toolbar: ToolbarSettings;
-  settings: ViewSettings;
-  position: ReadingPosition | undefined;
-  savePosition(position: ReadingPosition): void;
-  /** Hand a message the panel does not handle itself to the plugin that does. */
-  route(message: PluginMessage): Promise<void>;
-}
 
 /**
  * One open PDF editor, in any host: its page and the state the viewer
@@ -98,6 +65,15 @@ export class PdfViewerPanel {
   private readonly selected = new Emitter<SelectionSnapshot | undefined>();
   /** Fires with each new selection (or none), after `onDidChange`. */
   readonly onDidChangeSelection = this.selected.event;
+  private readonly annotationConflict = new Emitter<{
+    data: ArrayBuffer;
+    load: number;
+  }>();
+  /** Disk diverged from the editor's base bytes during an annotation save. */
+  readonly onAnnotationConflict = this.annotationConflict.event;
+  private readonly annotationSaveFailed = new Emitter<string>();
+  /** An annotation overwrite failed (I/O error). */
+  readonly onAnnotationSaveFailed = this.annotationSaveFailed.event;
 
   private readonly source: PdfSource;
   private readonly selectionState = new PdfSelectionState();
@@ -118,6 +94,7 @@ export class PdfViewerPanel {
     this.post(message),
   );
   private historyState = { back: false, forward: false };
+  private readonly annotations: AnnotationSave;
 
   constructor(
     /** The file's URI, without a fragment. */
@@ -134,11 +111,25 @@ export class PdfViewerPanel {
       changed: () => void this.load(),
       failed: (message) => host.error(message),
     });
+    this.annotations = new AnnotationSave(fileUri, host.files, this.source, {
+      isCurrentLoad: (load) => this.isCurrentLoad(load),
+      post: (message) => this.post(message),
+      error: (message) => host.error(message),
+      conflict: (payload) => this.annotationConflict.fire(payload),
+      failed: (message) => this.annotationSaveFailed.fire(message),
+    });
     // The listener's promise goes back to the host (tests await it).
     const stopReceiving = webview.onMessage((message) => this.receive(message));
-    this.disposables.push(this.changed, this.selected, this.source, {
-      dispose: stopReceiving,
-    });
+    this.disposables.push(
+      this.changed,
+      this.selected,
+      this.annotationConflict,
+      this.annotationSaveFailed,
+      this.source,
+      {
+        dispose: stopReceiving,
+      },
+    );
     webview.setHTML(viewerHtml(webview, options.toolbar));
   }
 
@@ -313,6 +304,18 @@ export class PdfViewerPanel {
     }
   }
 
+  async reloadFromDisk(): Promise<void> {
+    await this.load();
+  }
+
+  async keepMine(data: ArrayBuffer, load: number): Promise<void> {
+    await this.annotations.keepMine(data, load);
+  }
+
+  postAnnotationRetry(): void {
+    this.post({ type: "annotationRetry", load: this.loads });
+  }
+
   private async receive(raw: unknown): Promise<void> {
     const message = parseViewerMessage(raw);
     if (!message) {
@@ -345,6 +348,16 @@ export class PdfViewerPanel {
       case "historyTraverse":
         if (this.isCurrentLoad(message.load)) {
           await this.options.route(message);
+        }
+        break;
+      case "annotationSave":
+        await this.annotations.save(message);
+        break;
+      case "annotationSaveFailed":
+        if (this.isCurrentLoad(message.load)) {
+          this.annotations.markFailed();
+          this.host.error(`Could not save PDF annotations: ${message.message}`);
+          this.annotationSaveFailed.fire(message.message);
         }
         break;
       default:
@@ -440,6 +453,7 @@ export class PdfViewerPanel {
       load: this.loads,
       ...this.webview.deliver(bytes.data, this.loads),
       settings: this.settings,
+      sha256: bytes.sha256,
       ...(this.position ? { position: this.position } : {}),
     });
     this.history.newViewer();
