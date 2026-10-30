@@ -155,3 +155,19 @@ test("HTML conversion is suppressed inside literal code", () => {
     assert.equal(acceptsHtml(state), false);
   }
 });
+
+test("HTML img data:image stays as markdown so attachments can save it", () => {
+  assert.equal(
+    markdownFromHtml('<img src="data:image/png;base64,aaa" alt="green">'),
+    "![green](data:image/png;base64,aaa)",
+  );
+  assert.equal(
+    markdownFromHtml('<img src="data:image/jpeg;base64,/9j/" alt="x">'),
+    "![x](data:image/jpeg;base64,/9j/)",
+  );
+  // Non-image data URIs remain stripped (XSS).
+  assert.equal(
+    markdownFromHtml('<img src="data:text/html,bad" alt="safe">'),
+    "safe",
+  );
+});

@@ -7,6 +7,24 @@ export function safeDestination(value: string): string | undefined {
   }
   return value.trim();
 }
+
+/**
+ * Image `src` may be http(s) or a `data:image/…` URI (attachments decode and
+ * save those). Other `data:` schemes stay blocked (XSS via data:text/html).
+ */
+export function safeImageDestination(value: string): string | undefined {
+  const compact = Array.from(value.trim())
+    .filter((character) => character.charCodeAt(0) > 32)
+    .join("");
+  if (/^(javascript|vbscript):/i.test(compact)) {
+    return undefined;
+  }
+  if (/^data:/i.test(compact) && !/^data:image\//i.test(compact)) {
+    return undefined;
+  }
+  return value.trim();
+}
+
 /**
  * A link or image address as Obsidian writes it: spaces as `%20`, which
  * would otherwise end the address, and parentheses escaped.
@@ -45,7 +63,7 @@ export function imageMarkdown(node: HTMLElement): string {
     const label = alt && alt !== target ? `|${wikiPart(alt)}` : "";
     return `![[${wikiPart(target)}${label}]]`;
   }
-  const src = safeDestination(node.getAttribute("src") ?? "");
+  const src = safeImageDestination(node.getAttribute("src") ?? "");
   return src
     ? `![${alt.replace(/([\\\]])/g, "\\$1")}](${destination(src)}${titlePart(node)})`
     : alt;

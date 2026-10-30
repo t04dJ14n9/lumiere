@@ -43,6 +43,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `autoPair` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: pairs, wrap-only = ~ $ %, fence completion | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `smartLists` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: Enter, Shift+Enter, Backspace and quotes | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `pasteHtml` | 2026-10-17, measured by pasting the same HTML into a throwaway vault over the DevTools protocol: 60 cases (formatting, headings, lists, tables, code, quotes, links, images, Google Docs and GitHub markup) | Matches the measured Markdown in 59; Markdown characters in the text are escaped on purpose (src/plugins/pasteHtml/README.md) | Differential paste probe (Obsidian and the browser harness); unit tests pin each rule | behaviour measured; visual parity not observed |
+| `attachments` | not observed | Drop/paste/HTML-paste images into `files.attachmentFolder` with timestamp names; Import Asset removed | Unit tests (attachments core, sketch placement) | not observed |
 | `spellcheck` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `formatting` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: Cmd+B, Cmd+I, Cmd+K and Cmd+/ | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `copyLinkForAgent` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -232,6 +233,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.toggleChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: lumiere.markdown.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.attachments.enabled | not observed | Default on; saves dropped/pasted images under `files.attachmentFolder` | Unit tests (attachments core) | not observed |
 | Setting: lumiere.markdown.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: lumiere.markdown.plugins.backlinks.enabled |
 | Setting: lumiere.markdown.backlinks.sortOrder | not observed | not manually observed | Manual scenario pending | not observed | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
@@ -333,7 +335,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
 | Command: lumiere.markdown.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
 | Command: lumiere.markdown.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |
-| Command: lumiere.markdown.assets.import | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.bridge.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.bridge.envelope | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.marp.preview | not observed | not manually observed | Manual scenario pending | not observed |
@@ -347,12 +348,10 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.wiki.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.wiki.showLayout | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.wiki.refresh | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: lumiere.markdown.plugins.assets.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.bridge.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.marp.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.scratch.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.wiki.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: lumiere.markdown.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: lumiere.markdown.backlinks.sortByAlphabetical | not observed | not manually observed | Manual scenario pending | not observed |

@@ -156,6 +156,7 @@ function unavailableFiles(): WorkspaceFiles {
   return {
     readText: async () => undefined,
     writeText: unavailable,
+    writeBytes: unavailable,
     list: async () => undefined,
     mkdir: unavailable,
     copy: unavailable,

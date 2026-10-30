@@ -84,11 +84,6 @@
         "icon": "$(comment-discussion)"
       },
       {
-        "command": "lumiere.markdown.assets.import",
-        "title": "Import Asset",
-        "category": "Lumière"
-      },
-      {
         "command": "lumiere.markdown.backlinks.sortByAlphabetical",
         "title": "✓ File name (A to Z)",
         "category": "Lumière"
@@ -1552,10 +1547,6 @@
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge"
         },
         {
-          "command": "lumiere.markdown.assets.import",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.assets.enabled"
-        },
-        {
           "command": "lumiere.markdown.backlinks.sortByAlphabetical",
           "when": "false"
         },
@@ -2782,11 +2773,11 @@
             "scope": "resource",
             "description": "Copy selected text with a link to its saved source lines, for an agent."
           },
-          "lumiere.markdown.plugins.assets.enabled": {
+          "lumiere.markdown.plugins.attachments.enabled": {
             "type": "boolean",
             "default": true,
             "scope": "resource",
-            "description": "Import a file into the project's assets folder and insert a portable Markdown link."
+            "description": "Save dropped, pasted, and HTML-paste images into the vault attachment folder with Obsidian-style embeds."
           },
           "lumiere.markdown.plugins.autoPair.enabled": {
             "type": "boolean",
@@ -3064,12 +3055,6 @@
             "scope": "resource",
             "description": "Word and character count of the active note, or of the selection, in the status bar."
           },
-          "lumiere.markdown.assets.path": {
-            "type": "string",
-            "default": "",
-            "description": "Project-relative assets folder used when the folder has no .wiki/layout.json. Empty uses assets. The folder is created on import, not on open.",
-            "scope": "resource"
-          },
           "lumiere.markdown.autoPair.brackets": {
             "type": "boolean",
             "default": true,
@@ -3283,7 +3268,7 @@
           "lumiere.markdown.files.attachmentFolder": {
             "type": "string",
             "default": "",
-            "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+            "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Dropped, pasted, and HTML-paste images are saved here under timestamp names.",
             "scope": "resource"
           },
           "lumiere.markdown.marp.open": {

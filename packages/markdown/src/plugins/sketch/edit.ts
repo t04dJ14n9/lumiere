@@ -24,7 +24,7 @@ export interface SketchHost {
   readonly ink: InkService;
   readonly files: Pick<
     WorkspaceFiles,
-    "readText" | "writeText" | "list" | "mkdir"
+    "readText" | "writeText" | "writeBytes" | "list" | "mkdir"
   >;
   readonly vaults: Pick<Vaults, "locate">;
   readonly error: (message: string) => void;

@@ -53,12 +53,9 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   note and does not open a chat. **Copy Bridge Envelope** copies the
   versioned JSON selection (`docs/bridge-envelope.md`). Agent PDF Viewer
   is optional.
-- **Import Asset** copies a file into the project's assets folder (created
-  then) and inserts a portable Markdown link. **New Scratch Note** writes
-  a temporary note outside the wiki; **Promote Scratch Note** files it
-  only when you ask. **Open Marp Preview to the Side** and **Export Marp
-  Slide Deck** hand a `marp: true` deck to VS Code and Marp. A deck inside
-  the wiki bundle is not wrapped into a page.
+- **Attachments** save dropped, pasted, and HTML-paste images into
+  `files.attachmentFolder` under `YYYY-MM-DD HH.mm.ext` names with
+  Markdown or WikiLink embeds from the Links settings.
 - **Open Copied Agent Reference** opens `@Note.md#30-32` in Markdown
   Workshop and selects those source lines. It prefills the reference from
   the clipboard for you to confirm or replace; surrounding quotes are fine.
