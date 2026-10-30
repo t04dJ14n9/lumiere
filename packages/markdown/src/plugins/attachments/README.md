@@ -27,10 +27,12 @@ VS Code disables pointer events on custom-editor webviews while Explorer
 resources are dragged unless Shift is held, so the workbench opens the file as
 a pinned tab (`EditorDropTarget` forces `pinned: true`) instead of delivering
 `drop` to the page. There is no extension API to intercept those drops on the
-webview; the host watches pinned media tab opens instead: when the prior active
+webview; the VS Code adapter watches pinned media tab opens instead (see
+`src/host/attachments-explorer-reclaim.ts`, wired through
+`customEditors.registerExplorerAttachmentReclaim`): when the prior active
 editor in that column was a Lumière note that is still open, it closes the
 media tab, copies the file into `files.attachmentFolder` under a timestamp
-name, and inserts the embed into the note.
+name, and inserts the embed into the note. Portable hosts omit the hook.
 
 Sketch placement uses the same shared helpers, so sketches and pasted images
 share one folder and link story.
@@ -39,8 +41,8 @@ share one folder and link story.
 
 - `manifest.ts`: feature switch.
 - `protocol.ts`: webview → host `save` / `importUrl` requests.
-- `host.ts`: write into the vault; bind each open note page; reclaim Explorer
-  open-on-drop tabs.
+- `host.ts`: write into the vault; bind each open note page; opt into Explorer
+  reclaim when the adapter offers it (no `vscode` import).
 - `webview.ts`: DnD, clipboard image paste, HTML image rewrite.
 
 ## Settings

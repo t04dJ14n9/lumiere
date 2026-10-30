@@ -3,7 +3,12 @@ import {
   MARKDOWN_EDITOR,
   type EditorProvider,
 } from "../../shared/editor-provider";
-import type { CustomEditors, PanelShell } from "../../shared/host";
+import type {
+  CustomEditors,
+  ExplorerAttachmentReclaimHandlers,
+  PanelShell,
+} from "../../shared/host";
+import { registerAttachmentsExplorerReclaim } from "../attachments-explorer-reclaim";
 import { registerEditor } from "../editor-panels";
 import type { NativeNavigation } from "../navigation";
 import { registerReclaim } from "../reclaim";
@@ -22,6 +27,9 @@ export function createCustomEditors(options: {
   return {
     register: (provider, open) =>
       registerTrackedEditor({ ...options, provider, open }),
+    registerExplorerAttachmentReclaim: (
+      handlers: ExplorerAttachmentReclaimHandlers,
+    ) => registerAttachmentsExplorerReclaim(handlers),
   };
 }
 

@@ -5,19 +5,18 @@
  *
  * Explorer drops without Shift never reach the webview (VS Code disables
  * pointer events on the iframe unless Shift). Those drops open a pinned tab
- * (EditorDropTarget sets pinned:true); we reclaim matching pinned media tabs
- * back into timestamp attachments. Preview (single-click) opens are left alone.
+ * (EditorDropTarget sets pinned:true); the VS Code adapter reclaim hook
+ * (`customEditors.registerExplorerAttachmentReclaim`) converts matching
+ * pinned media tabs back into timestamp attachments. Preview (single-click)
+ * opens are left alone. Portable hosts omit the hook.
  */
-import * as vscode from "vscode";
 import type { Context, Plugin, PluginHandle } from "@workshop/core";
 import {
   decodeBase64,
   insertEmbed,
   loadAttachmentSource,
   saveAttachment,
-  shouldReclaimExplorerOpen,
 } from "../../attachments";
-import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { asString } from "../../shared/values";
 import type { EditorPanel } from "../editor/api";
 import type {} from "../vault/api";
@@ -41,6 +40,7 @@ export const attachmentsHost: Plugin = {
       "dialogs",
       "hostDocuments",
     ],
+    optional: ["customEditors"],
   },
   apply(ctx) {
     answerNotePages(ctx);
@@ -84,117 +84,43 @@ function answerNotePages(ctx: Context): void {
 }
 
 /**
- * Track which Lumière note was active per column, then convert Explorer
- * open-on-drop pinned media tabs into attachments on that note.
+ * When the VS Code adapter offers Explorer drop reclaim, convert matching
+ * pinned media tabs into attachments on the prior Lumière note.
  */
 function reclaimExplorerOpens(ctx: Context): void {
-  /** viewColumn → Lumière note URI last known active in that column. */
-  const priorLumiere = new Map<number, string>();
-  const syncPrior = () => {
-    for (const group of vscode.window.tabGroups.all) {
-      const column = group.viewColumn;
-      if (column === undefined) {
-        continue;
-      }
-      const active = group.activeTab;
-      if (active && isLumiereTab(active)) {
-        const uri = tabUri(active)?.toString();
-        if (uri) {
-          priorLumiere.set(column, uri);
-          continue;
+  const register = ctx.customEditors?.registerExplorerAttachmentReclaim;
+  if (!register) {
+    return;
+  }
+  ctx.effect(() =>
+    register({
+      reclaim: async ({ resourceUri, column, lumiereUri }) => {
+        const panel = ctx.editors
+          .all()
+          .find(
+            (item) =>
+              item.document.uri === lumiereUri && item.column === column,
+          );
+        if (!panel) {
+          return;
         }
-      }
-      // Clear when another editor is active so a later media open is not
-      // mistaken for a drop onto this note.
-      priorLumiere.delete(column);
-    }
-  };
-  syncPrior();
-  ctx.effect(() => {
-    const sub = vscode.window.tabGroups.onDidChangeTabs((event) => {
-      const victims = [...event.opened];
-      // Snapshot priors before syncing — opens have already stolen active.
-      void reclaimOpenedTabs(ctx, victims, priorLumiere).finally(syncPrior);
-    });
-    return () => sub.dispose();
-  });
-}
-
-async function reclaimOpenedTabs(
-  ctx: Context,
-  opened: readonly vscode.Tab[],
-  priorLumiere: ReadonlyMap<number, string>,
-): Promise<void> {
-  for (const tab of opened) {
-    await reclaimOneTab(ctx, tab, priorLumiere);
-  }
-}
-
-async function reclaimOneTab(
-  ctx: Context,
-  tab: vscode.Tab,
-  priorLumiere: ReadonlyMap<number, string>,
-): Promise<void> {
-  const resource = tabUri(tab);
-  const column = tab.group.viewColumn;
-  if (!resource || column === undefined) {
-    return;
-  }
-  const priorNote = priorLumiere.get(column);
-  const lumiereTab = tab.group.tabs.find(isLumiereTab);
-  const lumiereUri = lumiereTab ? tabUri(lumiereTab)?.toString() : undefined;
-  if (
-    !shouldReclaimExplorerOpen({
-      openedPath: resource.fsPath || resource.path,
-      isPreview: tab.isPreview,
-      groupHadLumiereNote: Boolean(lumiereUri),
-      priorActiveWasLumiere: Boolean(
-        priorNote && lumiereUri && priorNote === lumiereUri,
-      ),
-    })
-  ) {
-    return;
-  }
-  const panel = ctx.editors
-    .all()
-    .find((item) => item.document.uri === lumiereUri && item.column === column);
-  if (!panel) {
-    return;
-  }
-
-  // Close the workbench's open-on-drop tab and put the note back in front.
-  try {
-    await vscode.window.tabGroups.close(tab, true);
-  } catch {
-    // Tab may already be gone.
-  }
-  panel.reveal();
-
-  const saved = await importUrlForPanel(ctx, panel, resource.toString());
-  if (!saved.ok || !saved.embed) {
-    return;
-  }
-  const snapshot = await ctx.editors.capture(panel.id).catch(() => undefined);
-  const edit = insertEmbed(
-    panel.document.getText(),
-    snapshot?.state.head,
-    saved.embed,
+        panel.reveal();
+        const saved = await importUrlForPanel(ctx, panel, resourceUri);
+        if (!saved.ok || !saved.embed) {
+          return;
+        }
+        const snapshot = await ctx.editors
+          .capture(panel.id)
+          .catch(() => undefined);
+        const edit = insertEmbed(
+          panel.document.getText(),
+          snapshot?.state.head,
+          saved.embed,
+        );
+        await ctx.hostDocuments.apply(panel.document, [edit]);
+      },
+    }),
   );
-  await ctx.hostDocuments.apply(panel.document, [edit]);
-}
-
-function isLumiereTab(tab: vscode.Tab): boolean {
-  const input = tab.input;
-  return (
-    typeof vscode.TabInputCustom === "function" &&
-    input instanceof vscode.TabInputCustom &&
-    input.viewType === MARKDOWN_EDITOR.viewType
-  );
-}
-
-function tabUri(tab: vscode.Tab): vscode.Uri | undefined {
-  const input = tab.input as { uri?: vscode.Uri } | undefined;
-  return input?.uri;
 }
 
 async function saveForPanel(
@@ -216,7 +142,13 @@ async function importUrlForPanel(
 ): Promise<SaveResult> {
   const loaded = await loadAttachmentSource(url, {
     fetch: (target) => fetch(target),
-    readFile: readUriBytes,
+    readFile: async (uri) => {
+      try {
+        return await ctx.workspace.read(uri);
+      } catch {
+        return undefined;
+      }
+    },
   });
   if (!loaded) {
     return fail(ctx, "Could not download or read that image.");
@@ -255,14 +187,6 @@ async function writeAttachment(
     const message =
       error instanceof Error ? error.message : "Could not save the attachment.";
     return fail(ctx, message);
-  }
-}
-
-async function readUriBytes(uri: string): Promise<Uint8Array | undefined> {
-  try {
-    return await vscode.workspace.fs.readFile(vscode.Uri.parse(uri));
-  } catch {
-    return undefined;
   }
 }
 
