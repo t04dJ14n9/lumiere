@@ -52,6 +52,17 @@ test("mermaid fence keeps overflow-x auto", () => {
   assert.match(host, /overflow-x\s*:\s*auto/);
 });
 
+test("wide mermaid scrolls inside the column instead of widening the note", () => {
+  const host = css.match(
+    /pre\[data-fence="mermaid"\]:has\(> svg\)\s*\{[^}]*\}/,
+  )?.[0];
+  assert.ok(host);
+  // Stops the SVG min-content width from becoming the note's flex min-width.
+  assert.match(host, /contain\s*:\s*inline-size/);
+  assert.match(host, /max-width\s*:\s*100%/);
+  assert.match(host, /overflow-y\s*:\s*hidden/);
+});
+
 test("dark Mermaid SVG uses Obsidian invert filter", () => {
   assert.match(
     css,

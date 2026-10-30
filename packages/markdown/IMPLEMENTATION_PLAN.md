@@ -6320,3 +6320,19 @@ A caret at offset 0 is still not a match. The jump and the settled open
 are `docs/pr-screenshots/459/02-before-lumiere-top.png` and
 `06-after-long-first-paint.png` (the other files in that directory are the
 plain-text `sources` shots).
+
+## Mermaid architecture diagrams stay inside the column — 2026-10-30
+
+Nested `flowchart` SVGs are native width (`useMaxWidth: false`), often
+several thousand pixels. The fence had `overflow-x: auto`, but the SVG's
+min-content width became `.cm-content`'s (a flex item, `min-width: auto`).
+The fence grew to the SVG, so the overflow never scrolled. The note widened
+past the pane and `#app { overflow: hidden }` cut the drawing: subgraphs
+and arrows stopped at the window edge, and a later diagram sat in that same
+over-wide fence (empty region beside a centred SVG). The viewBox already
+held every node; staging `contain: paint` was not the clip.
+
+The fence now has `contain: inline-size` and `max-width: 100%`, with
+`overflow-y: hidden` so the horizontal scrollport does not also take the
+vertical wheel. A wide SVG scrolls inside the column. A small one stays
+its native size, centred. Dark mode is still the CSS invert.
