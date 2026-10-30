@@ -35,7 +35,7 @@ import {
   currentToolbarSettings,
   rememberToolbarSettings,
 } from "./toolbar-settings";
-import { FloatingToolbar } from "./floating-toolbar";
+import { rememberPageColors } from "./page-colors";
 import { Toolbar } from "./toolbar";
 import { useViewActions, useViewReporting } from "./view-sync";
 import { useHostMessages } from "./host-messages";
@@ -43,8 +43,8 @@ import { useWheelZoom } from "./wheel-zoom";
 import { useJumpHistory } from "./jump-history";
 
 /**
- * The open PDF: the slim or floating bar (unless the controls are in VS
- * Code's own UI or hidden), an optional search bar, and the scrolling pages.
+ * The open PDF: an optional search bar and the scrolling pages. Controls
+ * live on the VS Code status bar (or commands when toolbar.mode is none).
  */
 export function Viewer({
   document: pdf,
@@ -53,7 +53,6 @@ export function Viewer({
 }): React.JSX.Element {
   const view = useViewerState(pdf);
   const { choices, smooth, toolbar, tool, navigation, history, search } = view;
-  const bars = { navigation, tool, choices, run: view.runAction, history };
   return (
     <div
       className={`viewer tool-${tool} toolbar-${toolbar.mode}${smooth ? " smooth-motion" : ""}`}
@@ -63,16 +62,16 @@ export function Viewer({
       data-scroll-direction={choices.scrollDirection}
     >
       <CopyToClipboard />
-      {toolbar.mode === "slim" && <Toolbar {...bars} />}
+      {toolbar.mode === "slim" && (
+        <Toolbar
+          navigation={navigation}
+          tool={tool}
+          choices={choices}
+          run={view.runAction}
+          history={history}
+        />
+      )}
       <div className="document" ref={view.documentArea}>
-        {toolbar.mode === "floating" && (
-          <FloatingToolbar
-            {...bars}
-            dock={toolbar.dock}
-            onDock={view.dockToolbar}
-            zen={view.zen}
-          />
-        )}
         {search.isOpen && (
           <SearchBar
             navigation={navigation}
@@ -129,6 +128,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     setToolbar,
     setMotionSetting,
     setChoices,
+    setPageColors: rememberPageColors,
   });
   useViewerKeys({ selection, search, tool, setTool });
   return {
@@ -143,8 +143,6 @@ function useViewerState(pdf: PdfDocumentObject) {
     runAction,
     zen,
     toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
-    dockToolbar: (dock: ToolbarSettings["dock"]) =>
-      setToolbar((current) => rememberToolbarSettings({ ...current, dock })),
   };
 }
 

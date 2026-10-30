@@ -7,6 +7,7 @@ import { currentHostGeneration, listenToHost } from "./host";
 import type { useJumpHistory } from "./jump-history";
 import type { Navigation } from "./navigation";
 import { currentViewSettings, rememberViewSettings } from "./reading-position";
+import { rememberPageColors } from "./page-colors";
 import { rememberToolbarSettings } from "./toolbar-settings";
 import type { useViewActions } from "./view-sync";
 
@@ -21,6 +22,7 @@ export interface HostMessageHandlers {
   setToolbar: (toolbar: ToolbarSettings) => void;
   setMotionSetting: (setting: ViewSettings["smoothScrolling"]) => void;
   setChoices: React.Dispatch<React.SetStateAction<ViewChoices>>;
+  setPageColors: (effective: "normal" | "dark") => void;
 }
 
 /** What the extension asks of this viewer: history, actions and settings. */
@@ -79,6 +81,9 @@ function handleHostMessage(
       return;
     case "toolbar":
       handlers.setToolbar(rememberToolbarSettings(message.toolbar));
+      return;
+    case "pageColors":
+      handlers.setPageColors(rememberPageColors(message.effective));
       return;
   }
 }

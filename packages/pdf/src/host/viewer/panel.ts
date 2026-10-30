@@ -16,6 +16,7 @@ import {
   positionFromView,
   type ReadingPosition,
 } from "../../shared/reading-position";
+import type { EffectivePageColors } from "../../shared/page-colors";
 import type { ViewSettings } from "../../shared/view-settings";
 import { Emitter, type Subscription } from "../events";
 import { HistoryRequests } from "./history-requests";
@@ -111,6 +112,7 @@ export class PdfViewerPanel {
   private position: ReadingPosition | undefined;
   private settings: ViewSettings;
   private toolbar: ToolbarSettings;
+  private pageColorsMode: EffectivePageColors = "normal";
   private lastJump = 0;
   private readonly history = new HistoryRequests((message) =>
     this.post(message),
@@ -185,6 +187,25 @@ export class PdfViewerPanel {
     }
     this.historyState = { back, forward };
     this.post({ type: "historyState", back, forward });
+    this.changed.fire();
+  }
+
+  get canHistoryBack(): boolean {
+    return this.historyState.back;
+  }
+
+  get canHistoryForward(): boolean {
+    return this.historyState.forward;
+  }
+
+  get pageColors(): EffectivePageColors {
+    return this.pageColorsMode;
+  }
+
+  /** Effective page colors for the viewer (host owns Follow resolution). */
+  setPageColors(effective: EffectivePageColors): void {
+    this.pageColorsMode = effective;
+    this.post({ type: "pageColors", effective });
   }
 
   cancelHistoryRestore(): void {
@@ -271,7 +292,7 @@ export class PdfViewerPanel {
     this.post({ type: "lookUp", enabled });
   }
 
-  /** Zen mode is on or off: the viewer shows a floating bar for as long as it lasts. */
+  /** Zen mode is on or off: status bar is hidden by VS Code; controls are command-only. */
   setZen(on: boolean): void {
     this.zen = on;
     this.post({ type: "zen", on });
@@ -427,6 +448,7 @@ export class PdfViewerPanel {
     // A rebuilt page starts from the original HTML attributes. Rehydrate
     // changes made since the panel opened, after load retires its old inbox.
     this.post({ type: "toolbar", toolbar: this.toolbar });
+    this.post({ type: "pageColors", effective: this.pageColorsMode });
     this.post({ type: "historyState", ...this.historyState });
     if (this.lookUp) {
       this.post({ type: "lookUp", enabled: true });

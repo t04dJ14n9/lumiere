@@ -67,9 +67,26 @@ input {
   height: 100%;
 }
 
-/* Without the slim bar, the pages take the whole viewer. */
+/* Pages fill the viewer (slim toolbar mode removed). */
 .viewer:not(.toolbar-slim) {
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+/* Dark paper overlays: light marks on near-#1e1e1e pages (when engine hook applies). */
+#root[data-page-colors="dark"] .viewer {
+  --selection-fill: color-mix(
+    in srgb,
+    oklch(from var(--selection-source) clamp(0.55, l, 0.85) c h / 1) 45%,
+    #1e1e1e
+  );
+  --selection-soft: oklch(
+    from var(--selection-source) clamp(0.55, l, 0.85) c h / 0.35
+  );
+  --paper-accent: oklch(
+    from var(--vscode-textLink-foreground, #3794ff) max(l, 0.65) c h
+  );
+  --paper-accent-soft: oklch(from var(--paper-accent) l c h / 0.25);
+  --selection-edge: var(--paper-accent);
 }
 
 .document {

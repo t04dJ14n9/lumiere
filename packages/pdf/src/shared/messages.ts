@@ -19,7 +19,8 @@
  *    │  action { action } ──────►         page, zoom, find or tool, from a command
  *    │  toolbar { toolbar } ────►         the toolbar setting changed
  *    │  lookUp { enabled } ─────►         macOS Look Up is on or off
- *    │  zen { on } ─────────────►         zen mode is on or off (floating bar while it lasts)
+ *    │  zen { on } ─────────────►         zen mode is on or off (command-only while it lasts)
+    │  pageColors { effective } ►         normal | dark paper (host resolved Follow)
  *    │  ◄──────────── zen                 Exit zen pressed, or full-screen zen ended
  *    │  ◄──────────── lookUp              the word under a force click (open),
  *    │                                    or under a right click (to look up
@@ -166,9 +167,11 @@ export type HostMessage =
   | { type: "lookUpRequest" }
   /** Report the current selection now: Copy Link for Agent ran before the viewer's report arrived. */
   | { type: "reportSelection" }
-  /** Zen mode is on or off: the viewer shows a floating bar while it lasts. */
+  /** Zen mode is on or off: status bar hidden; controls are command-only. */
   | { type: "zen"; on: boolean }
-  | { type: "viewSettings"; settings: ViewSettings };
+  | { type: "viewSettings"; settings: ViewSettings }
+  /** Host-resolved page colors; webview must not re-derive theme kind. */
+  | { type: "pageColors"; effective: "normal" | "dark" };
 
 const MAX_OUTLINE_ITEMS = 10_000;
 const MAX_OUTLINE_DEPTH = 32;
