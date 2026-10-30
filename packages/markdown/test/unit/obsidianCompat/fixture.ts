@@ -143,6 +143,7 @@ export async function compatFixture() {
           writes.push({ uri, text });
           data.set(uri, text);
         },
+        async writeBytes() {},
         mkdir: async () => {
           await hooks.beforeMkdir?.();
         },

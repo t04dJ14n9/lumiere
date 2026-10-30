@@ -57,25 +57,31 @@ export function memoryFiles(
 ) {
   const files = new Map(Object.entries(initial));
   const folders = new Set<string>([ROOT]);
-  const api: Pick<WorkspaceFiles, "readText" | "writeText" | "list" | "mkdir"> =
-    {
-      readText: async (uri) => files.get(uri),
-      writeText: async (uri, text) => {
-        files.set(uri, text);
-        onWrite(uri);
-      },
-      list: async (uri) => {
-        const prefix = `${uri}/`;
-        const names = [...files.keys()]
-          .filter((key) => key.startsWith(prefix))
-          .map((key) => decodeURIComponent(key.slice(prefix.length)))
-          .filter((name) => !name.includes("/"));
-        return folders.has(uri) || names.length ? names : undefined;
-      },
-      mkdir: async (uri) => {
-        folders.add(uri);
-      },
-    };
+  const api: Pick<
+    WorkspaceFiles,
+    "readText" | "writeText" | "writeBytes" | "list" | "mkdir"
+  > = {
+    readText: async (uri) => files.get(uri),
+    writeText: async (uri, text) => {
+      files.set(uri, text);
+      onWrite(uri);
+    },
+    writeBytes: async (uri, data) => {
+      files.set(uri, Buffer.from(data).toString("base64"));
+      onWrite(uri);
+    },
+    list: async (uri) => {
+      const prefix = `${uri}/`;
+      const names = [...files.keys()]
+        .filter((key) => key.startsWith(prefix))
+        .map((key) => decodeURIComponent(key.slice(prefix.length)))
+        .filter((name) => !name.includes("/"));
+      return folders.has(uri) || names.length ? names : undefined;
+    },
+    mkdir: async (uri) => {
+      folders.add(uri);
+    },
+  };
   return { files, folders, api };
 }
 

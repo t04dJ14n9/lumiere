@@ -14,7 +14,7 @@ export const config = Schema.object({
   attachmentFolder: Schema.string()
     .default("")
     .description(
-      "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+      "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Dropped, pasted, and HTML-paste images are saved here under timestamp names.",
     ),
 });
 export default defineManifest({

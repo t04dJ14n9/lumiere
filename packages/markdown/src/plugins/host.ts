@@ -18,7 +18,7 @@ export { wordCountHost } from "./wordCount/host";
 export { linkUpdatesHost } from "./linkUpdates/host";
 export { bridgeHost } from "./bridge/host";
 export { wikiHost } from "./wiki/host";
-export { assetsHost } from "./assets/host";
+export { attachmentsHost } from "./attachments/host";
 export { scratchHost } from "./scratch/host";
 export { gitDiffEditorHost } from "./gitDiffEditor/host";
 export { marpHost } from "./marp/host";

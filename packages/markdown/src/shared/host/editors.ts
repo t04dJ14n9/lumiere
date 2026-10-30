@@ -45,11 +45,31 @@ export interface PanelPort {
   dispose(): Promise<void>;
 }
 
+/**
+ * Handlers for reclaiming Explorer drop-without-Shift media tabs as
+ * attachments. Implemented by the attachments host; wired only where the
+ * adapter has `tabGroups` (VS Code).
+ */
+export interface ExplorerAttachmentReclaimHandlers {
+  reclaim(args: {
+    resourceUri: string;
+    column: number;
+    lumiereUri: string;
+  }): Promise<void>;
+}
+
 /** VS Code's custom editor registry. */
 export interface CustomEditors {
   /** Register an editor (see `EditorProvider`); its panels go to `open`. */
   register(
     provider: EditorProvider,
     open: (panel: PanelShell) => void,
+  ): Disposer;
+  /**
+   * VS Code only: watch Explorer open-on-drop pinned media tabs and turn them
+   * into attachments. Portable hosts omit this.
+   */
+  registerExplorerAttachmentReclaim?(
+    handlers: ExplorerAttachmentReclaimHandlers,
   ): Disposer;
 }
