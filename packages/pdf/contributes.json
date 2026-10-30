@@ -227,6 +227,20 @@
       "icon": "$(edit)"
     },
     {
+      "command": "lumiere.pdf.toggleAnnotateTool",
+      "title": "Toggle Annotate",
+      "category": "PDF",
+      "icon": "$(edit)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.pickAnnotationTool",
+      "title": "Annotation Tool…",
+      "category": "PDF",
+      "icon": "$(paintcan)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
       "command": "lumiere.pdf.annotationUndo",
       "title": "Undo Annotation",
       "category": "PDF",
@@ -603,6 +617,14 @@
       },
       {
         "command": "lumiere.pdf.selectAnnotateTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.toggleAnnotateTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.pickAnnotationTool",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
       },
       {

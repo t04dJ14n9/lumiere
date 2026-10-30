@@ -97,8 +97,10 @@ export class PdfSource {
       try {
         const disk = await this.files.hash(this.uri);
         if (disk === this.expectedWrite) {
+          // Keep expectedWrite: atomic rename often fires create+change, and
+          // clearing after the first event lets the second reload the viewer
+          // (wiping EmbedPDF History so Undo Annotation no-ops).
           this.sha256 = disk;
-          this.expectedWrite = undefined;
           return;
         }
       } catch {

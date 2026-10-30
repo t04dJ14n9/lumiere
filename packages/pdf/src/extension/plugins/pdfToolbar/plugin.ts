@@ -2,9 +2,13 @@ import * as vscode from "vscode";
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../services";
 import type { PdfSettings } from "../../settings";
-import { TOOLBAR_COMMAND_IDS } from "../../../shared/command-ids";
+import {
+  TOOLBAR_COMMAND_IDS,
+  VIEW_COMMAND_IDS,
+} from "../../../shared/command-ids";
 import type { PdfPanels } from "../pdf/panels";
 import manifest from "./manifest";
+import { pickAnnotationTool, toggleAnnotate } from "./annotation-picker";
 import { selectToolbarMode } from "./mode-picker";
 import {
   cycleAndPublish,
@@ -103,6 +107,20 @@ function registerToolbarCommands(
       cycleAndPublish(settings, panels),
     ),
     "command",
+  );
+  ctx.own(
+    vscode.commands.registerCommand(
+      VIEW_COMMAND_IDS.toggleAnnotateTool,
+      () => toggleAnnotate(panels),
+    ),
+    "toggle annotate",
+  );
+  ctx.own(
+    vscode.commands.registerCommand(
+      VIEW_COMMAND_IDS.pickAnnotationTool,
+      () => pickAnnotationTool(panels),
+    ),
+    "pick annotation tool",
   );
 }
 

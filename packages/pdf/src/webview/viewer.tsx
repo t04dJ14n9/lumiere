@@ -158,7 +158,7 @@ function useViewerState(pdf: PdfDocumentObject) {
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   const annotation = useAnnotationMode(DOCUMENT_ID);
   const annotationSave = useAnnotationSaveSession(pdf);
-  useViewReporting(navigation, tool, choices);
+  useViewReporting(navigation, tool, choices, annotation);
   const runAction = useViewActions(navigation, search.open, setTool, {
     setChoices: (next) => setChoices((current) => ({ ...current, ...next })),
     setAnnotationTool: annotation.setAnnotationTool,

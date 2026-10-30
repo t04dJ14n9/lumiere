@@ -36,6 +36,10 @@ export interface ViewState extends ViewChoices {
   zoomPercent: number;
   fit: FitMode | null;
   tool: ToolMode;
+  /** Active EmbedPDF tool while Annotate mode is on; omitted when not annotating. */
+  annotationTool?: AnnotationToolId | null;
+  canAnnotationUndo?: boolean;
+  canAnnotationRedo?: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
   /** First visible page, which can precede the most-visible page shown in the status bar. */
@@ -104,7 +108,7 @@ export function parseViewState(value: unknown): ViewState | undefined {
     return undefined;
   }
   const { fit, tool } = report;
-  return {
+  const view: ViewState = {
     page: report.page,
     pageCount: report.pageCount,
     zoomPercent: Math.round(zoomPercent),
@@ -120,6 +124,18 @@ export function parseViewState(value: unknown): ViewState | undefined {
     top: report.top,
     left: report.left,
   };
+  if (isAnnotationToolId(report.annotationTool)) {
+    view.annotationTool = report.annotationTool;
+  } else if (report.annotationTool === null) {
+    view.annotationTool = null;
+  }
+  if (typeof report.canAnnotationUndo === "boolean") {
+    view.canAnnotationUndo = report.canAnnotationUndo;
+  }
+  if (typeof report.canAnnotationRedo === "boolean") {
+    view.canAnnotationRedo = report.canAnnotationRedo;
+  }
+  return view;
 }
 
 /** The page, the first visible page and the page count agree. */

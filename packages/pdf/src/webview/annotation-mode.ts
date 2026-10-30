@@ -10,7 +10,7 @@ import {
 const HISTORY_TOPIC = "annotations";
 
 /** Active EmbedPDF annotation tool + History undo/redo for one document. */
-export function useAnnotationMode(documentId: string): {
+export type AnnotationMode = {
   annotationTool: AnnotationToolId | null;
   setAnnotationTool: (tool: AnnotationToolId | null) => void;
   setColor: (color: string) => void;
@@ -18,7 +18,9 @@ export function useAnnotationMode(documentId: string): {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-} {
+};
+
+export function useAnnotationMode(documentId: string): AnnotationMode {
   const { provides: annots } = useAnnotationCapability();
   const { provides: history } = useHistoryCapability();
   const [annotationTool, setAnnotationToolState] =
@@ -58,13 +60,14 @@ export function useAnnotationMode(documentId: string): {
     [annots, annotationTool],
   );
 
-  const undo = useCallback(() => {
-    history?.forDocument(documentId).undo(HISTORY_TOPIC);
-  }, [history, documentId]);
-
-  const redo = useCallback(() => {
-    history?.forDocument(documentId).redo(HISTORY_TOPIC);
-  }, [history, documentId]);
+  const undo = useCallback(
+    () => runAnnotationHistory(history, documentId, "undo"),
+    [history, documentId],
+  );
+  const redo = useCallback(
+    () => runAnnotationHistory(history, documentId, "redo"),
+    [history, documentId],
+  );
 
   return {
     annotationTool,
@@ -75,6 +78,32 @@ export function useAnnotationMode(documentId: string): {
     canUndo,
     canRedo,
   };
+}
+
+function runAnnotationHistory(
+  history: ReturnType<typeof useHistoryCapability>["provides"],
+  documentId: string,
+  direction: "undo" | "redo",
+): void {
+  const scope = history?.forDocument(documentId);
+  if (!scope) {
+    return;
+  }
+  // Prefer the annotations topic; fall back to global if topic is empty
+  // (e.g. after a partial history rebuild) so Host GUI Undo still works.
+  if (direction === "undo") {
+    if (scope.canUndo(HISTORY_TOPIC)) {
+      scope.undo(HISTORY_TOPIC);
+    } else if (scope.canUndo()) {
+      scope.undo();
+    }
+    return;
+  }
+  if (scope.canRedo(HISTORY_TOPIC)) {
+    scope.redo(HISTORY_TOPIC);
+  } else if (scope.canRedo()) {
+    scope.redo();
+  }
 }
 
 function useAnnotationHistory(

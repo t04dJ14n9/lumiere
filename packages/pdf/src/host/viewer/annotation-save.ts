@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { HostMessage, ViewerMessage } from "../../shared/messages";
 import type { PdfFiles } from "../../shared/host";
 import type { PdfSource } from "./source";
@@ -30,11 +31,11 @@ export class AnnotationSave {
     if (!this.deps.isCurrentLoad(load) || !this.files.writeAtomic) {
       return;
     }
-    const { sha256 } = await this.files.writeAtomic(
-      this.fileUri,
-      new Uint8Array(data),
-    );
-    this.source.acceptWrite(sha256);
+    const bytes = new Uint8Array(data);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    this.source.expectWrite(sha256);
+    const written = await this.files.writeAtomic(this.fileUri, bytes);
+    this.source.acceptWrite(written.sha256);
     this.dirty = "clean";
     this.deps.post({ type: "annotationSaveResult", load, ok: true, sha256 });
   }
@@ -69,19 +70,19 @@ export class AnnotationSave {
       this.reportConflict(message, "The PDF was modified on disk.");
       return;
     }
+    const bytes = new Uint8Array(message.data);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    this.source.expectWrite(sha256);
     this.dirty = "saving";
     try {
-      const { sha256 } = await this.files.writeAtomic(
-        this.fileUri,
-        new Uint8Array(message.data),
-      );
-      this.source.acceptWrite(sha256);
+      const written = await this.files.writeAtomic(this.fileUri, bytes);
+      this.source.acceptWrite(written.sha256);
       this.dirty = "clean";
       this.deps.post({
         type: "annotationSaveResult",
         load: message.load,
         ok: true,
-        sha256,
+        sha256: written.sha256,
       });
     } catch (error) {
       this.dirty = "failed";

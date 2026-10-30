@@ -134,3 +134,72 @@ test("annotationSave conflicts when disk hash diverges", async () => {
     assert.equal(result.reason, "conflict");
   }
 });
+
+test("annotationSave suppresses watcher that fires during writeAtomic", async () => {
+  let watchCb: (() => void) | undefined;
+  let wrote = 0;
+  // Shared disk so mid-write hash() sees the bytes already on disk
+  // (realistic: rename completed before the watcher callback).
+  let disk = INITIAL;
+  const { posted, receive } = open({
+    watch: (_uri, onChange) => {
+      watchCb = onChange;
+      return () => {
+        watchCb = undefined;
+      };
+    },
+    hash: async () => createHash("sha256").update(disk).digest("hex"),
+    writeAtomic: async (_uri, bytes) => {
+      disk = new Uint8Array(bytes);
+      const sha256 = createHash("sha256").update(disk).digest("hex");
+      // Simulate the FS watcher firing as soon as the file is replaced,
+      // before annotation-save can call acceptWrite.
+      watchCb?.();
+      wrote += 1;
+      return { sha256 };
+    },
+  });
+  await receive({ type: "ready" });
+  const load = posted.find((m) => m.type === "load");
+  assert.ok(load && load.type === "load");
+  const loadsBefore = posted.filter((m) => m.type === "load").length;
+  const next = new Uint8Array([37, 80, 68, 70, 45, 98]); // %PDF-b
+  await receive({
+    type: "annotationSave",
+    load: load.load,
+    baseSha256: INITIAL_SHA,
+    data: next.buffer.slice(next.byteOffset, next.byteOffset + next.byteLength),
+  });
+  assert.equal(wrote, 1);
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(
+    posted.filter((m) => m.type === "load").length,
+    loadsBefore,
+    "mid-write watcher must not reload (expectWrite before writeAtomic)",
+  );
+});
+
+test("annotationSave survives create+change watcher pair after self-write", async () => {
+  const { posted, receive, writes, triggerWatch } = open();
+  await receive({ type: "ready" });
+  const load = posted.find((m) => m.type === "load");
+  assert.ok(load && load.type === "load");
+  const next = new Uint8Array([37, 80, 68, 70, 45, 99]); // %PDF-c
+  await receive({
+    type: "annotationSave",
+    load: load.load,
+    baseSha256: INITIAL_SHA,
+    data: next.buffer.slice(next.byteOffset, next.byteOffset + next.byteLength),
+  });
+  assert.equal(writes(), 1);
+  const loadsBefore = posted.filter((m) => m.type === "load").length;
+  // Atomic rename often delivers both create and change.
+  triggerWatch();
+  triggerWatch();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(
+    posted.filter((m) => m.type === "load").length,
+    loadsBefore,
+    "paired watcher events must not reload after acceptWrite",
+  );
+});
