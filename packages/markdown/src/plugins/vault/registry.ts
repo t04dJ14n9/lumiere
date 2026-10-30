@@ -8,7 +8,7 @@ import type {
   Vaults,
   VaultSystem,
 } from "./api";
-import { INITIAL_READY_BUDGET_MS, VaultIndexer, waitUpTo } from "./indexer";
+import { VaultIndexer } from "./indexer";
 import { MemoryVaultIndex } from "./memory-index";
 import { findVaultRoot, foldersUpTo } from "./roots";
 
@@ -200,7 +200,9 @@ export class VaultRegistry implements Vaults {
         vault.indexer.setOverlay(owner.path, text, uri);
       }
     }
-    await indexer.ready;
+    // Do not await indexer.ready here: panel/settings prepare must not sit on the
+    // cold-start file-list budget. Seed the opened note; reconcile continues via
+    // indexer.ready / vault.settled() in the background.
     return vault;
   }
 
@@ -216,11 +218,23 @@ export class VaultRegistry implements Vaults {
       linkFormat: "shortest",
     });
     index.setLinkPolicies(this.policies);
+    const openedPath = pathInside(root, uri);
+    if (openedPath !== undefined) {
+      index.addFiles([
+        {
+          uri,
+          path: openedPath,
+          mtime: 0,
+          size: 0,
+          excluded: false,
+        },
+      ]);
+    }
     const listed = this.system
       .list(root, 1_000, true)
       .then((listing) => index.replaceFiles(listing.files))
       .catch((error) => this.events.error("Could not list the folder", error));
-    await waitUpTo(listed, INITIAL_READY_BUDGET_MS);
+    // Listing continues in the background; open must not wait the ready budget.
     return {
       index,
       settled: () => listed,

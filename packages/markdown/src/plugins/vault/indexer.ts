@@ -66,6 +66,8 @@ export class VaultIndexer {
   /** Resolves as soon as the initial file list is in the index. */
   private fileListReady: Promise<void>;
   private markFileListReady!: () => void;
+  /** False until the initial vault listing (or cache) has populated the file table. */
+  private listingReady = false;
   /** The first comparison with the file system, which may run after `ready`. */
   private reconciled: Promise<void> = Promise.resolve();
   /** The save in progress, which the next save waits for. */
@@ -93,10 +95,18 @@ export class VaultIndexer {
     await this.queue.drained();
   }
 
+  private completeFileList(): void {
+    if (this.listingReady) {
+      return;
+    }
+    this.listingReady = true;
+    this.markFileListReady();
+  }
+
   /** Ensure an open note is indexed while the initial vault scan is still running. */
   seedFile(uri: string, path: string): void {
     if (
-      !this.reconciling ||
+      this.listingReady ||
       this.disposed ||
       isIgnoredPath(path) ||
       this.index.file(path)
@@ -110,7 +120,7 @@ export class VaultIndexer {
   /** The unsaved text of an open note, indexed after a short pause. */
   setOverlay(path: string, text: string, uri?: string): void {
     if (
-      this.reconciling &&
+      !this.listingReady &&
       !this.disposed &&
       !isIgnoredPath(path) &&
       !this.index.file(path)
@@ -181,7 +191,7 @@ export class VaultIndexer {
       .catch((error) =>
         this.options.onError?.("Could not list the vault", error),
       )
-      .finally(() => this.markFileListReady());
+      .finally(() => this.completeFileList());
     if (!hasCachedFiles) {
       await waitUpTo(
         this.fileListReady,
@@ -256,7 +266,7 @@ export class VaultIndexer {
           }
         }
       });
-      this.markFileListReady();
+      this.completeFileList();
       if (toParse.length > 0 && !this.disposed) {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }

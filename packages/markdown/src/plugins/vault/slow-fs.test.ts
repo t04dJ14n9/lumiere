@@ -86,7 +86,7 @@ test("VaultIndexer.ready resolves within the initial budget when fs.list takes 1
   await indexer.dispose();
 });
 
-test("VaultRegistry.forDocument seeds the opened note and bounds loose-folder scans on slow storage", async () => {
+test("VaultRegistry.forDocument seeds the opened note without waiting the ready budget on slow storage", async () => {
   const fs = new MemoryFileSystem({
     "notes/guide.md": "# Guide\n\nSee [[notes/other]]",
     "notes/other.md": "# Other",
@@ -101,16 +101,21 @@ test("VaultRegistry.forDocument seeds the opened note and bounds loose-folder sc
   const startedAt = performance.now();
   const vault = await registry.forDocument(`${ROOT}/notes/guide.md`);
   const elapsedMs = performance.now() - startedAt;
+  // Critical open path must not sit on INITIAL_READY_BUDGET_MS (~500 ms).
   assert.ok(
-    elapsedMs < 1_000,
-    `expected forDocument in < 1,000 ms, took ${Math.round(elapsedMs)} ms`,
+    elapsedMs < 100,
+    `expected forDocument in < 100 ms (no ready-budget wait), took ${Math.round(elapsedMs)} ms`,
   );
   assert.equal(vault.index.file("notes/guide.md")?.path, "notes/guide.md");
 
-  // Also check a loose note outside any workspace folder while storage is slow.
+  // Loose notes also open immediately; listing finishes via settled().
   const looseStartedAt = performance.now();
   const loose = await registry.forDocument("memory:///loose-folder/readme.md");
-  assert.ok(performance.now() - looseStartedAt < 1_000);
+  assert.ok(
+    performance.now() - looseStartedAt < 100,
+    `expected loose forDocument in < 100 ms, took ${Math.round(performance.now() - looseStartedAt)} ms`,
+  );
+  assert.equal(loose.index.file("readme.md")?.path, "readme.md");
 
   slow.finishAll();
   await vault.settled();
