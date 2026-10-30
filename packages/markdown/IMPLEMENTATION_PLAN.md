@@ -6270,3 +6270,22 @@ searched for `待收录的材料放这里。这些文件还不是知识库的一
 after the click showed that sentence selected in Lumière with Search still
 the sidebar. The temporary probe was removed; the shots are in
 `docs/pr-screenshots/458/`.
+
+## Mermaid Obsidian visual parity — 2026-10-30
+
+Dark Live Preview was Mermaid's stock `theme: "dark"` palette. Obsidian
+leaves Mermaid on its default palette and inverts the SVG in dark mode.
+Lumière now does the same: initialize omits `theme`, `--font-mermaid` is
+the editor font, and
+`body:not(.vscode-light):not(.vscode-high-contrast-light)` applies
+`filter: invert(100%) hue-rotate(180deg) saturate(1.25)` to the fence SVG
+and to `.diagram-inspector .media-area > svg`. Appearance is no longer part
+of the Mermaid cache or init key, so a light/dark toggle does not redraw.
+
+`#445` (lightbox id rewrite) and `#446` (`useMaxWidth` map, `max-width: none`,
+`overflow-x: auto`) stay. The height guess in `mermaid-height.ts` no longer
+scales flowchart and sequence reserves down to the pane; those types keep
+their full height. A headless editor harness measured a small flowchart at
+`width="360"` inside a 911px note, and a wide one at `width="1512"` with
+`max-width: none`. Host GUI screenshots on a real Cursor or VS Code window
+are still to be added.
