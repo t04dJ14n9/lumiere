@@ -2,14 +2,21 @@
  * Attachments host half: each note page asks to save bytes (or import a URL)
  * into the vault attachment folder; this side writes the file and returns the
  * embed string. Remote / file:// loads happen here — webview CSP has no https.
+ *
+ * Explorer drops without Shift never reach the webview (VS Code disables
+ * pointer events on the iframe unless Shift). Those drops open a preview tab
+ * instead; we reclaim matching media tabs back into timestamp attachments.
  */
 import * as vscode from "vscode";
 import type { Context, Plugin, PluginHandle } from "@workshop/core";
 import {
   decodeBase64,
+  insertEmbed,
   loadAttachmentSource,
   saveAttachment,
+  shouldReclaimExplorerOpen,
 } from "../../attachments";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { asString } from "../../shared/values";
 import type { EditorPanel } from "../editor/api";
 import type {} from "../vault/api";
@@ -25,10 +32,18 @@ type SaveResult = {
 export const attachmentsHost: Plugin = {
   name: "attachments",
   inject: {
-    required: ["editors", "vaults", "workspace", "settings", "dialogs"],
+    required: [
+      "editors",
+      "vaults",
+      "workspace",
+      "settings",
+      "dialogs",
+      "hostDocuments",
+    ],
   },
   apply(ctx) {
     answerNotePages(ctx);
+    reclaimExplorerOpens(ctx);
   },
 };
 
@@ -65,6 +80,120 @@ function answerNotePages(ctx: Context): void {
   for (const panel of ctx.editors.all()) {
     bind(panel);
   }
+}
+
+/**
+ * Track which Lumière note was active per column, then convert Explorer
+ * open-on-drop preview media tabs into attachments on that note.
+ */
+function reclaimExplorerOpens(ctx: Context): void {
+  /** viewColumn → Lumière note URI last known active in that column. */
+  const priorLumiere = new Map<number, string>();
+  const syncPrior = () => {
+    for (const group of vscode.window.tabGroups.all) {
+      const column = group.viewColumn;
+      if (column === undefined) {
+        continue;
+      }
+      const active = group.activeTab;
+      if (active && isLumiereTab(active)) {
+        const uri = tabUri(active)?.toString();
+        if (uri) {
+          priorLumiere.set(column, uri);
+          continue;
+        }
+      }
+      // Clear when another editor is active so a later media open is not
+      // mistaken for a drop onto this note.
+      priorLumiere.delete(column);
+    }
+  };
+  syncPrior();
+  ctx.effect(() => {
+    const sub = vscode.window.tabGroups.onDidChangeTabs((event) => {
+      const victims = [...event.opened];
+      // Snapshot priors before syncing — opens have already stolen active.
+      void reclaimOpenedTabs(ctx, victims, priorLumiere).finally(syncPrior);
+    });
+    return () => sub.dispose();
+  });
+}
+
+async function reclaimOpenedTabs(
+  ctx: Context,
+  opened: readonly vscode.Tab[],
+  priorLumiere: ReadonlyMap<number, string>,
+): Promise<void> {
+  for (const tab of opened) {
+    await reclaimOneTab(ctx, tab, priorLumiere);
+  }
+}
+
+async function reclaimOneTab(
+  ctx: Context,
+  tab: vscode.Tab,
+  priorLumiere: ReadonlyMap<number, string>,
+): Promise<void> {
+  const resource = tabUri(tab);
+  const column = tab.group.viewColumn;
+  if (!resource || column === undefined) {
+    return;
+  }
+  const priorNote = priorLumiere.get(column);
+  const lumiereTab = tab.group.tabs.find(isLumiereTab);
+  const lumiereUri = lumiereTab ? tabUri(lumiereTab)?.toString() : undefined;
+  if (
+    !shouldReclaimExplorerOpen({
+      openedPath: resource.fsPath || resource.path,
+      isPreview: tab.isPreview,
+      groupHadLumiereNote: Boolean(lumiereUri),
+      priorActiveWasLumiere: Boolean(
+        priorNote && lumiereUri && priorNote === lumiereUri,
+      ),
+    })
+  ) {
+    return;
+  }
+  const panel = ctx.editors
+    .all()
+    .find((item) => item.document.uri === lumiereUri && item.column === column);
+  if (!panel) {
+    return;
+  }
+
+  // Close the workbench's open-on-drop tab and put the note back in front.
+  try {
+    await vscode.window.tabGroups.close(tab, true);
+  } catch {
+    // Tab may already be gone.
+  }
+  panel.reveal();
+
+  const saved = await importUrlForPanel(ctx, panel, resource.toString());
+  if (!saved.ok || !saved.embed) {
+    return;
+  }
+  const snapshot = await ctx.editors.capture(panel.id).catch(() => undefined);
+  const edit = insertEmbed(
+    panel.document.getText(),
+    snapshot?.state.head,
+    saved.embed,
+  );
+  await ctx.hostDocuments.apply(panel.document, [edit]);
+}
+
+function isLumiereTab(tab: vscode.Tab): boolean {
+  const input = tab.input;
+  return (
+    typeof vscode.TabInputCustom === "function" &&
+    input instanceof vscode.TabInputCustom &&
+    input.viewType === MARKDOWN_EDITOR.viewType
+  );
+}
+
+function tabUri(tab: vscode.Tab): vscode.Uri | undefined {
+  const input = tab.input as { uri?: vscode.Uri } | undefined;
+  return input?.uri;
 }
 
 async function saveForPanel(

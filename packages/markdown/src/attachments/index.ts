@@ -2,7 +2,11 @@ export { resolveAttachmentDir } from "./folder";
 export { timestampStem, uniqueTimestampName } from "./naming";
 export { embedFor, type EmbedLink } from "./embed";
 export { insertEmbed } from "./insert";
-export { saveAttachment, type SaveAttachmentInput, type SavedAttachment } from "./save";
+export {
+  saveAttachment,
+  type SaveAttachmentInput,
+  type SavedAttachment,
+} from "./save";
 export {
   remoteImagesInMarkdown,
   rewriteRemoteImages,
@@ -26,3 +30,8 @@ export {
   type SourceFetch,
   type SourceRead,
 } from "./source";
+export {
+  isAttachableExplorerPath,
+  shouldReclaimExplorerOpen,
+  type ExplorerOpenFacts,
+} from "./explorer-open";
