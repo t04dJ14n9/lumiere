@@ -21,6 +21,24 @@ pre[data-fence="mermaid"] svg {
   user-select: text;
   -webkit-user-select: text;
 }
+/*
+ * Obsidian app.css: .theme-dark .mermaid > svg {
+ *   filter: invert(100%) hue-rotate(180deg) saturate(1.25);
+ * }
+ * Lumière webview: light = vscode-light | vscode-high-contrast-light.
+ */
+body:not(.vscode-light):not(.vscode-high-contrast-light)
+  pre[data-fence="mermaid"]
+  > svg {
+  filter: invert(100%) hue-rotate(180deg) saturate(1.25);
+}
+
+body:not(.vscode-light):not(.vscode-high-contrast-light)
+  .diagram-inspector
+  .media-area
+  > svg {
+  filter: invert(100%) hue-rotate(180deg) saturate(1.25);
+}
 pre[data-fence="mermaid"] svg text {
   cursor: text;
 }

@@ -77,7 +77,7 @@ is the only agent installed (or you pick one), that chat opens with it.
 
 ![The viewer with its controls in the editor title bar and the status bar](docs/images/toolbar-chrome-dark.png)
 
-`lumiere.pdf.toolbar.mode` sets where the controls are. **PDF: Choose
+`lumiere.pdf.toolbar.mode` is `chrome` (status bar) or `none`. **PDF: Choose
 Toolbar Location…** (also in the editor's **…** menu) switches it, and every
 open PDF follows at once.
 

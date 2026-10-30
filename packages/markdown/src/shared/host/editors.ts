@@ -12,6 +12,16 @@ export interface PanelShell {
   readonly transport: Transport;
   readonly cspSource: string;
   readonly trusted: boolean;
+  /** A native source selection was present while this panel was opened. */
+  readonly openedFromNativeSelection?: boolean;
+  /**
+   * Search match already known when the panel resolved, so the webview's
+   * first paint can show it instead of the top of the note.
+   */
+  readonly openingSelection?: {
+    readonly anchor: number;
+    readonly head: number;
+  };
   active(): boolean;
   reveal(): void;
   dispose(): void;
@@ -35,11 +45,25 @@ export interface PanelPort {
   readonly column: number | undefined;
   readonly id: string;
   readonly document: HostDocument;
+  readonly openedFromNativeSelection?: boolean;
   readonly rpc: Endpoint;
   active(): boolean;
   reveal(): void;
   /** Close the panel; resolves once its kernel and resources have stopped. */
   dispose(): Promise<void>;
+}
+
+/**
+ * Handlers for reclaiming Explorer drop-without-Shift media tabs as
+ * attachments. Implemented by the attachments host; wired only where the
+ * adapter has `tabGroups` (VS Code).
+ */
+export interface ExplorerAttachmentReclaimHandlers {
+  reclaim(args: {
+    resourceUri: string;
+    column: number;
+    lumiereUri: string;
+  }): Promise<void>;
 }
 
 /** VS Code's custom editor registry. */
@@ -48,5 +72,12 @@ export interface CustomEditors {
   register(
     provider: EditorProvider,
     open: (panel: PanelShell) => void,
+  ): Disposer;
+  /**
+   * VS Code only: watch Explorer open-on-drop pinned media tabs and turn them
+   * into attachments. Portable hosts omit this.
+   */
+  registerExplorerAttachmentReclaim?(
+    handlers: ExplorerAttachmentReclaimHandlers,
   ): Disposer;
 }

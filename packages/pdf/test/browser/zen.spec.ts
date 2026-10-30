@@ -12,54 +12,60 @@ const hostSend = (page: Page, message: unknown) =>
 
 const bar = (page: Page) => page.getByRole("toolbar", { name: "PDF toolbar" });
 
-for (const mode of ["chrome", "slim"]) {
-  test(`${mode} toolbar: zen shows the floating bar with Exit zen, and the mode comes back after`, async ({
+for (const mode of ["chrome", "slim"] as const) {
+  test(`${mode} toolbar: zen keeps the mode (no floating overlay) and restores after`, async ({
     page,
   }) => {
     await open(page, `?toolbar=${mode}`);
     await expect(page.locator(".viewer")).toHaveClass(
       new RegExp(`toolbar-${mode}`),
     );
+    if (mode === "chrome") {
+      await expect(bar(page)).toHaveCount(0);
+    } else {
+      await expect(bar(page)).toBeVisible();
+    }
     await hostSend(page, { type: "zen", on: true });
-    await expect(page.locator(".viewer")).toHaveClass(/toolbar-floating/);
-    await expect(bar(page)).toHaveAttribute("aria-orientation", "horizontal");
+    await expect(page.locator(".viewer")).toHaveClass(
+      new RegExp(`toolbar-${mode}`),
+    );
+    await expect(page.locator(".viewer")).not.toHaveClass(/toolbar-floating/);
     await expect(
       bar(page).getByRole("button", { name: "Exit zen mode" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     // Never a setting: the host's toolbar mode is untouched, and a reload keeps zen.
     await hostSend(page, { type: "toolbar", toolbar: { mode } });
-    await expect(page.locator(".viewer")).toHaveClass(/toolbar-floating/);
+    await expect(page.locator(".viewer")).toHaveClass(
+      new RegExp(`toolbar-${mode}`),
+    );
     await hostSend(page, { type: "zen", on: false });
     await expect(page.locator(".viewer")).toHaveClass(
       new RegExp(`toolbar-${mode}`),
     );
-    await expect(
-      bar(page).getByRole("button", { name: "Exit zen mode" }),
-    ).toHaveCount(0);
   });
 }
 
-test("the Exit zen button asks the extension to exit zen", async ({ page }) => {
+test("chrome stays chrome and none stays none in zen", async ({ page }) => {
   await open(page, "?toolbar=chrome");
   await hostSend(page, { type: "zen", on: true });
-  await bar(page).getByRole("button", { name: "Exit zen mode" }).click();
-  expect(
-    (await messages(page)).filter((message) => message.type === "zen"),
-  ).toEqual([{ type: "zen", exit: true }]);
-});
-
-test("floating stays floating (with Exit zen) and none stays none in zen", async ({
-  page,
-}) => {
-  await open(page, "?toolbar=floating&dock=left");
-  await hostSend(page, { type: "zen", on: true });
-  await expect(bar(page)).toHaveAttribute("aria-orientation", "vertical");
-  await expect(
-    bar(page).getByRole("button", { name: "Exit zen mode" }),
-  ).toBeVisible();
+  await expect(page.locator(".viewer")).toHaveClass(/toolbar-chrome/);
+  await expect(bar(page)).toHaveCount(0);
   await hostSend(page, { type: "toolbar", toolbar: { mode: "none" } });
   await expect(bar(page)).toHaveCount(0);
   await expect(page.locator(".viewer")).toHaveClass(/toolbar-none/);
+});
+
+test("legacy floating migrates to chrome and stays chrome in zen", async ({
+  page,
+}) => {
+  await open(page, "?toolbar=floating&dock=left");
+  await expect(page.locator(".viewer")).toHaveClass(/toolbar-chrome/);
+  await expect(bar(page)).toHaveCount(0);
+  await hostSend(page, { type: "zen", on: true });
+  await expect(page.locator(".viewer")).toHaveClass(/toolbar-chrome/);
+  await expect(
+    bar(page).getByRole("button", { name: "Exit zen mode" }),
+  ).toHaveCount(0);
 });
 
 test("the viewer tells the extension when full-screen zen ends without it", async ({
@@ -78,7 +84,7 @@ test("the viewer tells the extension when full-screen zen ends without it", asyn
     });
   });
   await hostSend(page, { type: "zen", on: true });
-  await expect(page.locator(".viewer")).toHaveClass(/toolbar-floating/);
+  await expect(page.locator(".viewer")).toHaveClass(/toolbar-chrome/);
   expect(
     (await messages(page)).filter((message) => message.type === "zen"),
   ).toEqual([]);

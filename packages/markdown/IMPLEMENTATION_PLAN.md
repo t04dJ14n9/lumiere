@@ -6240,3 +6240,83 @@ Three real-VS Code specs had failed on `main` since 20 October:
      and in larger text grown past a height map that no longer followed.
      It is now released once CodeMirror has measured the sheet in the page.
    Unit tests cover both; the three specs pass in VS Code.
+
+## Search match selection and sidebar — 2026-10-30
+
+Clicking a Find in Files result opened Lumière with no selection, then the
+Markdown Outline host replaced Search with Explorer. Host verification of
+the proposed `customTextEditorNavigation` opt-in failed twice. A packaged
+VS Code 1.144 install reports that an installed VSIX cannot use that
+proposal unless it is launched in extension development or with
+`--enable-proposed-api`. Search's match therefore never arrives through
+the custom-editor navigation callback, and `activeTextEditor` is absent
+while the custom editor resolves, so the panel opens at offsets 0, 0.
+The outline host then runs `outline.removeView`,
+`lumiere.markdown.outline.focus`, and
+`workbench.action.focusActiveEditorGroup`.
+
+Workspace Markdown now opens in the built-in text editor first
+(`workbench.editorAssociations` value `"default"`), with
+`lumiere.markdown.workspaceEditor` set. Reclaim reads the native range and
+transfers it into that exact Lumière panel. A caret at offset 0 is not
+treated as the match; the transfer waits for a non-empty range, then marks
+the panel so the outline host leaves the Search sidebar in place. An
+existing direct association, including a `*.md`-only entry or the same
+entry in user settings, is migrated when the extension activates
+(`workspaceContains:**/*.md`). The proposal declaration is removed.
+
+A packaged VS Code 1.144 window started with the old direct association,
+searched for `待收录的材料放这里。这些文件还不是知识库的一部分。`, and
+after the click showed that sentence selected in Lumière with Search still
+the sidebar. The temporary probe was removed; the shots are in
+`docs/pr-screenshots/458/`.
+
+## `sources` is a plain text property — 2026-10-30
+
+The properties sheet no longer treats `sources` as an OKF widget. PR #426
+had kept stacked source rows and opened a hidden YAML editor from a title
+click. That plugin (`sourcesProperty`) is removed: no custom renderer, no
+source cards, chips, disclosure, or open-link buttons. The key is reserved
+as Text. A string uses the same text control as any other string. A list or
+map shows its YAML text in that same control; committing it stores a string
+(a one-line replacement stays indented under the key, which YAML reads as a
+plain scalar).
+`generated` / `verified` and other nested values are unchanged. Graph edges
+from OKF `sources` rows are unchanged, because they read the note, not the
+sheet.
+
+## Mermaid Obsidian visual parity — 2026-10-30
+
+Dark Live Preview was Mermaid's stock `theme: "dark"` palette. Obsidian
+leaves Mermaid on its default palette and inverts the SVG in dark mode.
+Lumière now does the same: initialize omits `theme`, `--font-mermaid` is
+the editor font, and
+`body:not(.vscode-light):not(.vscode-high-contrast-light)` applies
+`filter: invert(100%) hue-rotate(180deg) saturate(1.25)` to the fence SVG
+and to `.diagram-inspector .media-area > svg`. Appearance is no longer part
+of the Mermaid cache or init key, so a light/dark toggle does not redraw.
+
+`#445` (lightbox id rewrite) and `#446` (`useMaxWidth` map, `max-width: none`,
+`overflow-x: auto`) stay. The height guess in `mermaid-height.ts` no longer
+scales flowchart and sequence reserves down to the pane; those types keep
+their full height. A headless editor harness measured a small flowchart at
+`width="360"` inside a 911px note, and a wide one at `width="1512"` with
+`max-width: none`. Host GUI verify passed; the screenshots are on the pull
+request. Lightbox was outside that Host GUI pass.
+
+## Search open paints on the match — 2026-10-30
+
+#458 routes a Find in Files click through the text editor so the match
+range survives on an installed VSIX, then reclaims that tab into Lumière.
+The reclaim's reveal runs only after the webview has painted, so Lumière's
+first content frame is the top of the note and the viewport then jumps to
+the match. On a long note the text editor is already scrolled to the hit;
+Lumière replaces it, shows line 1, and only afterwards scrolls.
+
+The range is captured while that open is in flight and sent with the
+webview's ready payload. The editor selects and centers it before the first
+frame. The later reveal still runs, and finds the match already in view.
+A caret at offset 0 is still not a match. The jump and the settled open
+are `docs/pr-screenshots/459/02-before-lumiere-top.png` and
+`06-after-long-first-paint.png` (the other files in that directory are the
+plain-text `sources` shots).

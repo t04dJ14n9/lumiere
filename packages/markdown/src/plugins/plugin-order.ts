@@ -36,8 +36,6 @@ export const FEATURE_ORDER = [
   // Table navigation claims override keys before Vim.
   "tables",
   "properties",
-  // Sources reads the properties renderer extension point.
-  "sourcesProperty",
   "inlineTitle",
   "pagePreview",
   // Claims video links before embeds renders them as images.
@@ -57,6 +55,7 @@ export const FEATURE_ORDER = [
   "suggest",
   "formatting",
   "pasteHtml",
+  "attachments",
   "agentBridge",
   // After agentBridge: Cursor Chat/Edit is a separate handoff surface.
   "cursorBridge",
@@ -91,7 +90,6 @@ export const WORKBENCH_FEATURE_ORDER = [
   // Host-only IDE context handoff (no webview half); sits with bridge.
   "ideContext",
   "wiki",
-  "assets",
   "scratch",
   "marp",
   "gitDiffEditor",

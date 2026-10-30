@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { EditorProvider } from "../shared/editor-provider";
 import type { PanelShell } from "../shared/host";
+import { SourceCoordinates } from "../shared/document/coordinates";
 import { panelIsActive } from "./active-panel";
 import {
   bindShellState,
@@ -9,6 +10,10 @@ import {
   enableCustomTextEditorProposals,
 } from "./custom-editor-navigation";
 import type { NativeNavigation } from "./navigation";
+import {
+  isNativeSelectionOpen,
+  nativeOpeningSelection,
+} from "./native-selection-open";
 import type { NativeDocuments } from "./services/native-documents";
 
 /**
@@ -22,6 +27,44 @@ interface EditorHost {
   extensionUri: vscode.Uri;
   documents: NativeDocuments;
   navigation?: NativeNavigation;
+}
+
+function currentNativeSelection(
+  document: vscode.TextDocument,
+): { at: number; to: number } | undefined {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.uri.toString() !== document.uri.toString()) {
+    return undefined;
+  }
+  const coordinates = new SourceCoordinates(document.getText());
+  const at = coordinates.toEditor(document.offsetAt(editor.selection.start));
+  const to = coordinates.toEditor(document.offsetAt(editor.selection.end));
+  return to > at ? { at, to } : undefined;
+}
+
+function openingSelectionFor(
+  uri: string,
+  column: number,
+  live: { at: number; to: number } | undefined,
+): { anchor: number; head: number } | undefined {
+  return (
+    nativeOpeningSelection(uri, column) ??
+    (live ? { anchor: live.at, head: live.to } : undefined)
+  );
+}
+
+function revealNativeSelection(
+  navigation: NativeNavigation | undefined,
+  panel: PanelShell,
+  selection: { at: number; to: number } | undefined,
+): void {
+  if (!navigation?.revealPanel || !selection) {
+    return;
+  }
+  const intent = navigation.begin();
+  void navigation.revealPanel(panel.id, selection, intent).catch((error) => {
+    console.error("Lumière editor selection reveal failed", error);
+  });
 }
 
 function panelTransport(panel: vscode.WebviewPanel): PanelShell["transport"] {
@@ -69,22 +112,46 @@ function panelState(
     tabSubscription.dispose();
   };
 }
+
+function panelResourceRoots(
+  document: vscode.TextDocument,
+  extensionUri: vscode.Uri,
+): vscode.Uri[] {
+  const root =
+    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
+    vscode.Uri.joinPath(document.uri, "..");
+  return [vscode.Uri.joinPath(extensionUri, "dist", "markdown"), root];
+}
+
+function panelOpenFields(options: {
+  openedFromNativeSelection?: boolean;
+  openingSelection?: { anchor: number; head: number };
+}): Pick<PanelShell, "openedFromNativeSelection" | "openingSelection"> {
+  return {
+    ...(options.openedFromNativeSelection
+      ? { openedFromNativeSelection: true }
+      : {}),
+    ...(options.openingSelection
+      ? { openingSelection: options.openingSelection }
+      : {}),
+  };
+}
+
 function createPanelShell(
   provider: EditorProvider,
   document: vscode.TextDocument,
   panel: vscode.WebviewPanel,
-  { extensionUri, documents }: EditorHost,
+  options: {
+    host: EditorHost;
+    openedFromNativeSelection?: boolean;
+    openingSelection?: { anchor: number; head: number };
+  },
 ): PanelShell {
+  const { extensionUri, documents } = options.host;
   const binding = bindingForPanel(panel, document);
-  const root =
-    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
-    vscode.Uri.joinPath(document.uri, "..");
   panel.webview.options = {
     enableScripts: true,
-    localResourceRoots: [
-      vscode.Uri.joinPath(extensionUri, "dist", "markdown"),
-      root,
-    ],
+    localResourceRoots: panelResourceRoots(document, extensionUri),
   };
 
   return {
@@ -95,6 +162,7 @@ function createPanelShell(
     document: documents.wrap(document),
     cspSource: panel.webview.cspSource,
     trusted: vscode.workspace.isTrusted,
+    ...panelOpenFields(options),
     transport: panelTransport(panel),
     active: () => isActivePanel(provider.viewType, binding.document, panel),
     reveal() {
@@ -154,7 +222,7 @@ async function movePanelToDocument(
   binding.viewState = undefined;
   binding.document = newDocument;
   binding.pendingRestore = snapshot;
-  open(createPanelShell(provider, newDocument, panel, host));
+  open(createPanelShell(provider, newDocument, panel, { host }));
 }
 /** Register `provider` as a custom editor; each panel it opens goes to `open`. */
 export function registerEditor(
@@ -167,7 +235,25 @@ export function registerEditor(
     provider.viewType,
     {
       resolveCustomTextEditor(document, panel) {
-        open(createPanelShell(provider, document, panel, host));
+        const selection = currentNativeSelection(document);
+        const column = panel.viewColumn ?? vscode.ViewColumn.One;
+        const transferredSelection = isNativeSelectionOpen(
+          document.uri.toString(),
+          column,
+        );
+        const openingSelection = openingSelectionFor(
+          document.uri.toString(),
+          column,
+          selection,
+        );
+        const shell = createPanelShell(provider, document, panel, {
+          host,
+          openedFromNativeSelection:
+            selection !== undefined || transferredSelection,
+          ...(openingSelection ? { openingSelection } : {}),
+        });
+        open(shell);
+        revealNativeSelection(host.navigation, shell, selection);
       },
       resolveCustomTextEditorNavigation(
         document: vscode.TextDocument,

@@ -27,6 +27,7 @@ import {
   isInside,
   writeAtomic,
   writeThroughFile,
+  writeThroughBytes,
 } from "./paths";
 import type { HostEntry, HostFiles, HostPlatform, HostStore } from "./platform";
 import { fileUri } from "./uris";
@@ -82,6 +83,7 @@ export const nodeFiles: HostFiles = {
   readText: (uri) => readFile(toFile(uri), "utf8"),
   readBytes: (uri) => readFile(toFile(uri)),
   save: (uri, text) => writeThroughFile(toFile(uri), text),
+  saveBytes: (uri, data) => writeThroughBytes(toFile(uri), data),
   create: (uri) => createEmptyFile(toFile(uri)),
   async stat(uri) {
     try {

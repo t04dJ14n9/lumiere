@@ -3,6 +3,7 @@
  * editor's own controls ask the viewer to do. Shared by the viewer and the
  * extension's status bar, editor title actions and keybindings.
  */
+import { isAnnotationToolId, type AnnotationToolId } from "./annotation-tools";
 import { MAX_ZOOM, MIN_ZOOM } from "./zoom-steps";
 import { isPageOffset } from "./reading-position";
 import {
@@ -25,7 +26,7 @@ export type FitMode = "width" | "page";
  * What a drag on a page selects: `text` selects text, or a region when it
  * starts on empty page space; `region` always selects a region.
  */
-export type ToolMode = "text" | "region";
+export type ToolMode = "text" | "region" | "annotate";
 
 /** What the viewer reports after each change, for the editor's controls. */
 export interface ViewState extends ViewChoices {
@@ -35,6 +36,10 @@ export interface ViewState extends ViewChoices {
   zoomPercent: number;
   fit: FitMode | null;
   tool: ToolMode;
+  /** Active EmbedPDF tool while Annotate mode is on; omitted when not annotating. */
+  annotationTool?: AnnotationToolId | null;
+  canAnnotationUndo?: boolean;
+  canAnnotationRedo?: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
   /** First visible page, which can precede the most-visible page shown in the status bar. */
@@ -59,11 +64,14 @@ export type ViewerAction =
         | "fitWidth"
         | "fitPage"
         | "actualSize"
-        | "find";
+        | "find"
+        | "annotationUndo"
+        | "annotationRedo";
     }
   | { action: "goToPage"; page: number }
   | { action: "setZoom"; percent: number }
   | { action: "setTool"; tool: ToolMode }
+  | { action: "setAnnotationTool"; tool: AnnotationToolId }
   | { action: "setPageLayout"; pageLayout: PageLayout }
   | { action: "setScrollMode"; scrollMode: ScrollMode }
   | { action: "setScrollDirection"; scrollDirection: ScrollDirection };
@@ -79,6 +87,8 @@ const SIMPLE_ACTIONS = new Set([
   "fitPage",
   "actualSize",
   "find",
+  "annotationUndo",
+  "annotationRedo",
 ]);
 
 /** Accept a view report only if it is well-formed (it comes from the untrusted viewer). */
@@ -98,12 +108,12 @@ export function parseViewState(value: unknown): ViewState | undefined {
     return undefined;
   }
   const { fit, tool } = report;
-  return {
+  const view: ViewState = {
     page: report.page,
     pageCount: report.pageCount,
     zoomPercent: Math.round(zoomPercent),
     fit: fit === "width" || fit === "page" ? fit : null,
-    tool: tool === "region" ? "region" : "text",
+    tool: asToolMode(tool),
     pageLayout: report.pageLayout,
     scrollMode: report.scrollMode,
     scrollDirection: report.scrollDirection,
@@ -114,6 +124,18 @@ export function parseViewState(value: unknown): ViewState | undefined {
     top: report.top,
     left: report.left,
   };
+  if (isAnnotationToolId(report.annotationTool)) {
+    view.annotationTool = report.annotationTool;
+  } else if (report.annotationTool === null) {
+    view.annotationTool = null;
+  }
+  if (typeof report.canAnnotationUndo === "boolean") {
+    view.canAnnotationUndo = report.canAnnotationUndo;
+  }
+  if (typeof report.canAnnotationRedo === "boolean") {
+    view.canAnnotationRedo = report.canAnnotationRedo;
+  }
+  return view;
 }
 
 /** The page, the first visible page and the page count agree. */
@@ -196,8 +218,12 @@ const ACTION_PARSERS: Readonly<
       ? { action: "setZoom", percent }
       : undefined,
   setTool: ({ tool }) =>
-    tool === "text" || tool === "region"
+    tool === "text" || tool === "region" || tool === "annotate"
       ? { action: "setTool", tool }
+      : undefined,
+  setAnnotationTool: ({ tool }) =>
+    isAnnotationToolId(tool)
+      ? { action: "setAnnotationTool", tool }
       : undefined,
   setPageLayout: ({ pageLayout }) =>
     isPageLayout(pageLayout)
@@ -258,6 +284,14 @@ export function zoomLabel(view: ViewState): string {
     return `Fit Page (${view.zoomPercent}%)`;
   }
   return `${view.zoomPercent}%`;
+}
+
+/** Coerce a reported tool to a known mode; anything else is text. */
+function asToolMode(tool: unknown): ToolMode {
+  if (tool === "region" || tool === "annotate") {
+    return tool;
+  }
+  return "text";
 }
 
 function isCount(value: unknown): value is number {

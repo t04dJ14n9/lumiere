@@ -215,9 +215,7 @@ test.describe("the caret stays out of the Properties block", () => {
       .toContain("title: SourceEdited");
   });
 
-  test("clicking a sources card opens the YAML textarea and commits edits", async ({
-    page,
-  }) => {
+  test("a sources value edits as plain text and commits", async ({ page }) => {
     const note = [
       "---",
       "sources:",
@@ -229,16 +227,13 @@ test.describe("the caret stays out of the Properties block", () => {
     ].join("\n");
     await start(page, 6, 0, note);
     const row = page.locator('[data-property-key="sources"]');
-    await row.locator(".source-title").click();
-    const textarea = row.locator("textarea.metadata-input-yaml");
-    await expect(textarea).toBeVisible();
-    await expect(textarea).toBeFocused();
-    await textarea.fill(
-      "- title: Updated Source\n  resource: ../raw/updated.md\n  id: src-1",
-    );
-    await textarea.press("ControlOrMeta+Enter");
+    await expect(row.locator(".source-title, .source-row")).toHaveCount(0);
+    const input = row.locator('[data-property-input="sources"]');
+    await expect(input).toHaveAttribute("data-property-kind", "text");
+    await input.fill("Updated Source");
+    await input.press("Enter");
     await expect
       .poll(() => page.evaluate(() => window.harness.text))
-      .toContain("Updated Source");
+      .toContain("sources:\n  Updated Source");
   });
 });

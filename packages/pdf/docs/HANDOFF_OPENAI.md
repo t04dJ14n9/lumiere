@@ -49,7 +49,10 @@ Open items / ambiguities: see "Ambiguities / open items" in plans/llm-wiki-refin
 
 ### Pending product work (not started, designs exist)
 - Current agreed navigation scope is separate, in-memory, per-document/pane jump history. The PDF local branch implements a bounded 100-stop host stack, own Back/Forward commands and controls, precise coordinates/view state, replay cancellation and forward-branch truncation. Native cross-file Back/Forward and Vim Ctrl+O/I remain unchanged. No cross-extension coordinator or global mixed stack is implemented. Historical plan: plans/cross-extension-navigation.md; its GLOBAL-stack proposal is deferred. Full compiler/browser/native validation is still required before merge.
-- The whole PDF annotation system is deferred by the owner. This includes storage, annotation UI, agent-added annotations via MCP, and Markdown rendering; do not implement a subset. Historical design: plans/pdf-annotations-feasibility.md.
+- PDF annotations (direct-to-PDF, EmbedPDF Annotation + History, UI-only) follow
+  `docs/superpowers/plans/2026-10-30-pdf-annotations-direct-to-pdf.md`.
+  Still out of scope: MCP write tools, sidecar, XFDF, Export Annotated Copy,
+  workbench Undo bridge, PencilKit/`packages/ink`.
 - One merged extension vs two: memo plans/one-vs-two-extensions.md (recommends two plus a shared package).
 - Showcase: cloud VS Code demo (Codespaces/vscode.dev) with the extension preloaded and a sample notes/PDF repo.
 - Naming: "Eureka" liked but may be taken; "vscodian" floated (plans/naming.md).

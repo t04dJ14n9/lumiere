@@ -46,6 +46,7 @@ test("with the controls in VS Code's own UI the viewer has no toolbar; the setti
     const data = await (await fetch("/fixtures/outline.pdf")).arrayBuffer();
     (window as unknown as { hostSend: (message: unknown) => void }).hostSend({
       type: "load",
+      sha256: "test-sha",
       data,
     });
   });

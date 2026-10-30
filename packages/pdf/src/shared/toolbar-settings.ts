@@ -1,20 +1,20 @@
 /**
  * Where the viewer's controls are (setting `lumiere.pdf.toolbar.mode`):
- *   chrome    VS Code's own: editor title actions and the status bar
- *   slim      a slim bar along the top of the viewer
- *   floating  a bar over the pages, docked to an edge the reader drags it to
- *   none      no controls; keyboard shortcuts, menus and commands only
+ *   chrome  VS Code status bar (and Settings / command palette)
+ *   none    no status-bar PDF entries; keyboard, menus and commands only
+ *   slim    in-page slim bar — used by stand-alone hosts (web / iPad) that
+ *           have no VS Code status bar; not offered in the VS Code setting
+ *
+ * Floating was removed. Saved VS Code values of slim/floating migrate to chrome.
  */
-export type ToolbarMode = "chrome" | "slim" | "floating" | "none";
-export const TOOLBAR_MODES: readonly ToolbarMode[] = [
-  "chrome",
-  "slim",
-  "floating",
-  "none",
-];
+export type ToolbarMode = "chrome" | "slim" | "none";
+export const TOOLBAR_MODES: readonly ToolbarMode[] = ["chrome", "slim", "none"];
 export const DEFAULT_TOOLBAR_MODE: ToolbarMode = "chrome";
 
-/** The edge of the viewer the floating bar is docked to. */
+/**
+ * Legacy dock edge for the removed floating bar. Kept so old messages and
+ * HTML data attributes still parse; new code always uses the default.
+ */
 export type FloatingDock = "top" | "bottom" | "left" | "right";
 export const FLOATING_DOCKS: readonly FloatingDock[] = [
   "top",
@@ -27,7 +27,7 @@ export const DEFAULT_FLOATING_DOCK: FloatingDock = "bottom";
 /** The toolbar settings the viewer needs. */
 export interface ToolbarSettings {
   mode: ToolbarMode;
-  /** Where the floating bar is; the reader's choice, kept by the extension. */
+  /** Unused after floating removal; kept for message / HTML compatibility. */
   dock: FloatingDock;
 }
 
@@ -36,11 +36,26 @@ export const DEFAULT_TOOLBAR_SETTINGS: ToolbarSettings = {
   dock: DEFAULT_FLOATING_DOCK,
 };
 
-/** A setting's value as a mode; anything unknown is the default. */
+/**
+ * A setting's value as a mode. Floating migrates to chrome. Slim is kept for
+ * stand-alone hosts (`PAGE_TOOLBAR`); the VS Code setting enum is chrome|none.
+ */
 export function parseToolbarMode(value: unknown): ToolbarMode {
-  return TOOLBAR_MODES.includes(value as ToolbarMode)
-    ? (value as ToolbarMode)
-    : DEFAULT_TOOLBAR_MODE;
+  if (value === "none" || value === "slim" || value === "chrome") {
+    return value;
+  }
+  if (value === "floating") {
+    return "chrome";
+  }
+  return DEFAULT_TOOLBAR_MODE;
+}
+
+/**
+ * VS Code setting values only: slim/floating (and unknown) → chrome.
+ * Stand-alone hosts should set `PAGE_TOOLBAR` directly, not this.
+ */
+export function parseVsCodeToolbarMode(value: unknown): "chrome" | "none" {
+  return value === "none" ? "none" : "chrome";
 }
 
 export function isFloatingDock(value: unknown): value is FloatingDock {
@@ -65,8 +80,8 @@ export function parseToolbarSettings(value: unknown): ToolbarSettings {
 }
 
 /**
- * The edge nearest to a point in a box of `width` by `height`: where a
- * dragged floating bar docks when dropped there.
+ * The edge nearest to a point in a box of `width` by `height`. Kept for
+ * unit tests of the old floating-dock helper; the floating bar is gone.
  */
 export function nearestDock(
   x: number,

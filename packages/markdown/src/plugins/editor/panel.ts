@@ -60,6 +60,9 @@ export function createPanel(
       return shell.column;
     },
     document: shell.document,
+    ...(shell.openedFromNativeSelection
+      ? { openedFromNativeSelection: true }
+      : {}),
     session,
     rpc,
     active: () => shell.active(),
@@ -124,6 +127,9 @@ function registerSessionHandshake(
         debugLogging: config.debugLogging ?? false,
         features: config.features ?? {},
         editor: editorConfig.parse(config.editor ?? {}),
+        ...(shell.openingSelection
+          ? { openingSelection: shell.openingSelection }
+          : {}),
       };
       // After the ready payload is built: deferred panel hosts (blame, search,
       // suggest, …) may start without delaying the webview's first paint.

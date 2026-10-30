@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { PdfFiles } from "../../../shared/host";
+import { writeAtomicFile } from "../../../host/atomic-write";
 
 /** PDF files through VS Code's file system, so remote and virtual files open too. */
 export const vscodePdfFiles: PdfFiles = {
@@ -8,6 +10,17 @@ export const vscodePdfFiles: PdfFiles = {
     Promise.resolve(vscode.workspace.fs.readFile(vscode.Uri.parse(uri))),
   watch: (uri, onChange) => watchFile(vscode.Uri.parse(uri), onChange),
   displayPath: (uri) => displayPath(vscode.Uri.parse(uri)),
+  hash: async (uri) => {
+    const bytes = await vscode.workspace.fs.readFile(vscode.Uri.parse(uri));
+    return createHash("sha256").update(bytes).digest("hex");
+  },
+  writeAtomic: async (uri, bytes) => {
+    const parsed = vscode.Uri.parse(uri);
+    if (parsed.scheme !== "file") {
+      throw new Error("In-place annotation save requires a local file URI");
+    }
+    return writeAtomicFile(parsed.fsPath, bytes);
+  },
 };
 
 function watchFile(uri: vscode.Uri, onChange: () => void): () => void {

@@ -68,6 +68,10 @@ export const protocol = defineProtocol("editor", {
         editor: editorConfig.default(editorConfig.parse({})),
         preset: Schema.union(["minimal", "obsidian"]),
         mode: Schema.union(["source", "livePreview"]),
+        openingSelection: Schema.object({
+          anchor: offset,
+          head: offset,
+        }).optional(),
       }),
     },
     captureSelection: { params: Schema.object({}), result: selection },

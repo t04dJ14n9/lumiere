@@ -303,3 +303,28 @@
   font-size: 12px;
   text-align: center;
 }
+
+.color-chip {
+  width: 14px;
+  height: 14px;
+  margin: 0 2px;
+  padding: 0;
+  border: 1px solid var(--vscode-widget-border, #454545);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.annotation-toolkit {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.annotation-chrome-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-widget-border, #454545);
+  background: var(--vscode-editorWidget-background, #252526);
+}

@@ -34,6 +34,9 @@ export const MARKDOWN_EDITOR: EditorProvider = Object.freeze({
   multipleEditorsPerDocument: true,
 });
 
+/** Workspace state: Markdown opens through text first, then transfers to Lumière. */
+export const MARKDOWN_WORKSPACE_EDITOR_KEY = "lumiere.markdown.workspaceEditor";
+
 /** `activeCustomEditorId == '<viewType>'`, for when-clauses. */
 export function whenActive(provider: EditorProvider): string {
   return `activeCustomEditorId == '${provider.viewType}'`;

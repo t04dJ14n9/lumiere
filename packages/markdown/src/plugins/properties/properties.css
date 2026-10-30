@@ -401,44 +401,6 @@
 .properties [hidden] {
   display: none !important;
 }
-.source-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.source-row {
-  padding: 6px 0;
-  border-top: 1px solid var(--line);
-}
-.source-title {
-  margin: 0;
-  font-weight: 600;
-}
-.source-resource,
-.source-id,
-.source-usage,
-.source-meta {
-  margin: 2px 0;
-}
-.source-resource button,
-.source-rows [data-source-more] {
-  color: var(--vscode-textLink-foreground, #3794ff);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  text-align: start;
-}
-.source-raw {
-  margin: 4px 0 0;
-  white-space: pre-wrap;
-  font-size: 0.85em;
-}
-
-.source-rows:empty::before {
-  content: "Empty";
-  color: var(--muted);
-}
 .property-complex {
   position: relative;
   display: flex;
@@ -515,8 +477,7 @@
   color: var(--vscode-descriptionForeground, inherit);
   opacity: 0.9;
 }
-.property-list [data-property-list-more],
-.source-rows [data-source-more] {
+.property-list [data-property-list-more] {
   display: inline-block;
   margin: 2px 0;
   padding: 0 4px;

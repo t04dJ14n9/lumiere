@@ -1,22 +1,21 @@
 /**
- * Expand-all grows the Sources sheet. If remount/estimatedHeight still assume
- * the first-8 disclosure, scrolling the sheet off-screen then rebuilding the
- * decoration collapses the height map and jumps every coordinate below it.
+ * A tall properties sheet, with `sources` as plain text, must keep its
+ * estimated height when a rebuild happens off-screen. The old Sources
+ * expand-all path is gone; this still guards the height map (#100).
  */
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function note(sourceCount: number): string {
-  const entries = Array.from(
-    { length: sourceCount },
-    (_, index) =>
-      `  - title: Source ${index}\n    resource: https://example.com/${index}`,
+function note(rowCount: number): string {
+  const fields = Array.from(
+    { length: rowCount },
+    (_, index) => `field${index}: value ${index}`,
   ).join("\n");
   const body = Array.from(
     { length: 40 },
     (_, index) => `Body line ${index} after the sheet.`,
   ).join("\n\n");
-  return `---\nsources:\n${entries}\n---\n# Heading\n\n${body}\n`;
+  return `---\n${fields}\nsources: plain citation\n---\n# Heading\n\n${body}\n`;
 }
 
 async function constrain(page: Page) {
@@ -27,18 +26,18 @@ async function constrain(page: Page) {
   await page.evaluate(() => window.dispatchEvent(new Event("resize")));
 }
 
-test("expand-all then off-viewport rebuild keeps the expanded sheet height", async ({
+test("off-viewport rebuild keeps a tall sheet height when sources is plain text", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
-  await open(page, note(20));
+  await open(page, note(40));
   await constrain(page);
   await expect(page.locator(".hybrid-properties")).toBeVisible();
-  await expect(page.locator("[data-source-more]")).toBeVisible();
-
-  await page.locator("[data-source-more]").click();
-  await expect(page.locator("[data-source-more]")).toHaveCount(0);
-  await expect(page.locator("article.source-row")).toHaveCount(20);
+  await expect(page.locator(".source-row, [data-source-more]")).toHaveCount(0);
+  await expect(page.locator('[data-property-input="sources"]')).toHaveAttribute(
+    "data-property-kind",
+    "text",
+  );
 
   const result = await page.evaluate(async () => {
     const fiber = [...window.harness.views[0]!.plugins].find(
@@ -48,7 +47,7 @@ test("expand-all then off-viewport rebuild keeps the expanded sheet height", asy
     await new Promise((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(resolve)),
     );
-    const afterExpand = view.lineBlockAt(0).height;
+    const painted = view.lineBlockAt(0).height;
     window.harness.reveal(window.harness.text.indexOf("Body line 30"));
     await new Promise((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(resolve)),
@@ -59,22 +58,21 @@ test("expand-all then off-viewport rebuild keeps the expanded sheet height", asy
       requestAnimationFrame(() => requestAnimationFrame(resolve)),
     );
     return {
-      afterExpand,
+      painted,
       afterRebuild: view.lineBlockAt(0).height,
       sheetInDom: !!document.querySelector(".hybrid-properties"),
     };
   });
 
-  expect(result.afterExpand, JSON.stringify(result)).toBeGreaterThan(900);
-  // Falling back to the first-8 estimate after expand drops hundreds of px.
+  expect(result.painted, JSON.stringify(result)).toBeGreaterThan(900);
   expect(result.afterRebuild, JSON.stringify(result)).toBeGreaterThan(
-    result.afterExpand * 0.85,
+    result.painted * 0.85,
   );
   expect(result.sheetInDom).toBe(false);
 
-  // Scroll the sheet back: remount must still show every source row.
   await page.evaluate(() => window.harness.reveal(0));
   await expect(page.locator(".hybrid-properties")).toBeVisible();
-  await expect(page.locator("article.source-row")).toHaveCount(20);
-  await expect(page.locator("[data-source-more]")).toHaveCount(0);
+  await expect(page.locator('[data-property-input="sources"]')).toHaveText(
+    "plain citation",
+  );
 });

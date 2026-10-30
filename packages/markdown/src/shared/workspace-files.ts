@@ -32,6 +32,8 @@ export interface WorkspaceFiles {
   authorize?(root: string, target: string): Promise<void>;
   readText(uri: string): Promise<string | undefined>;
   writeText(uri: string, text: string): Promise<void>;
+  /** Replace or create a file with raw bytes (images, etc.). */
+  writeBytes(uri: string, data: Uint8Array): Promise<void>;
   list(uri: string): Promise<readonly string[] | undefined>;
   mkdir(uri: string): Promise<void>;
   copy(from: string, to: string): Promise<void>;

@@ -25,12 +25,11 @@ function simpleNote(rows: number): string {
 }
 
 function sourcesNote(count: number): string {
-  const entries = Array.from(
+  const fields = Array.from(
     { length: count },
-    (_, index) =>
-      `  - title: Source ${index}\n    resource: https://example.com/${index}`,
+    (_, index) => `field${index}: value ${index}`,
   ).join("\n");
-  return `---\nsources:\n${entries}\ndecision_confirmation: yes\n---\n${HEADING}\n\n${body()}\n`;
+  return `---\n${fields}\nsources: plain citation\ndecision_confirmation: yes\n---\n${HEADING}\n\n${body()}\n`;
 }
 
 async function constrain(page: Page) {
@@ -54,7 +53,10 @@ test("rebuilding a properties sheet keeps its row height before the next measure
 
   await open(page, sourcesNote(12));
   await constrain(page);
-  await expect(page.locator(".source-row").first()).toBeVisible();
+  await expect(page.locator('[data-property-input="sources"]')).toHaveAttribute(
+    "data-property-kind",
+    "text",
+  );
   const sources = await reservedHeight(page, "decision_confirmation");
   expect(sources.reserved, JSON.stringify(sources)).toBeGreaterThan(
     sources.measured * 0.85,
@@ -185,9 +187,6 @@ async function reservedHeight(page: Page, needle: string) {
       reserved: view.lineBlockAt(0).height,
       yaml: document
         .querySelector(".metadata-input-yaml")
-        ?.getBoundingClientRect().height,
-      article: document
-        .querySelector(".source-row:not([hidden])")
         ?.getBoundingClientRect().height,
     };
   }, needle);

@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-20 (Asia/Shanghai)  
 **Obsidian evidence:** `/workspace/obsidian-rea/recovered/application/{app.css,app.js}` (REA pipeline; Obsidian 1.14.4)  
-**Lumière:** `packages/markdown/src/plugins/properties/` + `sourcesProperty/`  
+**Lumière:** `packages/markdown/src/plugins/properties/`  
 **Prior docs:** `docs/properties-diff.md`, `/workspace/plans/obsidian-properties-behaviour.md`
 
 Do not copy Obsidian code/CSS/assets. Gaps below are behaviour/layout targets.
@@ -62,9 +62,9 @@ Severity: **P0** height/remount or editing broken · **P1** clear visual/interac
 | ID | Sev | Topic | Decision |
 | --- | --- | --- | --- |
 | G18 | N/A | Nested/`unknown` → Obsidian `JSON.stringify` + `lucide-file-question` | Lumière editable YAML drafts — **keep** (documented enhancement) |
-| G19 | N/A | OKF `sources` stacked articles + disclosure + YAML | Not in Obsidian; **keep** renderer; only height/estimate bugs are fair game |
-| G20 | OK | Sources expand session + remeasure | Fixed earlier (tall-Sources / remount) |
-| G21 | P2 | Sources article chrome vs estimate `ARTICLE_CHROME` | Re-measure if body jumps after G2/G3 chrome change |
+| G19 | N/A | OKF `sources` stacked articles + disclosure + YAML | Removed. `sources` is a plain text property, same control as any other string |
+| G20 | N/A | Sources expand session + remeasure | Widget removed with G19. Tall-sheet tests use plain text rows |
+| G21 | N/A | Sources article chrome vs estimate `ARTICLE_CHROME` | Removed with the Sources widget. `sources` estimates as clamped text |
 
 ---
 

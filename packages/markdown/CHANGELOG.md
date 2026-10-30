@@ -2,6 +2,17 @@
 
 ## 0.1.0 (unreleased)
 
+- Dark Mermaid diagrams use Obsidian's invert of the default palette
+  (`invert(100%) hue-rotate(180deg) saturate(1.25)`), including the diagram
+  inspector. Light (`vscode-light`, `vscode-high-contrast-light`) stays the
+  default Mermaid palette. Flowchart and sequence height reserves no longer
+  shrink when the pane is narrower than the diagram.
+
+- Obsidian-style attachments: drop or paste images (including screenshots and
+  remote/data images in rich HTML paste) into `files.attachmentFolder` under
+  `YYYY-MM-DD HH.mm.ext` names with wikilink / Markdown embeds. Sketch placement
+  shares the same core. Import Asset / `assets.path` removed.
+
 - Smoother scrolling through Mermaid diagrams in Live Preview: a diagram
   draws as it comes within a screen of view, as in Obsidian, instead of
   showing its source until you stop scrolling, and the text around it moves

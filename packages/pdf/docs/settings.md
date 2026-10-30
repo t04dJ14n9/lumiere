@@ -8,7 +8,8 @@ Every setting of this extension can be changed without opening a settings file.
 | **PDF: Change Setting…** | Lists *all* of the extension's settings, grouped, with the current value and the description; picking one edits it by its type (below). |
 | **PDF: Toggle Smooth Scrolling** | Flips `view.smoothScrolling` (from what is in effect now, also when it followed the editor). |
 | **PDF: Toggle Keyboard Shortcuts** | Flips `keyboardShortcuts`. |
-| **PDF: Choose Toolbar Location…** | `toolbar.mode`. |
+| **PDF: Choose Toolbar Location…** | `toolbar.mode` (`chrome` status bar or `none`). |
+| **PDF: Cycle Page Colors** | `pageColors` (Follow → Normal → Dark). |
 | **PDF: Set Default Zoom… / Page Layout… / Scrolling…** | `view.defaultZoom`, `view.pageLayout`, `view.scrollMode`. |
 
 ![PDF: Change Setting… in the Command Palette](images/change-setting.png)

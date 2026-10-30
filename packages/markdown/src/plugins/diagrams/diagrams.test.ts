@@ -51,3 +51,31 @@ test("mermaid fence keeps overflow-x auto", () => {
   assert.ok(host);
   assert.match(host, /overflow-x\s*:\s*auto/);
 });
+
+test("dark Mermaid SVG uses Obsidian invert filter", () => {
+  assert.match(
+    css,
+    /body:not\(\.vscode-light\):not\(\.vscode-high-contrast-light\)[\s\S]*?pre\[data-fence="mermaid"\][\s\S]*?>\s*svg[\s\S]*?filter:\s*invert\(100%\)\s+hue-rotate\(180deg\)\s+saturate\(1\.25\)/,
+  );
+});
+
+test("diagram inspector Mermaid SVG uses the same dark invert", () => {
+  assert.match(
+    css,
+    /body:not\(\.vscode-light\):not\(\.vscode-high-contrast-light\)[\s\S]*?\.diagram-inspector[\s\S]*?svg[\s\S]*?filter:\s*invert\(100%\)\s+hue-rotate\(180deg\)\s+saturate\(1\.25\)/,
+  );
+});
+
+test("markdown webview defines --font-mermaid from the editor font", () => {
+  const base = readFileSync(
+    join(
+      dirname(fileURLToPath(import.meta.url)),
+      "../../webview/styles/base.css",
+    ),
+    "utf8",
+  );
+  assert.match(
+    base,
+    /--font-mermaid:\s*var\(--vscode-editor-font-family,\s*inherit\)/,
+  );
+});

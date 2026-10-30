@@ -11,12 +11,20 @@ import {
   TabSwaps,
 } from "./reclaim-policy";
 import type { TabKind, TabModel, TabSwap } from "./reclaim-policy";
-import { MARKDOWN_EDITOR } from "../shared/editor-provider";
+import {
+  MARKDOWN_EDITOR,
+  MARKDOWN_WORKSPACE_EDITOR_KEY,
+} from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
 import { readerText } from "./reader-text";
-import { SourceCoordinates } from "../shared/document/coordinates";
 import type { NativeNavigation } from "./navigation";
 import type { NavigationIntent } from "../shared/host";
+import { openRange, withNativeSelectionOpen } from "./native-selection-open";
+import {
+  createReclaimScheduler,
+  nativeSelectionRange as readNativeSelectionRange,
+  registerSelectionReclaim,
+} from "./reclaim-selection";
 
 const { viewType } = MARKDOWN_EDITOR;
 
@@ -122,41 +130,20 @@ export function registerReclaim(
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
   readerText.restore(memory);
-  const judge = ({ tab, swap }: { tab: vscode.Tab; swap: TabSwap }) => {
-    // A Cursor Edit session keeps the note native. Switching its text tab
-    // with Preview | Markdown ends the session only when that text tab
-    // closes, after the new tab is shown, so judge that tab again then.
-    if (handoffLease.has(swap.uri)) {
-      swaps.hold(tab, swap);
-      return;
-    }
-    if (!shouldReclaim(swap, reclaimContext(swap.uri))) {
-      if (swap.after === "text" && isReclaimableNote(swap.uri)) {
-        readerText.keep(swap.uri);
-      }
-      return;
-    }
-    // Within 10s of a reclaim, asking for the text editor again keeps it,
-    // also for command selection reclaim, which does not see
-    // recentTransfers (Host GUI S6). Navigation hunks after reclaim still
-    // transfer: they never hit this tab-skip path.
-    if (
-      shouldHoldNativeAfterReclaim({
-        recentTransfer: recentTransfers.has(swap.uri),
-        reclaimable: true,
-        hasSelectionTarget: hasSelectionTarget(
-          nativeSelectionRange(tab, swap.uri),
-        ),
-      })
-    ) {
-      textBypass.allow(swap.uri);
-      if (swap.after === "text") {
-        readerText.keep(swap.uri);
-      }
-      return;
-    }
-    transfer.open(tab, swap.uri);
-  };
+  const workspaceDefault = () =>
+    memory?.get(MARKDOWN_WORKSPACE_EDITOR_KEY, false) ?? false;
+  const scheduler = createReclaimScheduler({
+    open: transfer.open,
+    readSelection: nativeSelectionRange,
+    waitForTextSelection: workspaceDefault,
+  });
+  const judge = createReclaimJudge({
+    recentTransfers,
+    swaps,
+    workspaceDefault,
+    schedule: (tab, swap) =>
+      scheduler.schedule(tab, swap.uri, swap.after === "text"),
+  });
   const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
     const ended = [...event.closed, ...event.opened, ...event.changed]
       .map(releaseLeaseWithoutTextTab)
@@ -166,7 +153,18 @@ export function registerReclaim(
   });
   const stop = vscode.Disposable.from(
     tabs,
-    registerSelectionReclaim(transfer.open, transfer.capture),
+    registerSelectionReclaim({
+      capture: transfer.capture,
+      ready: scheduler.ready,
+      shouldTransfer: (tab, uri) =>
+        hasSelectionTarget(nativeSelectionRange(tab, uri)) &&
+        shouldReclaim(
+          { uri, before: "none", after: kindOf(tab) },
+          reclaimContext(uri, workspaceDefault()),
+        ),
+      transfer: transfer.open,
+    }),
+    scheduler,
     transfer,
   );
   return {
@@ -182,6 +180,43 @@ export function registerReclaim(
         .adopt(vscode.window.tabGroups.all.flatMap((group) => group.tabs))
         .forEach(judge);
     },
+  };
+}
+
+function createReclaimJudge(options: {
+  recentTransfers: Bypass;
+  swaps: TabSwaps<vscode.Tab>;
+  workspaceDefault: () => boolean;
+  schedule: (tab: vscode.Tab, swap: TabSwap) => void;
+}) {
+  return ({ tab, swap }: { tab: vscode.Tab; swap: TabSwap }) => {
+    if (handoffLease.has(swap.uri)) {
+      options.swaps.hold(tab, swap);
+      return;
+    }
+    if (
+      !shouldReclaim(swap, reclaimContext(swap.uri, options.workspaceDefault()))
+    ) {
+      if (swap.after === "text" && isReclaimableNote(swap.uri)) {
+        readerText.keep(swap.uri);
+      }
+      return;
+    }
+    const hasTarget = hasSelectionTarget(nativeSelectionRange(tab, swap.uri));
+    if (
+      shouldHoldNativeAfterReclaim({
+        recentTransfer: options.recentTransfers.has(swap.uri),
+        reclaimable: true,
+        hasSelectionTarget: hasTarget,
+      })
+    ) {
+      textBypass.allow(swap.uri);
+      if (swap.after === "text") {
+        readerText.keep(swap.uri);
+      }
+      return;
+    }
+    options.schedule(tab, swap);
   };
 }
 
@@ -241,78 +276,33 @@ function createReclaimTransfer(
   };
 }
 
-/** Command jumps also arrive when Cursor reuses a native tab without a tab change. */
-function registerSelectionReclaim(
-  transfer: (tab: vscode.Tab, uri: string) => void,
-  capture: (tab: vscode.Tab, uri: string) => void,
-): vscode.Disposable {
-  const selections = vscode.window.onDidChangeTextEditorSelection((event) => {
-    if (
-      event.kind !== vscode.TextEditorSelectionChangeKind.Command ||
-      event.textEditor !== vscode.window.activeTextEditor
-    ) {
-      return;
-    }
-    const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
-    const uri = event.textEditor.document.uri.toString();
-    if (
-      !tab ||
-      nativeSelectionRange(tab, uri) === undefined ||
-      !shouldReclaim(
-        { uri, before: "none", after: kindOf(tab) },
-        reclaimContext(uri),
-      )
-    ) {
-      return;
-    }
-    // Bypass hold lives in transfer.open so an in-flight reclaim can still
-    // absorb a later hunk, while a second Reopen-as-text stays native.
-    transfer(tab, uri);
-  });
-  // Tab notifications can precede the native editor snapshot. Its initial
-  // selection arrives with activation, without a separate selection event.
-  const activation = vscode.window.onDidChangeActiveTextEditor((editor) => {
-    const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
-    if (editor && tab) {
-      capture(tab, editor.document.uri.toString());
-    }
-  });
-  return vscode.Disposable.from(selections, activation);
-}
-
 function nativeSelectionRange(
   tab: vscode.Tab,
   uri: string,
 ): { at: number; to?: number } | undefined {
-  const editor = vscode.window.activeTextEditor;
-  if (
-    !editor ||
-    editor.viewColumn !== tab.group.viewColumn ||
-    editor.document.uri.toString() !== uri ||
-    (uriOf(tab) ?? labelUri(tab)) !== uri
-  ) {
-    return undefined;
-  }
-  const document = editor.document;
-  const coordinates = new SourceCoordinates(document.getText());
-  const at = coordinates.toEditor(document.offsetAt(editor.selection.start));
-  const to = coordinates.toEditor(document.offsetAt(editor.selection.end));
-  return to > at ? { at, to } : { at };
+  return readNativeSelectionRange(
+    tab,
+    uri,
+    (candidate) => uriOf(candidate) ?? labelUri(candidate),
+  );
 }
 
 function hasSelectionTarget(s?: { at: number; to?: number }): boolean {
   return s !== undefined && (s.at > 0 || (s.to !== undefined && s.to > s.at));
 }
 
-function reclaimContext(uri: string) {
+function reclaimContext(uri: string, workspaceDefault: boolean) {
   const target = vscode.Uri.parse(uri);
   return {
-    enabled: reclaimEnabled({
-      mode: vscode.workspace
-        .getConfiguration("lumiere.markdown", target)
-        .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
-      appName: vscode.env.appName,
-    }),
+    enabled: reclaimEnabled(
+      {
+        mode: vscode.workspace
+          .getConfiguration("lumiere.markdown", target)
+          .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
+        appName: vscode.env.appName,
+      },
+      workspaceDefault,
+    ),
     isNote: isReclaimableNote,
     associated: (value: string) =>
       associatedWith(
@@ -321,6 +311,7 @@ function reclaimContext(uri: string) {
           .get("editorAssociations"),
         value,
         viewType,
+        workspaceDefault,
       ),
     bypassed: hasNativeOptOut,
   };
@@ -359,10 +350,12 @@ async function reopen(
   }
   const { column } = request;
   refreshRequestSelection(native, uri, request);
-  await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
-    viewColumn: column,
-    preview: native.isPreview,
-  });
+  const open = () =>
+    vscode.commands.executeCommand("vscode.openWith", target, viewType, {
+      viewColumn: column,
+      preview: native.isPreview,
+    });
+  await withNativeSelectionOpen(uri, column, () => openRange(request), open);
   if (navigation && request.intent && request.at !== undefined) {
     request.delivering = true;
     refreshRequestSelection(native, uri, request);
