@@ -20,15 +20,64 @@ test("property sheet distinguishes editable scalars, list chips and Obsidian unk
   assert.doesNotMatch(html, /<script>|<b>/);
 });
 
-test("generated is OKF typed provenance; bare sources (no plugin) stay Unknown JSON", () => {
+test("generated is OKF typed provenance; sources is a plain text property", () => {
   const html = renderProperties(
-    '---\ngenerated:\n  by: agent\n  at: "2026-10-15T00:00:00Z"\nsources:\n  - resource: ../raw/a.pdf\n    id: a1\n---\n',
+    '---\ngenerated:\n  by: agent\n  at: "2026-10-15T00:00:00Z"\nsources:\n  - resource: ../raw/a.pdf\n    id: a1\nnote: hello\n---\n',
   );
   assert.match(html, /data-property-key="generated"[\s\S]*mod-okf-provenance/);
   assert.match(html, /data-property-type="generated"/);
   assert.match(html, /okf-provenance-by[^>]*>agent</);
-  assert.match(html, /data-property-key="sources"[\s\S]*mod-unknown/);
-  assert.doesNotMatch(html, /data-property-kind="yaml"/);
+  assert.match(
+    html,
+    /data-property-input="sources"[^>]*data-property-kind="text"/,
+  );
+  assert.match(
+    html,
+    /data-property-key="sources"[\s\S]*data-property-type="text"/,
+  );
+  assert.match(
+    html,
+    /data-property-input="note"[^>]*data-property-kind="text"/,
+  );
+  assert.match(html, /resource: \.\.\/raw\/a\.pdf/);
+  assert.doesNotMatch(
+    html,
+    /source-row|source-title|mod-unknown|data-property-type="sources"|data-property-list="sources"|data-property-kind="yaml"/,
+  );
+});
+
+test("a string sources value uses the same text control as any other string", () => {
+  const html = renderProperties(
+    "---\nsources: https://example.com/paper\nnote: hello\n---\n",
+  );
+  assert.match(html, />https:\/\/example.com\/paper</);
+  assert.match(
+    html,
+    /data-property-input="sources"[^>]*data-property-kind="text"/,
+  );
+  assert.match(
+    html,
+    /data-property-input="note"[^>]*data-property-kind="text"/,
+  );
+  assert.doesNotMatch(html, /source-row|source-title|property-complex/);
+});
+
+test("a custom renderer cannot replace the sources text field", () => {
+  const html = renderProperties(
+    "---\nsources: hello\n---\n",
+    {},
+    {
+      renderValue: (key) =>
+        key === "sources"
+          ? '<div class="source-rows"><p class="source-title">hello</p></div>'
+          : undefined,
+    },
+  );
+  assert.match(html, /data-property-kind="text">hello</);
+  assert.doesNotMatch(
+    html,
+    /source-title|source-rows|data-property-type="sources"/,
+  );
 });
 
 test("decision confidence maps and lists of maps render as Obsidian unknown JSON", () => {
@@ -125,31 +174,31 @@ test("property rendering bounds recursive aliases and leaves absent frontmatter 
   assert.match(empty, /data-placeholder="Empty"/);
 });
 
-test("empty sources keeps custom stacked UI with hidden YAML draft for editing", () => {
+test("a custom renderer still replaces a non-sources property and keeps a YAML draft", () => {
   const html = renderProperties(
-    "---\nsources: []\n---\n",
+    "---\ncitations: []\n---\n",
     {},
     {
       renderValue: (key) =>
-        key === "sources"
+        key === "citations"
           ? '<div class="source-rows" data-sources></div>'
           : undefined,
     },
   );
   assert.match(html, /data-sources/);
-  assert.match(html, /data-property-type="sources"/);
+  assert.match(html, /data-property-type="multitext"/);
   assert.match(html, /data-property-edit/);
   assert.match(html, /<textarea hidden[^>]*data-property-kind="yaml"/);
-  assert.doesNotMatch(html, /data-property-list="sources"/);
+  assert.doesNotMatch(html, /data-property-list="citations"/);
 });
 
-test("Sources custom rows stay typed UI without YAML even when entries alias", () => {
+test("custom rows stay typed UI without YAML even when entries alias", () => {
   const html = renderProperties(
-    "---\nreference: &r {resource: ../raw/a.pdf, id: a1}\nsources: [*r]\n---\n",
+    "---\nreference: &r {resource: ../raw/a.pdf, id: a1}\ncitations: [*r]\n---\n",
     {},
     {
       renderValue: (key) =>
-        key === "sources"
+        key === "citations"
           ? '<div class="source-rows"><button data-source-open>Open source</button></div>'
           : undefined,
     },
@@ -159,7 +208,7 @@ test("Sources custom rows stay typed UI without YAML even when entries alias", (
     /class="property-complex"><div class="source-rows">[\s\S]*data-source-open/,
   );
   assert.doesNotMatch(html, /data-property-kind="yaml"|Source mode/);
-  assert.doesNotMatch(html, /data-property-list="sources"/);
+  assert.doesNotMatch(html, /data-property-list="citations"/);
 });
 
 test("tagged YAML sets that cannot round-trip stay non-draft displays", () => {

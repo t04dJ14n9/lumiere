@@ -32,7 +32,7 @@ test("registry inference covers every scalar/list kind and reserved names before
     assert.equal(inferPropertyKind("status", value), kind);
   }
   assert.equal(inferPropertyKind("Status", true, { status: "text" }), "text");
-  for (const name of ["tags", "aliases", "cssclasses"]) {
+  for (const name of ["tags", "aliases", "cssclasses", "sources"]) {
     assert.equal(canSetPropertyType(name, "text"), false);
     assert.equal(canSetPropertyType(name, null), false);
   }
@@ -69,7 +69,7 @@ test("type submenu order, Automatic and checked state follow the registry", () =
   choices[0]!.run!();
   assert.deepEqual(calls, [["status", null]]);
   assert.equal(propertyTypeChoices("status", editor(), true)[0]!.checked, true);
-  for (const key of ["tags", "aliases", "cssclasses"]) {
+  for (const key of ["tags", "aliases", "cssclasses", "sources"]) {
     const reserved = propertyTypeChoices(key, service, ["x"]);
     assert.equal(reserved.length, 6);
     assert.ok(reserved.every((item) => item.disabled));
@@ -150,6 +150,7 @@ test("vault name suggestions combine registered and inferred names, filter and f
     "cssclasses",
     "due",
     "list",
+    "sources",
     "status",
     "tags",
     "title",

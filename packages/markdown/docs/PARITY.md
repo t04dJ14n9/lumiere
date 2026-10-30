@@ -375,7 +375,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: lumiere.markdown.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.graph.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.plugins.okfCore.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: lumiere.markdown.plugins.sourcesProperty.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.graph.maxNodes | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.graph.maxEdges | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: lumiere.markdown.graph.defaultMode | not observed | not manually observed | Manual scenario pending | not observed |

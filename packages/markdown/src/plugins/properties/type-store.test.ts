@@ -46,7 +46,7 @@ test("the name registry survives reopening and Automatic restores value inferenc
   assert.deepEqual(reopened.read("vault-b"), {});
   await reopened.set("vault-a", "STATUS", null);
   assert.deepEqual(store.read("vault-a"), {});
-  for (const key of ["tags", "Aliases", "cssclasses"]) {
+  for (const key of ["tags", "Aliases", "cssclasses", "sources"]) {
     await assert.rejects(store.set("vault-a", key, "number"));
     await assert.rejects(store.set("vault-a", key, null));
   }
