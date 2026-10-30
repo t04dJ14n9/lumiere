@@ -1041,6 +1041,32 @@
         "icon": "$(inspect)"
       },
       {
+        "command": "lumiere.pdf.selectAnnotateTool",
+        "title": "Annotate",
+        "category": "PDF",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "lumiere.pdf.annotationUndo",
+        "title": "Undo Annotation",
+        "category": "PDF",
+        "icon": "$(discard)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.annotationRedo",
+        "title": "Redo Annotation",
+        "category": "PDF",
+        "icon": "$(redo)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.annotationRetrySave",
+        "title": "Retry Annotation Save",
+        "category": "PDF",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
         "command": "lumiere.pdf.selectToolbarMode",
         "title": "Choose Toolbar Location…",
         "category": "PDF",
@@ -1455,6 +1481,12 @@
         "command": "lumiere.pdf.selectRegionTool",
         "key": "ctrl+alt+r",
         "mac": "ctrl+cmd+r",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.selectAnnotateTool",
+        "key": "ctrl+alt+a",
+        "mac": "ctrl+cmd+a",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
       }
     ],
@@ -2185,6 +2217,22 @@
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
         },
         {
+          "command": "lumiere.pdf.selectAnnotateTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.annotationUndo",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.annotationRedo",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.annotationRetrySave",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
           "command": "lumiere.pdf.selectToolbarMode"
         },
         {
@@ -2623,6 +2671,11 @@
           "command": "lumiere.pdf.selectRegionTool",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
           "group": "3_pdfTool@2"
+        },
+        {
+          "command": "lumiere.pdf.selectAnnotateTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfTool@3"
         },
         {
           "command": "lumiere.pdf.toggleOutline",
