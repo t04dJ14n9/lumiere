@@ -44,20 +44,6 @@ function yamlDraft(source: string, key: string): string {
   return draft;
 }
 
-/** Nested maps/lists render as Obsidian Unknown JSON (#141), not YAML drafts. */
-function assertUnknownProperty(source: string, key: string): void {
-  const html = renderProperties(source);
-  const keyAttr = `data-property-key="${key}"`;
-  const keyAt = html.indexOf(keyAttr);
-  assert.ok(keyAt >= 0, `Missing property key ${key}`);
-  const slice = html.slice(keyAt, keyAt + 4000);
-  assert.ok(slice.includes("mod-unknown"), `Expected Unknown UI for ${key}`);
-  assert.doesNotMatch(
-    html,
-    new RegExp(`data-property-input="${key}"[^>]*data-property-kind="yaml"`),
-  );
-}
-
 /** OKF known type: generated/verified maps with `by` (#144). */
 function assertOkfGenerated(source: string): void {
   const html = renderProperties(source);
@@ -103,10 +89,19 @@ for (const eol of ["\n", "\r\n"]) {
   });
 }
 
-test("Sources nested mappings render as Unknown; set-via-YAML still preserves comments", () => {
+test("sources nested mappings render as plain text; a YAML set still preserves comments", () => {
   const source =
     "---\nsources:\n  - resource: ../raw/old.pdf\n    # stable id\n    id: '01'\nkeep: yes\n---\n";
-  assertUnknownProperty(source, "sources");
+  const html = renderProperties(source);
+  assert.match(
+    html,
+    /data-property-input="sources"[^>]*data-property-kind="text"/,
+  );
+  assert.match(html, /resource: \.\.\/raw\/old\.pdf/);
+  assert.doesNotMatch(
+    html,
+    /mod-unknown|source-row|data-property-type="sources"|data-property-kind="yaml"/,
+  );
   const yaml = yamlDraft(source, "sources").replace("old.pdf", "new.pdf");
   assert.equal(
     editYaml(source, "sources", yaml),

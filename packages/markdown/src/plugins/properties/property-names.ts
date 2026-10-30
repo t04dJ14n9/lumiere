@@ -11,6 +11,7 @@ export function vaultPropertyNames(
     "tags",
     "aliases",
     "cssclasses",
+    "sources",
     ...Object.keys(types),
   ]);
   for (const properties of values) {

@@ -6270,3 +6270,17 @@ searched for `待收录的材料放这里。这些文件还不是知识库的一
 after the click showed that sentence selected in Lumière with Search still
 the sidebar. The temporary probe was removed; the shots are in
 `docs/pr-screenshots/458/`.
+
+## `sources` is a plain text property — 2026-10-30
+
+The properties sheet no longer treats `sources` as an OKF widget. PR #426
+had kept stacked source rows and opened a hidden YAML editor from a title
+click. That plugin (`sourcesProperty`) is removed: no custom renderer, no
+source cards, chips, disclosure, or open-link buttons. The key is reserved
+as Text. A string uses the same text control as any other string. A list or
+map shows its YAML text in that same control; committing it stores a string
+(a one-line replacement stays indented under the key, which YAML reads as a
+plain scalar).
+`generated` / `verified` and other nested values are unchanged. Graph edges
+from OKF `sources` rows are unchanged, because they read the note, not the
+sheet.

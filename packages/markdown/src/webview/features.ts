@@ -68,10 +68,6 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
     import("../plugins/pasteHtml/webview").then((m) => m.pasteHtmlWebview),
   properties: () =>
     import("../plugins/properties/webview").then((m) => m.propertiesWebview),
-  sourcesProperty: () =>
-    import("../plugins/sourcesProperty/webview").then(
-      (m) => m.sourcesPropertyWebview,
-    ),
   search: () =>
     import("../plugins/search/webview").then((m) => m.searchWebview),
   smartLists: () =>
@@ -88,12 +84,12 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
 };
 
 /**
- * Properties sheet first: only the sheet + Sources so the real Properties
- * widget does not wait on tags/lineNumbers (or tables/callouts) chunks.
+ * Properties sheet first: only the sheet so the real Properties widget does
+ * not wait on tags/lineNumbers (or tables/callouts) chunks.
  * Wave 13: tags/lineNumbers moved to the paint set — they are not needed for
  * Properties-ready after the wave-12 body-first placeholder.
  */
-const CHROME_FEATURE_IDS = new Set(["properties", "sourcesProperty"]);
+const CHROME_FEATURE_IDS = new Set(["properties"]);
 
 /**
  * Visible structure for the first screen after the Properties sheet. Includes
@@ -155,7 +151,7 @@ const PAINT_MANAGED_IDS = WEBVIEW_FEATURE_IDS.filter((id) =>
 
 export type FeaturePhase = "chrome" | "paint" | "all";
 
-/** Sheet chunks only (Properties / Sources). */
+/** Sheet chunk only (Properties). */
 export function preloadChromeFeatures(): Promise<void> {
   return Promise.all(
     [...CHROME_FEATURE_IDS].map((id) => loadWebviewPlugin(id)),
@@ -187,7 +183,7 @@ export function preloadPaintFeatures(
  * with `defaults`, those on by default), each with its parsed configuration.
  * Feature modules load in parallel the first time they are wanted.
  *
- * `phase: "chrome"` starts Properties/Sources only and must not wait on
+ * `phase: "chrome"` starts Properties only and must not wait on
  * tags/lineNumbers or tables/callouts chunk download. `phase: "paint"` adds
  * the rest of the first-screen structure (and does not stop deferred ones
  * that are not loaded yet). `phase: "all"` (default) applies the full wanted

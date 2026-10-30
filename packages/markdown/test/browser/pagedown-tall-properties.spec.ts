@@ -6,17 +6,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function largeNote(sourceCount: number, bodyParagraphs: number): string {
-  const entries = Array.from(
-    { length: sourceCount },
-    (_, index) =>
-      `  - title: Source ${index} title for the tall sheet\n    resource: https://example.com/src/${index}\n    id: id-${index}`,
+function largeNote(rowCount: number, bodyParagraphs: number): string {
+  const fields = Array.from(
+    { length: rowCount },
+    (_, index) => `field${index}: value ${index} for the tall sheet`,
   ).join("\n");
   const body = Array.from(
     { length: bodyParagraphs },
     (_, index) => `Body paragraph ${index} keeps painting.`,
   ).join("\n\n");
-  return `---\nsources:\n${entries}\n---\n# H1 Title\n\n${body}\n`;
+  return `---\n${fields}\nsources: plain citation\n---\n# H1 Title\n\n${body}\n`;
 }
 
 async function constrain(page: Page) {

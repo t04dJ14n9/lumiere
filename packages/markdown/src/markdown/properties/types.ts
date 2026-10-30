@@ -90,6 +90,8 @@ export function reservedPropertyKind(key: string): PropertyKind | undefined {
     tags: "tags",
     aliases: "aliases",
     cssclasses: "list",
+    // Always Text. The properties sheet must not grow a Sources widget.
+    sources: "text",
   };
   const name = key.toLowerCase();
   return Object.hasOwn(reserved, name) ? reserved[name] : undefined;

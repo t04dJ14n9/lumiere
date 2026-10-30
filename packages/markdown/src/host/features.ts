@@ -12,7 +12,6 @@ import {
   suggestHost,
   searchHost,
   onlineVideosHost,
-  sourcesPropertyHost,
   cursorBridgePanelHost,
 } from "../plugins/host";
 
@@ -23,7 +22,6 @@ const CRITICAL_PANEL_HOSTS: readonly PanelHost[] = [
   linksHost,
   tasksHost,
   propertiesHost,
-  sourcesPropertyHost,
   tagsHost,
   cursorBridgePanelHost,
 ];

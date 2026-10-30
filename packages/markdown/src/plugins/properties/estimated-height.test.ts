@@ -61,105 +61,27 @@ test("a multiline text value uses YAML-draft estimate (not one row per source li
   assert.equal(estimate("---\nnote: |\n  one\n  two\n  three\n---\n"), 182);
 });
 
-test("only the disclosed source rows count (no YAML draft under Sources)", () => {
-  const entries = Array.from({ length: 9 }, (_, index) => ({
-    title: `Source ${index}`,
-    resource: `https://example.com/${index}`,
-  }));
-  const source = `---\nsources:\n${entries
-    .map(
-      (entry) => `  - title: ${entry.title}\n    resource: ${entry.resource}`,
-    )
-    .join("\n")}\n---\n`;
-  const height = estimate(source, {
-    renderValue: (_key, value) => {
-      const rows = (value as { title: string; resource: string }[])
-        .map((entry, index) => {
-          const hidden = index >= 8 ? " hidden" : "";
-          return `<article class="source-row"${hidden} data-source-index="${index}"><p class="source-title">${entry.title}</p><p class="source-resource">${entry.resource}</p></article>`;
-        })
-        .join("");
-      return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 9</button></div>`;
-    },
+test("a large sources list estimates as clamped text, not stacked articles", () => {
+  const entries = Array.from(
+    { length: 108 },
+    (_, index) =>
+      `  - title: Source ${index}\n    resource: https://example.com/${index}\n    id: id-${index}`,
+  ).join("\n");
+  const source = `---\nsources:\n${entries}\n---\n`;
+  const height = estimate(source);
+  const short = estimate("---\nsources: hi\n---\n");
+  assert.ok(height > short, `${height} vs ${short}`);
+  assert.ok(height < 200, String(height));
+  const ignored = estimate(source, {
+    renderValue: () =>
+      '<div class="source-rows"><article class="source-row"><p class="source-title">Tall</p></article></div>',
   });
-  // 8 articles × ~65, 7 gaps × 8, disclosure — no YAML draft under Sources (OKF).
-  assert.equal(height, 663);
+  assert.equal(ignored, height);
 });
 
 test("an unreadable frontmatter reserves the source it shows", () => {
   const height = estimate("---\na: 1\na: 2\n---\n");
   assert.ok(height > 121, String(height));
-});
-
-test("a WorkVault-scale Sources list still reserves far more than one line", () => {
-  const entries = Array.from({ length: 108 }, (_, index) => ({
-    title: `Source ${index}`,
-    resource: `https://example.com/${index}`,
-    id: `id-${index}`,
-  }));
-  const source = `---\nsources:\n${entries
-    .map(
-      (entry) =>
-        `  - title: ${entry.title}\n    resource: ${entry.resource}\n    id: ${entry.id}`,
-    )
-    .join("\n")}\ndecision_confirmation: yes\n---\n`;
-  const height = estimate(source, {
-    renderValue: (key, value, _values) => {
-      if (key !== "sources") {
-        return undefined;
-      }
-      const rows = (value as { title: string; resource: string }[])
-        .map((entry, index) => {
-          const hidden = index >= 8 ? " hidden" : "";
-          return `<article class="source-row"${hidden} data-source-index="${index}"><p class="source-title">${entry.title}</p><p class="source-resource">${entry.resource}</p></article>`;
-        })
-        .join("");
-      return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 108</button></div>`;
-    },
-  });
-  // Default WidgetType estimatedHeight (-1) is one line (~24px). A 108-source
-  // sheet still only discloses 8 rows, but that is hundreds of pixels — enough
-  // that a one-line reserve blanks the body when the height map is consulted.
-  assert.ok(height > 600, String(height));
-  assert.ok(height < 2000, String(height));
-});
-
-test("an expanded Sources list reserves every article, not only the first eight", () => {
-  const entries = Array.from({ length: 12 }, (_, index) => ({
-    title: `Source ${index}`,
-    resource: `https://example.com/${index}`,
-  }));
-  const source = `---\nsources:\n${entries
-    .map(
-      (entry) => `  - title: ${entry.title}\n    resource: ${entry.resource}`,
-    )
-    .join("\n")}\n---\n`;
-  const disclosed = estimate(source, {
-    renderValue: (_key, value) => {
-      const rows = (value as { title: string; resource: string }[])
-        .map((entry, index) => {
-          const hidden = index >= 8 ? " hidden" : "";
-          return `<article class="source-row"${hidden} data-source-index="${index}"><p class="source-title">${entry.title}</p><p class="source-resource">${entry.resource}</p></article>`;
-        })
-        .join("");
-      return `<div class="source-rows">${rows}<button type="button" data-source-more>Showing 8 of 12</button></div>`;
-    },
-  });
-  const expanded = estimate(source, {
-    renderValue: (_key, value) => {
-      const rows = (value as { title: string; resource: string }[])
-        .map(
-          (entry, index) =>
-            `<article class="source-row" data-source-index="${index}"><p class="source-title">${entry.title}</p><p class="source-resource">${entry.resource}</p></article>`,
-        )
-        .join("");
-      return `<div class="source-rows">${rows}</div>`;
-    },
-  });
-  assert.ok(expanded > disclosed, `${expanded} vs ${disclosed}`);
-  // Four extra articles at 65px plus gaps — enough that falling back to the
-  // disclosed estimate after expand would jump the body by >200px.
-  assert.ok(expanded - disclosed > 200, String(expanded - disclosed));
 });
 
 test("a wrapping tags list reserves more than one control row", () => {
@@ -188,29 +110,4 @@ test("longtext estimate caps at three unfocused lines, as in Obsidian", () => {
   assert.ok(height > short, `${height} vs short ${short}`);
   // Unclamped 80×"wrapping" used to reserve >200px; the 3-line cap stays under.
   assert.ok(height < 200, String(height));
-});
-
-test("Sources article estimate follows title vs meta CSS margins (G21)", () => {
-  const titleOnly = estimate("---\nsources:\n  - title: Solo\n---\n", {
-    renderValue: () =>
-      `<div class="source-rows"><article class="source-row" data-source-index="0"><p class="source-title">Solo</p></article></div>`,
-  });
-  const titleResource = estimate(
-    "---\nsources:\n  - title: Solo\n    resource: https://example.com/0\n---\n",
-    {
-      renderValue: () =>
-        `<div class="source-rows"><article class="source-row" data-source-index="0"><p class="source-title">Solo</p><p class="source-resource">https://example.com/0</p></article></div>`,
-    },
-  );
-  const withMeta = estimate(
-    "---\nsources:\n  - title: Solo\n    resource: https://example.com/0\n    id: abc\n---\n",
-    {
-      renderValue: () =>
-        `<div class="source-rows"><article class="source-row" data-source-index="0"><p class="source-title">Solo</p><p class="source-resource">https://example.com/0</p><p class="source-id">abc</p></article></div>`,
-    },
-  );
-  // Extra meta line adds LINE + ARTICLE_META_MARGIN (21 + 4 with TEXT=14).
-  assert.equal(withMeta - titleResource, 25);
-  assert.equal(titleResource - titleOnly, 25);
-  assert.ok(titleOnly > 0);
 });
