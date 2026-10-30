@@ -45,6 +45,28 @@ export function shouldClaimEditorDrop(data: DragPayload | null): boolean {
   return isAttachmentDrag(data);
 }
 
+/** Push trimmed string entries from a JSON array uri-list payload. */
+function appendJsonUriList(found: string[], raw: string): void {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return;
+    }
+    for (const item of parsed) {
+      if (typeof item !== "string") {
+        continue;
+      }
+      const trimmed = item.trim();
+      if (!trimmed) {
+        continue;
+      }
+      found.push(trimmed);
+    }
+  } catch {
+    // Not JSON — ignore.
+  }
+}
+
 /** File:// and http(s) URIs from uri-list flavours (Explorer / OS without File). */
 export function urisFromDataTransfer(data: DragPayload | null): string[] {
   if (!data) {
@@ -68,18 +90,7 @@ export function urisFromDataTransfer(data: DragPayload | null): string[] {
     if (!raw.trim()) {
       continue;
     }
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) {
-          if (typeof item === "string" && item.trim()) {
-            found.push(item.trim());
-          }
-        }
-      }
-    } catch {
-      // Not JSON — ignore.
-    }
+    appendJsonUriList(found, raw);
   }
   return [...new Set(found)];
 }
