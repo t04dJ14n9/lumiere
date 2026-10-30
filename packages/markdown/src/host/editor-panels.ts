@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { EditorProvider } from "../shared/editor-provider";
 import type { PanelShell } from "../shared/host";
+import { SourceCoordinates } from "../shared/document/coordinates";
 import { panelIsActive } from "./active-panel";
 import {
   bindShellState,
@@ -22,6 +23,33 @@ interface EditorHost {
   extensionUri: vscode.Uri;
   documents: NativeDocuments;
   navigation?: NativeNavigation;
+}
+
+function currentNativeSelection(
+  document: vscode.TextDocument,
+): { at: number; to: number } | undefined {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.uri.toString() !== document.uri.toString()) {
+    return undefined;
+  }
+  const coordinates = new SourceCoordinates(document.getText());
+  const at = coordinates.toEditor(document.offsetAt(editor.selection.start));
+  const to = coordinates.toEditor(document.offsetAt(editor.selection.end));
+  return to > at ? { at, to } : undefined;
+}
+
+function revealNativeSelection(
+  navigation: NativeNavigation | undefined,
+  panel: PanelShell,
+  selection: { at: number; to: number } | undefined,
+): void {
+  if (!navigation?.revealPanel || !selection) {
+    return;
+  }
+  const intent = navigation.begin();
+  void navigation.revealPanel(panel.id, selection, intent).catch((error) => {
+    console.error("Lumière editor selection reveal failed", error);
+  });
 }
 
 function panelTransport(panel: vscode.WebviewPanel): PanelShell["transport"] {
@@ -74,6 +102,7 @@ function createPanelShell(
   document: vscode.TextDocument,
   panel: vscode.WebviewPanel,
   { extensionUri, documents }: EditorHost,
+  openedFromNativeSelection = false,
 ): PanelShell {
   const binding = bindingForPanel(panel, document);
   const root =
@@ -95,6 +124,7 @@ function createPanelShell(
     document: documents.wrap(document),
     cspSource: panel.webview.cspSource,
     trusted: vscode.workspace.isTrusted,
+    ...(openedFromNativeSelection ? { openedFromNativeSelection: true } : {}),
     transport: panelTransport(panel),
     active: () => isActivePanel(provider.viewType, binding.document, panel),
     reveal() {
@@ -167,7 +197,16 @@ export function registerEditor(
     provider.viewType,
     {
       resolveCustomTextEditor(document, panel) {
-        open(createPanelShell(provider, document, panel, host));
+        const selection = currentNativeSelection(document);
+        const shell = createPanelShell(
+          provider,
+          document,
+          panel,
+          host,
+          selection !== undefined,
+        );
+        open(shell);
+        revealNativeSelection(host.navigation, shell, selection);
       },
       resolveCustomTextEditorNavigation(
         document: vscode.TextDocument,

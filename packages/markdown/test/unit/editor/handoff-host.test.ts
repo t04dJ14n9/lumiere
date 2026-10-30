@@ -2120,6 +2120,8 @@ function createFakeDoc(uriStr: string, lines: readonly string[]) {
   const rawText = lines.join("\r\n");
   return {
     uri: Uri.parse(uriStr),
+    isDirty: false,
+    version: 1,
     getText: () => rawText,
     offsetAt(pos: Position) {
       return (
@@ -2305,6 +2307,67 @@ test("registerEditor enables customTextEditorNavigation and revealRange respects
       preserveFocus: true,
     },
   ]);
+});
+
+test("registerEditor relays a native search selection while resolving its custom panel", async (t) => {
+  const panels: PanelShell[] = [];
+  const navigation = host.navigation.createNavigation(() => panels);
+  let openedShell: PanelShell | undefined;
+  const stop = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extensionUri: Uri.parse("file:///ext") as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+      navigation,
+    },
+    (shell) => {
+      openedShell = shell;
+      panels.push(shell);
+    },
+  );
+  t.after(stop);
+
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+  };
+  const lines = ["Heading", "Search result token", "Tail"];
+  const document = createFakeDoc(note, lines);
+  const panel = createFakeWebviewPanel();
+  const start = lines[1]!.indexOf("result");
+  const selection = new Range(
+    new Position(1, start),
+    new Position(1, start + "result token".length),
+  );
+  vscode.window.activeTextEditor = {
+    document,
+    selection,
+    viewColumn: 1,
+  };
+
+  provider.resolveCustomTextEditor(document, panel);
+  assert.ok(openedShell);
+  const received: { at?: number; to?: number }[] = [];
+  const unregister = navigation.registerReveal({
+    id: openedShell.id,
+    uri: note,
+    active: () => true,
+    async reveal(target) {
+      received.push({
+        ...(target.at === undefined ? {} : { at: target.at }),
+        ...(target.to === undefined ? {} : { to: target.to }),
+      });
+      return true;
+    },
+  });
+  t.after(unregister);
+
+  await tick();
+  const source = lines.join("\n");
+  const at = source.indexOf("result token");
+  assert.deepEqual(received, [{ at, to: at + "result token".length }]);
 });
 
 test("CustomTextEditorNavigation tracks selection, fires onDidChangeSelection, and round-trips viewState", async (t) => {
