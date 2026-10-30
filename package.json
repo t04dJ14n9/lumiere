@@ -37,7 +37,8 @@
   ],
   "activationEvents": [
     "onCommand:vscodeEmbedPdf.bridge.envelope",
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "workspaceContains:**/*.md"
   ],
   "capabilities": {
     "untrustedWorkspaces": {

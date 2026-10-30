@@ -5,6 +5,7 @@ import type {
   HostSettings,
   NoteSettings,
 } from "../../shared/host";
+import { mergeEditorAssociations } from "../editor-association-merge";
 import { readSettings, type SettingsReader } from "../settings";
 import { createSettingsAccess } from "../settings-access";
 import type { RunningExtension } from "../running-extension";
@@ -71,7 +72,14 @@ function workspaceEditorAssociations(): EditorAssociations {
       if (!vscode.workspace.workspaceFolders?.length) {
         return undefined;
       }
-      return settings().inspect("editorAssociations")?.workspaceValue ?? {};
+      const inspected = settings().inspect("editorAssociations");
+      // User settings are visible too: Search uses the merged association,
+      // while the migration writes its override into the workspace.
+      return mergeEditorAssociations([
+        inspected?.globalValue,
+        inspected?.workspaceValue,
+        inspected?.workspaceFolderValue,
+      ]);
     },
     async write(associations) {
       await settings().update(

@@ -60,6 +60,9 @@ export function createPanel(
       return shell.column;
     },
     document: shell.document,
+    ...(shell.openedFromNativeSelection
+      ? { openedFromNativeSelection: true }
+      : {}),
     session,
     rpc,
     active: () => shell.active(),
