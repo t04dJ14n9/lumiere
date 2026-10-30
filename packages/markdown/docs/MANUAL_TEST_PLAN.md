@@ -315,9 +315,10 @@ Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
    source/live-preview toggles keep the native document authoritative. Check
    menu clipboard permissions, native pickers/locales and actual IME with the
    owner's editor; these are not established by the DOM event unit fakes.
-9b. `lumiere.markdown.properties.listPreviewCount` (default 3): a tags list or
-   Sources sheet with more than N items shows disclosure; raise/lower N and
-   confirm the chip/row preview count updates without rewriting YAML.
+9b. `lumiere.markdown.properties.listPreviewCount` (default 3): a tags, aliases,
+   cssclasses, or other list with more than N items shows disclosure; raise/lower
+   N and confirm the chip preview count updates without rewriting YAML. `sources`
+   is text, so this setting does not apply to it.
 10. Keep `title` as an ordinary editable text property (WorkVault uses the
     filename stem). Add `decision_confidence_and_supporting_evidence: high` and
     a nested `decision_conf` map with `score`, `rationale` and a `factors` list.
@@ -329,8 +330,8 @@ Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
     `decision_conf`. Its YAML editor must show the resolved list and permit a
     score edit. Commit with Ctrl/Cmd+Enter, save/reopen and undo; unrelated YAML
     stays intact. Unsupported tagged/recursive values show a clear Source mode
-    message. Sources retains stacked rows above its YAML editor, including
-    `sources: []`; source links still open, and selecting source ids still copies.
+    message. `sources` is plain text (see "sources and nested Properties"),
+    including `sources: []`: no stacked rows, source links, or id chips.
 
 Daily-note links are deferred because this editor has no daily-note plugin;
 per-note collapse (as in Obsidian) and native picker appearance are deliberate limits.
@@ -950,41 +951,33 @@ Cmd/Ctrl+K. Leave `agentBridge` behaviour unchanged.
 
 ### sources and nested Properties
 
-A note inside an OKF bundle, with a `sources` frontmatter list and a `generated`
-map. Confirm light and dark themes.
+A note with `sources: https://example.com/paper` (a string) and a `generated`
+map. Also open a note whose `sources` value is still a YAML list. Confirm light
+and dark themes.
 
-1. Rows stack in document order. The first eight are expanded. **Showing 8 of
-   N** reveals the rest. Revealing rows does not change the file. Beneath the
-   rows, a YAML draft edits the whole `sources` value; committing it updates
-   frontmatter (undoable like other Properties).
-2. A row shows its title, or a resource-derived label, with the original
-   resource on its own line. `id` appears only when the entry has one, as plain
-   selectable text (no Copy id button). A missing `usage_count` is not shown as
-   zero; zero is shown as zero. An entry `usage_window` wins over the inherited
-   one.
-3. An `https` resource opens in the browser. A bundle path opens that workspace
-   file. `command:`, `javascript:` and `data:` stay plain text and do not open.
-   Nothing is fetched to preview a title or a remote page.
-4. Edit the note so the clicked resource is gone, then activate the stale row.
-   The click does nothing. It does not open a different source by position.
-5. A note outside a bundle still shows the rows. A path that leaves the vault
-   does not open.
-6. `generated` (and any other nested map / list-of-maps) is editable as YAML in
+1. `sources` is a text property, the same control as `title` or any other
+   string: a text field, type Text, no stacked rows, chips, source links, or
+   disclosure. Edit the text and leave the field. The note stores a string.
+   Undo restores the previous value.
+2. A YAML list under `sources` still opens as that same text field (the list's
+   YAML text), not as cards or Unknown JSON. Committing the field stores a
+   string. Replacing the list with one line of text keeps that string indented
+   under `sources:` (a YAML plain scalar), not as a list.
+3. `generated` (and any other nested map / list-of-maps) is editable as YAML in
    Properties and writes back into the note. Scalar and scalar-list properties
    keep their usual controls.
-7. Add a comment between `generated.by` and `generated.checksum`, and quote the
+4. Add a comment between `generated.by` and `generated.checksum`, and quote the
    checksum. Open the YAML draft: its comments and quoting match the source.
    Change only `by`, add another comment in the draft, and commit with
    Ctrl/Cmd+Enter or Save. Both comments and the checksum's quoting survive.
-   Repeat with comments inside Sources entries and with a CRLF note. Undo once
-   restores the whole edit.
-8. In source, add `first: &a 9007199254740993` and `mirror: *a`. Edit `first`
+   Repeat with a CRLF note. Undo once restores the whole edit.
+5. In source, add `first: &a 9007199254740993` and `mirror: *a`. Edit `first`
    through Properties. Inspect source: `mirror` becomes the exact decimal
    `9007199254740993`. Repeat with that number inside an anchored collection.
-9. Add `pairs: !!pairs [a: 1, b: 2]` and an empty `!!pairs []`, plus nested
+6. Add `pairs: !!pairs [a: 1, b: 2]` and an empty `!!pairs []`, plus nested
    `!!pairs`, `!!set`, `!!map` and `!!timestamp` values. These rows remain
    display-only. Editing another property leaves every tag unchanged.
-10. Start a YAML draft, then edit its property or a frontmatter comment from
+7. Start a YAML draft, then edit its property or a frontmatter comment from
     another view before committing. The draft reports a conflict and preserves
     the other edit. A body-only edit still permits the property commit.
 
@@ -1013,9 +1006,8 @@ the command again reveals it. The panel is not tied to a Markdown document.
 5. Hide the panel and show it again. The layout worker does not keep running
    while it is hidden. Close the panel. The worker stops. Repeat in light and
    dark themes. The graph does not request remote images or URLs.
-6. Settings, all off in a minimal preset: `lumiere.markdown.plugins.graph.enabled`,
+6. Settings, all off in a minimal preset:    `lumiere.markdown.plugins.graph.enabled`,
    `lumiere.markdown.plugins.okfCore.enabled`,
-   `lumiere.markdown.plugins.sourcesProperty.enabled`,
    `lumiere.markdown.graph.maxNodes`, `lumiere.markdown.graph.maxEdges`,
    `lumiere.markdown.graph.defaultMode`, `lumiere.markdown.graph.localDepth`,
    `lumiere.markdown.graph.colorBy`, `lumiere.markdown.okfCore.bundles`.
@@ -1075,7 +1067,7 @@ On by default; VS Code's text diff stays the default until
    rendered panel follows both changes. Close the panel and repeat: no disposed
    panel updates or retained subscriptions should remain.
 
-### wiki, assets, scratch and Marp
+### wiki, scratch and Marp
 
 Use a disposable folder, never a personal vault. Add the slim
 `.wiki/layout.json` from `docs/bridge-envelope.md` if you want collection
@@ -1093,16 +1085,12 @@ paths; a missing layout is the legacy preset.
    portable Markdown link. The same text in a fence, in frontmatter, or
    outside the bundle does not. A bundle page with no `type` is reported.
    `knowledge/index.md` and `knowledge/log.md` are not.
-4. **Import Asset** of a new png creates the assets folder and inserts
-   `![…](…)` relative to the note. Import the same name again and choose
-   Keep both: the file is `name-2` and the folder is not recreated. Point
-   assets at a folder inside the bundle: the import is refused.
-5. **New Scratch Note** writes under `scratch/` (or the layout's scratch
+4. **New Scratch Note** writes under `scratch/` (or the layout's scratch
    path) with `title` and `captured` and no `type`. **Promote Scratch Note**
    to Concept writes `## Definition` and the other fixed sections, replaces
    the scratch note with a Markdown link, and does not change `index.md`.
    A scratch note with `marp: true` is refused and left in place.
-6. A note with `marp: true` offers **Open Marp Preview to the Side**.
+5. A note with `marp: true` offers **Open Marp Preview to the Side**.
    **Export Marp Slide Deck** in an untrusted workspace is refused. With
    Marp for VS Code installed and the workspace trusted, the text editor
    opens and Marp's export follows. **Toggle Marp** flips only the `marp`
@@ -1120,7 +1108,6 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
 | `lumiere.markdown.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.backlinks.sortByAlphabetical` — ✓ File name (A to Z) | unbound | On a disposable fixture, run ✓ File name (A to Z); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.backlinks.sortByAlphabeticalReverse` — ✓ File name (Z to A) | unbound | On a disposable fixture, run ✓ File name (Z to A); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.backlinks.sortByModifiedTime` — ✓ Modified time (new to old) | unbound | On a disposable fixture, run ✓ Modified time (new to old); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1280,7 +1267,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Setting | Default | Procedure |
 | --- | --- | --- |
 | `lumiere.markdown.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.attachments.enabled` | `true` | boolean; drop/paste an image into a note, confirm a timestamp file under `files.attachmentFolder` and its embed; turn off and confirm drop/paste leave the vault unchanged; then reset. |
 | `lumiere.markdown.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1318,7 +1305,6 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.search.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.sketch.enabled` | `true` | boolean; turn off on the iPad and confirm Insert Sketch leaves the right-click menu and a tap on a sketch selects it as an image; then reset. |
 | `lumiere.markdown.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.sourcesProperty.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.stickyScroll.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.suggest.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1328,7 +1314,6 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.backlinks.sortOrder` | `"alphabetical"` | alphabetical / alphabeticalReverse / byModifiedTime / byModifiedTimeReverse; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1382,7 +1367,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 
-Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
+Attachment folder (`files.attachmentFolder`) is where dropped, pasted, and HTML-paste images (and sketches) are saved under timestamp names. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
 
 

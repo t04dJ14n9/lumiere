@@ -97,6 +97,7 @@ test("loadVaultCssSnippets honors appearance.json enabledCssSnippets or discover
       authorize: async () => {},
       readText: async (uri) => files.get(uri),
       writeText: async () => {},
+      writeBytes: async () => {},
       list: async () => ["callouts.css", "extra.css"],
       mkdir: async () => {},
       copy: async () => {},

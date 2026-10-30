@@ -13,7 +13,7 @@ const fence = (body: string) => `\`\`\`mermaid\n${body}\n\`\`\``;
 const DRAWN: { name: string; source: string; at1211: number; at731: number }[] =
   [
     { name: "chain", source: diagramSource(0), at1211: 904, at731: 904 },
-    { name: "messages", source: diagramSource(1), at1211: 595, at731: 448 },
+    { name: "messages", source: diagramSource(1), at1211: 595, at731: 595 },
     { name: "classes", source: diagramSource(2), at1211: 497, at731: 497 },
     { name: "states", source: diagramSource(3), at1211: 435, at731: 435 },
     { name: "entities", source: diagramSource(4), at1211: 513, at731: 513 },
@@ -29,7 +29,7 @@ const DRAWN: { name: string; source: string; at1211: number; at731: number }[] =
       name: "pipeline",
       source: MERMAID_SAMPLES.pipeline!,
       at1211: 238,
-      at731: 191,
+      at731: 238,
     },
     {
       name: "subgraphs",
@@ -41,7 +41,7 @@ const DRAWN: { name: string; source: string; at1211: number; at731: number }[] =
       name: "conversation",
       source: MERMAID_SAMPLES.conversation!,
       at1211: 686,
-      at731: 643,
+      at731: 686,
     },
     {
       name: "animals",
@@ -78,6 +78,34 @@ for (const { name, source, at1211, at731 } of DRAWN) {
     }
   });
 }
+
+test("flowchart and sequence height guesses do not shrink with a narrower pane", () => {
+  // Short diagrams are already narrower than both panes. The wide ones are
+  // the cases fitted() used to scale down at 731px and leave tall at 1211px.
+  const sources = [
+    fence("flowchart TB\n  A --> B --> C --> D --> E"),
+    fence("flowchart LR\n  A --> B --> C --> D --> E --> F --> G --> H --> I"),
+    fence(
+      "flowchart TB\n  A --> B\n  A --> C\n  A --> D\n  A --> E\n  A --> F\n  A --> G\n  A --> H\n  A --> I",
+    ),
+    fence(
+      "sequenceDiagram\n  Alice->>Bob: hi\n  Bob->>Alice: yo\n  Alice->>Bob: ok",
+    ),
+    fence(
+      "sequenceDiagram\n  A->>B: hi\n  C->>D: hi\n  E->>F: hi\n  G->>H: hi\n  I->>J: hi",
+    ),
+    fence(diagramSource(1)),
+    fence(MERMAID_SAMPLES.pipeline!),
+    fence(MERMAID_SAMPLES.conversation!),
+  ];
+  for (const source of sources) {
+    assert.equal(
+      mermaidBlockHeight(source, 731),
+      mermaidBlockHeight(source, 1211),
+      source,
+    );
+  }
+});
 
 test("comments, directives and front matter are not statements", () => {
   const plain = mermaidBlockHeight(fence("flowchart TB\n  A --> B --> C"), 900);

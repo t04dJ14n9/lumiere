@@ -1,6 +1,7 @@
 import type { PdfDocumentObject } from "@embedpdf/models";
 import { PagePointerProvider } from "@embedpdf/plugin-interaction-manager/react";
 import { SearchLayer } from "@embedpdf/plugin-search/react";
+import { AnnotationLayer } from "@embedpdf/plugin-annotation/react";
 import { SelectionLayer } from "@embedpdf/plugin-selection/react";
 import React from "react";
 import type { PageRect } from "../shared/geometry";
@@ -26,8 +27,10 @@ export interface PageProps {
 
 /**
  * One page, as layers from bottom to top: the rendered image, search hits,
- * clickable links, a highlighted location, the selected region, and
- * EmbedPDF's text selection (which also draws the region being dragged).
+ * clickable links, a highlighted location, the selected region, annotations
+ * (absolute overlay; pointer-events none so link hit-targets do not steal
+ * region/text drags), and EmbedPDF's text selection (which also draws the
+ * region being dragged).
  */
 export function Page({
   pdf,
@@ -39,11 +42,52 @@ export function Page({
   region,
   onOpenPage,
 }: PageProps): React.JSX.Element {
-  const page = pageIndex + 1;
   const scale = width / Math.max(1, pdf.pages[pageIndex]?.size.width ?? width);
   const rotation = pageRotation(pdf, pageIndex);
-  const layer = { pageIndex, scale };
   const layers = (
+    <PageLayers
+      pdf={pdf}
+      pageIndex={pageIndex}
+      width={width}
+      height={height}
+      scale={scale}
+      rotation={rotation}
+      devicePixelRatio={devicePixelRatio}
+      highlight={highlight}
+      region={region}
+      onOpenPage={onOpenPage}
+    />
+  );
+  if (rotation === 0) {
+    return layers;
+  }
+  return (
+    <RotatedPage
+      pageIndex={pageIndex}
+      scale={scale}
+      size={{ width, height }}
+      rotation={rotation}
+    >
+      {layers}
+    </RotatedPage>
+  );
+}
+
+function PageLayers({
+  pdf,
+  pageIndex,
+  width,
+  height,
+  scale,
+  rotation,
+  devicePixelRatio,
+  highlight,
+  region,
+  onOpenPage,
+}: PageProps & { scale: number; rotation: number }): React.JSX.Element {
+  const page = pageIndex + 1;
+  const layer = { pageIndex, scale };
+  return (
     <PagePointerProvider
       documentId={DOCUMENT_ID}
       {...layer}
@@ -68,20 +112,18 @@ export function Page({
         highlight={highlight}
         region={region}
       />
+      <AnnotationLayer
+        documentId={DOCUMENT_ID}
+        pageIndex={pageIndex}
+        scale={scale}
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+        }}
+      />
       <TextSelection {...layer} />
     </PagePointerProvider>
-  );
-  return rotation === 0 ? (
-    layers
-  ) : (
-    <RotatedPage
-      pageIndex={pageIndex}
-      scale={scale}
-      size={{ width, height }}
-      rotation={rotation}
-    >
-      {layers}
-    </RotatedPage>
   );
 }
 

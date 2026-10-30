@@ -174,7 +174,7 @@ test("cssclasses frontmatter applies classes onto editor DOM and custom callouts
   );
 });
 
-test("OKF sources property opens YAML editor on click or edit button and commits changes", async ({
+test("sources property edits as plain text, like any other string", async ({
   page,
 }) => {
   const doc = [
@@ -184,35 +184,29 @@ test("OKF sources property opens YAML editor on click or edit button and commits
     "  - id: src-1",
     "    resource: https://example.com/a",
     "    title: Original Source",
-    "    usage: Initial usage",
     "---",
     "",
     "# Body",
   ].join("\n");
   await open(page, doc);
+  await expect(
+    page.locator(".source-title, .source-row, [data-source-more]"),
+  ).toHaveCount(0);
   const sourcesRow = page.locator('[data-property-row="sources"]');
-  await expect(sourcesRow.locator(".source-title")).toHaveText(
-    "Original Source",
+  const input = sourcesRow.locator('[data-property-input="sources"]');
+  await expect(input).toHaveAttribute("data-property-kind", "text");
+  await expect(sourcesRow.locator(".metadata-property-value")).toHaveAttribute(
+    "data-property-type",
+    "text",
   );
-  const textarea = sourcesRow.locator(
-    'textarea[data-property-input="sources"]',
-  );
-  await expect(textarea).toBeHidden();
-
-  await sourcesRow.locator(".source-title").click();
-  await expect(textarea).toBeVisible();
-  await expect(textarea).toBeFocused();
-  await textarea.fill(
-    "- id: src-1\n  resource: https://example.com/a\n  title: Updated Source Title\n  usage: Updated usage",
-  );
-  await page.locator("h1, .cm-line").last().click();
-
-  await expect(sourcesRow.locator(".source-title")).toHaveText(
-    "Updated Source Title",
-  );
+  await expect(input).toContainText("title: Original Source");
+  await input.fill("Updated Source Title");
+  await page.keyboard.press("Enter");
+  // A list replaced by text is still a string. The writer keeps the value
+  // indented under the key, which YAML reads as a plain scalar.
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
-    .toContain("title: Updated Source Title");
+    .toContain("sources:\n  Updated Source Title");
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toContain("title: Sources Note");

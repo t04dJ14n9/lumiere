@@ -8,6 +8,7 @@ export function createWorkspaceFiles(): WorkspaceFiles {
     authorize: (root, target) => contained(parse(root), parse(target)),
     readText,
     writeText,
+    writeBytes,
     list,
     mkdir,
     copy,
@@ -32,6 +33,10 @@ async function writeText(uri: string, text: string): Promise<void> {
     parse(uri),
     new TextEncoder().encode(text),
   );
+}
+
+async function writeBytes(uri: string, data: Uint8Array): Promise<void> {
+  await vscode.workspace.fs.writeFile(parse(uri), data);
 }
 
 async function list(uri: string): Promise<readonly string[] | undefined> {

@@ -13,17 +13,16 @@ import { open } from "./harness";
 const HEADING = "# H1 Title";
 const BODY = "Body paragraph";
 
-function largeNote(sourceCount: number, bodyParagraphs: number): string {
-  const entries = Array.from(
-    { length: sourceCount },
-    (_, index) =>
-      `  - title: Source ${index} title for the tall sheet\n    resource: https://example.com/src/${index}\n    id: id-${index}`,
+function largeNote(rowCount: number, bodyParagraphs: number): string {
+  const fields = Array.from(
+    { length: rowCount },
+    (_, index) => `field${index}: value ${index} for the tall sheet`,
   ).join("\n");
   const body = Array.from(
     { length: bodyParagraphs },
     (_, index) => `${BODY} ${index} keeps painting.`,
   ).join("\n\n");
-  return `---\nsources:\n${entries}\n---\n${HEADING}\n\n${body}\n`;
+  return `---\n${fields}\nsources: plain citation\n---\n${HEADING}\n\n${body}\n`;
 }
 
 async function constrain(page: Page) {
@@ -238,10 +237,9 @@ test("in-note fragment jump with a tall sheet keeps neighbours painted", async (
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
-  const entries = Array.from(
+  const fields = Array.from(
     { length: 108 },
-    (_, index) =>
-      `  - title: Source ${index}\n    resource: https://example.com/${index}\n    id: id-${index}`,
+    (_, index) => `field${index}: value ${index} for the tall sheet`,
   ).join("\n");
   const lead = Array.from(
     { length: 15 },
@@ -251,7 +249,7 @@ test("in-note fragment jump with a tall sheet keeps neighbours painted", async (
     { length: 20 },
     (_, index) => `Progress paragraph ${index}.`,
   ).join("\n\n");
-  const doc = `---\nsources:\n${entries}\n---\n# H1 Title\n\nSee [Progress](#progress).\n\n${lead}\n\n## Progress\n\n${progress}\n`;
+  const doc = `---\n${fields}\nsources: plain citation\n---\n# H1 Title\n\nSee [Progress](#progress).\n\n${lead}\n\n## Progress\n\n${progress}\n`;
   await open(page, doc);
   await constrain(page);
   await expect(page.locator(".hybrid-properties")).toBeVisible();

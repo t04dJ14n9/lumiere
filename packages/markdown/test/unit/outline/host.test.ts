@@ -31,6 +31,27 @@ test("the Markdown Outline shows and follows the first editor opened", async (t)
   assert.deepEqual(fixture.warnings, []);
 });
 
+test("opening from a native selection leaves the Search sidebar in place", async (t) => {
+  const fixture = await outlineFixture();
+  t.after(() => fixture.root.dispose());
+  const { panel } = fixture.panel("search-result");
+  Object.assign(panel, { openedFromNativeSelection: true });
+
+  fixture.open(panel);
+  await tick();
+
+  assert.deepEqual(
+    fixture.executed.filter(([command]) =>
+      [
+        "outline.removeView",
+        "lumiere.markdown.outline.focus",
+        "workbench.action.focusActiveEditorGroup",
+      ].includes(String(command)),
+    ),
+    [],
+  );
+});
+
 test("Follow Cursor commands persist the setting and update the checked context", async (t) => {
   const fixture = await outlineFixture();
   t.after(() => fixture.root.dispose());

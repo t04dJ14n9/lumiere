@@ -6,11 +6,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function sources(n: number): string {
-  return Array.from(
-    { length: n },
-    (_, i) => `  - title: S${i}\n    resource: https://ex.com/${i}`,
-  ).join("\n");
+function tallFields(n: number): string {
+  return Array.from({ length: n }, (_, i) => `field${i}: value ${i}`).join(
+    "\n",
+  );
 }
 
 async function constrain(page: Page) {
@@ -54,7 +53,7 @@ test("Mod-click PDF wiki #page= under tall Sources opens with fragment", async (
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
-  const doc = `---\nsources:\n${sources(20)}\n---\n# H\n\nOpen [[paper.pdf#page=7]] UniquePdfLink.\n`;
+  const doc = `---\n${tallFields(20)}\nsources: plain citation\n---\n# H\n\nOpen [[paper.pdf#page=7]] UniquePdfLink.\n`;
   await open(page, doc);
   await constrain(page);
   await page.evaluate(() =>

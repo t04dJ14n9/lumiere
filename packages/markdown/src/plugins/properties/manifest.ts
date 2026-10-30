@@ -7,7 +7,7 @@ export const config = Schema.object({
     .max(50)
     .default(3)
     .description(
-      "How many list chips or Sources rows to show before a disclosure control. Applies to tags, aliases, cssclasses, other lists, and OKF sources.",
+      "How many list chips to show before a disclosure control. Applies to tags, aliases, cssclasses, and other lists.",
     ),
 });
 export default defineManifest({

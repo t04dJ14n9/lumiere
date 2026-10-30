@@ -37,7 +37,8 @@
   ],
   "activationEvents": [
     "onCommand:vscodeEmbedPdf.bridge.envelope",
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "workspaceContains:**/*.md"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -81,11 +82,6 @@
         "title": "Copy Link for Agent",
         "category": "Lumière",
         "icon": "$(comment-discussion)"
-      },
-      {
-        "command": "lumiere.markdown.assets.import",
-        "title": "Import Asset",
-        "category": "Lumière"
       },
       {
         "command": "lumiere.markdown.backlinks.sortByAlphabetical",
@@ -1041,10 +1037,57 @@
         "icon": "$(inspect)"
       },
       {
+        "command": "lumiere.pdf.selectAnnotateTool",
+        "title": "Annotate",
+        "category": "PDF",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "lumiere.pdf.toggleAnnotateTool",
+        "title": "Toggle Annotate",
+        "category": "PDF",
+        "icon": "$(edit)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.pickAnnotationTool",
+        "title": "Annotation Tool…",
+        "category": "PDF",
+        "icon": "$(paintcan)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.annotationUndo",
+        "title": "Undo Annotation",
+        "category": "PDF",
+        "icon": "$(discard)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.annotationRedo",
+        "title": "Redo Annotation",
+        "category": "PDF",
+        "icon": "$(redo)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
+        "command": "lumiere.pdf.annotationRetrySave",
+        "title": "Retry Annotation Save",
+        "category": "PDF",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
         "command": "lumiere.pdf.selectToolbarMode",
         "title": "Choose Toolbar Location…",
         "category": "PDF",
         "icon": "$(layout)"
+      },
+      {
+        "command": "lumiere.pdf.cyclePageColors",
+        "title": "Cycle Page Colors",
+        "category": "PDF",
+        "icon": "$(color-mode)",
+        "enablement": "lumiere.pdf.pdfActive"
       },
       {
         "command": "lumiere.pdf.actualSize",
@@ -1449,6 +1492,12 @@
         "key": "ctrl+alt+r",
         "mac": "ctrl+cmd+r",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+      },
+      {
+        "command": "lumiere.pdf.selectAnnotateTool",
+        "key": "ctrl+alt+a",
+        "mac": "ctrl+cmd+a",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
       }
     ],
     "views": {
@@ -1496,10 +1545,6 @@
         {
           "command": "lumiere.markdown.copyLinkForAgent",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.agentBridge"
-        },
-        {
-          "command": "lumiere.markdown.assets.import",
-          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.assets.enabled"
         },
         {
           "command": "lumiere.markdown.backlinks.sortByAlphabetical",
@@ -2178,6 +2223,30 @@
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
         },
         {
+          "command": "lumiere.pdf.selectAnnotateTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.toggleAnnotateTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.pickAnnotationTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.annotationUndo",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.annotationRedo",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
+          "command": "lumiere.pdf.annotationRetrySave",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
           "command": "lumiere.pdf.selectToolbarMode"
         },
         {
@@ -2563,51 +2632,6 @@
           "group": "navigation"
         },
         {
-          "command": "lumiere.pdf.historyBack",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
-          "group": "navigation@8"
-        },
-        {
-          "command": "lumiere.pdf.historyForward",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome'",
-          "group": "navigation@9"
-        },
-        {
-          "command": "lumiere.pdf.find",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@10"
-        },
-        {
-          "command": "lumiere.pdf.zoomOut",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@11"
-        },
-        {
-          "command": "lumiere.pdf.zoomIn",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@12"
-        },
-        {
-          "command": "lumiere.pdf.fitPage",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit == 'width'",
-          "group": "navigation@13"
-        },
-        {
-          "command": "lumiere.pdf.fitWidth",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.fit != 'width'",
-          "group": "navigation@13"
-        },
-        {
-          "command": "lumiere.pdf.selectRegionTool",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool != 'region'",
-          "group": "navigation@14"
-        },
-        {
-          "command": "lumiere.pdf.selectTextTool",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu && lumiere.pdf.tool == 'region'",
-          "group": "navigation@14"
-        },
-        {
           "command": "lumiere.pdf.find",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
           "group": "0_pdfFind@1"
@@ -2661,6 +2685,11 @@
           "command": "lumiere.pdf.selectRegionTool",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
           "group": "3_pdfTool@2"
+        },
+        {
+          "command": "lumiere.pdf.selectAnnotateTool",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "3_pdfTool@3"
         },
         {
           "command": "lumiere.pdf.toggleOutline",
@@ -2718,9 +2747,19 @@
           "group": "4_pdfView@11"
         },
         {
-          "command": "lumiere.pdf.selectView",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && config.lumiere.pdf.toolbar.mode == 'chrome' && !lumiere.pdf.titleActionsInMenu",
-          "group": "navigation@15"
+          "command": "lumiere.pdf.cyclePageColors",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "4_pdfView@1.5"
+        },
+        {
+          "command": "lumiere.pdf.historyBack",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@0"
+        },
+        {
+          "command": "lumiere.pdf.historyForward",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+          "group": "1_pdfPage@0.5"
         }
       ]
     },
@@ -2734,11 +2773,11 @@
             "scope": "resource",
             "description": "Copy selected text with a link to its saved source lines, for an agent."
           },
-          "lumiere.markdown.plugins.assets.enabled": {
+          "lumiere.markdown.plugins.attachments.enabled": {
             "type": "boolean",
             "default": true,
             "scope": "resource",
-            "description": "Import a file into the project's assets folder and insert a portable Markdown link."
+            "description": "Save dropped, pasted, and HTML-paste images into the vault attachment folder with Obsidian-style embeds."
           },
           "lumiere.markdown.plugins.autoPair.enabled": {
             "type": "boolean",
@@ -2962,12 +3001,6 @@
             "scope": "resource",
             "description": "Smart lists in the Markdown editor."
           },
-          "lumiere.markdown.plugins.sourcesProperty.enabled": {
-            "type": "boolean",
-            "default": true,
-            "scope": "resource",
-            "description": "Show OKF sources as stacked rows with open links (typed Properties UI)."
-          },
           "lumiere.markdown.plugins.spellcheck.enabled": {
             "type": "boolean",
             "default": true,
@@ -3021,12 +3054,6 @@
             "default": true,
             "scope": "resource",
             "description": "Word and character count of the active note, or of the selection, in the status bar."
-          },
-          "lumiere.markdown.assets.path": {
-            "type": "string",
-            "default": "",
-            "description": "Project-relative assets folder used when the folder has no .wiki/layout.json. Empty uses assets. The folder is created on import, not on open.",
-            "scope": "resource"
           },
           "lumiere.markdown.autoPair.brackets": {
             "type": "boolean",
@@ -3241,7 +3268,7 @@
           "lumiere.markdown.files.attachmentFolder": {
             "type": "string",
             "default": "",
-            "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+            "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Dropped, pasted, and HTML-paste images are saved here under timestamp names.",
             "scope": "resource"
           },
           "lumiere.markdown.marp.open": {
@@ -3332,6 +3359,7 @@
             "minimum": 1,
             "maximum": 50,
             "default": 3,
+            "description": "How many list chips to show before a disclosure control. Applies to tags, aliases, cssclasses, and other lists.",
             "scope": "resource"
           },
           "lumiere.markdown.scratch.folder": {
@@ -3481,17 +3509,13 @@
             "default": "chrome",
             "enum": [
               "chrome",
-              "slim",
-              "floating",
               "none"
             ],
             "enumDescriptions": [
-              "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
-              "A slim bar along the top of the viewer.",
-              "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
-              "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+              "VS Code status bar entries for page, zoom, View, page colors and navigation.",
+              "No status-bar PDF entries: keyboard shortcuts, menus and the command palette only."
             ],
-            "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+            "markdownDescription": "Where the page, zoom, find and page-colors controls of the PDF viewer appear. Slim and floating viewer bars were removed. Every control also has a command and a keyboard shortcut."
           },
           "lumiere.pdf.toolbar.statusBarButtons": {
             "type": "string",
@@ -3506,7 +3530,7 @@
               "Always show the buttons.",
               "Only the page, zoom and View."
             ],
-            "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+            "markdownDescription": "With `#lumiere.pdf.toolbar.mode#` set to `chrome`, whether the status bar also shows history, previous and next page, zoom out and in, and find buttons around the page and zoom."
           },
           "lumiere.pdf.agentBridge.enabled": {
             "type": "boolean",
@@ -3595,6 +3619,21 @@
             ],
             "default": null,
             "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
+          },
+          "lumiere.pdf.pageColors": {
+            "type": "string",
+            "default": "follow",
+            "enum": [
+              "follow",
+              "normal",
+              "dark"
+            ],
+            "enumDescriptions": [
+              "Match the editor color theme kind: dark themes get dark paper; light themes stay normal.",
+              "White paper (classic PDF rendering).",
+              "Dark paper with recolored text and vectors; embedded images stay as-is. Scanned pages stay largely bright."
+            ],
+            "markdownDescription": "PDF page surface colors. **Follow** tracks `#window.activeColorTheme#` kind. Dark paper needs a PDFium color-scheme hook on EmbedPDF (see embedpdf#679); when unavailable, rendering stays Normal. No CSS invert."
           }
         }
       }

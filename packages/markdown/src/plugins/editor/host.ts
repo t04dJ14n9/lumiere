@@ -28,6 +28,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
       "clipboard",
       "dialogs",
       "settings",
+      "storage",
       "customEditors",
       "documents",
       "activeEditor",

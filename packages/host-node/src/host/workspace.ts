@@ -72,6 +72,18 @@ export function createWorkspaceFiles(
   const inside = (uri: string) => containInRoots(files, roots(), uri);
   return {
     authorize: (root, target) => files.contain(root, target),
+    ...workspaceFileReads(files, inside),
+    ...workspaceFileWrites(files, inside),
+    // There is no native file picker behind a page.
+    pickFile: async () => undefined,
+  };
+}
+
+function workspaceFileReads(
+  files: HostFiles,
+  inside: (uri: string) => Promise<void>,
+): Pick<WorkspaceFiles, "readText" | "list" | "isSymbolicLink"> {
+  return {
     readText: async (uri) => {
       try {
         await inside(uri);
@@ -80,14 +92,6 @@ export function createWorkspaceFiles(
         return undefined;
       }
     },
-    writeText: async (uri, text) => {
-      await inside(uri);
-      await files.mkdir(parentUri(files, uri));
-      // `save` only replaces a file (host-web refuses a missing one), and
-      // `create` leaves an existing one as it is.
-      await files.create(uri);
-      await files.save(uri, text);
-    },
     list: async (uri) => {
       try {
         await inside(uri);
@@ -95,6 +99,39 @@ export function createWorkspaceFiles(
         return undefined;
       }
       return (await files.list(uri))?.map((entry) => entry.name);
+    },
+    isSymbolicLink: async (uri) => {
+      try {
+        await inside(uri);
+      } catch {
+        return false;
+      }
+      return (await files.linkStat(uri))?.symbolicLink ?? false;
+    },
+  };
+}
+
+function workspaceFileWrites(
+  files: HostFiles,
+  inside: (uri: string) => Promise<void>,
+): Pick<
+  WorkspaceFiles,
+  "writeText" | "writeBytes" | "mkdir" | "copy" | "move" | "remove"
+> {
+  // `save` / `saveBytes` only replace; `create` leaves an existing file as-is.
+  const prepareWrite = async (uri: string) => {
+    await inside(uri);
+    await files.mkdir(parentUri(files, uri));
+    await files.create(uri);
+  };
+  return {
+    writeText: async (uri, text) => {
+      await prepareWrite(uri);
+      await files.save(uri, text);
+    },
+    writeBytes: async (uri, data) => {
+      await prepareWrite(uri);
+      await files.saveBytes(uri, data);
     },
     mkdir: async (uri) => {
       await inside(uri);
@@ -113,16 +150,6 @@ export function createWorkspaceFiles(
       await inside(uri);
       await files.remove(uri);
     },
-    isSymbolicLink: async (uri) => {
-      try {
-        await inside(uri);
-      } catch {
-        return false;
-      }
-      return (await files.linkStat(uri))?.symbolicLink ?? false;
-    },
-    // There is no native file picker behind a page.
-    pickFile: async () => undefined,
   };
 }
 

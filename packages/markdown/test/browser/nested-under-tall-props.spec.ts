@@ -5,12 +5,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function frontmatter(sourceCount: number): string {
-  const entries = Array.from(
-    { length: sourceCount },
-    (_, i) => `  - title: S${i}\n    resource: https://ex.com/${i}`,
+function frontmatter(rowCount: number): string {
+  const fields = Array.from(
+    { length: rowCount },
+    (_, i) => `field${i}: value ${i}`,
   ).join("\n");
-  return `---\nsources:\n${entries}\n---\n`;
+  return `---\n${fields}\nsources: plain citation\n---\n`;
 }
 
 async function constrain(page: Page) {

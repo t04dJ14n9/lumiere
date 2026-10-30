@@ -141,8 +141,8 @@ test("recreated webviews receive the current toolbar mode and dock after loading
   const viewer = open(preferences);
   await viewer.receive({ type: "ready" });
   for (const toolbar of [
-    { mode: "slim", dock: "bottom" },
-    { mode: "floating", dock: "right" },
+    { mode: "chrome", dock: "bottom" },
+    { mode: "none", dock: "right" },
   ] as const) {
     viewer.panel.setToolbar(toolbar);
     viewer.messages.length = 0;

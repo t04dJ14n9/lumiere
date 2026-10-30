@@ -10,7 +10,7 @@ retaining focused draft inputs. Edits use the pure YAML operations and become on
 outer-document transaction. List and chip drafts resolve the selected occurrence
 against current values before committing, so a stale render cannot replace a
 concurrently edited list. Save participants commit drafts and reject invalid
-input. Nested non-OKF maps render as Obsidian Unknown (`JSON.stringify`). OKF `generated`/`verified` use typed actor+time chips; OKF `sources` uses stacked rows (no YAML draft). List chips and Sources disclose after `properties.listPreviewCount` (default 3). Unsupported/tagged YAML prefers Source mode. If a settable value's slice cannot
+input. Nested non-OKF maps render as Obsidian Unknown (`JSON.stringify`). OKF `generated`/`verified` use typed actor+time chips. `sources` is a plain text property, the same control as any other string. List chips disclose after `properties.listPreviewCount` (default 3). Unsupported/tagged YAML prefers Source mode. If a settable value's slice cannot
 parse independently, a serialized copy keeps it editable. Blank row/value space
 focuses the value editor; native field, pill and link clicks keep their own actions.
 Replaced anchors materialize their external aliases with exact integers.
@@ -84,7 +84,7 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 The host injects `rpc`, `vault` and the host service `storage`; the webview injects `editor`,
 `document`, `livePreview`, `commands`, `rpc` and `menu`. The webview provides
 `propertyRenderers`, so another feature can replace one property's markup.
-`sourcesProperty` registers `sources` there.
+`sources` does not use that hook: it always renders as text.
 Widgets bind sheet content; heading interactions call `editor/focusTitle`.
 Edits emit `render/changed` and `editor/clearProjection`; RPC receives type
 preferences and shared disclosure; name suggestions use indexed vault metadata.

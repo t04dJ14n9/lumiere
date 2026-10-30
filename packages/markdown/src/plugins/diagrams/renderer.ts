@@ -115,27 +115,19 @@ export class DiagramRenderer {
     this.cleanups.clear();
   }
 
-  /** Theme + trust + source — SVG is not reusable across those axes. */
+  /** Trust + source. Dark is a CSS invert, so one SVG serves both appearances. */
   private cacheKeyFor(source: string): string {
-    const light =
-      typeof document !== "undefined" &&
-      document.body?.classList?.contains("vscode-light");
-    const theme = light ? "default" : "dark";
     const trust = this.trust.isTrusted() ? "t" : "u";
-    return `${theme}|${trust}|${source}`;
+    return `${trust}|${source}`;
   }
 
   private async renderMermaidSvg(source: string): Promise<string> {
     const { default: mermaid } = await import("mermaid");
     // Obsidian Allow (`mermaid-vault-trust`) enables HTML labels; Lumière still
     // sanitizes SVG output once before caching. Untrusted stays strict.
+    // Obsidian omits theme → Mermaid default (light); dark UI uses CSS invert.
     const trusted = this.trust.isTrusted();
-    const theme =
-      typeof document !== "undefined" &&
-      document.body?.classList?.contains("vscode-light")
-        ? "default"
-        : "dark";
-    const initKey = `${theme}|${trusted ? "t" : "u"}`;
+    const initKey = trusted ? "t" : "u";
     if (this.lastInitKey !== initKey) {
       mermaid.initialize({
         startOnLoad: false,
@@ -155,7 +147,6 @@ export class DiagramRenderer {
             "var(--font-mermaid, var(--vscode-editor-font-family, inherit))",
         },
         suppressErrorRendering: true,
-        theme,
       });
       this.lastInitKey = initKey;
     }

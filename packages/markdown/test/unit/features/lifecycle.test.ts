@@ -73,7 +73,6 @@ const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
 /** Features that need another feature running (declared through `inject.required`). */
 const providers: Record<string, string[]> = {
   gitInline: ["gitGutter"],
-  sourcesProperty: ["properties"],
 };
 const settingsOf = (ids: readonly string[]) =>
   Object.fromEntries(

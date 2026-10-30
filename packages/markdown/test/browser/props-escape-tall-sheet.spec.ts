@@ -1,23 +1,17 @@
 /**
- * Large-fixture-like sheet (nested maps + tall Sources + trailing map).
+ * Large-fixture-like sheet (nested maps + many text rows + trailing map).
  * Host GUI 2026-10-20: Escape while editing a property key scrolled from the
  * sheet top to frontmatter end (sources / decision_confirmation tail).
  */
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function largeFixtureLike(sourceCount: number): string {
+function largeFixtureLike(rowCount: number): string {
   const generated = `generated:\n  by: claude-code/claude-opus-5-5\n  at: '2026-10-19T23:30:00+08:00'`;
-  const entries = Array.from({ length: sourceCount }, (_, index) => {
-    const title =
-      index === 0
-        ? "DFActivitySystem feat/dfactivitycloud（a66257c，太湖登录与经太湖网关调工蜂）"
-        : `Source ${index} long title that wraps in a narrow properties value column`;
-    return `  - id: d-src-${index}
-    resource: https://git.woa.com/TimiJ3DFMServer/DFActivitySystem/tree/feat/cloud#section-${index}
-    revision: a66257c37e8f0f5a8ba4936a028deea681ed293e
-    title: ${title}`;
-  }).join("\n");
+  const fields = Array.from(
+    { length: rowCount },
+    (_, index) => `field${index}: value ${index}`,
+  ).join("\n");
   const decision = `decision_confirmation:
   by: human:youngjin
   at: '2026-09-07T20:09:07+08:00'
@@ -36,8 +30,8 @@ tags:
 - external
 status: draft
 ${generated}
-sources:
-${entries}
+sources: plain citation text
+${fields}
 ${decision}
 ---
 # H1 Title

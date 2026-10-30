@@ -57,14 +57,13 @@ import wordCount from "./wordCount/manifest";
 import linkUpdates from "./linkUpdates/manifest";
 import bridge from "./bridge/manifest";
 import wiki from "./wiki/manifest";
-import assets from "./assets/manifest";
+import attachments from "./attachments/manifest";
 import scratch from "./scratch/manifest";
 import gitDiffEditor from "./gitDiffEditor/manifest";
 import marp from "./marp/manifest";
 import okfCore from "./okfCore/manifest";
 import obsidianCompat from "./obsidianCompat/manifest";
 import graph from "./graph/manifest";
-import sourcesProperty from "./sourcesProperty/manifest";
 /**
  * Which plugins exist; nothing else. Their precedence is plugin-order.ts,
  * their dependencies plugin-graph.ts, and their lifecycle the kernel.
@@ -94,8 +93,8 @@ export const features: readonly Manifest[] = inPluginOrder(
     onlineVideos,
     pagePreview,
     pasteHtml,
+    attachments,
     properties,
-    sourcesProperty,
     search,
     smartLists,
     spellcheck,
@@ -115,7 +114,6 @@ export const features: readonly Manifest[] = inPluginOrder(
  */
 export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
   [
-    assets,
     backlinks,
     bridge,
     ideContext,

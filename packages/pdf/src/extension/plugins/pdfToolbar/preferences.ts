@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import {
   parseFloatingDock,
-  parseToolbarMode,
+  parseVsCodeToolbarMode,
   type FloatingDock,
   type ToolbarSettings,
 } from "../../../shared/toolbar-settings";
@@ -29,7 +29,7 @@ export class ToolbarPreferences implements vscode.Disposable {
 
   get settings(): ToolbarSettings {
     return {
-      mode: parseToolbarMode(
+      mode: parseVsCodeToolbarMode(
         vscode.workspace.getConfiguration(SECTION).get("mode"),
       ),
       dock: parseFloatingDock(this.state.get(DOCK_KEY)),

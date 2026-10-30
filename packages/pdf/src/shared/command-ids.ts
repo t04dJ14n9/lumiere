@@ -18,6 +18,12 @@ export const VIEW_COMMAND_IDS = {
   find: "lumiere.pdf.find",
   selectTextTool: "lumiere.pdf.selectTextTool",
   selectRegionTool: "lumiere.pdf.selectRegionTool",
+  selectAnnotateTool: "lumiere.pdf.selectAnnotateTool",
+  toggleAnnotateTool: "lumiere.pdf.toggleAnnotateTool",
+  pickAnnotationTool: "lumiere.pdf.pickAnnotationTool",
+  annotationUndo: "lumiere.pdf.annotationUndo",
+  annotationRedo: "lumiere.pdf.annotationRedo",
+  annotationRetrySave: "lumiere.pdf.annotationRetrySave",
   goToPage: "lumiere.pdf.goToPage",
   selectZoom: "lumiere.pdf.selectZoom",
 } as const;
@@ -60,6 +66,7 @@ export const HISTORY_COMMAND_IDS = {
 
 export const TOOLBAR_COMMAND_IDS = {
   selectToolbarMode: "lumiere.pdf.selectToolbarMode",
+  cyclePageColors: "lumiere.pdf.cyclePageColors",
 } as const;
 
 export const LOOK_UP_COMMAND_IDS = {

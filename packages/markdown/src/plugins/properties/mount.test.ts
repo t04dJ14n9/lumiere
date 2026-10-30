@@ -9,10 +9,13 @@ test("the first property paint includes a custom renderer", () => {
     source: "current",
     copy() {},
     openMenu: () => () => {},
-    renderProperty: () => "<button data-source-open>../raw/paper.pdf</button>",
+    renderProperty: (key: string) =>
+      key === "citations"
+        ? "<button data-source-open>../raw/paper.pdf</button>"
+        : undefined,
   } as PropertyContext;
   const html = propertyMarkup(
-    "---\nsources:\n  - resource: ../raw/paper.pdf\n---\n",
+    "---\ncitations:\n  - resource: ../raw/paper.pdf\n---\n",
     context,
     false,
   );

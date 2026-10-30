@@ -82,7 +82,7 @@ unresolved set shortly after. Host claim handlers may override default opening.
 
 File-location fields are validated by this plugin's schema and exposed as
 `files.newNoteFolder` and `files.attachmentFolder`. The native note-creation
-pipeline consumes the former; attachment importing is outside this release.
+pipeline consumes the former; the Attachments plugin saves dropped/pasted images using the latter.
 `useWikilinks` controls suggestion acceptance; explicit Insert Wikilink retains
 wiki syntax. New-link format still controls vault link text.
 

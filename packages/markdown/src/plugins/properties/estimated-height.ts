@@ -14,7 +14,7 @@ import type { PropertyTypes } from "../../markdown/properties/types";
  *
  * The numbers match the Obsidian-parity sheet in `properties.css`:
  * 0.875em metadata text (~14px at 16px root), 8px top padding,
- * 2rem bottom margin, 3px row gap, heading, add button, source articles.
+ * 2rem bottom margin, 3px row gap, heading and add button.
  * Once the sheet is drawn, measurement replaces this guess.
  */
 const TEXT = 14;
@@ -32,11 +32,6 @@ const ADD_BUTTON = 8 + 8 + LINE;
 const SHEET_PADDING = 8 + 32;
 const SHEET_CHROME = SHEET_PADDING + HEADING + ADD_BUTTON;
 const COLLAPSED = SHEET_PADDING + HEADING;
-/** `.source-row` padding 6+6 plus 1px border-top (`properties.css`). */
-const ARTICLE_CHROME = 12 + 1;
-/** Non-title `<p>` use `margin: 2px 0` → 4px; `.source-title` is `margin: 0`. */
-const ARTICLE_META_MARGIN = 4;
-const STACK_GAP = 8;
 /** `textarea` rows=3 at 0.92em of the 0.875em sheet, plus padding/border. */
 const YAML_FIELD = 76;
 /** Flex-wrap chips in the value column (default ~14px sheet width). */
@@ -103,11 +98,6 @@ function propertyRowHeight(row: string): number {
 }
 
 function valueColumnHeight(row: string): number {
-  const sources = sourcesHeight(row);
-  // Sources stacked UI is typed OKF — no YAML draft under the rows.
-  if (sources > 0) {
-    return sources;
-  }
   // Unknown JSON / OKF provenance chips are one value line.
   if (row.includes("mod-unknown") || row.includes("mod-okf-provenance")) {
     return VALUE_MIN;
@@ -127,7 +117,7 @@ function valueColumnHeight(row: string): number {
   return longTextHeight(row);
 }
 
-/** Tag/alias/list chips wrap; one-row reserve blanks the body like Sources did. */
+/** Tag/alias/list chips wrap; a one-row reserve blanks the body under them. */
 function listHeight(row: string): number | undefined {
   if (!row.includes("multi-select-container")) {
     return undefined;
@@ -181,62 +171,6 @@ function longTextHeight(row: string): number {
     rows += Math.max(1, Math.ceil(width / LIST_WIDTH));
   }
   return Math.max(VALUE_MIN, Math.min(rows, LONGTEXT_CLAMP_LINES) * LINE);
-}
-
-/** Visible source articles only. Rows past the disclosure stay in the markup with `hidden`. */
-function sourcesHeight(row: string): number {
-  if (!row.includes("source-row")) {
-    return 0;
-  }
-  const articles = row.split("<article").slice(1);
-  let height = 0;
-  let visible = 0;
-  for (const article of articles) {
-    if (article.startsWith(' class="source-row" hidden')) {
-      continue;
-    }
-    visible += 1;
-    height += sourceArticleHeight(article);
-  }
-  if (visible === 0) {
-    return 0;
-  }
-  height += (visible - 1) * STACK_GAP;
-  if (row.includes("data-source-more")) {
-    height += STACK_GAP + LINE;
-  }
-  return height;
-}
-
-function sourceArticleHeight(article: string): number {
-  // Titles and long resource URLs wrap in the value column (LIST_WIDTH).
-  // One-line-per-<p> underestimates WorkVault Sources and leaves the map
-  // short of painted height (tail overlap / Escape jump into the sheet).
-  // Paragraph vertical margins follow properties.css: title has none; meta
-  // lines (resource/id/usage/meta) contribute ARTICLE_META_MARGIN each so a
-  // typical title+resource article still lands on the measured 65px floor.
-  // Bound at </article>: the split remnant can include sheet chrome (SVG
-  // icons, `.property-message`) that must not count as article paragraphs.
-  const end = article.indexOf("</article>");
-  const body = end === -1 ? article : article.slice(0, end);
-  let height = ARTICLE_CHROME;
-  for (const match of body.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/g)) {
-    const plain = match[1]!.replace(/<[^>]+>/g, "").trim();
-    const width = Math.max(plain.length, 1) * CHAR_WIDTH;
-    const rows = Math.max(1, Math.ceil(width / LIST_WIDTH));
-    const className = /class="([^"]*)"/.exec(match[0]!)?.[1] ?? "";
-    const margin = className.includes("source-title") ? 0 : ARTICLE_META_MARGIN;
-    height += rows * LINE + margin;
-  }
-  const raw = /<pre class="source-raw">([\s\S]*?)<\/pre>/.exec(body)?.[1];
-  if (raw === undefined) {
-    return height;
-  }
-  return height + rawBlockHeight(raw);
-}
-
-function rawBlockHeight(text: string): number {
-  return 4 + text.split("\n").length * TEXT * 0.85 * 1.5;
 }
 
 function errorSheetHeight(markup: string): number {

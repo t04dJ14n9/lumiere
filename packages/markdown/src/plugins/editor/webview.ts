@@ -42,6 +42,10 @@ import { reportWebviewFocus } from "./focus-report";
 import { selectionDragScroll } from "./drag-scroll";
 import { focusOpensKeyboard } from "../../webview/ui/soft-keyboard";
 import { chromeInsetMargins } from "../../webview/ui/chrome-inset";
+import {
+  placeOpeningSelection,
+  type OpeningSelection,
+} from "./opening-selection";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -54,6 +58,8 @@ interface EditorConfig {
   text: string;
   parent: HTMLElement;
   mode: "source" | "livePreview";
+  /** Search match to show on the first paint, before a later reveal. */
+  openingSelection?: OpeningSelection;
 }
 /** More than one caret, as in Obsidian and VS Code; Alt-click adds one. */
 const multipleCarets = [
@@ -130,6 +136,9 @@ export const editorWebview: Plugin<EditorConfig> = {
     if (!focusOpensKeyboard()) {
       view.focus();
     }
+    // Before the first frame: otherwise the note paints at the top and the
+    // Search reveal then jumps it to the match.
+    placeOpeningSelection(view, config.openingSelection);
   },
 };
 

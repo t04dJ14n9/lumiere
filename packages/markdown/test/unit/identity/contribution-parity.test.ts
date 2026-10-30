@@ -18,7 +18,7 @@ import type { Okf } from "../../../src/plugins/okfCore/api";
 import type { Editors } from "../../../src/plugins/editor/api";
 import type { Vaults } from "../../../src/plugins/vault/api";
 import { commandsHost } from "../../../src/plugins/commands/host";
-import { assetsHost } from "../../../src/plugins/assets/host";
+import { attachmentsHost } from "../../../src/plugins/attachments/host";
 import { bridgeHost } from "../../../src/plugins/bridge/host";
 import { cursorBridgeHost } from "../../../src/plugins/cursorBridge/host";
 import { ideContextHost } from "../../../src/plugins/ideContext/host";
@@ -280,7 +280,7 @@ function installHosts(
   root.plugin(wikiHost);
   root.plugin(scratchHost);
   root.plugin(marpHost);
-  root.plugin(assetsHost);
+  root.plugin(attachmentsHost);
   root.plugin(gitDiffEditorHost);
   root.plugin(quickSwitcherHost);
   root.plugin(linkUpdatesHost);

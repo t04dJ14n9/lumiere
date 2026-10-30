@@ -127,11 +127,23 @@ export const commands = {
   getCommands: async () => [] as string[],
 };
 
+export const ColorThemeKind = {
+  Light: 1,
+  Dark: 2,
+  HighContrast: 3,
+  HighContrastLight: 4,
+};
+
 export const window = {
+  activeColorTheme: { kind: ColorThemeKind.Dark },
+  onDidChangeActiveColorTheme: event("window.colorTheme"),
+  setStatusBarMessage: (_text: string, _hideAfterTimeout?: number) =>
+    track("statusBarMessage", { dispose() {} }),
   registerCustomEditorProvider: (viewType: string) =>
     track(`customEditor:${viewType}`),
   createStatusBarItem: () =>
     track("statusBarItem", {
+      name: "",
       text: "",
       tooltip: "",
       command: undefined as unknown,

@@ -10,40 +10,38 @@ import {
 } from "./view-controls-support";
 import { parseViewSettings } from "../../src/shared/view-settings";
 
-for (const toolbar of ["slim", "floating"]) {
-  test(`${toolbar}: View chooses fit modes, actual size and custom percentages`, async ({
-    page,
-  }) => {
-    await openView(page, { defaultZoom: "fitPage" }, toolbar);
-    await viewMenu(page);
-    const mode = page.getByRole("combobox", { name: "Zoom mode", exact: true });
-    await mode.selectOption("actualSize");
-    await expect
-      .poll(() => lastView(page))
-      .toMatchObject({ zoomPercent: 100, fit: null });
-    await expect
-      .poll(() =>
-        page
-          .locator(".page")
-          .first()
-          .evaluate((element) => element.getBoundingClientRect().width),
-      )
-      .toBe(300);
-    await page
-      .getByRole("textbox", { name: "Custom zoom", exact: true })
-      .fill("140");
-    await page
-      .getByRole("textbox", { name: "Custom zoom", exact: true })
-      .press("Enter");
-    await expect
-      .poll(() => lastView(page))
-      .toMatchObject({ zoomPercent: 140, fit: null });
-    await mode.selectOption("fitWidth");
-    await expect.poll(() => lastView(page)).toMatchObject({ fit: "width" });
-    await mode.selectOption("fitPage");
-    await expect.poll(() => lastView(page)).toMatchObject({ fit: "page" });
-  });
-}
+test("slim: View chooses fit modes, actual size and custom percentages", async ({
+  page,
+}) => {
+  await openView(page, { defaultZoom: "fitPage" }, "slim");
+  await viewMenu(page);
+  const mode = page.getByRole("combobox", { name: "Zoom mode", exact: true });
+  await mode.selectOption("actualSize");
+  await expect
+    .poll(() => lastView(page))
+    .toMatchObject({ zoomPercent: 100, fit: null });
+  await expect
+    .poll(() =>
+      page
+        .locator(".page")
+        .first()
+        .evaluate((element) => element.getBoundingClientRect().width),
+    )
+    .toBe(300);
+  await page
+    .getByRole("textbox", { name: "Custom zoom", exact: true })
+    .fill("140");
+  await page
+    .getByRole("textbox", { name: "Custom zoom", exact: true })
+    .press("Enter");
+  await expect
+    .poll(() => lastView(page))
+    .toMatchObject({ zoomPercent: 140, fit: null });
+  await mode.selectOption("fitWidth");
+  await expect.poll(() => lastView(page)).toMatchObject({ fit: "width" });
+  await mode.selectOption("fitPage");
+  await expect.poll(() => lastView(page)).toMatchObject({ fit: "page" });
+});
 
 test("chrome receives the same view actions without a webview toolbar", async ({
   page,
@@ -226,6 +224,7 @@ test("saved view choices override defaults on reopen and survive a file rebuild"
     const data = await (await fetch("/fixtures/outline.pdf")).arrayBuffer();
     (window as unknown as { hostSend(message: unknown): void }).hostSend({
       type: "load",
+      sha256: "test-sha",
       data,
       settings: {},
     });

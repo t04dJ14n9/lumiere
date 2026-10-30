@@ -45,6 +45,8 @@
   --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --text-font: var(--ui-font);
   --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
+  /* Obsidian: --font-mermaid: var(--font-text); editor face is the Lumière stand-in */
+  --font-mermaid: var(--vscode-editor-font-family, inherit);
   --text-size: 16px;
   /*
    * Code is set a size smaller than the proportional prose, as in Obsidian
