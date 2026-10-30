@@ -10,6 +10,7 @@ import {
   enableCustomTextEditorProposals,
 } from "./custom-editor-navigation";
 import type { NativeNavigation } from "./navigation";
+import { isNativeSelectionOpen } from "./native-selection-open";
 import type { NativeDocuments } from "./services/native-documents";
 
 /**
@@ -97,23 +98,31 @@ function panelState(
     tabSubscription.dispose();
   };
 }
+
+function panelResourceRoots(
+  document: vscode.TextDocument,
+  extensionUri: vscode.Uri,
+): vscode.Uri[] {
+  const root =
+    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
+    vscode.Uri.joinPath(document.uri, "..");
+  return [vscode.Uri.joinPath(extensionUri, "dist", "markdown"), root];
+}
+
 function createPanelShell(
   provider: EditorProvider,
   document: vscode.TextDocument,
   panel: vscode.WebviewPanel,
-  { extensionUri, documents }: EditorHost,
-  openedFromNativeSelection = false,
+  options: {
+    host: EditorHost;
+    openedFromNativeSelection?: boolean;
+  },
 ): PanelShell {
+  const { extensionUri, documents } = options.host;
   const binding = bindingForPanel(panel, document);
-  const root =
-    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
-    vscode.Uri.joinPath(document.uri, "..");
   panel.webview.options = {
     enableScripts: true,
-    localResourceRoots: [
-      vscode.Uri.joinPath(extensionUri, "dist", "markdown"),
-      root,
-    ],
+    localResourceRoots: panelResourceRoots(document, extensionUri),
   };
 
   return {
@@ -124,7 +133,9 @@ function createPanelShell(
     document: documents.wrap(document),
     cspSource: panel.webview.cspSource,
     trusted: vscode.workspace.isTrusted,
-    ...(openedFromNativeSelection ? { openedFromNativeSelection: true } : {}),
+    ...(options.openedFromNativeSelection
+      ? { openedFromNativeSelection: true }
+      : {}),
     transport: panelTransport(panel),
     active: () => isActivePanel(provider.viewType, binding.document, panel),
     reveal() {
@@ -184,7 +195,7 @@ async function movePanelToDocument(
   binding.viewState = undefined;
   binding.document = newDocument;
   binding.pendingRestore = snapshot;
-  open(createPanelShell(provider, newDocument, panel, host));
+  open(createPanelShell(provider, newDocument, panel, { host }));
 }
 /** Register `provider` as a custom editor; each panel it opens goes to `open`. */
 export function registerEditor(
@@ -198,13 +209,15 @@ export function registerEditor(
     {
       resolveCustomTextEditor(document, panel) {
         const selection = currentNativeSelection(document);
-        const shell = createPanelShell(
-          provider,
-          document,
-          panel,
-          host,
-          selection !== undefined,
+        const transferredSelection = isNativeSelectionOpen(
+          document.uri.toString(),
+          panel.viewColumn ?? vscode.ViewColumn.One,
         );
+        const shell = createPanelShell(provider, document, panel, {
+          host,
+          openedFromNativeSelection:
+            selection !== undefined || transferredSelection,
+        });
         open(shell);
         revealNativeSelection(host.navigation, shell, selection);
       },

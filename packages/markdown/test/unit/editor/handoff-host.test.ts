@@ -10,7 +10,10 @@ import type * as HostNavigation from "../../../src/host/navigation";
 import type * as EditorPanels from "../../../src/host/editor-panels";
 import type { PanelShell, RevealPanel } from "../../../src/shared/host";
 import type { Uri as NativeUri } from "vscode";
-import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
+import {
+  MARKDOWN_EDITOR,
+  MARKDOWN_WORKSPACE_EDITOR_KEY,
+} from "../../../src/shared/editor-provider";
 import {
   confirmActiveEditor,
   handOffSelection,
@@ -1702,6 +1705,109 @@ test("a hunk selection exposed by late native activation survives an in-flight o
   assert.equal(commands.length, 1);
 });
 
+test("a Search selection applied after text activation updates the in-flight open", async (t) => {
+  let finishOpen = () => {};
+  const opening = new Promise<void>((resolve) => {
+    finishOpen = resolve;
+  });
+  t.after(finishOpen);
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const completeOpen = afterCommand;
+  afterCommand = async () => {
+    await opening;
+    await completeOpen?.();
+  };
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  tab.input = new TabInputText(Uri.parse(note));
+  const editor = nativeHunkEditor(tab, 0);
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+
+  const selected = nativeHunkEditor(tab, 947);
+  selectionChanged.fire({ textEditor: selected });
+  finishOpen();
+  await tick();
+
+  assert.deepEqual(destination.ranges, [
+    {
+      at: selected.document.getText().indexOf("Line 948\n"),
+      to: selected.document.getText().indexOf("Line 950\n") + 4,
+    },
+  ]);
+  assert.equal(
+    editor.document.uri.toString(),
+    selected.document.uri.toString(),
+  );
+});
+
+test("a caret at the start does not reclaim before Search applies its range", async (t) => {
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("workbench.editorAssociations", { "*.md": "default" });
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(
+    destination.navigation,
+    state as never,
+  );
+  t.after(() => stop.dispose());
+  tab.input = new TabInputText(Uri.parse(note));
+  const editor = nativeHunkEditor(tab, 0);
+  editor.selection = new Range(new Position(0, 0), new Position(0, 0));
+  destination.ready();
+
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.deepEqual(commands, [], "an initial caret is not the Search match");
+
+  const lines = editor.document.getText().split("\n");
+  const at = lines
+    .slice(0, 1)
+    .reduce((length, line) => length + line.length + 1, 0);
+  editor.selection = new Range(new Position(1, 0), new Position(1, 4));
+  selectionChanged.fire({ textEditor: editor });
+  await tick();
+
+  assert.deepEqual(destination.ranges, [{ at, to: at + 4 }]);
+});
+
+test("a new Search tab settles its selection before custom-editor handoff", async (t) => {
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("workbench.editorAssociations", { "*.md": "default" });
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(
+    destination.navigation,
+    state as never,
+  );
+  t.after(() => stop.dispose());
+  tab.input = new TabInputText(Uri.parse(note));
+  nativeHunkEditor(tab, 0);
+  destination.ready();
+  vscode.window.activeTextEditor = undefined;
+
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  assert.deepEqual(
+    commands,
+    [],
+    "Search must finish applying its editor range",
+  );
+  const selected = nativeHunkEditor(tab, 947);
+  await new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+  assert.deepEqual(destination.ranges, [
+    {
+      at: selected.document.getText().indexOf("Line 948\n"),
+      to: selected.document.getText().indexOf("Line 950\n") + 4,
+    },
+  ]);
+});
+
 test("hunk transfer leaves another clean native tab of the same note open", async (t) => {
   const tab = cursorTab();
   const destination = hunkDestination(tab, true);
@@ -2084,6 +2190,69 @@ test("hunk and search transfers preserve both start and end selection offsets [a
   const expectedAt = normalized.indexOf("Line 930\n");
   const expectedTo = normalized.indexOf("Line 932\n") + 4;
   assert.deepEqual(destination.ranges, [{ at: expectedAt, to: expectedTo }]);
+});
+
+test("the workspace default reclaims Search through text on VS Code", async (t) => {
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("workbench.editorAssociations", { "*.md": "default" });
+  vscode.env.appName = "Visual Studio Code";
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(
+    destination.navigation,
+    state as never,
+  );
+  t.after(() => stop.dispose());
+  const editor = nativeHunkEditor(tab, 929, "\r\n");
+  destination.ready();
+
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+
+  const normalized = editor.document.getText().replaceAll("\r\n", "\n");
+  assert.deepEqual(destination.ranges, [
+    {
+      at: normalized.indexOf("Line 930\n"),
+      to: normalized.indexOf("Line 932\n") + 4,
+    },
+  ]);
+});
+
+test("a Search reclaim marks the custom panel after native focus has cleared", async (t) => {
+  let openedShell: PanelShell | undefined;
+  const stopEditor = host.editorPanels.registerEditor(
+    MARKDOWN_EDITOR,
+    {
+      extensionUri: Uri.parse("file:///ext") as unknown as NativeUri,
+      documents: {
+        wrap: (doc: { uri: Uri }) =>
+          ({ uri: doc.uri.toString() }) as unknown as PanelShell["document"],
+      } as never,
+    },
+    (shell) => {
+      openedShell = shell;
+    },
+  );
+  t.after(stopEditor);
+  const provider = registeredProviders[0]?.provider as {
+    resolveCustomTextEditor(doc: unknown, panel: unknown): void;
+  };
+  const tab = cursorTab();
+  const editor = nativeHunkEditor(tab, 929);
+  const stopReclaim = host.reclaim.registerReclaim();
+  t.after(() => stopReclaim.dispose());
+  afterCommand = () => {
+    tab.input = new TabInputCustom(Uri.parse(note), viewType);
+    vscode.window.activeTextEditor = undefined;
+    provider.resolveCustomTextEditor(editor.document, createFakeWebviewPanel());
+  };
+
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  await tick();
+
+  assert.equal(openedShell?.openedFromNativeSelection, true);
 });
 
 test("repeated search jumps opening text tabs with a selection within 10s still reclaim and jump", async (t) => {

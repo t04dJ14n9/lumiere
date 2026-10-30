@@ -50,6 +50,11 @@ test("auto reclaims only in Cursor; on and off are explicit", () => {
     true,
   );
   assert.equal(reclaimEnabled({ mode: "off", appName: "Cursor" }), false);
+  assert.equal(
+    reclaimEnabled({ mode: "auto", appName: "Visual Studio Code" }, true),
+    true,
+  );
+  assert.equal(reclaimEnabled({ mode: "off", appName: "Cursor" }, true), false);
 });
 
 test("a switch in place to the text editor is the reader's choice and stays", () => {
@@ -107,6 +112,14 @@ test("only notes the workspace routes to Lumière are reclaimed", () => {
     false,
   );
   assert.equal(associatedWith(undefined, note, viewType), false);
+  assert.equal(
+    associatedWith({ "*.md": "default" }, note, viewType, true),
+    true,
+  );
+  assert.equal(
+    associatedWith({ "*.md": "default" }, note, viewType, false),
+    false,
+  );
   assert.equal(shouldReclaim(swap("none", "text"), context), true);
   assert.equal(
     shouldReclaim(swap("none", "text"), {

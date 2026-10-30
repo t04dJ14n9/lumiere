@@ -6240,3 +6240,33 @@ Three real-VS Code specs had failed on `main` since 20 October:
      and in larger text grown past a height map that no longer followed.
      It is now released once CodeMirror has measured the sheet in the page.
    Unit tests cover both; the three specs pass in VS Code.
+
+## Search match selection and sidebar — 2026-10-30
+
+Clicking a Find in Files result opened Lumière with no selection, then the
+Markdown Outline host replaced Search with Explorer. Host verification of
+the proposed `customTextEditorNavigation` opt-in failed twice. A packaged
+VS Code 1.144 install reports that an installed VSIX cannot use that
+proposal unless it is launched in extension development or with
+`--enable-proposed-api`. Search's match therefore never arrives through
+the custom-editor navigation callback, and `activeTextEditor` is absent
+while the custom editor resolves, so the panel opens at offsets 0, 0.
+The outline host then runs `outline.removeView`,
+`lumiere.markdown.outline.focus`, and
+`workbench.action.focusActiveEditorGroup`.
+
+Workspace Markdown now opens in the built-in text editor first
+(`workbench.editorAssociations` value `"default"`), with
+`lumiere.markdown.workspaceEditor` set. Reclaim reads the native range and
+transfers it into that exact Lumière panel. A caret at offset 0 is not
+treated as the match; the transfer waits for a non-empty range, then marks
+the panel so the outline host leaves the Search sidebar in place. An
+existing direct association, including a `*.md`-only entry or the same
+entry in user settings, is migrated when the extension activates
+(`workspaceContains:**/*.md`). The proposal declaration is removed.
+
+A packaged VS Code 1.144 window started with the old direct association,
+searched for `待收录的材料放这里。这些文件还不是知识库的一部分。`, and
+after the click showed that sentence selected in Lumière with Search still
+the sidebar. The temporary probe was removed; the shots are in
+`docs/pr-screenshots/458/`.

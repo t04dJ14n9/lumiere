@@ -37,10 +37,8 @@
   ],
   "activationEvents": [
     "onCommand:vscodeEmbedPdf.bridge.envelope",
-    "onLanguage:markdown"
-  ],
-  "enabledApiProposals": [
-    "customTextEditorNavigation"
+    "onLanguage:markdown",
+    "workspaceContains:**/*.md"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
