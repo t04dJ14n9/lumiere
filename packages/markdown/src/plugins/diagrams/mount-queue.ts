@@ -27,7 +27,7 @@ export type MountWatch = (element: Element, onMount: () => void) => () => void;
 
 export interface MermaidQueueOptions {
   render: (source: string) => Promise<string>;
-  /** The cache key of a source (theme, trust and source); the source by default. */
+  /** The cache key of a source (trust and source); the source by default. */
   cacheKey?: (source: string) => string;
   cache?: MermaidSvgCache;
   watchMount?: MountWatch;

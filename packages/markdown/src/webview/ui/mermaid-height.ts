@@ -9,8 +9,8 @@
  * flowchart rank is about 105 px, a sequence message 52 px, a gantt task
  * 32 px; a pie is 450 px whatever its slices. They were checked against
  * test/support/mermaid-note.ts and mermaid-samples.ts, drawn at 731 and
- * 1211 px. Diagrams wider than the note
- * scale down to fit, and so does their height.
+ * 1211 px. Native-size types (useMaxWidth: false) keep full height; pane
+ * width does not scale the reserve.
  */
 
 /** The SVG's top and bottom padding inside the block. */
@@ -114,36 +114,27 @@ function graphEdges(statements: string[], arrow: RegExp): [string, string][] {
   return edges;
 }
 
-/** Scale a diagram that is wider than the note down to fit it. */
-function fitted(height: number, naturalWidth: number, width: number): number {
-  return height * Math.min(1, width / naturalWidth);
-}
-
 const FLOW_ARROW = /\s*(?:<?[-=.]{2,}[->ox]?|~~~)(?:\|[^|]*\|)?\s*/u;
 
-function flowchart(diagram: Diagram, width: number): number {
+function flowchart(diagram: Diagram, _width: number): number {
   const direction = diagram.header.split(/\s+/u)[1] ?? "tb";
   const { count, widest } = layers(graphEdges(diagram.statements, FLOW_ARROW));
   const subgraphs = diagram.statements.filter((line) =>
     line.startsWith("subgraph"),
   ).length;
   if (direction === "lr" || direction === "rl") {
-    return fitted(40 + widest * 75 + subgraphs * 90, count * 170, width);
+    return 40 + widest * 75 + subgraphs * 90;
   }
-  return fitted(count * 105 + subgraphs * 90, widest * 120, width);
+  return count * 105 + subgraphs * 90;
 }
 
 const SEQUENCE_ARROW = /-{1,2}(?:>>|>|x|\))[+-]?/u;
 const SEQUENCE_BLOCK = /^(?:loop|alt|opt|par|critical|break|rect)\b/iu;
 
-function sequence(diagram: Diagram, width: number): number {
-  const actors = new Set<string>();
+function sequence(diagram: Diagram, _width: number): number {
   let height = 170;
   for (const line of diagram.statements) {
-    const declared = /^(?:participant|actor)\s+(\S+)/iu.exec(line);
-    if (declared) {
-      actors.add(declared[1]!);
-    } else if (/^note\s/iu.test(line)) {
+    if (/^note\s/iu.test(line)) {
       height += 70 + 25 * (line.split(/<br\s*\/?>/iu).length - 1);
     } else if (SEQUENCE_BLOCK.test(line)) {
       height += 70;
@@ -152,12 +143,11 @@ function sequence(diagram: Diagram, width: number): number {
     } else if (/^[^:]*?-{1,2}(?:>>|>|x|\))/u.test(line)) {
       const [from, to] = line.split(SEQUENCE_ARROW);
       const target = (to ?? "").split(":")[0]!.trim();
-      actors.add(from!.trim()).add(target);
       // A message to oneself loops back below its line.
       height += from!.trim() === target ? 92 : 52;
     }
   }
-  return fitted(height, Math.max(1, actors.size) * 240, width);
+  return height;
 }
 
 const GANTT_KEYWORDS =

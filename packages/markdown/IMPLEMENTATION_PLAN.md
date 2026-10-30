@@ -6284,3 +6284,22 @@ plain scalar).
 `generated` / `verified` and other nested values are unchanged. Graph edges
 from OKF `sources` rows are unchanged, because they read the note, not the
 sheet.
+
+## Mermaid Obsidian visual parity — 2026-10-30
+
+Dark Live Preview was Mermaid's stock `theme: "dark"` palette. Obsidian
+leaves Mermaid on its default palette and inverts the SVG in dark mode.
+Lumière now does the same: initialize omits `theme`, `--font-mermaid` is
+the editor font, and
+`body:not(.vscode-light):not(.vscode-high-contrast-light)` applies
+`filter: invert(100%) hue-rotate(180deg) saturate(1.25)` to the fence SVG
+and to `.diagram-inspector .media-area > svg`. Appearance is no longer part
+of the Mermaid cache or init key, so a light/dark toggle does not redraw.
+
+`#445` (lightbox id rewrite) and `#446` (`useMaxWidth` map, `max-width: none`,
+`overflow-x: auto`) stay. The height guess in `mermaid-height.ts` no longer
+scales flowchart and sequence reserves down to the pane; those types keep
+their full height. A headless editor harness measured a small flowchart at
+`width="360"` inside a 911px note, and a wide one at `width="1512"` with
+`max-width: none`. Host GUI verify passed; the screenshots are on the pull
+request. Lightbox was outside that Host GUI pass.
