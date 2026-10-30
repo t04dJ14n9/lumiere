@@ -40,6 +40,11 @@ export function primeMathJaxForTest(mod: MathJaxModule | undefined): void {
   mathjaxLoad = mod ? Promise.resolve(mod) : undefined;
 }
 
+/** Test hook: true once apply/typeset has started a MathJax dynamic import. */
+export function mathJaxLoadStartedForTest(): boolean {
+  return mathjaxLoad !== undefined;
+}
+
 const mounts = new WeakMap<Context, MathMount>();
 
 export const mathWebview: Plugin<Infer<typeof config>> = {
@@ -68,12 +73,7 @@ export const mathWebview: Plugin<Infer<typeof config>> = {
   apply(ctx, options) {
     const mount: MathMount = { macros: options.macros };
     mounts.set(ctx, mount);
-    void loadMathJax().then((mod) => {
-      mod.setUserMacros(mount.macros);
-      if (typeof window !== "undefined" && typeof document !== "undefined") {
-        void mod.ensureBrowser();
-      }
-    });
+    // Defer MathJax until the first math block (typesetNode), like lazy Mermaid.
     const cleanups = registerMathCleanup(ctx);
     registerTypesetting(ctx, cleanups, mount);
     registerMathRenderers(ctx);

@@ -56,7 +56,7 @@ function connectedShell(uri: string, text: string) {
   return { shell, client };
 }
 
-test("opening a note on a slow 15,000 ms network mount resolves panel ready in < 1,000 ms with the note text", async () => {
+test("opening a note on a slow 15,000 ms network mount resolves panel ready in < 100 ms with the note text", async () => {
   let openPanel: (panel: PanelShell) => void = () => {};
   const host = fakeHost({
     settings: { forNote: () => ({ preset: "obsidian", mode: "source" }) },
@@ -104,8 +104,8 @@ test("opening a note on a slow 15,000 ms network mount resolves panel ready in <
   const elapsedMs = performance.now() - startedAt;
 
   assert.ok(
-    elapsedMs < 1_000,
-    `expected panel ready in < 1,000 ms, took ${Math.round(elapsedMs)} ms`,
+    elapsedMs < 100,
+    `expected panel ready in < 100 ms (no vault ready-budget wait), took ${Math.round(elapsedMs)} ms`,
   );
   assert.equal(init.text, NOTE_TEXT);
   assert.equal(init.source, NOTE_URI);

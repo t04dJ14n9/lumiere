@@ -10,7 +10,7 @@ import { protocol } from "./protocol";
 const NOTE_URI = "file:///remote-ceph-workspace/notes/guide.md";
 const NOTE_TEXT = "# Guide\n\nSee [[notes/other]]";
 
-test("createPanel ready resolves within < 1,000 ms when vault plugin bounds cold-start ready to 500 ms", async () => {
+test("createPanel ready resolves promptly when panel plugins settle without a vault ready-budget wait", async () => {
   let hostReceive = (_value: unknown) => {};
   let clientReceive = (_value: unknown) => {};
   const client = new Endpoint(
@@ -68,10 +68,12 @@ test("createPanel ready resolves within < 1,000 ms when vault plugin bounds cold
     onClose() {},
     onState() {},
     configure(context) {
+      // Mimic vaultHost after the cold-open fix: forDocument returns immediately
+      // (seed + background index), so settled() is not gated on ~500 ms.
       context.plugin({
-        name: "vault-BoundedReady",
+        name: "vault-ImmediateSeed",
         async apply() {
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await Promise.resolve();
         },
       });
     },
@@ -82,8 +84,8 @@ test("createPanel ready resolves within < 1,000 ms when vault plugin bounds cold
   const elapsedMs = performance.now() - startedAt;
 
   assert.ok(
-    elapsedMs < 1_000,
-    `expected < 1,000 ms, took ${Math.round(elapsedMs)} ms`,
+    elapsedMs < 100,
+    `expected < 100 ms, took ${Math.round(elapsedMs)} ms`,
   );
   assert.equal(init.text, NOTE_TEXT);
   assert.equal(init.source, NOTE_URI);
