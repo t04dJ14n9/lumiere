@@ -1,6 +1,7 @@
 import { useScrollState } from "./scroll-state";
 import { ZoomMode, useZoom } from "@embedpdf/plugin-zoom/react";
 import { useCallback, useEffect, useRef } from "react";
+import type { AnnotationToolId } from "../shared/annotation-tools";
 import type {
   FitMode,
   ToolMode,
@@ -23,10 +24,22 @@ export function useViewReporting(
   navigation: Navigation,
   tool: ToolMode,
   choices: ViewChoices,
+  annotation?: {
+    annotationTool: AnnotationToolId | null;
+    canUndo: boolean;
+    canRedo: boolean;
+  },
 ): void {
   const { state: scroll } = useScrollState();
   const { state: zoom } = useZoom(DOCUMENT_ID);
-  const view = currentView({ navigation, tool, choices, scroll, zoom });
+  const view = currentView({
+    navigation,
+    tool,
+    choices,
+    scroll,
+    zoom,
+    ...(annotation ? { annotation } : {}),
+  });
   const latest = useRef(view);
   latest.current = view;
   // Report each distinct view once.
@@ -47,8 +60,13 @@ function currentView(state: {
   choices: ViewChoices;
   scroll: ReturnType<typeof useScrollState>["state"];
   zoom: ReturnType<typeof useZoom>["state"];
+  annotation?: {
+    annotationTool: AnnotationToolId | null;
+    canUndo: boolean;
+    canRedo: boolean;
+  };
 }): ViewState | undefined {
-  const { navigation, tool, choices, scroll, zoom } = state;
+  const { navigation, tool, choices, scroll, zoom, annotation } = state;
   const { currentPage: page, pageCount, canGoBack, canGoForward } = navigation;
   const zoomPercent = Math.round(zoom.currentZoomLevel * 100);
   if (
@@ -82,6 +100,13 @@ function currentView(state: {
     zoom: fit ? FIT_CHOICES[fit] : zoom.currentZoomLevel * 100,
     top: Math.max(0, (metric?.original.pageY ?? 0) - inset),
     left: Math.max(0, (metric?.original.pageX ?? 0) - inset),
+    ...(tool === "annotate" && annotation
+      ? {
+          annotationTool: annotation.annotationTool,
+          canAnnotationUndo: annotation.canUndo,
+          canAnnotationRedo: annotation.canRedo,
+        }
+      : {}),
   };
 }
 
@@ -90,6 +115,9 @@ interface ActionContext {
   navigation: Navigation;
   openSearch: () => void;
   setTool: (tool: ToolMode) => void;
+  setAnnotationTool: (tool: AnnotationToolId | null) => void;
+  annotationUndo: () => void;
+  annotationRedo: () => void;
   setChoices: (choices: Partial<ViewChoices>) => void;
   /** Zoom to a level, within the viewer's range. */
   zoomTo: (level: number) => void;
@@ -142,6 +170,10 @@ const ACTIONS: Handlers = {
     setChoices({ scrollDirection }),
   find: (_, { openSearch }) => openSearch(),
   setTool: ({ tool }, { setTool }) => setTool(tool),
+  setAnnotationTool: ({ tool }, { setAnnotationTool }) =>
+    setAnnotationTool(tool),
+  annotationUndo: (_, { annotationUndo }) => annotationUndo(),
+  annotationRedo: (_, { annotationRedo }) => annotationRedo(),
 };
 
 /**
@@ -152,14 +184,22 @@ export function useViewActions(
   navigation: Navigation,
   openSearch: () => void,
   setTool: (tool: ToolMode) => void,
-  setChoices: (choices: Partial<ViewChoices>) => void,
+  options: {
+    setChoices: (choices: Partial<ViewChoices>) => void;
+    setAnnotationTool: (tool: AnnotationToolId | null) => void;
+    undo: () => void;
+    redo: () => void;
+  },
 ): (action: ViewerAction) => void {
   const { provides: zoom, state } = useZoom(DOCUMENT_ID);
   const current = {
     navigation,
     openSearch,
     setTool,
-    setChoices,
+    setAnnotationTool: options.setAnnotationTool,
+    annotationUndo: options.undo,
+    annotationRedo: options.redo,
+    setChoices: options.setChoices,
     zoom,
     level: state.currentZoomLevel,
   };

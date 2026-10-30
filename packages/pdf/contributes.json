@@ -2,7 +2,7 @@
   "customEditors": [
     {
       "viewType": "lumiere.pdf.viewer",
-      "displayName": "Lumière PDF",
+      "displayName": "Lumi\u00e8re PDF",
       "selector": [
         {
           "filenamePattern": "*.pdf"
@@ -24,7 +24,7 @@
   "viewsWelcome": [
     {
       "view": "lumiere.pdf.outline",
-      "contents": "Reading the outline…",
+      "contents": "Reading the outline\u2026",
       "when": "lumiere.pdf.outlineLoading"
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "command": "lumiere.pdf.changeSetting",
-      "title": "Change Setting…",
+      "title": "Change Setting\u2026",
       "category": "PDF"
     },
     {
@@ -62,17 +62,17 @@
     },
     {
       "command": "lumiere.pdf.setDefaultZoom",
-      "title": "Set Default Zoom…",
+      "title": "Set Default Zoom\u2026",
       "category": "PDF"
     },
     {
       "command": "lumiere.pdf.setDefaultPageLayout",
-      "title": "Set Default Page Layout…",
+      "title": "Set Default Page Layout\u2026",
       "category": "PDF"
     },
     {
       "command": "lumiere.pdf.setDefaultScrollMode",
-      "title": "Set Default Scrolling…",
+      "title": "Set Default Scrolling\u2026",
       "category": "PDF"
     },
     {
@@ -111,7 +111,7 @@
     },
     {
       "command": "lumiere.pdf.openLocation",
-      "title": "Open Location…",
+      "title": "Open Location\u2026",
       "category": "PDF"
     },
     {
@@ -121,7 +121,7 @@
     },
     {
       "command": "lumiere.pdf.goToOutlineItem",
-      "title": "Go to Outline Item…",
+      "title": "Go to Outline Item\u2026",
       "category": "PDF"
     },
     {
@@ -143,7 +143,7 @@
     },
     {
       "command": "lumiere.pdf.copyMcpSetup",
-      "title": "Copy MCP Setup for Claude Code / Codex…",
+      "title": "Copy MCP Setup for Claude Code / Codex\u2026",
       "category": "PDF"
     },
     {
@@ -162,7 +162,7 @@
     },
     {
       "command": "lumiere.pdf.goToPage",
-      "title": "Go to Page…",
+      "title": "Go to Page\u2026",
       "category": "PDF",
       "icon": "$(list-ordered)"
     },
@@ -180,7 +180,7 @@
     },
     {
       "command": "lumiere.pdf.selectZoom",
-      "title": "Zoom…",
+      "title": "Zoom\u2026",
       "category": "PDF",
       "icon": "$(search-fuzzy)"
     },
@@ -221,8 +221,48 @@
       "icon": "$(inspect)"
     },
     {
+      "command": "lumiere.pdf.selectAnnotateTool",
+      "title": "Annotate",
+      "category": "PDF",
+      "icon": "$(edit)"
+    },
+    {
+      "command": "lumiere.pdf.toggleAnnotateTool",
+      "title": "Toggle Annotate",
+      "category": "PDF",
+      "icon": "$(edit)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.pickAnnotationTool",
+      "title": "Annotation Tool…",
+      "category": "PDF",
+      "icon": "$(paintcan)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.annotationUndo",
+      "title": "Undo Annotation",
+      "category": "PDF",
+      "icon": "$(discard)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.annotationRedo",
+      "title": "Redo Annotation",
+      "category": "PDF",
+      "icon": "$(redo)",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.annotationRetrySave",
+      "title": "Retry Annotation Save",
+      "category": "PDF",
+      "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
       "command": "lumiere.pdf.selectToolbarMode",
-      "title": "Choose Toolbar Location…",
+      "title": "Choose Toolbar Location\u2026",
       "category": "PDF",
       "icon": "$(layout)"
     },
@@ -242,7 +282,7 @@
     },
     {
       "command": "lumiere.pdf.selectView",
-      "title": "View…",
+      "title": "View\u2026",
       "category": "PDF",
       "icon": "$(layout)",
       "enablement": "lumiere.pdf.pdfActive"
@@ -257,7 +297,7 @@
     },
     {
       "command": "lumiere.pdf.twoPageSpread",
-      "title": "Two Pages (1–2, 3–4)",
+      "title": "Two Pages (1\u20132, 3\u20134)",
       "category": "PDF",
       "icon": "$(book)",
       "enablement": "lumiere.pdf.pdfActive",
@@ -265,7 +305,7 @@
     },
     {
       "command": "lumiere.pdf.twoPageCover",
-      "title": "Two Pages with Cover (1, 2–3)",
+      "title": "Two Pages with Cover (1, 2\u20133)",
       "category": "PDF",
       "icon": "$(book)",
       "enablement": "lumiere.pdf.pdfActive",
@@ -320,12 +360,12 @@
     {
       "command": "lumiere.pdf.ideContext.copy",
       "title": "Copy IDE Context",
-      "category": "Lumière PDF"
+      "category": "Lumi\u00e8re PDF"
     },
     {
       "command": "lumiere.pdf.ideContext.send",
-      "title": "Send IDE Context to Agent…",
-      "category": "Lumière PDF"
+      "title": "Send IDE Context to Agent\u2026",
+      "category": "Lumi\u00e8re PDF"
     }
   ],
   "menus": {
@@ -401,6 +441,11 @@
         "command": "lumiere.pdf.selectRegionTool",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
         "group": "3_pdfTool@2"
+      },
+      {
+        "command": "lumiere.pdf.selectAnnotateTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
+        "group": "3_pdfTool@3"
       },
       {
         "command": "lumiere.pdf.toggleOutline",
@@ -571,6 +616,30 @@
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
       },
       {
+        "command": "lumiere.pdf.selectAnnotateTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.toggleAnnotateTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.pickAnnotationTool",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.annotationUndo",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.annotationRedo",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
+        "command": "lumiere.pdf.annotationRetrySave",
+        "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+      },
+      {
         "command": "lumiere.pdf.selectToolbarMode"
       },
       {
@@ -723,7 +792,7 @@
     ]
   },
   "configuration": {
-    "title": "Lumière PDF",
+    "title": "Lumi\u00e8re PDF",
     "properties": {
       "lumiere.pdf.outline.followCursor": {
         "type": "boolean",
@@ -779,7 +848,7 @@
           "never"
         ],
         "enumDescriptions": [
-          "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
+          "In Cursor, which keeps extension buttons in the editor title bar's \"\u2026\" menu: yes. In VS Code: no.",
           "Always show the buttons.",
           "Only the page, zoom and View."
         ],
@@ -788,7 +857,7 @@
       "lumiere.pdf.agentBridge.enabled": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
+        "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex\u2026** gives the command that connects those agents."
       },
       "lumiere.pdf.view.defaultZoom": {
         "type": [
@@ -811,7 +880,7 @@
             "maximum": 400
           }
         ],
-        "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25–400)."
+        "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25\u2013400)."
       },
       "lumiere.pdf.view.pageLayout": {
         "type": "string",
@@ -823,8 +892,8 @@
         ],
         "enumDescriptions": [
           "One page per row.",
-          "Pair pages 1–2, 3–4, and so on.",
-          "Cover page alone, then pair pages 2–3, 4–5, and so on."
+          "Pair pages 1\u20132, 3\u20134, and so on.",
+          "Cover page alone, then pair pages 2\u20133, 4\u20135, and so on."
         ],
         "markdownDescription": "Page layout for PDFs without a saved view."
       },
@@ -858,7 +927,7 @@
       "lumiere.pdf.keyboardShortcuts": {
         "type": "boolean",
         "default": true,
-        "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/⌘+G (Go to Line elsewhere), Ctrl/⌘+0 (focus the side bar), Ctrl/⌘+= and Ctrl/⌘+- (zoom the window) and Ctrl/⌘+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+        "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/\u2318+G (Go to Line elsewhere), Ctrl/\u2318+0 (focus the side bar), Ctrl/\u2318+= and Ctrl/\u2318+- (zoom the window) and Ctrl/\u2318+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
       },
       "lumiere.pdf.view.restoreOnReopen": {
         "type": "boolean",
@@ -1031,12 +1100,18 @@
       "key": "ctrl+alt+r",
       "mac": "ctrl+cmd+r",
       "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
+    },
+    {
+      "command": "lumiere.pdf.selectAnnotateTool",
+      "key": "ctrl+alt+a",
+      "mac": "ctrl+cmd+a",
+      "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
     }
   ],
   "mcpServerDefinitionProviders": [
     {
       "id": "lumiere.pdf.agentBridge",
-      "label": "Lumière PDF"
+      "label": "Lumi\u00e8re PDF"
     }
   ]
 }

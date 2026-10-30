@@ -77,3 +77,12 @@ test("history sits left of find (moved from chrome title actions)", () => {
   assert.ok(order.indexOf("historyBack") < order.indexOf("find"));
   assert.ok(order.indexOf("historyForward") < order.indexOf("find"));
 });
+
+test("annotate controls sit after find, before view", () => {
+  const order = [...STATUS_BAR_ORDER];
+  assert.ok(order.indexOf("find") < order.indexOf("annotate"));
+  assert.ok(order.indexOf("annotate") < order.indexOf("annotationTool"));
+  assert.ok(order.indexOf("annotationTool") < order.indexOf("annotationUndo"));
+  assert.ok(order.indexOf("annotationUndo") < order.indexOf("annotationRedo"));
+  assert.ok(order.indexOf("annotationRedo") < order.indexOf("view"));
+});

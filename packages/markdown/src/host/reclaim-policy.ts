@@ -7,11 +7,20 @@ export interface ReclaimSetting {
   appName: string;
 }
 
-export function reclaimEnabled({ mode, appName }: ReclaimSetting): boolean {
+export function reclaimEnabled(
+  { mode, appName }: ReclaimSetting,
+  workspaceDefault = false,
+): boolean {
+  if (mode === "off") {
+    return false;
+  }
+  if (workspaceDefault) {
+    return true;
+  }
   if (mode === "auto") {
     return /cursor/i.test(appName);
   }
-  return mode === "on";
+  return true;
 }
 
 export interface TabSwap {
@@ -226,13 +235,20 @@ export function associatedWith(
   associations: unknown,
   uri: string,
   viewType: string,
+  workspaceDefault = false,
 ): boolean {
   if (!associations || typeof associations !== "object") {
     return false;
   }
   const extension = /\.(md|markdown)$/i.exec(uri)?.[1]?.toLowerCase();
   const map = associations as Record<string, unknown>;
-  return extension !== undefined && map[`*.${extension}`] === viewType;
+  if (extension === undefined) {
+    return false;
+  }
+  const associated = map[`*.${extension}`];
+  return (
+    associated === viewType || (workspaceDefault && associated === "default")
+  );
 }
 
 /** Notes this extension may reclaim: Markdown files on disk. */

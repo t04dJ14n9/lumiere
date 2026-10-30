@@ -67,9 +67,14 @@ input {
   height: 100%;
 }
 
-/* Pages fill the viewer (slim toolbar mode removed). */
+/* Pages fill the viewer when there is no in-viewer bar. */
 .viewer:not(.toolbar-slim) {
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+/* Annotate chrome bar sits above the pages (auto + pages). */
+.viewer.tool-annotate:not(.toolbar-slim) {
+  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
 }
 
 /* Dark paper overlays: light marks on near-#1e1e1e pages (when engine hook applies). */

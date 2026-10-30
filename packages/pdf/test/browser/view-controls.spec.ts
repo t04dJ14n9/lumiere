@@ -224,6 +224,7 @@ test("saved view choices override defaults on reopen and survive a file rebuild"
     const data = await (await fetch("/fixtures/outline.pdf")).arrayBuffer();
     (window as unknown as { hostSend(message: unknown): void }).hostSend({
       type: "load",
+      sha256: "test-sha",
       data,
       settings: {},
     });

@@ -12,6 +12,8 @@ export interface PanelShell {
   readonly transport: Transport;
   readonly cspSource: string;
   readonly trusted: boolean;
+  /** A native source selection was present while this panel was opened. */
+  readonly openedFromNativeSelection?: boolean;
   active(): boolean;
   reveal(): void;
   dispose(): void;
@@ -35,6 +37,7 @@ export interface PanelPort {
   readonly column: number | undefined;
   readonly id: string;
   readonly document: HostDocument;
+  readonly openedFromNativeSelection?: boolean;
   readonly rpc: Endpoint;
   active(): boolean;
   reveal(): void;

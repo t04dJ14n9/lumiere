@@ -27,6 +27,7 @@ export interface SourceEvents {
  */
 export class PdfSource {
   sha256: string | undefined;
+  private expectedWrite: string | undefined;
   private generation = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly stopWatching: () => void;
@@ -38,8 +39,31 @@ export class PdfSource {
   ) {
     this.stopWatching = files.watch(uri, () => {
       clearTimeout(this.timer);
-      this.timer = setTimeout(() => events.changed(), RELOAD_DELAY_MS);
+      this.timer = setTimeout(
+        () => void this.onWatchedChange(),
+        RELOAD_DELAY_MS,
+      );
     });
+  }
+
+  expectWrite(sha256: string): void {
+    this.expectedWrite = sha256;
+  }
+
+  async diskMatchesBase(): Promise<boolean> {
+    if (!this.sha256 || !this.files.hash) {
+      return true;
+    }
+    try {
+      return (await this.files.hash(this.uri)) === this.sha256;
+    } catch {
+      return false;
+    }
+  }
+
+  acceptWrite(sha256: string): void {
+    this.sha256 = sha256;
+    this.expectedWrite = sha256;
   }
 
   /** Start a new read; resolves `undefined` if a newer read started meanwhile or it failed. */
@@ -66,6 +90,24 @@ export class PdfSource {
     this.generation++;
     clearTimeout(this.timer);
     this.stopWatching();
+  }
+
+  private async onWatchedChange(): Promise<void> {
+    if (this.expectedWrite && this.files.hash) {
+      try {
+        const disk = await this.files.hash(this.uri);
+        if (disk === this.expectedWrite) {
+          // Keep expectedWrite: atomic rename often fires create+change, and
+          // clearing after the first event lets the second reload the viewer
+          // (wiping EmbedPDF History so Undo Annotation no-ops).
+          this.sha256 = disk;
+          return;
+        }
+      } catch {
+        // Fall through to a normal reload.
+      }
+    }
+    this.events.changed();
   }
 }
 
