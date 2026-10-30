@@ -53,6 +53,12 @@ export const VIEW_ACTION_COMMANDS: readonly ViewActionCommand[] = [
     id: VIEW_COMMAND_IDS.selectRegionTool,
     action: { action: "setTool", tool: "region" },
   },
+  {
+    id: VIEW_COMMAND_IDS.selectAnnotateTool,
+    action: { action: "setTool", tool: "annotate" },
+  },
+  simple(VIEW_COMMAND_IDS.annotationUndo, "annotationUndo"),
+  simple(VIEW_COMMAND_IDS.annotationRedo, "annotationRedo"),
   simple(VIEW_CONTROL_COMMAND_IDS.actualSize, "actualSize"),
   ...PAGE_LAYOUTS.map((item) => ({
     id: viewControlCommandId(item.command),

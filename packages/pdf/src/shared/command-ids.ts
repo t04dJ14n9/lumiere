@@ -18,6 +18,10 @@ export const VIEW_COMMAND_IDS = {
   find: "lumiere.pdf.find",
   selectTextTool: "lumiere.pdf.selectTextTool",
   selectRegionTool: "lumiere.pdf.selectRegionTool",
+  selectAnnotateTool: "lumiere.pdf.selectAnnotateTool",
+  annotationUndo: "lumiere.pdf.annotationUndo",
+  annotationRedo: "lumiere.pdf.annotationRedo",
+  annotationRetrySave: "lumiere.pdf.annotationRetrySave",
   goToPage: "lumiere.pdf.goToPage",
   selectZoom: "lumiere.pdf.selectZoom",
 } as const;
