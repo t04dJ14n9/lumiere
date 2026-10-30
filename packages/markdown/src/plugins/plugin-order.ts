@@ -57,6 +57,7 @@ export const FEATURE_ORDER = [
   "suggest",
   "formatting",
   "pasteHtml",
+  "attachments",
   "agentBridge",
   // After agentBridge: Cursor Chat/Edit is a separate handoff surface.
   "cursorBridge",
@@ -91,7 +92,6 @@ export const WORKBENCH_FEATURE_ORDER = [
   // Host-only IDE context handoff (no webview half); sits with bridge.
   "ideContext",
   "wiki",
-  "assets",
   "scratch",
   "marp",
   "gitDiffEditor",

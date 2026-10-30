@@ -1075,7 +1075,7 @@ On by default; VS Code's text diff stays the default until
    rendered panel follows both changes. Close the panel and repeat: no disposed
    panel updates or retained subscriptions should remain.
 
-### wiki, assets, scratch and Marp
+### wiki, scratch and Marp
 
 Use a disposable folder, never a personal vault. Add the slim
 `.wiki/layout.json` from `docs/bridge-envelope.md` if you want collection
@@ -1093,16 +1093,12 @@ paths; a missing layout is the legacy preset.
    portable Markdown link. The same text in a fence, in frontmatter, or
    outside the bundle does not. A bundle page with no `type` is reported.
    `knowledge/index.md` and `knowledge/log.md` are not.
-4. **Import Asset** of a new png creates the assets folder and inserts
-   `![…](…)` relative to the note. Import the same name again and choose
-   Keep both: the file is `name-2` and the folder is not recreated. Point
-   assets at a folder inside the bundle: the import is refused.
-5. **New Scratch Note** writes under `scratch/` (or the layout's scratch
+4. **New Scratch Note** writes under `scratch/` (or the layout's scratch
    path) with `title` and `captured` and no `type`. **Promote Scratch Note**
    to Concept writes `## Definition` and the other fixed sections, replaces
    the scratch note with a Markdown link, and does not change `index.md`.
    A scratch note with `marp: true` is refused and left in place.
-6. A note with `marp: true` offers **Open Marp Preview to the Side**.
+5. A note with `marp: true` offers **Open Marp Preview to the Side**.
    **Export Marp Slide Deck** in an untrusted workspace is refused. With
    Marp for VS Code installed and the workspace trusted, the text editor
    opens and Marp's export follows. **Toggle Marp** flips only the `marp`
@@ -1120,7 +1116,6 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
 | `lumiere.markdown.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.backlinks.sortByAlphabetical` — ✓ File name (A to Z) | unbound | On a disposable fixture, run ✓ File name (A to Z); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.backlinks.sortByAlphabeticalReverse` — ✓ File name (Z to A) | unbound | On a disposable fixture, run ✓ File name (Z to A); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.backlinks.sortByModifiedTime` — ✓ Modified time (new to old) | unbound | On a disposable fixture, run ✓ Modified time (new to old); confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1280,7 +1275,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Setting | Default | Procedure |
 | --- | --- | --- |
 | `lumiere.markdown.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.attachments.enabled` | `true` | boolean; drop/paste an image into a note, confirm a timestamp file under `files.attachmentFolder` and its embed; turn off and confirm drop/paste leave the vault unchanged; then reset. |
 | `lumiere.markdown.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1328,7 +1323,6 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.backlinks.sortOrder` | `"alphabetical"` | alphabetical / alphabeticalReverse / byModifiedTime / byModifiedTimeReverse; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1382,7 +1376,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 
-Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
+Attachment folder (`files.attachmentFolder`) is where dropped, pasted, and HTML-paste images (and sketches) are saved under timestamp names. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
 
 

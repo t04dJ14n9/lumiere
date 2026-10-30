@@ -41,6 +41,8 @@ export interface HostFiles {
   readBytes(uri: string): Promise<Uint8Array>;
   /** Replace an existing file's text; a symbolic link in its place is not followed. */
   save(uri: string, text: string): Promise<void>;
+  /** Replace an existing file's bytes; a symbolic link in its place is not followed. */
+  saveBytes(uri: string, data: Uint8Array): Promise<void>;
   /**
    * Write a new, empty file. An existing file is left as it is, and a
    * symbolic link in its place is not followed.

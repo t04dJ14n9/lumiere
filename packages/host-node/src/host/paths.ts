@@ -155,6 +155,22 @@ export async function writeThroughFile(
   }
 }
 
+/** Like `writeThroughFile`, for binary payloads (images). */
+export async function writeThroughBytes(
+  file: string,
+  data: Uint8Array,
+): Promise<void> {
+  const handle = await open(
+    file,
+    constants.O_WRONLY | constants.O_TRUNC | noFollow(),
+  );
+  try {
+    await handle.writeFile(data);
+  } finally {
+    await handle.close();
+  }
+}
+
 /** Create an empty file, and leave an existing one untouched. */
 export async function createEmptyFile(file: string): Promise<void> {
   try {

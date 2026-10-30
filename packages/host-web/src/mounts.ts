@@ -98,6 +98,12 @@ export class Mounts implements HostFiles {
     this.changed(full);
   }
 
+  async saveBytes(uri: string, data: Uint8Array): Promise<void> {
+    const { fs, path, full } = this.resolve(uri);
+    await fs.write(path, data, "replace");
+    this.changed(full);
+  }
+
   async create(uri: string): Promise<void> {
     const { fs, path, full } = this.resolve(uri);
     await fs.write(path, new Uint8Array(), "create");

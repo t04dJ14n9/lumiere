@@ -57,7 +57,7 @@ import wordCount from "./wordCount/manifest";
 import linkUpdates from "./linkUpdates/manifest";
 import bridge from "./bridge/manifest";
 import wiki from "./wiki/manifest";
-import assets from "./assets/manifest";
+import attachments from "./attachments/manifest";
 import scratch from "./scratch/manifest";
 import gitDiffEditor from "./gitDiffEditor/manifest";
 import marp from "./marp/manifest";
@@ -94,6 +94,7 @@ export const features: readonly Manifest[] = inPluginOrder(
     onlineVideos,
     pagePreview,
     pasteHtml,
+    attachments,
     properties,
     sourcesProperty,
     search,
@@ -115,7 +116,6 @@ export const features: readonly Manifest[] = inPluginOrder(
  */
 export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
   [
-    assets,
     backlinks,
     bridge,
     ideContext,

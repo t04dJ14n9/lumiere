@@ -57,11 +57,15 @@ export function memoryFiles(
 ) {
   const files = new Map(Object.entries(initial));
   const folders = new Set<string>([ROOT]);
-  const api: Pick<WorkspaceFiles, "readText" | "writeText" | "list" | "mkdir"> =
+  const api: Pick<WorkspaceFiles, "readText" | "writeText" | "writeBytes" | "list" | "mkdir"> =
     {
       readText: async (uri) => files.get(uri),
       writeText: async (uri, text) => {
         files.set(uri, text);
+        onWrite(uri);
+      },
+      writeBytes: async (uri, data) => {
+        files.set(uri, Buffer.from(data).toString("base64"));
         onWrite(uri);
       },
       list: async (uri) => {
