@@ -4,7 +4,9 @@
 
 **Goal:** Ship a first-class PDF annotation UI in Lumière that writes standard PDF annotations into the open file via EmbedPDF Annotation + History plugins, with in-place atomic overwrite and session undo/redo separate from VS Code Undo.
 
-**Architecture:** Register `@embedpdf/plugin-annotation` and `@embedpdf/plugin-history` beside the existing EmbedPDF stack; mount `AnnotationLayer` per page; add an **Annotate** mode next to Select Text / Select Region that drives `setActiveTool` for the full toolkit. On each **committed** annotation change (including History undo/redo), the webview runs `engine.saveAsCopy`, posts bytes to the host, and the host writes a same-directory temp file then atomically replaces the open PDF while suppressing the self-write watcher reload. Agents/MCP stay read-only.
+**Architecture:** Register `@embedpdf/plugin-annotation` and `@embedpdf/plugin-history` beside the existing EmbedPDF stack; mount `AnnotationLayer` per page; add an **Annotate** mode next to Select Text / Select Region that drives `setActiveTool` for the full toolkit. On each **committed** annotation change (including History undo/redo), the webview runs `engine.saveAsCopy`, posts bytes to the host, and the host writes a same-directory temp file then atomically replaces the open PDF while suppressing the self-write watcher reload. Agents/MCP stay read-only. Annotation controls are the VS Code **status bar** and the **command palette** only.
+
+**UI amendment (2026-10-31, Asia/Shanghai, 金扬):** Tasks 10 and 11 target the status bar and the command palette. They do not add Annotate to a slim bar, a floating bar, or an in-viewer annotation bar. Other locked Cut B decisions are unchanged.
 
 **Tech Stack:** TypeScript, React 19, EmbedPDF 2.15.1 (`@embedpdf/plugin-annotation`, `@embedpdf/plugin-history`), VS Code custom readonly editor + Node `fs` atomic rename, `node:test` / Playwright browser harness under `packages/pdf`.
 
@@ -16,7 +18,8 @@
 - Save: `saveAsCopy` → temp beside open URI → **atomic replace** of the open file; trigger on each **committed** edit (not every ink pointer move)
 - Undo/redo: EmbedPDF History plugin **only**, separate from VS Code Undo; closing the webview drops the History stack
 - Agents/MCP: **UI only**; do not add write annotation MCP tools
-- Wiring: Approach 1 — Annotation + History plugins are source of truth; map tools into chrome / slim / floating toolbars
+- Wiring: Approach 1 — Annotation + History plugins are source of truth
+- UI: **status bar + command palette only** (a setting only if a persisted color default is added). Annotate mode, the toolkit quick pick, color quick pick, and History undo/redo live there. Out: slim toolbar, floating toolbar, editor-title tool strip, and any in-viewer annotation bar (`toolbar.tsx`, `floating-toolbar.tsx`, `annotation-toolbar.tsx`, `annotation-chrome-bar`). Same control-surface rule as page colors (#454). When `toolbar.mode` is `none`, status entries hide and the command palette and keybindings remain
 - Scope of this plan: **annotations + history ONLY** — not rotate, pan, fullscreen, Export Annotated Copy, XFDF, PencilKit/`packages/ink`, or workbench Undo bridge
 - EmbedPDF packages pinned to **2.15.1** (same as `@embedpdf/core` today)
 - Webview messages remain untrusted: every new viewer→host payload goes through `parseViewerMessage`
@@ -33,7 +36,7 @@
 | `packages/pdf/package.json` | Add `@embedpdf/plugin-annotation` + `@embedpdf/plugin-history` @ 2.15.1 |
 | `packages/pdf/src/webview/plugins.ts` | Register History then Annotation after Selection |
 | `packages/pdf/src/webview/page.tsx` | Mount `AnnotationLayer` under `SelectionLayer` |
-| `packages/pdf/src/shared/view-state.ts` | Extend `ToolMode` with `"annotate"`; parse/actions |
+| `packages/pdf/src/shared/view-state.ts` | Extend `ToolMode` with `"annotate"`; parse/actions (Task 4). Task 10 adds `annotationTool`, `canAnnotationUndo`, `canAnnotationRedo`, and `setAnnotationColor` |
 | `packages/pdf/src/shared/annotation-tools.ts` | **Create:** toolkit id union, labels, icons, color presets |
 | `packages/pdf/src/webview/tool-mode.ts` | Enter/exit Annotate; clear region/text; deactivate annotation tool on exit |
 | `packages/pdf/src/webview/annotation-mode.ts` | **Create:** active tool + History undo/redo hooks |
@@ -46,17 +49,20 @@
 | `packages/pdf/src/extension/plugins/pdf/files.ts` | Implement `writeAtomic` + `hash` for `file:` URIs |
 | `packages/pdf/src/extension/plugins/pdfAnnotations/` | **Create:** conflict modal, failure toast + Retry |
 | `packages/pdf/src/extension/plugins/catalog.ts` | Register `pdfAnnotationsPlugin` |
-| `packages/pdf/src/webview/toolbar.tsx` | Annotate mode button; host toolkit when annotate |
-| `packages/pdf/src/webview/annotation-toolbar.tsx` | **Create:** toolkit + colors + History undo/redo |
-| `packages/pdf/src/webview/floating-toolbar.tsx` | Parity via shared `ToolbarControls` |
-| `packages/pdf/src/shared/command-ids.ts` | Annotate / undo / redo / retry command ids |
+| `packages/pdf/src/extension/plugins/pdfToolbar/status-bar-layout.ts` | Annotate cluster in `STATUS_BAR_ORDER` after `find`, before `view` |
+| `packages/pdf/src/extension/plugins/pdfToolbar/status-bar.ts` | Annotate, tool, color, undo, redo status entries |
+| `packages/pdf/src/extension/plugins/pdfToolbar/annotation-picker.ts` | **Create:** toolkit and color quick picks |
+| `packages/pdf/src/shared/command-ids.ts` | Annotate / tool / color / undo / redo / retry command ids |
 | `packages/pdf/src/shared/view-commands.ts` | Map new commands to viewer actions |
-| `packages/pdf/contributes.json` | Commands, menus, keybindings for chrome parity |
+| `packages/pdf/contributes.json` | Command palette entries and keybindings (not an editor-title or viewer-bar surface) |
+| `packages/pdf/src/webview/toolbar.tsx` | **Do not** add Annotate here |
+| `packages/pdf/src/webview/floating-toolbar.tsx` | **Do not** add Annotate here |
 | `packages/pdf/src/webview/viewer.tsx` | Wire annotation session; Escape exits Annotate |
 | `packages/pdf/docs/HANDOFF_OPENAI.md` | Un-defer annotation system for this scoped slice |
 | `packages/pdf/test/unit/atomic-write.test.ts` | **Create** |
 | `packages/pdf/test/unit/annotation-messages.test.ts` | **Create** |
 | `packages/pdf/test/unit/view-state-annotate.test.ts` | **Create** |
+| `packages/pdf/test/unit/annotation-status-bar.test.ts` | **Create:** status-bar order and annotate entry ids |
 | `packages/pdf/test/unit/plugin-registration-annotations.test.ts` | **Create** |
 | `packages/pdf/test/unit/page-annotation-layer.test.ts` | **Create** |
 | `packages/pdf/test/unit/annotation-save-panel.test.ts` | **Create** |
@@ -650,7 +656,7 @@ Return `tool: annotate ? "annotate" : state.activeMode === REGION_MODE ? "region
 
 - [ ] **Step 3: Wire actions in `view-sync.ts` / `viewer.tsx`**
 
-Handle `setAnnotationTool`, `annotationUndo`, `annotationRedo` in the action map. Pass hooks from `useAnnotationMode(DOCUMENT_ID)` into `useViewActions` and toolbars.
+Handle `setAnnotationTool`, `annotationUndo`, `annotationRedo` in the action map. Pass hooks from `useAnnotationMode(DOCUMENT_ID)` into `useViewActions`. Do not pass them into `toolbar.tsx` or `floating-toolbar.tsx`. Task 10 reports `annotationTool` and the History undo/redo flags on the view state the status bar reads, and handles `setAnnotationColor`.
 
 In Escape key handler: if `tool === "annotate"`, `setTool("text")` and return (spec: Escape exits Annotate).
 
@@ -1301,131 +1307,117 @@ EOF
 
 ---
 
-### Task 10: Annotate toolbar UI (slim + floating)
+### Task 10: Annotate controls on the status bar
 
 **Files:**
-- Create: `packages/pdf/src/webview/annotation-toolbar.tsx`
-- Modify: `packages/pdf/src/webview/toolbar.tsx`
-- Modify: `packages/pdf/src/webview/styles/toolbar.css`
-- Modify: `packages/pdf/src/webview/viewer.tsx`
-- Modify: `packages/pdf/src/webview/annotation-mode.ts` (setColor already in Task 5)
+- Modify: `packages/pdf/src/extension/plugins/pdfToolbar/status-bar-layout.ts`
+- Modify: `packages/pdf/src/extension/plugins/pdfToolbar/status-bar.ts`
+- Create: `packages/pdf/src/extension/plugins/pdfToolbar/annotation-picker.ts`
+- Modify: `packages/pdf/src/shared/view-state.ts` (report fields + `setAnnotationColor`)
+- Modify: `packages/pdf/src/shared/command-ids.ts`
+- Modify: `packages/pdf/src/webview/view-sync.ts` (report fields; handle `setAnnotationColor`)
+- Modify: `packages/pdf/src/webview/annotation-mode.ts` (stamp default only, if the stamp tool needs an image)
+- Test: `packages/pdf/test/unit/annotation-status-bar.test.ts` (create)
+- Test: `packages/pdf/test/unit/view-state-annotate.test.ts` (extend)
+
+Do not modify `toolbar.tsx`, `floating-toolbar.tsx`, or `styles/toolbar.css` for this UI. Do not create `annotation-toolbar.tsx` or an in-viewer annotation bar.
 
 **Interfaces:**
-- Consumes: `tool`, `run`, `annotationTool`, `canUndo`, `canRedo`, `setColor`
-- Produces: Annotate toggle; when annotate, full toolkit + color chips + History Undo/Redo in slim and floating (via `ToolbarControls`)
+- Consumes: view `tool`, `annotationTool`, `canAnnotationUndo`, `canAnnotationRedo`; `ANNOTATION_TOOL_IDS`; `ANNOTATION_COLOR_PRESETS`
+- Produces: status-bar entries `annotate`, `annotationTool`, `annotationColor`, `annotationUndo`, `annotationRedo`; toolkit and color quick picks; commands `lumiere.pdf.toggleAnnotateTool`, `lumiere.pdf.pickAnnotationTool`, `lumiere.pdf.pickAnnotationColor`
 
-- [ ] **Step 1: Create `annotation-toolbar.tsx`**
+- [ ] **Step 1: Write a failing status-bar order test**
 
-```tsx
-import React from "react";
-import {
-  ANNOTATION_COLOR_PRESETS,
-  ANNOTATION_TOOL_ICONS,
-  ANNOTATION_TOOL_IDS,
-  ANNOTATION_TOOL_LABELS,
-  type AnnotationToolId,
-} from "../shared/annotation-tools";
-import type { ViewerAction } from "../shared/view-state";
+Create `packages/pdf/test/unit/annotation-status-bar.test.ts`:
 
-export function AnnotationToolkit({
-  annotationTool,
-  canUndo,
-  canRedo,
-  run,
-  onColor,
-}: {
-  annotationTool: AnnotationToolId | null;
-  canUndo: boolean;
-  canRedo: boolean;
-  run: (action: ViewerAction) => void;
-  onColor: (color: string) => void;
-}): React.JSX.Element {
-  return (
-    <span
-      className="toolbar-group annotation-toolkit"
-      role="group"
-      aria-label="PDF annotation tools"
-    >
-      <button
-        type="button"
-        className="icon-button"
-        aria-label="Undo annotation"
-        title="Undo annotation"
-        disabled={!canUndo}
-        onClick={() => run({ action: "annotationUndo" })}
-      >
-        <i className="codicon codicon-discard" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        className="icon-button"
-        aria-label="Redo annotation"
-        title="Redo annotation"
-        disabled={!canRedo}
-        onClick={() => run({ action: "annotationRedo" })}
-      >
-        <i className="codicon codicon-redo" aria-hidden="true" />
-      </button>
-      <span className="separator" />
-      {ANNOTATION_TOOL_IDS.map((id) => (
-        <button
-          key={id}
-          type="button"
-          className={`icon-button${annotationTool === id ? " pressed" : ""}`}
-          aria-label={ANNOTATION_TOOL_LABELS[id]}
-          title={ANNOTATION_TOOL_LABELS[id]}
-          aria-pressed={annotationTool === id}
-          onClick={() => run({ action: "setAnnotationTool", tool: id })}
-        >
-          <i
-            className={`codicon codicon-${ANNOTATION_TOOL_ICONS[id]}`}
-            aria-hidden="true"
-          />
-        </button>
-      ))}
-      <span className="separator" />
-      {ANNOTATION_COLOR_PRESETS.map((color) => (
-        <button
-          key={color}
-          type="button"
-          className="color-chip"
-          aria-label={`Annotation color ${color}`}
-          title={color}
-          style={{ background: color }}
-          onClick={() => onColor(color)}
-        />
-      ))}
-    </span>
-  );
-}
+```ts
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { STATUS_BAR_ORDER } from "../../src/extension/plugins/pdfToolbar/status-bar-layout";
+
+const ANNOTATE_CLUSTER = [
+  "annotate",
+  "annotationTool",
+  "annotationColor",
+  "annotationUndo",
+  "annotationRedo",
+] as const;
+
+test("annotate cluster sits after find and before view", () => {
+  const find = STATUS_BAR_ORDER.indexOf("find");
+  const view = STATUS_BAR_ORDER.indexOf("view");
+  const indexes = ANNOTATE_CLUSTER.map((id) => STATUS_BAR_ORDER.indexOf(id));
+  for (const index of indexes) {
+    assert.ok(index > find, String(index));
+    assert.ok(index < view, String(index));
+  }
+  const sorted = [...indexes].sort((a, b) => a - b);
+  assert.deepEqual(indexes, sorted);
+});
 ```
 
-- [ ] **Step 2: Extend `ToolGroup` / `ToolbarControls`**
+- [ ] **Step 2: Run — expect FAIL**
 
-Add Annotate `IconButton` (`icon="edit"`, label `"Annotate"`, shortcut Ctrl+Alt+A / ⌃⌘A, `pressed={tool === "annotate"}`).
+Run: `cd /workspace/lumiere/packages/pdf && pnpm exec tsx --test test/unit/annotation-status-bar.test.ts`
 
-When `tool === "annotate"`, render `<AnnotationToolkit ... />` after the tool group inside `ToolbarControls` so slim and floating both get it.
+Expected: FAIL (`annotate` is not in `STATUS_BAR_ORDER` yet).
 
-Extend `ToolbarProps` with annotation fields from Task 5.
+- [ ] **Step 3: Extend the view report**
 
-If stamp is inert without an image, add `packages/pdf/src/webview/assets/stamp.png` (tiny PNG) and on annotate enter call `setToolDefaults("stamp", { imageSrc: stampUrl })` once.
+In `view-state.ts`:
 
-- [ ] **Step 3: CSS**
+1. Add optional `annotationTool?: AnnotationToolId | null`, `canAnnotationUndo?: boolean`, and `canAnnotationRedo?: boolean` on `ViewState`.
+2. In `parseViewState`, copy `annotationTool` when `isAnnotationToolId` or the value is `null`, and copy the undo/redo flags only when they are booleans.
+3. Add viewer action `{ action: "setAnnotationColor"; color: string }`. Accept `color` only when it is one of `ANNOTATION_COLOR_PRESETS`.
 
-In `toolbar.css`, style `.color-chip` (14×14, border-radius 2px, border) and allow `.annotation-toolkit` to wrap or scroll in floating vertical layout.
+Extend `view-state-annotate.test.ts` with a case that accepts `setAnnotationColor` of `#FFE600` and rejects `"red"`.
 
-- [ ] **Step 4: Typecheck**
+In `view-sync.ts`, put those three fields on the reported view from `useAnnotationMode`, and handle `setAnnotationColor` by calling `setColor`.
 
-Run: `cd /workspace/lumiere/packages/pdf && pnpm exec tsc -p src/webview --noEmit`
+- [ ] **Step 4: Status bar entries**
 
-Expected: exit 0.
+In `status-bar-layout.ts`, add the five ids to `StatusBarEntryId` and insert them in `STATUS_BAR_ORDER` immediately after `find` and before `view`. Leave history and page-colors entries where they already are. Page colors stays near `view`, left of page and zoom.
 
-- [ ] **Step 5: Commit**
+In `status-bar.ts`, add:
+
+- `annotate` — `$(edit) Annotate`, or `$(edit) Annotating` while `tool === "annotate"`. Command `toggleAnnotateTool`. Shown whenever other PDF status entries are shown (status-bar mode).
+- `annotationTool` — label of the active tool, command `pickAnnotationTool`, shown only while annotating.
+- `annotationColor` — `$(symbol-color) Color`, command `pickAnnotationColor`, shown only while annotating.
+- `annotationUndo` / `annotationRedo` — icon buttons, shown only while annotating, and they follow `lumiere.pdf.toolbar.statusBarButtons` the same way other optional buttons do. Clear the command when `canAnnotationUndo` / `canAnnotationRedo` is false.
+
+Add `toggleAnnotateTool`, `pickAnnotationTool`, and `pickAnnotationColor` to `VIEW_COMMAND_IDS` (`lumiere.pdf.toggleAnnotateTool`, `lumiere.pdf.pickAnnotationTool`, `lumiere.pdf.pickAnnotationColor`). `toggleAnnotate`: if the active panel's tool is `annotate`, send `setTool` `text`; otherwise send `setTool` `annotate`.
+
+- [ ] **Step 5: Quick picks**
+
+Create `annotation-picker.ts`:
+
+- `pickAnnotationTool`: if the panel is not annotating, enter Annotate, then `showQuickPick` over `ANNOTATION_TOOL_IDS` using `ANNOTATION_TOOL_LABELS` and `ANNOTATION_TOOL_ICONS`. On a choice, send `setAnnotationTool`.
+- `pickAnnotationColor`: `showQuickPick` over `ANNOTATION_COLOR_PRESETS`. On a choice, send `{ action: "setAnnotationColor", color }`.
+
+Register `toggleAnnotateTool`, `pickAnnotationTool`, and `pickAnnotationColor` from one plugin (`pdfToolbar`, unless `pdfAnnotations` already owns annotation commands — one owner only).
+
+If the stamp tool is inert without an image, add `packages/pdf/src/webview/assets/stamp.png` (a tiny PNG) and, when the stamp tool becomes active, call `setToolDefaults("stamp", { imageSrc: stampUrl })` once from `annotation-mode.ts`.
+
+- [ ] **Step 6: Leave viewer bars alone**
+
+Do not mount annotation controls in `toolbar.tsx`, `floating-toolbar.tsx`, or `viewer.tsx`. If an `AnnotationToolkit`, an Annotate button on the slim bar, or an in-viewer annotation bar is already present, delete that surface in this task. The status bar and the command palette replace it. A stand-alone slim bar keeps its other PDF controls and does not gain an Annotate toolkit.
+
+- [ ] **Step 7: Run tests**
+
+Run:
 
 ```bash
-git add packages/pdf/src/webview/annotation-toolbar.tsx packages/pdf/src/webview/toolbar.tsx packages/pdf/src/webview/viewer.tsx packages/pdf/src/webview/styles/toolbar.css packages/pdf/src/webview/assets/stamp.png
+cd /workspace/lumiere/packages/pdf && pnpm exec tsx --test test/unit/annotation-status-bar.test.ts test/unit/view-state-annotate.test.ts test/unit/status-bar-layout.test.ts && pnpm exec tsc -p src/extension --noEmit
+```
+
+Expected: PASS.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add packages/pdf/src/extension/plugins/pdfToolbar/status-bar-layout.ts packages/pdf/src/extension/plugins/pdfToolbar/status-bar.ts packages/pdf/src/extension/plugins/pdfToolbar/annotation-picker.ts packages/pdf/src/shared/view-state.ts packages/pdf/src/shared/command-ids.ts packages/pdf/src/webview/view-sync.ts packages/pdf/src/webview/annotation-mode.ts packages/pdf/test/unit/annotation-status-bar.test.ts packages/pdf/test/unit/view-state-annotate.test.ts
 git commit -m "$(cat <<'EOF'
-feat(pdf): Annotate toolkit and History undo/redo in viewer toolbars
+feat(pdf): Annotate toolkit and History undo/redo on the status bar
 
 EOF
 )"
@@ -1433,29 +1425,33 @@ EOF
 
 ---
 
-### Task 11: Chrome contributes (commands, menus, keybindings)
+### Task 11: Command palette (commands and keybindings)
 
 **Files:**
 - Modify: `packages/pdf/contributes.json`
+- Modify: `packages/pdf/src/shared/command-ids.ts` (only if Task 10 left an id out)
 - Possibly root `package.json` via `pnpm contributions`
 - Test: `packages/pdf/test/unit/identity/contribution-parity.test.ts`
 
 **Interfaces:**
-- Consumes: `selectAnnotateTool`, `annotationUndo`, `annotationRedo`, `annotationRetrySave`
-- Produces: chrome title/menu/keybinding parity with Select Text/Region; when-clauses use `lumiere.pdf.tool`
+- Consumes: command ids from Tasks 4 and 10, plus `annotationRetrySave` from Task 9
+- Produces: command-palette entries and the Annotate keybinding
 
 - [ ] **Step 1: Add command contributions**
 
-Mirror Select Text / Select Region entries for:
+Category `PDF`, each visible in the command palette when `activeCustomEditorId == 'lumiere.pdf.viewer'` (match sibling PDF commands):
 
-- `lumiere.pdf.selectAnnotateTool` — title "Annotate", category "PDF"
+- `lumiere.pdf.selectAnnotateTool` — "Annotate" (enters Annotate mode)
+- `lumiere.pdf.toggleAnnotateTool` — "Toggle Annotate"
+- `lumiere.pdf.pickAnnotationTool` — "Annotation Tool…"
+- `lumiere.pdf.pickAnnotationColor` — "Annotation Color…"
 - `lumiere.pdf.annotationUndo` — "Undo Annotation"
 - `lumiere.pdf.annotationRedo` — "Redo Annotation"
 - `lumiere.pdf.annotationRetrySave` — "Retry Annotation Save"
 
-Editor title / menus: `when` parallel to existing tool buttons. Show Annotate when `lumiere.pdf.tool != 'annotate'`; when annotate, prefer Select Text to exit.
+Do not add these commands to `editor/title`, `view/title`, or a webview toolbar menu.
 
-Keybinding: `ctrl+alt+a` (mac `cmd+ctrl+a`) for Annotate — do **not** steal workbench Undo (`cmd+z`).
+Keybinding: `ctrl+alt+a` (mac `cmd+ctrl+a`) runs Toggle Annotate. Do not bind History undo/redo to workbench Undo (`cmd+z` / `ctrl+z`).
 
 - [ ] **Step 2: Regenerate merged contributions**
 
@@ -1472,9 +1468,9 @@ Expected: PASS.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/pdf/contributes.json package.json
+git add packages/pdf/contributes.json packages/pdf/src/shared/command-ids.ts package.json
 git commit -m "$(cat <<'EOF'
-feat(pdf): contribute Annotate commands for chrome toolbar
+feat(pdf): contribute Annotate commands for the command palette
 
 EOF
 )"
@@ -1501,7 +1497,7 @@ Create `packages/pdf/test/browser/annotations.spec.ts`:
 import { expect, test } from "@playwright/test";
 import { open, sendAction, pagePoint, lastView, TEXT_MIDLINE } from "./viewer-support";
 
-test("Annotate mode exposes toolkit and Escape returns to text", async ({
+test("Annotate mode has no viewer bar and Escape returns to text", async ({
   page,
 }) => {
   await open(page);
@@ -1509,7 +1505,10 @@ test("Annotate mode exposes toolkit and Escape returns to text", async ({
   await expect.poll(() => lastView(page)).toMatchObject({ tool: "annotate" });
   await expect(
     page.getByRole("group", { name: "PDF annotation tools" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("toolbar", { name: "PDF annotation bar" }),
+  ).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect.poll(() => lastView(page)).toMatchObject({ tool: "text" });
 });
@@ -1523,11 +1522,6 @@ test("highlight tool can mark text", async ({ page }) => {
   await page.mouse.down();
   await page.mouse.move(...at(205, TEXT_MIDLINE));
   await page.mouse.up();
-  await expect
-    .poll(async () =>
-      page.locator(".annotation-toolkit").evaluate(() => true),
-    )
-    .toBe(true);
   // Assert at least one annotation overlay node appeared; adjust selector
   // after a headed inspect of AnnotationLayer DOM if needed.
   await expect
@@ -1623,7 +1617,7 @@ Run:
 cd /workspace/lumiere/packages/pdf && pnpm typecheck && pnpm test && pnpm test:browser -- test/browser/annotations.spec.ts test/browser/tool-mode.spec.ts test/browser/toolbar.spec.ts
 ```
 
-Expected: all PASS. Fix Escape / toolbar regressions from the new Annotate control.
+Expected: all PASS. Escape still leaves Annotate mode. `toolbar.spec.ts` still passes, and the slim bar does not gain an Annotate control.
 
 - [ ] **Step 2: Contributions / format**
 
@@ -1652,8 +1646,8 @@ git add -u && git commit -m "fix(pdf): annotation plan verification follow-ups"
 | EmbedPDF History ≠ VS Code Undo | 2, 5, 10; Global Constraints |
 | UI only; MCP read-only | Global Constraints; no MCP write tasks |
 | Approach 1: Annotation + History SOT | 2, 3, 5 |
-| Annotate vs Select Text/Region; Escape exits | 4, 5, 10, 12 |
-| chrome / slim / floating parity | 10, 11 |
+| Annotate vs Select Text/Region; Escape exits | 4, 5, 12 |
+| Status bar + command palette only | 10, 11, 12 |
 | Dirty while saving / failed; toast + Retry | 8, 9 |
 | Concurrent external change: Reload vs Keep mine | 9 |
 | Closing webview drops History | History plugin session; Constraints |
@@ -1664,6 +1658,7 @@ git add -u && git commit -m "fix(pdf): annotation plan verification follow-ups"
 
 - No deferred placeholders left in task steps (every step has concrete code or commands).
 - `ToolMode` / `AnnotationToolId` / message names consistent across Tasks 4–11.
+- Tasks 10–12 put Annotate on the status bar and in the command palette, and they do not add a slim, floating, or in-viewer annotation bar.
 - Extension `pdfHistory` (jump) untouched; annotation undo uses EmbedPDF topic `"annotations"`.
 - `PdfFiles.writeAtomic` optional → non-`file` hosts error (no sidecar).
 
