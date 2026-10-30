@@ -1,6 +1,7 @@
 import { useScrollState } from "./scroll-state";
 import { ZoomMode, useZoom } from "@embedpdf/plugin-zoom/react";
 import { useCallback, useEffect, useRef } from "react";
+import type { AnnotationToolId } from "../shared/annotation-tools";
 import type {
   FitMode,
   ToolMode,
@@ -90,6 +91,9 @@ interface ActionContext {
   navigation: Navigation;
   openSearch: () => void;
   setTool: (tool: ToolMode) => void;
+  setAnnotationTool: (tool: AnnotationToolId | null) => void;
+  annotationUndo: () => void;
+  annotationRedo: () => void;
   setChoices: (choices: Partial<ViewChoices>) => void;
   /** Zoom to a level, within the viewer's range. */
   zoomTo: (level: number) => void;
@@ -142,6 +146,10 @@ const ACTIONS: Handlers = {
     setChoices({ scrollDirection }),
   find: (_, { openSearch }) => openSearch(),
   setTool: ({ tool }, { setTool }) => setTool(tool),
+  setAnnotationTool: ({ tool }, { setAnnotationTool }) =>
+    setAnnotationTool(tool),
+  annotationUndo: (_, { annotationUndo }) => annotationUndo(),
+  annotationRedo: (_, { annotationRedo }) => annotationRedo(),
 };
 
 /**
@@ -153,12 +161,20 @@ export function useViewActions(
   openSearch: () => void,
   setTool: (tool: ToolMode) => void,
   setChoices: (choices: Partial<ViewChoices>) => void,
+  annotation: {
+    setAnnotationTool: (tool: AnnotationToolId | null) => void;
+    undo: () => void;
+    redo: () => void;
+  },
 ): (action: ViewerAction) => void {
   const { provides: zoom, state } = useZoom(DOCUMENT_ID);
   const current = {
     navigation,
     openSearch,
     setTool,
+    setAnnotationTool: annotation.setAnnotationTool,
+    annotationUndo: annotation.undo,
+    annotationRedo: annotation.redo,
     setChoices,
     zoom,
     level: state.currentZoomLevel,

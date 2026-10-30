@@ -2,8 +2,10 @@ import {
   useInteractionManager,
   useInteractionManagerCapability,
 } from "@embedpdf/plugin-interaction-manager/react";
+import { useAnnotationCapability } from "@embedpdf/plugin-annotation/react";
 import { useSelectionCapability } from "@embedpdf/plugin-selection/react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { DEFAULT_ANNOTATION_TOOL } from "../shared/annotation-tools";
 import type { ToolMode } from "../shared/view-state";
 import { touchOnly } from "./touch";
 
@@ -21,7 +23,9 @@ export function useToolMode(documentId: string): {
 } {
   const { provides: interaction } = useInteractionManagerCapability();
   const { provides: selection } = useSelectionCapability();
+  const { provides: annots } = useAnnotationCapability();
   const { state } = useInteractionManager(documentId);
+  const [annotate, setAnnotate] = useState(false);
 
   useEffect(() => {
     if (!interaction || !selection) {
@@ -58,6 +62,15 @@ export function useToolMode(documentId: string): {
       if (!scope) {
         return;
       }
+      if (tool === "annotate") {
+        selection?.forDocument(documentId).clear();
+        scope.activateDefaultMode();
+        annots?.forDocument(documentId).setActiveTool(DEFAULT_ANNOTATION_TOOL);
+        setAnnotate(true);
+        return;
+      }
+      annots?.forDocument(documentId).setActiveTool(null);
+      setAnnotate(false);
       if (tool === "region") {
         // A text selection would stay on screen, unreachable by region drags.
         selection?.forDocument(documentId).clear();
@@ -66,11 +79,15 @@ export function useToolMode(documentId: string): {
         scope.activateDefaultMode();
       }
     },
-    [documentId, interaction, selection],
+    [documentId, interaction, selection, annots],
   );
 
   return {
-    tool: state.activeMode === REGION_MODE ? "region" : "text",
+    tool: annotate
+      ? "annotate"
+      : state.activeMode === REGION_MODE
+        ? "region"
+        : "text",
     setTool,
   };
 }

@@ -29,6 +29,7 @@ import { SearchBar } from "./search-bar";
 import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
+import { useAnnotationMode } from "./annotation-mode";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
@@ -109,9 +110,18 @@ function useViewerState(pdf: PdfDocumentObject) {
   const [setting, setToolbar] = useState(currentToolbarSettings);
   const [zen, setZen] = useZen();
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
+  const annotation = useAnnotationMode(DOCUMENT_ID);
   useViewReporting(navigation, tool, choices);
-  const runAction = useViewActions(navigation, search.open, setTool, (next) =>
-    setChoices((current) => ({ ...current, ...next })),
+  const runAction = useViewActions(
+    navigation,
+    search.open,
+    setTool,
+    (next) => setChoices((current) => ({ ...current, ...next })),
+    {
+      setAnnotationTool: annotation.setAnnotationTool,
+      undo: annotation.undo,
+      redo: annotation.redo,
+    },
   );
   useHostMessages({
     show: navigation.show,
@@ -136,6 +146,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     search,
     documentArea,
     tool,
+    annotation,
     runAction,
     zen,
     toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
@@ -231,7 +242,7 @@ function useViewerKeys(state: {
   selection: Selection;
   search: ReturnType<typeof useSearch>;
   tool: string;
-  setTool: (tool: "text" | "region") => void;
+  setTool: (tool: "text" | "region" | "annotate") => void;
 }): void {
   const latest = useRef(state);
   latest.current = state;
@@ -253,7 +264,7 @@ function onEscape(state: {
   selection: Selection;
   search: ReturnType<typeof useSearch>;
   tool: string;
-  setTool: (tool: "text" | "region") => void;
+  setTool: (tool: "text" | "region" | "annotate") => void;
 }): void {
   const { search, selection, tool, setTool } = state;
   if (document.querySelector(".view-menu:popover-open")) {
@@ -261,6 +272,9 @@ function onEscape(state: {
   }
   if (search.isOpen) {
     search.close();
+  } else if (tool === "annotate") {
+    // Spec: Escape exits Annotate mode.
+    setTool("text");
   } else if (tool === "region" && !selection.region) {
     // With nothing selected, Escape puts down the Select Region tool.
     setTool("text");
