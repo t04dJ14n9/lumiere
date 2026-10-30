@@ -98,6 +98,15 @@ export class PdfViewerPanel {
   private readonly selected = new Emitter<SelectionSnapshot | undefined>();
   /** Fires with each new selection (or none), after `onDidChange`. */
   readonly onDidChangeSelection = this.selected.event;
+  private readonly annotationConflict = new Emitter<{
+    data: ArrayBuffer;
+    load: number;
+  }>();
+  /** Disk diverged from the editor's base bytes during an annotation save. */
+  readonly onAnnotationConflict = this.annotationConflict.event;
+  private readonly annotationSaveFailed = new Emitter<string>();
+  /** An annotation overwrite failed (I/O error). */
+  readonly onAnnotationSaveFailed = this.annotationSaveFailed.event;
 
   private readonly source: PdfSource;
   private readonly selectionState = new PdfSelectionState();
@@ -118,6 +127,8 @@ export class PdfViewerPanel {
     this.post(message),
   );
   private historyState = { back: false, forward: false };
+  private annotationDirty: "clean" | "saving" | "failed" = "clean";
+  private lastSaveBytes: ArrayBuffer | undefined;
 
   constructor(
     /** The file's URI, without a fragment. */
@@ -136,7 +147,7 @@ export class PdfViewerPanel {
     });
     // The listener's promise goes back to the host (tests await it).
     const stopReceiving = webview.onMessage((message) => this.receive(message));
-    this.disposables.push(this.changed, this.selected, this.source, {
+    this.disposables.push(this.changed, this.selected, this.annotationConflict, this.annotationSaveFailed, this.source, {
       dispose: stopReceiving,
     });
     webview.setHTML(viewerHtml(webview, options.toolbar));
@@ -313,6 +324,94 @@ export class PdfViewerPanel {
     }
   }
 
+
+  async reloadFromDisk(): Promise<void> {
+    await this.load();
+  }
+
+  async keepMine(data: ArrayBuffer, load: number): Promise<void> {
+    if (!this.isCurrentLoad(load) || !this.host.files.writeAtomic) return;
+    const { sha256 } = await this.host.files.writeAtomic(
+      this.fileUri,
+      new Uint8Array(data),
+    );
+    this.source.acceptWrite(sha256);
+    this.annotationDirty = "clean";
+    this.post({ type: "annotationSaveResult", load, ok: true, sha256 });
+  }
+
+  postAnnotationRetry(): void {
+    this.post({ type: "annotationRetry", load: this.loads });
+  }
+
+  private async onAnnotationSave(
+    message: Extract<ViewerMessage, { type: "annotationSave" }>,
+  ): Promise<void> {
+    if (!this.isCurrentLoad(message.load)) return;
+    this.lastSaveBytes = message.data;
+    if (message.baseSha256 !== this.source.sha256) {
+      this.annotationConflict.fire({ data: message.data, load: message.load });
+      this.post({
+        type: "annotationSaveResult",
+        load: message.load,
+        ok: false,
+        reason: "conflict",
+        message: "The PDF changed since this editor loaded it.",
+      });
+      return;
+    }
+    if (!this.host.files.writeAtomic) {
+      this.annotationDirty = "failed";
+      this.host.error("This host cannot overwrite PDF files in place.");
+      this.post({
+        type: "annotationSaveResult",
+        load: message.load,
+        ok: false,
+        reason: "error",
+        message: "writeAtomic is unavailable",
+      });
+      return;
+    }
+    if (!(await this.source.diskMatchesBase())) {
+      this.annotationConflict.fire({ data: message.data, load: message.load });
+      this.post({
+        type: "annotationSaveResult",
+        load: message.load,
+        ok: false,
+        reason: "conflict",
+        message: "The PDF was modified on disk.",
+      });
+      return;
+    }
+    this.annotationDirty = "saving";
+    try {
+      const { sha256 } = await this.host.files.writeAtomic(
+        this.fileUri,
+        new Uint8Array(message.data),
+      );
+      this.source.acceptWrite(sha256);
+      this.annotationDirty = "clean";
+      this.post({
+        type: "annotationSaveResult",
+        load: message.load,
+        ok: true,
+        sha256,
+      });
+    } catch (error) {
+      this.annotationDirty = "failed";
+      const text = error instanceof Error ? error.message : String(error);
+      this.host.error(`Could not save PDF annotations: ${text}`);
+      this.annotationSaveFailed.fire(text);
+      this.post({
+        type: "annotationSaveResult",
+        load: message.load,
+        ok: false,
+        reason: "error",
+        message: text,
+      });
+    }
+  }
+
   private async receive(raw: unknown): Promise<void> {
     const message = parseViewerMessage(raw);
     if (!message) {
@@ -345,6 +444,16 @@ export class PdfViewerPanel {
       case "historyTraverse":
         if (this.isCurrentLoad(message.load)) {
           await this.options.route(message);
+        }
+        break;
+      case "annotationSave":
+        await this.onAnnotationSave(message);
+        break;
+      case "annotationSaveFailed":
+        if (this.isCurrentLoad(message.load)) {
+          this.annotationDirty = "failed";
+          this.host.error(`Could not save PDF annotations: ${message.message}`);
+          this.annotationSaveFailed.fire(message.message);
         }
         break;
       default:
@@ -440,6 +549,7 @@ export class PdfViewerPanel {
       load: this.loads,
       ...this.webview.deliver(bytes.data, this.loads),
       settings: this.settings,
+      sha256: bytes.sha256,
       ...(this.position ? { position: this.position } : {}),
     });
     this.history.newViewer();

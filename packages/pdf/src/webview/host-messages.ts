@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { applyAnnotationHostMessage } from "./annotation-session";
 import type { HostMessage } from "../shared/messages";
 import type { ToolbarSettings } from "../shared/toolbar-settings";
 import type { ViewChoices, ViewSettings } from "../shared/view-settings";
@@ -23,6 +24,7 @@ export interface HostMessageHandlers {
   setMotionSetting: (setting: ViewSettings["smoothScrolling"]) => void;
   setChoices: React.Dispatch<React.SetStateAction<ViewChoices>>;
   setPageColors: (effective: "normal" | "dark") => void;
+  retryAnnotationSave?: () => void;
 }
 
 /** What the extension asks of this viewer: history, actions and settings. */
@@ -84,6 +86,12 @@ function handleHostMessage(
       return;
     case "pageColors":
       handlers.setPageColors(rememberPageColors(message.effective));
+      return;
+    case "annotationSaveResult":
+      applyAnnotationHostMessage(message);
+      return;
+    case "annotationRetry":
+      handlers.retryAnnotationSave?.();
       return;
   }
 }

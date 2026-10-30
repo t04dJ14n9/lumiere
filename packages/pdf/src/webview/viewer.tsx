@@ -30,6 +30,7 @@ import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
+import { useAnnotationSaveSession } from "./annotation-session";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
@@ -111,6 +112,7 @@ function useViewerState(pdf: PdfDocumentObject) {
   const [zen, setZen] = useZen();
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   const annotation = useAnnotationMode(DOCUMENT_ID);
+  const annotationSave = useAnnotationSaveSession(pdf);
   useViewReporting(navigation, tool, choices);
   const runAction = useViewActions(
     navigation,
@@ -135,6 +137,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     setMotionSetting,
     setChoices,
     setPageColors: rememberPageColors,
+    retryAnnotationSave: annotationSave.retry,
   });
   useViewerKeys({ selection, search, tool, setTool });
   return {

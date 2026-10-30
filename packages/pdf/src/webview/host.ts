@@ -6,6 +6,7 @@ import type { HostMessage, ViewerPatch } from "../shared/messages";
 import { createOutbox, type OutgoingMessage } from "./outbox";
 import { prepareReadingPosition } from "./reading-position";
 import { HostInbox } from "../shared/host-inbox";
+import { rememberAnnotationLoad } from "./annotation-load-state";
 import { createLoadReceiver, fetchPdfBytes } from "./load";
 
 declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
@@ -64,6 +65,7 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
       if (message.type === "load") {
         inbox.beginLoad();
         outbox.loaded(message.load);
+        rememberAnnotationLoad(message.load, message.sha256);
         prepareReadingPosition(message.settings, message.position);
         receiveBytes(message);
       } else {
