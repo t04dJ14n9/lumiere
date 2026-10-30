@@ -27,8 +27,10 @@ export interface PageProps {
 
 /**
  * One page, as layers from bottom to top: the rendered image, search hits,
- * clickable links, a highlighted location, the selected region, and
- * EmbedPDF's text selection (which also draws the region being dragged).
+ * clickable links, a highlighted location, the selected region, annotations
+ * (absolute overlay; pointer-events none so link hit-targets do not steal
+ * region/text drags), and EmbedPDF's text selection (which also draws the
+ * region being dragged).
  */
 export function Page({
   pdf,
@@ -73,6 +75,11 @@ export function Page({
         documentId={DOCUMENT_ID}
         pageIndex={pageIndex}
         scale={scale}
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+        }}
       />
       <TextSelection {...layer} />
     </PagePointerProvider>

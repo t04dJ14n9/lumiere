@@ -39,7 +39,10 @@ export class PdfSource {
   ) {
     this.stopWatching = files.watch(uri, () => {
       clearTimeout(this.timer);
-      this.timer = setTimeout(() => void this.onWatchedChange(), RELOAD_DELAY_MS);
+      this.timer = setTimeout(
+        () => void this.onWatchedChange(),
+        RELOAD_DELAY_MS,
+      );
     });
   }
 

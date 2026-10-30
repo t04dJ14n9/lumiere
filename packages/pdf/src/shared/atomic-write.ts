@@ -10,10 +10,7 @@ export async function writeAtomicFile(
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const dir = path.dirname(targetPath);
   const base = path.basename(targetPath);
-  const temp = path.join(
-    dir,
-    `.${base}.${randomBytes(8).toString("hex")}.tmp`,
-  );
+  const temp = path.join(dir, `.${base}.${randomBytes(8).toString("hex")}.tmp`);
   try {
     const handle = await open(temp, "w");
     try {

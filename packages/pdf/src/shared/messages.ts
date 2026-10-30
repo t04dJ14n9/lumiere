@@ -270,7 +270,6 @@ const VIEWER_PARSERS: Readonly<
       : undefined,
 };
 
-
 const MAX_ANNOTATION_SAVE_BYTES = 512_000_000;
 
 function parseAnnotationSave(message: Fields): ViewerMessage | undefined {

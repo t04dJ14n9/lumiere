@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  parseViewState,
-  parseViewerAction,
-} from "../../src/shared/view-state";
+import { parseViewState, parseViewerAction } from "../../src/shared/view-state";
 import { DEFAULT_VIEW_CHOICES } from "../../src/shared/view-settings";
 import {
   ANNOTATION_TOOL_IDS,

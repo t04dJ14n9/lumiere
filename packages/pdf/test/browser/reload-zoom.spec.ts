@@ -62,7 +62,7 @@ test("a reloaded file reopens at the same place and zoom", async ({ page }) => {
     const data = await (await fetch("/fixtures/outline.pdf")).arrayBuffer();
     (window as unknown as { hostSend: (message: unknown) => void }).hostSend({
       type: "load",
-        sha256: "test-sha",
+      sha256: "test-sha",
       data,
     });
   });

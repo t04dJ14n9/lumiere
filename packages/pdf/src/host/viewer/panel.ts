@@ -147,9 +147,16 @@ export class PdfViewerPanel {
     });
     // The listener's promise goes back to the host (tests await it).
     const stopReceiving = webview.onMessage((message) => this.receive(message));
-    this.disposables.push(this.changed, this.selected, this.annotationConflict, this.annotationSaveFailed, this.source, {
-      dispose: stopReceiving,
-    });
+    this.disposables.push(
+      this.changed,
+      this.selected,
+      this.annotationConflict,
+      this.annotationSaveFailed,
+      this.source,
+      {
+        dispose: stopReceiving,
+      },
+    );
     webview.setHTML(viewerHtml(webview, options.toolbar));
   }
 
@@ -323,7 +330,6 @@ export class PdfViewerPanel {
       disposable.dispose();
     }
   }
-
 
   async reloadFromDisk(): Promise<void> {
     await this.load();

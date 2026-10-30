@@ -7,10 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { createPdfiumEngine } from "@embedpdf/engines/pdfium-direct-engine";
-import {
-  PdfAnnotationSubtype,
-  PdfBlendMode,
-} from "@embedpdf/models";
+import { PdfAnnotationSubtype, PdfBlendMode } from "@embedpdf/models";
 import { writeAtomicFile } from "../../src/shared/atomic-write";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -36,7 +33,9 @@ test("highlight annotation survives saveAsCopy → atomic write → reopen", asy
       bytes.byteOffset,
       bytes.byteOffset + bytes.byteLength,
     );
-    const doc = await engine.openDocumentBuffer({ id: "d1", content }).toPromise();
+    const doc = await engine
+      .openDocumentBuffer({ id: "d1", content })
+      .toPromise();
     const page = doc.pages[0]!;
     const rect = {
       origin: { x: 72, y: 280 },

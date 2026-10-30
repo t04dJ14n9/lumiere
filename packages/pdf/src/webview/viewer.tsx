@@ -75,7 +75,11 @@ export function Viewer({
         />
       )}
       {tool === "annotate" && toolbar.mode !== "slim" && (
-        <div className="annotation-chrome-bar" role="toolbar" aria-label="PDF annotation bar">
+        <div
+          className="annotation-chrome-bar"
+          role="toolbar"
+          aria-label="PDF annotation bar"
+        >
           <AnnotationToolkit
             annotationTool={view.annotation.annotationTool}
             canUndo={view.annotation.canUndo}

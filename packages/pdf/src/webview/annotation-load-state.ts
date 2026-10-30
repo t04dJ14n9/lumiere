@@ -6,8 +6,7 @@ export function rememberAnnotationLoad(load: number, sha256: string): void {
 }
 
 export function annotationLoadState():
-  | { load: number; sha256: string }
-  | undefined {
+  { load: number; sha256: string } | undefined {
   return current;
 }
 

@@ -34,7 +34,13 @@ function deferred() {
 }
 
 const load = (load: number, delivery: object) =>
-  ({ type: "load", load, settings, sha256: "test-sha", ...delivery }) as LoadMessage;
+  ({
+    type: "load",
+    load,
+    settings,
+    sha256: "test-sha",
+    ...delivery,
+  }) as LoadMessage;
 
 test("bytes in the message open at once, as VS Code sends them", () => {
   const { receive, opened } = receiver(() => assert.fail("no fetch"));

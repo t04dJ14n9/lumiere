@@ -3,10 +3,7 @@
  * editor's own controls ask the viewer to do. Shared by the viewer and the
  * extension's status bar, editor title actions and keybindings.
  */
-import {
-  isAnnotationToolId,
-  type AnnotationToolId,
-} from "./annotation-tools";
+import { isAnnotationToolId, type AnnotationToolId } from "./annotation-tools";
 import { MAX_ZOOM, MIN_ZOOM } from "./zoom-steps";
 import { isPageOffset } from "./reading-position";
 import {

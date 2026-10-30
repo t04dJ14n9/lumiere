@@ -14,5 +14,18 @@ test("Page mounts AnnotationLayer before SelectionLayer", () => {
   assert.match(source, /AnnotationLayer/);
   const ann = source.indexOf("<AnnotationLayer");
   const sel = source.indexOf("<SelectionLayer");
-  assert.ok(ann > 0 && sel > ann, "AnnotationLayer must precede SelectionLayer in JSX");
+  assert.ok(
+    ann > 0 && sel > ann,
+    "AnnotationLayer must precede SelectionLayer in JSX",
+  );
+});
+
+test("AnnotationLayer is an absolute non-hit overlay so selection drags keep working", () => {
+  const source = readFileSync(pagePath, "utf8");
+  const block = source.slice(
+    source.indexOf("<AnnotationLayer"),
+    source.indexOf("/>", source.indexOf("<AnnotationLayer")) + 2,
+  );
+  assert.match(block, /position:\s*"absolute"/);
+  assert.match(block, /pointerEvents:\s*"none"/);
 });

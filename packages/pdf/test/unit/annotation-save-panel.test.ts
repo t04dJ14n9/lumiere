@@ -92,7 +92,9 @@ test("annotationSave overwrites and suppresses watcher reload", async () => {
     data: next.buffer.slice(next.byteOffset, next.byteOffset + next.byteLength),
   });
   assert.equal(writes(), 1);
-  const result = posted.slice(before).find((m) => m.type === "annotationSaveResult");
+  const result = posted
+    .slice(before)
+    .find((m) => m.type === "annotationSaveResult");
   assert.ok(result && result.type === "annotationSaveResult" && result.ok);
   const loadsBeforeWatch = posted.filter((m) => m.type === "load").length;
   triggerWatch();
