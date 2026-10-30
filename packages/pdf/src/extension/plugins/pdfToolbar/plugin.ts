@@ -109,16 +109,14 @@ function registerToolbarCommands(
     "command",
   );
   ctx.own(
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.toggleAnnotateTool,
-      () => toggleAnnotate(panels),
+    vscode.commands.registerCommand(VIEW_COMMAND_IDS.toggleAnnotateTool, () =>
+      toggleAnnotate(panels),
     ),
     "toggle annotate",
   );
   ctx.own(
-    vscode.commands.registerCommand(
-      VIEW_COMMAND_IDS.pickAnnotationTool,
-      () => pickAnnotationTool(panels),
+    vscode.commands.registerCommand(VIEW_COMMAND_IDS.pickAnnotationTool, () =>
+      pickAnnotationTool(panels),
     ),
     "pick annotation tool",
   );
