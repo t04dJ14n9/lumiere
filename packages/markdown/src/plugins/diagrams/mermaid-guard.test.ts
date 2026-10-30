@@ -323,7 +323,7 @@ test("wireMermaidInternalLinks binds click, modifier keys, keyboard, and abort c
   assert.equal(nodeA.listeners.click?.length ?? 0, 0);
 });
 
-test("DiagramRenderer initializes mermaid only when theme or trust changes", async () => {
+test("DiagramRenderer initializes mermaid only when trust changes", async () => {
   const { default: mermaid } = await import("mermaid");
   const { DiagramRenderer } = await import("./renderer");
   const origInit = mermaid.initialize;
@@ -331,6 +331,7 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
   let initCalls = 0;
   let renderCalls = 0;
   type MermaidInitArg = {
+    theme?: string;
     flowchart?: { useMaxWidth?: boolean };
     sequence?: { useMaxWidth?: boolean };
     gitGraph?: { useMaxWidth?: boolean };
@@ -385,6 +386,15 @@ test("DiagramRenderer initializes mermaid only when theme or trust changes", asy
       initArg.themeVariables?.fontFamily,
       "var(--font-mermaid, var(--vscode-editor-font-family, inherit))",
     );
+    assert.ok(
+      initArg.theme === undefined || initArg.theme === "default",
+      `expected default Mermaid theme, got ${initArg.theme}`,
+    );
+    const cacheKey = (
+      renderer as unknown as { cacheKeyFor: (source: string) => string }
+    ).cacheKeyFor.bind(renderer);
+    const key = cacheKey("flowchart LR\nA-->B");
+    assert.equal(key, `u|flowchart LR\nA-->B`);
 
     trusted = true;
     await renderOne("flowchart LR\nE-->F");
