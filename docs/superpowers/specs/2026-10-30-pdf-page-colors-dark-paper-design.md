@@ -30,7 +30,7 @@ Today every page is white paper in every VS Code theme (`packages/pdf/src/webvie
 | Setting | `lumiere.pdf.pageColors` ∈ `follow` \| `normal` \| `dark`. |
 | Default | `follow`. |
 | Follow mapping | VS Code `window.activeColorTheme.kind`: `Dark` and `HighContrast` → effective **dark**; `Light` and `HighContrastLight` → effective **normal**. |
-| Controls | **Both** a PDF toolbar **cycle** (`Follow` → `Normal` → `Dark` → …) **and** a Settings entry (plus existing Change Setting… / Open Settings surfaces). |
+| Controls | **Page colors** cycle (`Follow` → `Normal` → `Dark` → …) on the **host UI that already shows view controls for the active toolbar mode**, plus the Settings entry (and Change Setting… / Open Settings). **Chrome** (default): VS Code **status bar** — not a new viewer-only bar. **Slim** / **floating**: same cycle on those viewer bars. **None**: Settings + command palette only. |
 | Engine approach | **PDFium page color scheme at render time** (closest to embedpdf#679). **No** CSS invert/filter fallback in v1. |
 | Fail-closed | If the color-scheme hook is **unavailable** on EmbedPDF **2.15.x** (current pin), stay on effective **Normal** and document the gap in the implementation PR — never muddy CSS. |
 | Scope | **Page colors only** — not annotations, rotate, pan, or fullscreen. |
@@ -60,18 +60,25 @@ lumiere.pdf.pageColors + (if follow) ColorThemeKind
 - Regenerated / synced `package.json` contributions follow the existing PDF settings pipeline so **PDF: Change Setting…** and **PDF: Open Settings** pick it up automatically.
 - Scope: same as peer PDF view settings (user/workspace; write path matches other toggle/cycle commands).
 
-### Toolbar cycle
+### UI surfaces (cycle control)
 
-- Add a **Page colors** control on chrome / slim / floating toolbar surfaces (parity with other view toggles).
+Do **not** invent a separate viewer-only toolbar as the primary chrome surface. Reuse the existing PDF control layouts per `lumiere.pdf.toolbar.mode`:
+
+| `toolbar.mode` | Where **Page colors** lives |
+| --- | --- |
+| **chrome** (default) | VS Code **bottom status bar**, alongside find / View / page / zoom. Touch `packages/pdf/src/extension/plugins/pdfToolbar/status-bar.ts`, `status-bar-layout.ts`, and `STATUS_BAR_ORDER`. Prefer placement **near `view`** (layout/view controls), **left of** `page` / zoom so page+zoom stay rightmost — e.g. left-to-right `find`, `view`, **`pageColors`**, `page`, … Matching layout to extend: `packages/pdf/docs/images/toolbar-chrome-dark.png`. |
+| **slim** / **floating** | Same cycle control on those **viewer** bars (parity with other view toggles: `toolbar.tsx`, `floating-toolbar.tsx`). |
+| **none** | **No** in-viewer or status-bar Page colors entry; **Settings** + **command palette** only. |
+
 - Cycle order: **Follow → Normal → Dark → Follow**.
 - Label / tooltip reflects the **setting** value (Follow / Normal / Dark), not only the effective mode; when Follow is selected, the UI may optionally hint the effective side (e.g. “Follow (Dark)”) without writing `dark` into the setting.
-- Command palette: a dedicated cycle or set command is fine if it keeps Settings and toolbar in sync (same key, no parallel state).
+- Command palette: a dedicated cycle or set command keeps Settings and the active surface in sync (same `lumiere.pdf.pageColors` key, no parallel state). Always available under **none**.
 
 ### Engine integration (EmbedPDF 2.15.x)
 
 - Prefer the public / plugin API if EmbedPDF exposes `pageColors` (or equivalent) on the render plugin by the time of implementation.
 - If not yet public at 2.15.1, implement against the **engine render options** Lumière already owns (`engine.tsx` / render session) only when the PDFium color-scheme entry point is reachable **without** forking EmbedPDF for a muddy CSS path.
-- **Fail closed:** if the hook cannot be wired cleanly on the pinned EmbedPDF version, effective mode stays **Normal**, toolbar/Settings still exist (or are gated), and the implementation PR **notes** the upstream gap and links #679 — **no** CSS `filter: invert()` (or similar) stopgap.
+- **Fail closed:** if the hook cannot be wired cleanly on the pinned EmbedPDF version, effective mode stays **Normal**, status-bar/viewer-bar/Settings controls still exist (or are gated), and the implementation PR **notes** the upstream gap and links #679 — **no** CSS `filter: invert()` (or similar) stopgap.
 - Dark palette (initial): dark page background (near editor-dark paper, e.g. ~`#1e1e1e` class) with light text/path fill/stroke suitable for reading; exact tokens chosen in implementation to match host chrome without pretending to invert images.
 
 ### Limits (product-visible)
@@ -82,7 +89,7 @@ lumiere.pdf.pageColors + (if follow) ColorThemeKind
 ## Data flow
 
 ```
-Settings / toolbar cycle
+Settings / status-bar or viewer-bar cycle / command
   → write lumiere.pdf.pageColors
   → host resolveEffective(pageColors, theme.kind)
   → postMessage { type: "pageColors", effective: "normal"|"dark" }  (name illustrative)
@@ -96,7 +103,7 @@ Theme listener (Follow only): `onDidChangeActiveColorTheme` → same resolve →
 
 - **Unit:** `resolveEffective(pageColors, kind)` matrix for all four `ColorThemeKind` values × `follow`/`normal`/`dark`; setting default `follow`; cycle order Follow→Normal→Dark; no effective change when Follow and kind stays in the same light/dark bucket.
 - **Unit / webview (as feasible without full WASM):** when effective flips, render/refresh is requested; overlay token path selects dark vs white-paper set.
-- **Host GUI:** text-heavy PDF under **Dark** and under **Follow** with a dark theme — page paper dark, text light, images (if any) unchanged; same files under **Normal** / Follow+light theme — white paper as today; **scanned PDF** under Dark — page stays largely bright (expected); theme switch with Follow updates open viewer without manual reload.
+- **Host GUI:** with default **chrome** toolbar mode, confirm **Page colors** appears on the **status bar** near View (see `toolbar-chrome-dark.png` layout); cycle works. Text-heavy PDF under **Dark** and under **Follow** with a dark theme — page paper dark, text light, images (if any) unchanged; same files under **Normal** / Follow+light theme — white paper as today; **scanned PDF** under Dark — page stays largely bright (expected); theme switch with Follow updates open viewer without manual reload. Smoke slim/floating parity and **none** (Settings/command only).
 - **Fail-closed note:** if implementation lands without the engine hook, tests assert Normal rendering and the PR body states the limitation explicitly.
 
 ## Out of scope / follow-ups
@@ -110,7 +117,7 @@ Theme listener (Follow only): `onDidChangeActiveColorTheme` → same resolve →
 ## Success criteria
 
 - Fresh install: `lumiere.pdf.pageColors` defaults to `follow`; dark editor themes get dark paper + recolored text/vectors on born-digital PDFs; light themes stay normal.
-- Toolbar cycle and Settings always agree on the stored enum; Follow tracks theme kind without writing Normal/Dark into settings.
+- Status-bar (chrome) / slim / floating cycle and Settings always agree on the stored enum; under **none**, Settings + command palette remain the only surfaces; Follow tracks theme kind without writing Normal/Dark into settings.
 - Images and scans are not falsely “darkened” by CSS; unavailable engine hook fails closed to Normal with an explicit PR note.
 - Selection / region / jump overlays remain readable on both white and dark paper.
 - No annotation, rotate, pan, or fullscreen work ships in the page-colors implementation PR.
