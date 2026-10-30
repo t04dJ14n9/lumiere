@@ -1,6 +1,9 @@
 /**
  * Attachments webview: drag-and-drop files, clipboard image paste, and
  * rewriting remote / data-URI images after HTML→Markdown paste.
+ *
+ * DnD must preventDefault on dragover + drop whenever the payload looks like
+ * files/URIs so VS Code does not open the drop as a new tab.
  */
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
@@ -8,9 +11,13 @@ import {
   decodeDataUri,
   encodeBase64,
   extensionForMime,
-  extensionFromUrl,
+  filesFromDataTransfer,
   insertEmbed,
+  isHostSourceUrl,
   rewriteRemoteImages,
+  shouldClaimEditorDrop,
+  urisFromDataTransfer,
+  type DragFile,
 } from "../../attachments";
 import type {} from "../editor/api";
 import type {} from "../pasteHtml/api";
@@ -44,16 +51,22 @@ function registerEditorCapture(ctx: Context): void {
       ViewPlugin.define((view) => {
         const events = new AbortController();
         const opts = { capture: true, signal: events.signal };
-        view.dom.addEventListener(
-          "dragover",
-          (event) => {
-            if (hasFiles(event.dataTransfer)) {
-              event.preventDefault();
-            }
-          },
-          opts,
-        );
-        view.dom.addEventListener(
+        // Document capture: OS/Explorer drops onto the webview (not only
+        // cm-content) must be claimed so the host does not open a tab.
+        const root = view.dom.ownerDocument;
+        const claimDrag = (event: DragEvent) => {
+          if (!shouldClaimEditorDrop(event.dataTransfer)) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "copy";
+          }
+        };
+        root.addEventListener("dragenter", claimDrag, opts);
+        root.addEventListener("dragover", claimDrag, opts);
+        root.addEventListener(
           "drop",
           (event) => {
             void onDrop(ctx, view, event, () => !events.signal.aborted);
@@ -79,21 +92,39 @@ async function onDrop(
   event: DragEvent,
   isLive: () => boolean,
 ): Promise<void> {
-  const files = [...(event.dataTransfer?.files ?? [])];
-  if (files.length === 0) {
+  if (!shouldClaimEditorDrop(event.dataTransfer)) {
     return;
   }
-  const target = dropView(event, outer);
-  if (!target) {
-    return;
-  }
+  // Claim before any await so VS Code never opens the file as a tab.
   event.preventDefault();
+  event.stopPropagation();
+
+  const target = dropView(event, outer) ?? outer;
+  if (event.target instanceof HTMLElement) {
+    if (event.target.closest("input, textarea")) {
+      return;
+    }
+  }
+
+  const files = filesFromDataTransfer(event.dataTransfer);
+  const uris =
+    files.length > 0 ? [] : urisFromDataTransfer(event.dataTransfer);
+  if (files.length === 0 && uris.length === 0) {
+    return;
+  }
+
   const pos =
     target.posAtCoords({ x: event.clientX, y: event.clientY }) ??
     target.state.selection.main.head;
   const embeds: string[] = [];
   for (const file of files) {
     const embed = await saveFile(ctx, file);
+    if (embed) {
+      embeds.push(embed);
+    }
+  }
+  for (const uri of uris) {
+    const embed = await saveSrc(ctx, uri);
     if (embed) {
       embeds.push(embed);
     }
@@ -145,7 +176,7 @@ function insertAt(view: EditorView, pos: number, embed: string): void {
 
 async function saveFile(
   ctx: Context,
-  file: File,
+  file: DragFile,
 ): Promise<string | undefined> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const ext = extensionFromName(file.name) || extensionForMime(file.type);
@@ -163,20 +194,12 @@ async function saveSrc(
     }
     return saveBytes(ctx, decoded.bytes, decoded.ext);
   }
-  try {
-    const response = await fetch(src);
-    if (!response.ok) {
-      return undefined;
-    }
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    const mime = response.headers.get("content-type") ?? "";
-    const ext =
-      extensionFromUrl(src) ||
-      (mime ? extensionForMime(mime.split(";")[0]!.trim()) : "png");
-    return saveBytes(ctx, bytes, ext);
-  } catch {
-    return undefined;
+  if (isHostSourceUrl(src)) {
+    const result = await ctx.rpc.call(protocol, "importUrl", { url: src });
+    return result.ok ? result.embed : undefined;
   }
+  // Relative / vault paths are not downloaded.
+  return undefined;
 }
 
 async function saveBytes(
@@ -208,7 +231,6 @@ function imageFileFromClipboard(data: DataTransfer): File | undefined {
   return undefined;
 }
 
-
 function editorViewFromPaste(
   event: ClipboardEvent,
   outer: EditorView,
@@ -232,21 +254,18 @@ function dropView(
   event: DragEvent,
   outer: EditorView,
 ): EditorView | undefined {
-  if (!(event.target instanceof HTMLElement)) {
+  const el = event.target instanceof HTMLElement ? event.target : null;
+  if (el?.closest("input, textarea")) {
     return undefined;
   }
-  if (event.target.closest("input, textarea")) {
-    return undefined;
+  if (el) {
+    const target = EditorView.findFromDOM(el);
+    if (target && outer.dom.contains(target.dom)) {
+      return target;
+    }
   }
-  const target = EditorView.findFromDOM(event.target);
-  return target && outer.dom.contains(target.dom) ? target : undefined;
-}
-
-function hasFiles(data: DataTransfer | null): boolean {
-  if (!data) {
-    return false;
-  }
-  return [...data.types].includes("Files") || data.files.length > 0;
+  // Drop elsewhere in the webview still embeds into the active note editor.
+  return outer.dom.isConnected ? outer : undefined;
 }
 
 function extensionFromName(name: string): string {

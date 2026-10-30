@@ -11,3 +11,18 @@ export {
   extensionFromUrl,
 } from "./html-images";
 export { encodeBase64, decodeBase64 } from "./base64";
+export {
+  isAttachmentDrag,
+  shouldClaimEditorDrop,
+  urisFromDataTransfer,
+  filesFromDataTransfer,
+  type DragPayload,
+  type DragFile,
+} from "./drop";
+export {
+  isHostSourceUrl,
+  loadAttachmentSource,
+  type SourceBytes,
+  type SourceFetch,
+  type SourceRead,
+} from "./source";
