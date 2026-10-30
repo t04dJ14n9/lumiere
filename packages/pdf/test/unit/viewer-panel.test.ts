@@ -45,7 +45,7 @@ function open(files: Partial<PdfFiles> = {}) {
       refocus: () => undefined,
     },
     {
-      toolbar: { mode: "slim", dock: "bottom" },
+      toolbar: { mode: "chrome", dock: "bottom" },
       settings: parseViewSettings({}),
       position: undefined,
       savePosition: () => undefined,
@@ -69,7 +69,7 @@ test("the page's files come from the host's asset URLs", () => {
     html(),
     /data-pdfium-wasm="\/lumiere\/pdf\/viewer\/pdfium\.wasm"/,
   );
-  assert.match(html(), /data-toolbar="slim"/);
+  assert.match(html(), /data-toolbar="chrome"/);
 });
 
 test("a load carries the bytes the way the host delivers them", async () => {

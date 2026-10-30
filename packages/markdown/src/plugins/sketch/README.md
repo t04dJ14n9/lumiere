@@ -44,7 +44,7 @@ waits where the host provides no `ink`. It registers
 context key while it runs. The page half injects `editor` and `rpc`, and
 emits `resources/changed` and `render/changed` after a sketch is saved.
 `lumiere.markdown.plugins.sketch.enabled` defaults to true. The folder and
-link form follow the Links plugin's `attachmentFolder`, `useWikilinks` and
+link form use the shared `src/attachments/` helpers (same as paste/drop) and the Links plugin's `attachmentFolder`, `useWikilinks` and
 `newLinkFormat` (Obsidian's Files and links settings).
 
 ## Limits

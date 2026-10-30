@@ -18,7 +18,7 @@ export { wordCountHost } from "./wordCount/host";
 export { linkUpdatesHost } from "./linkUpdates/host";
 export { bridgeHost } from "./bridge/host";
 export { wikiHost } from "./wiki/host";
-export { assetsHost } from "./assets/host";
+export { attachmentsHost } from "./attachments/host";
 export { scratchHost } from "./scratch/host";
 export { gitDiffEditorHost } from "./gitDiffEditor/host";
 export { marpHost } from "./marp/host";
@@ -39,7 +39,6 @@ export { codeBlocksHost } from "./codeBlocks/host";
 export { okfCoreHost } from "./okfCore/host";
 export { obsidianCompatHost } from "./obsidianCompat/host";
 export { graphHost } from "./graph/host";
-export { sourcesPropertyHost } from "./sourcesProperty/host";
 export { publicApiHost } from "./publicApi/host";
 export { settingsHost } from "./settings/host";
 

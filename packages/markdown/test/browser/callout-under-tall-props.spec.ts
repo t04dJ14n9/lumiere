@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { open } from "./harness";
 
-function note(sourceCount: number): string {
-  const entries = Array.from(
-    { length: sourceCount },
-    (_, i) => `  - title: S${i}\n    resource: https://ex.com/${i}`,
+function note(rowCount: number): string {
+  const fields = Array.from(
+    { length: rowCount },
+    (_, i) => `field${i}: value ${i}`,
   ).join("\n");
-  return `---\nsources:\n${entries}\n---\n# H1\n\n> [!note] Callout title\n> Callout body line with **bold** text.\n\nAfter callout paragraph.\n\n$E=mc^2$\n\nFinal line.\n`;
+  return `---\n${fields}\nsources: plain citation\n---\n# H1\n\n> [!note] Callout title\n> Callout body line with **bold** text.\n\nAfter callout paragraph.\n\n$E=mc^2$\n\nFinal line.\n`;
 }
 
 async function constrain(page: Page) {

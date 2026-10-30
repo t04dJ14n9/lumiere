@@ -203,14 +203,28 @@ test("B1: a conditional writer rejects B arriving after the final registry read 
 
 test("B1: built-ins reject incompatible retypes, including case variants", async () => {
   const { registry, state } = registryFixture('{"types":{}}');
-  for (const name of ["tags", "Tags", "aliases", "ALIASES", "cssclasses"]) {
+  for (const name of [
+    "tags",
+    "Tags",
+    "aliases",
+    "ALIASES",
+    "cssclasses",
+    "sources",
+    "Sources",
+  ]) {
     assert.throws(() => registry.set(name, "number"), /built-in/);
   }
   await registry.set("tags", "tags");
   await registry.set("aliases", "aliases");
   await registry.set("cssclasses", "multitext");
+  await registry.set("sources", "text");
   assert.deepEqual(JSON.parse(state.source!), {
-    types: { tags: "tags", aliases: "aliases", cssclasses: "multitext" },
+    types: {
+      tags: "tags",
+      aliases: "aliases",
+      cssclasses: "multitext",
+      sources: "text",
+    },
   });
   await registry.dispose();
 });

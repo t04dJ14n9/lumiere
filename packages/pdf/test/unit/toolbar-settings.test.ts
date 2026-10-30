@@ -4,17 +4,27 @@ import {
   nearestDock,
   parseToolbarMode,
   parseToolbarSettings,
+  parseVsCodeToolbarMode,
   showStatusBarButtons,
   titleActionsInMenu,
 } from "../../src/shared/toolbar-settings";
 
-test("the toolbar mode defaults to VS Code's own controls", () => {
-  for (const mode of ["chrome", "slim", "floating", "none"] as const) {
-    assert.equal(parseToolbarMode(mode), mode);
-  }
+test("parseToolbarMode keeps slim for stand-alone hosts; floating migrates to chrome", () => {
+  assert.equal(parseToolbarMode("chrome"), "chrome");
+  assert.equal(parseToolbarMode("none"), "none");
+  assert.equal(parseToolbarMode("slim"), "slim");
+  assert.equal(parseToolbarMode("floating"), "chrome");
   for (const value of [undefined, null, "", "Slim", "compact", 42]) {
     assert.equal(parseToolbarMode(value), "chrome");
   }
+});
+
+test("VS Code setting parser maps slim/floating to chrome", () => {
+  assert.equal(parseVsCodeToolbarMode("chrome"), "chrome");
+  assert.equal(parseVsCodeToolbarMode("none"), "none");
+  assert.equal(parseVsCodeToolbarMode("slim"), "chrome");
+  assert.equal(parseVsCodeToolbarMode("floating"), "chrome");
+  assert.equal(parseVsCodeToolbarMode(undefined), "chrome");
 });
 
 test("status bar buttons show in Cursor unless set otherwise", () => {
@@ -33,18 +43,22 @@ test('Cursor keeps extension title actions in its "…" menu', () => {
 
 test("toolbar settings from a message fall back to the defaults", () => {
   assert.deepEqual(parseToolbarSettings({ mode: "floating", dock: "left" }), {
-    mode: "floating",
+    mode: "chrome",
     dock: "left",
   });
   assert.deepEqual(parseToolbarSettings({ mode: "slim" }), {
     mode: "slim",
     dock: "bottom",
   });
+  assert.deepEqual(parseToolbarSettings({ mode: "none", dock: "top" }), {
+    mode: "none",
+    dock: "top",
+  });
   assert.deepEqual(parseToolbarSettings({ mode: "floating", dock: "middle" }), {
-    mode: "floating",
+    mode: "chrome",
     dock: "bottom",
   });
-  for (const value of [undefined, null, "slim", 3]) {
+  for (const value of [undefined, null, 3]) {
     assert.deepEqual(parseToolbarSettings(value), {
       mode: "chrome",
       dock: "bottom",
@@ -53,12 +67,10 @@ test("toolbar settings from a message fall back to the defaults", () => {
 });
 
 test("a dropped floating bar docks to the nearest edge", () => {
-  // A 1000 x 600 viewer.
   assert.equal(nearestDock(500, 20, 1000, 600), "top");
   assert.equal(nearestDock(500, 590, 1000, 600), "bottom");
   assert.equal(nearestDock(10, 300, 1000, 600), "left");
   assert.equal(nearestDock(980, 300, 1000, 600), "right");
-  // Nearest in pixels: near the middle of a wide viewer, the top or bottom.
   assert.equal(nearestDock(400, 280, 1000, 600), "top");
   assert.equal(nearestDock(400, 320, 1000, 600), "bottom");
   assert.equal(nearestDock(150, 300, 1000, 600), "left");

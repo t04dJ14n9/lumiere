@@ -99,7 +99,10 @@ function registerOutlineFocus(ctx: Context): void {
     activeCustomEditorViewType: () => activeEditor.customEditorViewType(),
   });
   ctx.effect(() => () => focus.dispose());
-  const sync = () => focus.sync(Boolean(ctx.editors.active()));
+  const sync = () => {
+    const active = ctx.editors.active();
+    focus.sync(Boolean(active && !active.openedFromNativeSelection));
+  };
   ctx.on("editor/opened", sync);
   ctx.on("editor/closed", sync);
   ctx.on("editor/activeChanged", sync);

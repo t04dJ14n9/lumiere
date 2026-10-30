@@ -1,5 +1,7 @@
 import { createPluginRegistration } from "@embedpdf/core";
+import { AnnotationPluginPackage } from "@embedpdf/plugin-annotation/react";
 import { BookmarkPluginPackage } from "@embedpdf/plugin-bookmark/react";
+import { HistoryPluginPackage } from "@embedpdf/plugin-history/react";
 import { DocumentManagerPluginPackage } from "@embedpdf/plugin-document-manager/react";
 import { InteractionManagerPluginPackage } from "@embedpdf/plugin-interaction-manager/react";
 import { RenderPluginPackage } from "@embedpdf/plugin-render/react";
@@ -46,6 +48,13 @@ export function viewerPlugins(buffer: ArrayBuffer) {
     createPluginRegistration(RenderPluginPackage),
     createPluginRegistration(InteractionManagerPluginPackage),
     createPluginRegistration(SelectionPluginPackage),
+    createPluginRegistration(HistoryPluginPackage),
+    createPluginRegistration(AnnotationPluginPackage, {
+      annotationAuthor: "Lumière",
+      autoCommit: true,
+      selectAfterCreate: true,
+      deactivateToolAfterCreate: false,
+    }),
     createPluginRegistration(ZoomPluginPackage, {
       // A number would leave the viewport gated until a zoom request; the restored
       // number is requested once the document is shown (useRestorePosition).

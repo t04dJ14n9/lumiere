@@ -1,14 +1,12 @@
 import type { ToolbarMode } from "./toolbar-settings";
 
 /**
- * The toolbar mode the viewer shows. In zen mode VS Code hides or loses the
- * editor title actions and the status bar, so the controls that live there
- * (`chrome`) or take a row of the screen (`slim`) are a floating bar for as
- * long as zen lasts. `floating` and `none` are what the reader chose. The
- * setting itself is never changed.
+ * The toolbar mode the viewer shows. Zen no longer forces a floating overlay
+ * bar: VS Code hides the status bar in zen, so PDF controls are command /
+ * palette only until zen ends. The setting itself is never changed.
  */
-export function zenToolbarMode(mode: ToolbarMode, zen: boolean): ToolbarMode {
-  return zen && (mode === "chrome" || mode === "slim") ? "floating" : mode;
+export function zenToolbarMode(mode: ToolbarMode, _zen: boolean): ToolbarMode {
+  return mode;
 }
 
 /**

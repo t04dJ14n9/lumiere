@@ -40,7 +40,9 @@ them, so `*a*` from a web page turns italic and `[[1]](#cite)` becomes a
 wikilink.
 
 Rectangular table paste retains TSV semantics; HTML conversion applies inside a
-focused cell. Menu paste receives plain text from VS Code's clipboard API. Rich
-paste does not download images or save attachments. Shift+Mod+V, code and property
-inputs keep their native behavior. Asynchronous transforms are discarded after
-an intervening edit or selection change; the user can paste again.
+focused cell. Menu paste receives plain text from VS Code's clipboard API. After
+conversion, the attachments plugin downloads or decodes remote and data-URI
+images, saves them under `files.attachmentFolder`, and rewrites embeds; failed
+images stay as in the pasted Markdown. Shift+Mod+V, code and property inputs
+keep their native behavior. Asynchronous transforms are discarded after an
+intervening edit or selection change; the user can paste again.
