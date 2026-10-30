@@ -4,12 +4,11 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { createPdfiumEngine } from "@embedpdf/engines/pdfium-direct-engine";
 import { PdfAnnotationSubtype, PdfBlendMode } from "@embedpdf/models";
 import { writeAtomicFile } from "../../src/host/atomic-write";
-import { shortPdf } from "../fixtures/make-fixtures.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const wasmPath = path.join(
@@ -20,13 +19,19 @@ const fixtureDir = path.join(root, "test/fixtures/generated");
 const fixturePath = path.join(fixtureDir, "short.pdf");
 
 /** generated/ is gitignored; unit tests must materialize short.pdf themselves. */
-function ensureShortFixture(): void {
+async function ensureShortFixture(): Promise<void> {
   mkdirSync(fixtureDir, { recursive: true });
+  const fixturesUrl = pathToFileURL(
+    path.join(root, "test/fixtures/make-fixtures.mjs"),
+  ).href;
+  const { shortPdf } = (await import(fixturesUrl)) as {
+    shortPdf: () => Buffer;
+  };
   writeFileSync(fixturePath, shortPdf());
 }
 
 test("highlight annotation survives saveAsCopy → atomic write → reopen", async () => {
-  ensureShortFixture();
+  await ensureShortFixture();
   const wasm = readFileSync(wasmPath);
   const server = createServer((_req, res) => {
     res.setHeader("content-type", "application/wasm");
