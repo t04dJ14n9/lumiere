@@ -10,9 +10,7 @@ export interface SourceBytes {
   readonly ext: string;
 }
 
-export type SourceFetch = (
-  url: string,
-) => Promise<{
+export type SourceFetch = (url: string) => Promise<{
   ok: boolean;
   headers: { get(name: string): string | null };
   arrayBuffer(): Promise<ArrayBuffer>;

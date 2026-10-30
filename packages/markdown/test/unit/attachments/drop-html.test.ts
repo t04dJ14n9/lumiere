@@ -1,10 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { markdownFromHtml } from "../../../src/plugins/pasteHtml/conversion";
-import {
-  rewriteRemoteImages,
-  decodeDataUri,
-} from "../../../src/attachments";
+import { rewriteRemoteImages, decodeDataUri } from "../../../src/attachments";
 import {
   isAttachmentDrag,
   urisFromDataTransfer,
@@ -35,21 +32,18 @@ test("isAttachmentDrag claims Files and uri-list payloads", () => {
   assert.equal(isAttachmentDrag(null), false);
   assert.equal(isAttachmentDrag(transfer({ types: ["text/plain"] })), false);
   assert.equal(isAttachmentDrag(transfer({ types: ["Files"] })), true);
+  assert.equal(isAttachmentDrag(transfer({ types: ["text/uri-list"] })), true);
   assert.equal(
-    isAttachmentDrag(transfer({ types: ["text/uri-list"] })),
-    true,
-  );
-  assert.equal(
-    isAttachmentDrag(
-      transfer({ types: ["application/vnd.code.uri-list"] }),
-    ),
+    isAttachmentDrag(transfer({ types: ["application/vnd.code.uri-list"] })),
     true,
   );
   assert.equal(
     isAttachmentDrag(
       transfer({
         types: [],
-        files: [new File([new Uint8Array([1])], "a.png", { type: "image/png" })],
+        files: [
+          new File([new Uint8Array([1])], "a.png", { type: "image/png" }),
+        ],
       }),
     ),
     true,
@@ -84,10 +78,7 @@ test("urisFromDataTransfer reads text/uri-list and code uri-list", () => {
 });
 
 test("shouldClaimEditorDrop is true for file drags so VS Code must not open tabs", () => {
-  assert.equal(
-    shouldClaimEditorDrop(transfer({ types: ["Files"] })),
-    true,
-  );
+  assert.equal(shouldClaimEditorDrop(transfer({ types: ["Files"] })), true);
   assert.equal(
     shouldClaimEditorDrop(transfer({ types: ["text/plain"] })),
     false,
@@ -113,14 +104,8 @@ test("rich HTML data+http images rewrite to embeds after conversion", async () =
     }
     return undefined;
   });
-  assert.equal(
-    out.includes("![[2026-10-30 15.00.png]]"),
-    true,
-  );
-  assert.equal(
-    out.includes("![[2026-10-30 15.01.png]]"),
-    true,
-  );
+  assert.equal(out.includes("![[2026-10-30 15.00.png]]"), true);
+  assert.equal(out.includes("![[2026-10-30 15.01.png]]"), true);
   assert.equal(out.includes("data:image"), false);
   assert.equal(out.includes("https://example.com"), false);
 });
@@ -142,7 +127,9 @@ test("loadAttachmentSource downloads http and reads file URIs", async () => {
   const http = await loadAttachmentSource("https://ex/a.png", {
     fetch: async () => ({
       ok: true,
-      headers: { get: (name) => (name === "content-type" ? "image/png" : null) },
+      headers: {
+        get: (name) => (name === "content-type" ? "image/png" : null),
+      },
       arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
     }),
     readFile: async () => undefined,
@@ -185,8 +172,5 @@ test("urisFromDataTransfer reads VS Code ResourceURLs JSON", () => {
     ),
     ["file:///vault/pic.png"],
   );
-  assert.equal(
-    isAttachmentDrag(transfer({ types: ["ResourceURLs"] })),
-    true,
-  );
+  assert.equal(isAttachmentDrag(transfer({ types: ["ResourceURLs"] })), true);
 });

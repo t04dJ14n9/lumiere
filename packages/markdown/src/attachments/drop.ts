@@ -31,7 +31,10 @@ export function isAttachmentDrag(data: DragPayload | null): boolean {
     return false;
   }
   const types = Array.from(data.types);
-  if (types.includes("Files") || URI_TYPES.some((type) => types.includes(type))) {
+  if (
+    types.includes("Files") ||
+    URI_TYPES.some((type) => types.includes(type))
+  ) {
     return true;
   }
   return data.files.length > 0;
@@ -81,7 +84,8 @@ export function urisFromDataTransfer(data: DragPayload | null): string[] {
   return [...new Set(found)];
 }
 
-export type DragFile = DragPayload["files"] extends ArrayLike<infer F> ? F : never;
+export type DragFile =
+  DragPayload["files"] extends ArrayLike<infer F> ? F : never;
 
 /** Files from the FileList (OS drops). */
 export function filesFromDataTransfer(data: DragPayload | null): DragFile[] {

@@ -97,4 +97,3 @@ export function extensionFromUrl(url: string): string {
   }
   return "png";
 }
-

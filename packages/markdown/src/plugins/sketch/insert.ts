@@ -11,11 +11,7 @@ import { lookupKey } from "../../shared/vault-path";
 import type { VaultIndex } from "../vault/api";
 import { draw, type SketchHost } from "./edit";
 import { resolveAttachmentDir } from "../../attachments";
-import {
-  sketchInsertion,
-  sketchStem,
-  type EmbedLink,
-} from "./placement";
+import { sketchInsertion, sketchStem, type EmbedLink } from "./placement";
 
 export interface SketchNote {
   readonly document: HostDocument;

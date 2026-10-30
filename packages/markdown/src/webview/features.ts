@@ -67,9 +67,7 @@ const WEBVIEW_LOADERS: Record<string, () => Promise<Plugin<unknown>>> = {
   pasteHtml: () =>
     import("../plugins/pasteHtml/webview").then((m) => m.pasteHtmlWebview),
   attachments: () =>
-    import("../plugins/attachments/webview").then(
-      (m) => m.attachmentsWebview,
-    ),
+    import("../plugins/attachments/webview").then((m) => m.attachmentsWebview),
   properties: () =>
     import("../plugins/properties/webview").then((m) => m.propertiesWebview),
   sourcesProperty: () =>

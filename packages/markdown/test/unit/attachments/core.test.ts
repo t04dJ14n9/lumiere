@@ -110,7 +110,7 @@ import type { WorkspaceFiles } from "../../../src/shared/workspace-files";
 
 test("remoteImagesInMarkdown finds http and data URI images", () => {
   const md =
-    'Hello ![a](https://example.com/x.png) and ![b](data:image/png;base64,aaa) and ![ok](local.png)';
+    "Hello ![a](https://example.com/x.png) and ![b](data:image/png;base64,aaa) and ![ok](local.png)";
   const found = remoteImagesInMarkdown(md);
   assert.equal(found.length, 2);
   assert.equal(found[0]!.src, "https://example.com/x.png");
@@ -166,16 +166,13 @@ test("saveAttachment writes under files.attachmentFolder with timestamp name", a
   assert.ok(saved);
   assert.equal(saved!.path, "assets/2026-10-30 14.52.png");
   assert.equal(saved!.embed, "![[2026-10-30 14.52.png]]");
-  assert.ok(written.has("file:///vault/assets/2026-10-30%2014.52.png") || [...written.keys()].some((k) => k.includes("14.52")));
+  assert.ok(
+    written.has("file:///vault/assets/2026-10-30%2014.52.png") ||
+      [...written.keys()].some((k) => k.includes("14.52")),
+  );
 });
 
 test("sketch and attachments share the same folder resolution", () => {
-  assert.equal(
-    resolveAttachmentDir("assets", "Notes/A.md"),
-    "assets",
-  );
-  assert.equal(
-    resolveAttachmentDir("./shots", "Notes/A.md"),
-    "Notes/shots",
-  );
+  assert.equal(resolveAttachmentDir("assets", "Notes/A.md"), "assets");
+  assert.equal(resolveAttachmentDir("./shots", "Notes/A.md"), "Notes/shots");
 });

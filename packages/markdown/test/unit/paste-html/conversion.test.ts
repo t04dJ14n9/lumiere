@@ -158,9 +158,7 @@ test("HTML conversion is suppressed inside literal code", () => {
 
 test("HTML img data:image stays as markdown so attachments can save it", () => {
   assert.equal(
-    markdownFromHtml(
-      '<img src="data:image/png;base64,aaa" alt="green">',
-    ),
+    markdownFromHtml('<img src="data:image/png;base64,aaa" alt="green">'),
     "![green](data:image/png;base64,aaa)",
   );
   assert.equal(

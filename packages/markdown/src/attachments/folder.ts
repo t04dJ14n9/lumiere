@@ -8,7 +8,10 @@
 import { folderOf, joinVaultPath } from "../shared/vault-path";
 import { safeRelative } from "../shared/workspace-path";
 
-export function resolveAttachmentDir(setting: string, notePath: string): string {
+export function resolveAttachmentDir(
+  setting: string,
+  notePath: string,
+): string {
   const value = setting.trim();
   const noteFolder = folderOf(notePath);
   if (value === "." || value === "./") {

@@ -107,8 +107,7 @@ async function onDrop(
   }
 
   const files = filesFromDataTransfer(event.dataTransfer);
-  const uris =
-    files.length > 0 ? [] : urisFromDataTransfer(event.dataTransfer);
+  const uris = files.length > 0 ? [] : urisFromDataTransfer(event.dataTransfer);
   if (files.length === 0 && uris.length === 0) {
     return;
   }
@@ -183,10 +182,7 @@ async function saveFile(
   return saveBytes(ctx, bytes, ext);
 }
 
-async function saveSrc(
-  ctx: Context,
-  src: string,
-): Promise<string | undefined> {
+async function saveSrc(ctx: Context, src: string): Promise<string | undefined> {
   if (src.startsWith("data:")) {
     const decoded = decodeDataUri(src);
     if (!decoded) {
@@ -250,10 +246,7 @@ function editorViewFromPaste(
   return target && outer.dom.contains(target.dom) ? target : undefined;
 }
 
-function dropView(
-  event: DragEvent,
-  outer: EditorView,
-): EditorView | undefined {
+function dropView(event: DragEvent, outer: EditorView): EditorView | undefined {
   const el = event.target instanceof HTMLElement ? event.target : null;
   if (el?.closest("input, textarea")) {
     return undefined;
@@ -277,4 +270,3 @@ function extensionFromName(name: string): string {
   const ext = base.slice(dot + 1).toLowerCase();
   return /^[a-z0-9]{1,8}$/.test(ext) ? ext : "";
 }
-
