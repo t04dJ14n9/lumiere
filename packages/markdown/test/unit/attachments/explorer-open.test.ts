@@ -15,16 +15,9 @@ test("isAttachableExplorerPath accepts common media and rejects notes/code", () 
   assert.equal(isAttachableExplorerPath("/vault/readme"), false);
 });
 
-test("shouldReclaimExplorerOpen requires preview media over a prior Lumière note", () => {
-  assert.equal(
-    shouldReclaimExplorerOpen({
-      openedPath: "/vault/a.png",
-      isPreview: true,
-      groupHadLumiereNote: true,
-      priorActiveWasLumiere: true,
-    }),
-    true,
-  );
+test("shouldReclaimExplorerOpen requires pinned media over a prior Lumière note", () => {
+  // Workbench EditorDropTarget opens Explorer tree drops with pinned:true
+  // (isPreview false). Single-click Explorer opens are preview tabs.
   assert.equal(
     shouldReclaimExplorerOpen({
       openedPath: "/vault/a.png",
@@ -32,13 +25,23 @@ test("shouldReclaimExplorerOpen requires preview media over a prior Lumière not
       groupHadLumiereNote: true,
       priorActiveWasLumiere: true,
     }),
-    false,
-    "permanent (double-click) opens stay as tabs",
+    true,
+    "Explorer drop-without-Shift opens a pinned media tab",
   );
   assert.equal(
     shouldReclaimExplorerOpen({
       openedPath: "/vault/a.png",
       isPreview: true,
+      groupHadLumiereNote: true,
+      priorActiveWasLumiere: true,
+    }),
+    false,
+    "single-click preview opens stay as tabs (not drop-on-note)",
+  );
+  assert.equal(
+    shouldReclaimExplorerOpen({
+      openedPath: "/vault/a.png",
+      isPreview: false,
       groupHadLumiereNote: true,
       priorActiveWasLumiere: false,
     }),
@@ -48,7 +51,7 @@ test("shouldReclaimExplorerOpen requires preview media over a prior Lumière not
   assert.equal(
     shouldReclaimExplorerOpen({
       openedPath: "/vault/a.png",
-      isPreview: true,
+      isPreview: false,
       groupHadLumiereNote: false,
       priorActiveWasLumiere: true,
     }),
@@ -57,7 +60,7 @@ test("shouldReclaimExplorerOpen requires preview media over a prior Lumière not
   assert.equal(
     shouldReclaimExplorerOpen({
       openedPath: "/vault/note.md",
-      isPreview: true,
+      isPreview: false,
       groupHadLumiereNote: true,
       priorActiveWasLumiere: true,
     }),

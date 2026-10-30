@@ -4,8 +4,9 @@
  * embed string. Remote / file:// loads happen here — webview CSP has no https.
  *
  * Explorer drops without Shift never reach the webview (VS Code disables
- * pointer events on the iframe unless Shift). Those drops open a preview tab
- * instead; we reclaim matching media tabs back into timestamp attachments.
+ * pointer events on the iframe unless Shift). Those drops open a pinned tab
+ * (EditorDropTarget sets pinned:true); we reclaim matching pinned media tabs
+ * back into timestamp attachments. Preview (single-click) opens are left alone.
  */
 import * as vscode from "vscode";
 import type { Context, Plugin, PluginHandle } from "@workshop/core";
@@ -84,7 +85,7 @@ function answerNotePages(ctx: Context): void {
 
 /**
  * Track which Lumière note was active per column, then convert Explorer
- * open-on-drop preview media tabs into attachments on that note.
+ * open-on-drop pinned media tabs into attachments on that note.
  */
 function reclaimExplorerOpens(ctx: Context): void {
   /** viewColumn → Lumière note URI last known active in that column. */

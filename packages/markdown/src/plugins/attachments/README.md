@@ -25,11 +25,12 @@ downloaded on the host because the editor CSP `connect-src` does not allow
 
 VS Code disables pointer events on custom-editor webviews while Explorer
 resources are dragged unless Shift is held, so the workbench opens the file as
-a preview tab instead of delivering `drop` to the page. The host watches those
-preview media tab opens: when the prior active editor in that column was a
-Lumière note that is still open, it closes the media tab, copies the file into
-`files.attachmentFolder` under a timestamp name, and inserts the embed into the
-note.
+a pinned tab (`EditorDropTarget` forces `pinned: true`) instead of delivering
+`drop` to the page. There is no extension API to intercept those drops on the
+webview; the host watches pinned media tab opens instead: when the prior active
+editor in that column was a Lumière note that is still open, it closes the
+media tab, copies the file into `files.attachmentFolder` under a timestamp
+name, and inserts the embed into the note.
 
 Sketch placement uses the same shared helpers, so sketches and pasted images
 share one folder and link story.
@@ -52,6 +53,9 @@ Folder: `files.attachmentFolder` (Links). Links: `links.useWikilinks` and
 A failed save leaves that item unchanged and shows a short error; no broken
 vault link is inserted. Other items in a multi-drop may still succeed.
 
-Single-click opening a preview media file while a Lumière note is focused in
-the same group can look like Explorer drop-without-Shift and may be reclaimed
-as an attachment; double-click (permanent tab) or open-to-the-side is left alone.
+Single-click preview media while a Lumière note is focused is left alone
+(preview tabs are not reclaimed). Double-click (also pinned) or any permanent
+open while the note is focused in the same group can look like Explorer
+drop-without-Shift and may be reclaimed as an attachment; open-to-the-side is
+left alone. When `workbench.editor.enablePreview` is false, single-click also
+opens pinned and may be reclaimed.
