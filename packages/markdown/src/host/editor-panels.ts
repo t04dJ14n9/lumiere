@@ -10,7 +10,10 @@ import {
   enableCustomTextEditorProposals,
 } from "./custom-editor-navigation";
 import type { NativeNavigation } from "./navigation";
-import { isNativeSelectionOpen } from "./native-selection-open";
+import {
+  isNativeSelectionOpen,
+  nativeOpeningSelection,
+} from "./native-selection-open";
 import type { NativeDocuments } from "./services/native-documents";
 
 /**
@@ -37,6 +40,17 @@ function currentNativeSelection(
   const at = coordinates.toEditor(document.offsetAt(editor.selection.start));
   const to = coordinates.toEditor(document.offsetAt(editor.selection.end));
   return to > at ? { at, to } : undefined;
+}
+
+function openingSelectionFor(
+  uri: string,
+  column: number,
+  live: { at: number; to: number } | undefined,
+): { anchor: number; head: number } | undefined {
+  return (
+    nativeOpeningSelection(uri, column) ??
+    (live ? { anchor: live.at, head: live.to } : undefined)
+  );
 }
 
 function revealNativeSelection(
@@ -109,6 +123,20 @@ function panelResourceRoots(
   return [vscode.Uri.joinPath(extensionUri, "dist", "markdown"), root];
 }
 
+function panelOpenFields(options: {
+  openedFromNativeSelection?: boolean;
+  openingSelection?: { anchor: number; head: number };
+}): Pick<PanelShell, "openedFromNativeSelection" | "openingSelection"> {
+  return {
+    ...(options.openedFromNativeSelection
+      ? { openedFromNativeSelection: true }
+      : {}),
+    ...(options.openingSelection
+      ? { openingSelection: options.openingSelection }
+      : {}),
+  };
+}
+
 function createPanelShell(
   provider: EditorProvider,
   document: vscode.TextDocument,
@@ -116,6 +144,7 @@ function createPanelShell(
   options: {
     host: EditorHost;
     openedFromNativeSelection?: boolean;
+    openingSelection?: { anchor: number; head: number };
   },
 ): PanelShell {
   const { extensionUri, documents } = options.host;
@@ -133,9 +162,7 @@ function createPanelShell(
     document: documents.wrap(document),
     cspSource: panel.webview.cspSource,
     trusted: vscode.workspace.isTrusted,
-    ...(options.openedFromNativeSelection
-      ? { openedFromNativeSelection: true }
-      : {}),
+    ...panelOpenFields(options),
     transport: panelTransport(panel),
     active: () => isActivePanel(provider.viewType, binding.document, panel),
     reveal() {
@@ -209,14 +236,21 @@ export function registerEditor(
     {
       resolveCustomTextEditor(document, panel) {
         const selection = currentNativeSelection(document);
+        const column = panel.viewColumn ?? vscode.ViewColumn.One;
         const transferredSelection = isNativeSelectionOpen(
           document.uri.toString(),
-          panel.viewColumn ?? vscode.ViewColumn.One,
+          column,
+        );
+        const openingSelection = openingSelectionFor(
+          document.uri.toString(),
+          column,
+          selection,
         );
         const shell = createPanelShell(provider, document, panel, {
           host,
           openedFromNativeSelection:
             selection !== undefined || transferredSelection,
+          ...(openingSelection ? { openingSelection } : {}),
         });
         open(shell);
         revealNativeSelection(host.navigation, shell, selection);

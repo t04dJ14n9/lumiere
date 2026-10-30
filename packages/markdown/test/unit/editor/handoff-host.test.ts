@@ -2253,6 +2253,9 @@ test("a Search reclaim marks the custom panel after native focus has cleared", a
   await tick();
 
   assert.equal(openedShell?.openedFromNativeSelection, true);
+  const anchor = editor.document.offsetAt!(editor.selection.start);
+  const head = editor.document.offsetAt!(editor.selection.end);
+  assert.deepEqual(openedShell?.openingSelection, { anchor, head });
 });
 
 test("repeated search jumps opening text tabs with a selection within 10s still reclaim and jump", async (t) => {
