@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
-import type { Plugin } from "@workshop/core";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../services";
+import type { PdfSettings } from "../../settings";
 import { TOOLBAR_COMMAND_IDS } from "../../../shared/command-ids";
+import type { PdfPanels } from "../pdf/panels";
 import manifest from "./manifest";
 import { selectToolbarMode } from "./mode-picker";
 import {
@@ -26,24 +28,7 @@ export const pdfToolbarPlugin: Plugin = {
       new ToolbarPreferences(ctx.extensionContext.globalState),
       "preferences",
     );
-    // Title-bar PDF strip is gone; keep the context key true so leftover
-    // when-clauses that still mention `!titleActionsInMenu` stay off.
-    void vscode.commands.executeCommand(
-      "setContext",
-      "lumiere.pdf.titleActionsInMenu",
-      true,
-    );
-    ctx.own(
-      {
-        dispose: () =>
-          vscode.commands.executeCommand(
-            "setContext",
-            "lumiere.pdf.titleActionsInMenu",
-            false,
-          ),
-      },
-      "context key",
-    );
+    keepTitleActionsHidden(ctx);
     const statusBar = ctx.own(new StatusBar(panels), "statusBar");
     ctx.own(
       panels.provideViewerToolbar(() => preferences.settings),
@@ -55,44 +40,86 @@ export const pdfToolbarPlugin: Plugin = {
       ),
       "message handler",
     );
-    const follow = (): void => {
-      const settings = preferences.settings;
-      for (const panel of panels.all) {
-        panel.setToolbar(settings);
-      }
-      statusBar.update();
-    };
-    ctx.own(preferences.onDidChange(follow), "listener");
-    ctx.own(
-      vscode.commands.registerCommand(
-        TOOLBAR_COMMAND_IDS.selectToolbarMode,
-        () => selectToolbarMode(ctx.pdfSettings),
-      ),
-      "command",
-    );
-    ctx.own(
-      vscode.commands.registerCommand(TOOLBAR_COMMAND_IDS.cyclePageColors, () =>
-        cycleAndPublish(ctx.pdfSettings, panels),
-      ),
-      "command",
-    );
+    const follow = wireToolbarFollow(ctx, preferences, panels, statusBar);
+    registerToolbarCommands(ctx, panels, ctx.pdfSettings);
     ctx.own(watchPageColors(panels), "page colors");
-    ctx.own(
-      vscode.workspace.onDidChangeConfiguration((event) => {
-        if (
-          event.affectsConfiguration("lumiere.pdf.toolbar") ||
-          event.affectsConfiguration("lumiere.pdf.pageColors")
-        ) {
-          statusBar.update();
-        }
-      }),
-      "status bar settings",
-    );
-    ctx.own(
-      vscode.window.onDidChangeActiveColorTheme(() => statusBar.update()),
-      "status bar theme",
-    );
+    wireStatusBarRefresh(ctx, statusBar);
     follow();
     publishPageColors(panels);
   },
 };
+
+function keepTitleActionsHidden(ctx: Context): void {
+  // Title-bar PDF strip is gone; keep the context key true so leftover
+  // when-clauses that still mention `!titleActionsInMenu` stay off.
+  void vscode.commands.executeCommand(
+    "setContext",
+    "lumiere.pdf.titleActionsInMenu",
+    true,
+  );
+  ctx.own(
+    {
+      dispose: () =>
+        vscode.commands.executeCommand(
+          "setContext",
+          "lumiere.pdf.titleActionsInMenu",
+          false,
+        ),
+    },
+    "context key",
+  );
+}
+
+function wireToolbarFollow(
+  ctx: Context,
+  preferences: ToolbarPreferences,
+  panels: PdfPanels,
+  statusBar: StatusBar,
+): () => void {
+  const follow = (): void => {
+    const settings = preferences.settings;
+    for (const panel of panels.all) {
+      panel.setToolbar(settings);
+    }
+    statusBar.update();
+  };
+  ctx.own(preferences.onDidChange(follow), "listener");
+  return follow;
+}
+
+function registerToolbarCommands(
+  ctx: Context,
+  panels: PdfPanels,
+  settings: PdfSettings,
+): void {
+  ctx.own(
+    vscode.commands.registerCommand(TOOLBAR_COMMAND_IDS.selectToolbarMode, () =>
+      selectToolbarMode(settings),
+    ),
+    "command",
+  );
+  ctx.own(
+    vscode.commands.registerCommand(TOOLBAR_COMMAND_IDS.cyclePageColors, () =>
+      cycleAndPublish(settings, panels),
+    ),
+    "command",
+  );
+}
+
+function wireStatusBarRefresh(ctx: Context, statusBar: StatusBar): void {
+  ctx.own(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (
+        event.affectsConfiguration("lumiere.pdf.toolbar") ||
+        event.affectsConfiguration("lumiere.pdf.pageColors")
+      ) {
+        statusBar.update();
+      }
+    }),
+    "status bar settings",
+  );
+  ctx.own(
+    vscode.window.onDidChangeActiveColorTheme(() => statusBar.update()),
+    "status bar theme",
+  );
+}

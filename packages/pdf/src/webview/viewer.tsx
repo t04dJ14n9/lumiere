@@ -16,7 +16,6 @@ import {
   useRestorePosition,
 } from "./reading-position";
 import type { ViewChoices } from "../shared/view-settings";
-import type { ToolbarSettings } from "../shared/toolbar-settings";
 import { usePagedScroll } from "./paged-scroll";
 import { usePagedWheel, usePagingKeys } from "./paging-input";
 import { useSmoothMotion, useSmoothWheel } from "./smooth-scrolling";
@@ -31,10 +30,7 @@ import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
 import { useToolMode } from "./tool-mode";
-import {
-  currentToolbarSettings,
-  rememberToolbarSettings,
-} from "./toolbar-settings";
+import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
 import { Toolbar } from "./toolbar";
 import { useViewActions, useViewReporting } from "./view-sync";

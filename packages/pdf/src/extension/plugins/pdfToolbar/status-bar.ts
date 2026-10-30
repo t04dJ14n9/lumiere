@@ -10,7 +10,11 @@ import {
   parseVsCodeToolbarMode,
   showStatusBarButtons,
 } from "../../../shared/toolbar-settings";
-import { pageLabel, zoomLabel } from "../../../shared/view-state";
+import {
+  pageLabel,
+  zoomLabel,
+  type ViewState,
+} from "../../../shared/view-state";
 import type { PdfPanels } from "../pdf/panels";
 import {
   HISTORY_COMMAND_IDS,
@@ -147,6 +151,46 @@ function pageColorsText(setting: PageColorsSetting): string {
   return `$(color-mode) Follow (${pageColorsLabel(effective)})`;
 }
 
+type EntryState = {
+  view: ViewState;
+  panel: PdfPanels["active"];
+  colors: PageColorsSetting;
+};
+
+function refreshEntry(
+  entry: vscode.StatusBarItem,
+  item: Item,
+  state: EntryState,
+): void {
+  const { view, panel, colors } = state;
+  switch (item.id) {
+    case "page":
+      entry.text = pageLabel(view);
+      return;
+    case "zoom":
+      entry.text = zoomLabel(view);
+      return;
+    case "pageColors":
+      entry.text = pageColorsText(colors);
+      entry.tooltip = `Page colors: ${pageColorsLabel(colors)} (click to cycle)`;
+      return;
+    case "previousPage":
+      entry.command = view.canGoBack ? item.command : undefined;
+      return;
+    case "nextPage":
+      entry.command = view.canGoForward ? item.command : undefined;
+      return;
+    case "historyBack":
+      entry.command = panel?.canHistoryBack ? item.command : undefined;
+      return;
+    case "historyForward":
+      entry.command = panel?.canHistoryForward ? item.command : undefined;
+      return;
+    default:
+      return;
+  }
+}
+
 export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
   private readonly subscription: vscode.Disposable;
@@ -188,28 +232,7 @@ export class StatusBar implements vscode.Disposable {
         entry.hide();
         continue;
       }
-      if (item.id === "page") {
-        entry.text = pageLabel(view);
-      }
-      if (item.id === "zoom") {
-        entry.text = zoomLabel(view);
-      }
-      if (item.id === "pageColors") {
-        entry.text = pageColorsText(colors);
-        entry.tooltip = `Page colors: ${pageColorsLabel(colors)} (click to cycle)`;
-      }
-      if (item.id === "previousPage") {
-        entry.command = view.canGoBack ? item.command : undefined;
-      }
-      if (item.id === "nextPage") {
-        entry.command = view.canGoForward ? item.command : undefined;
-      }
-      if (item.id === "historyBack") {
-        entry.command = panel?.canHistoryBack ? item.command : undefined;
-      }
-      if (item.id === "historyForward") {
-        entry.command = panel?.canHistoryForward ? item.command : undefined;
-      }
+      refreshEntry(entry, item, { view: view!, panel, colors });
       entry.show();
     }
   }
