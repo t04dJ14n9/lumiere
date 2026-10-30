@@ -30,10 +30,11 @@ Today every page is white paper in every VS Code theme (`packages/pdf/src/webvie
 | Setting | `lumiere.pdf.pageColors` ∈ `follow` \| `normal` \| `dark`. |
 | Default | `follow`. |
 | Follow mapping | VS Code `window.activeColorTheme.kind`: `Dark` and `HighContrast` → effective **dark**; `Light` and `HighContrastLight` → effective **normal**. |
-| Controls | **Page colors** cycle (`Follow` → `Normal` → `Dark` → …) on the **host UI that already shows view controls for the active toolbar mode**, plus the Settings entry (and Change Setting… / Open Settings). **Chrome** (default): VS Code **status bar** — not a new viewer-only bar. **Slim** / **floating**: same cycle on those viewer bars. **None**: Settings + command palette only. |
+| Controls | **Page colors** cycle (`Follow` → `Normal` → `Dark` → …) on the VS Code **status bar** only (plus Settings / command palette). No slim top bar, no floating bar. |
+| Toolbar product | **Remove `slim` and `floating`** from `lumiere.pdf.toolbar.mode`. Status bar is the **only** PDF control surface (see [Related product change](#related-product-change-status-bar-only)). |
 | Engine approach | **PDFium page color scheme at render time** (closest to embedpdf#679). **No** CSS invert/filter fallback in v1. |
 | Fail-closed | If the color-scheme hook is **unavailable** on EmbedPDF **2.15.x** (current pin), stay on effective **Normal** and document the gap in the implementation PR — never muddy CSS. |
-| Scope | **Page colors only** — not annotations, rotate, pan, or fullscreen. |
+| Scope | Page colors **plus** consolidating PDF controls onto the status bar (remove slim/floating). Still **not** annotations, rotate, pan, or fullscreen. |
 
 ## Architecture
 
@@ -60,25 +61,34 @@ lumiere.pdf.pageColors + (if follow) ColorThemeKind
 - Regenerated / synced `package.json` contributions follow the existing PDF settings pipeline so **PDF: Change Setting…** and **PDF: Open Settings** pick it up automatically.
 - Scope: same as peer PDF view settings (user/workspace; write path matches other toggle/cycle commands).
 
-### UI surfaces (cycle control)
+### Related product change (status-bar only)
 
-Do **not** invent a separate viewer-only toolbar as the primary chrome surface. Reuse the existing PDF control layouts per `lumiere.pdf.toolbar.mode`:
+Owner lock (2026-10-30): **put the whole PDF toolbar on the status line.** Delete **slim** and **floating** as modes — no slim top bar, no floating bar over pages. The VS Code **status bar** is the only in-editor control surface (plus Settings / command palette).
 
-| `toolbar.mode` | Where **Page colors** lives |
-| --- | --- |
-| **chrome** (default) | VS Code **bottom status bar**, alongside find / View / page / zoom. Touch `packages/pdf/src/extension/plugins/pdfToolbar/status-bar.ts`, `status-bar-layout.ts`, and `STATUS_BAR_ORDER`. Prefer placement **near `view`** (layout/view controls), **left of** `page` / zoom so page+zoom stay rightmost — e.g. left-to-right `find`, `view`, **`pageColors`**, `page`, … Matching layout to extend: `packages/pdf/docs/images/toolbar-chrome-dark.png`. |
-| **slim** / **floating** | Same cycle control on those **viewer** bars (parity with other view toggles: `toolbar.tsx`, `floating-toolbar.tsx`). |
-| **none** | **No** in-viewer or status-bar Page colors entry; **Settings** + **command palette** only. |
+Implications beyond page-colors:
 
+- Remove `slim` | `floating` from `lumiere.pdf.toolbar.mode` (and **PDF: Choose Toolbar Location…**). Migrate any saved `slim`/`floating` values to status-bar chrome (or equivalent default).
+- **Editor-title** PDF navigation icons that today appear under chrome should **move into / already live on the status bar** — do not keep a parallel title-bar control strip once slim/floating are gone. Prefer one status-bar cluster rather than title + status duplication.
+- Keep fine-grained hide via existing `lumiere.pdf.toolbar.statusBarButtons` (and similar) so users can drop optional status buttons without resurrecting slim/floating. Prefer **not** retaining a separate `none` toolbar mode if `statusBarButtons` (or Settings) already covers “keyboard/menu only”; if `none` stays briefly for migration, it means no status PDF entries — Settings + command palette only — not a viewer bar.
+- Zen mode today forces a floating bar for chrome/slim (`packages/pdf/src/shared/zen.ts`): redesign zen to status-bar / command-only chrome (no floating overlay bar) as part of this consolidation.
+- Touch points (illustrative): `toolbar-settings.ts`, `pdfToolbar/*`, `toolbar.tsx`, `floating-toolbar.tsx`, contributes `toolbar.mode`, README / docs images.
+
+**Plan sequencing (choose in the implementation plan, prefer one plan):** either (a) **prerequisite slice** — remove slim/floating + consolidate onto status bar, then page-colors as a follow-up commit/PR — or (b) **same implementation PR** — status-bar consolidation and page-colors entry together. Prefer documenting both options in the plan and picking one; this design assumes page-colors is **one new status-bar entry in a status-bar-only world**.
+
+### UI surface (Page colors cycle)
+
+- **Only** the VS Code **bottom status bar**, alongside find / View / page / zoom. Touch `packages/pdf/src/extension/plugins/pdfToolbar/status-bar.ts`, `status-bar-layout.ts`, and `STATUS_BAR_ORDER`.
+- Placement: **near `view`**, **left of** `page` / zoom so page+zoom stay rightmost — e.g. left-to-right `find`, `view`, **`pageColors`**, `page`, … Layout to extend: `packages/pdf/docs/images/toolbar-chrome-dark.png`.
+- Plus **Settings** (`lumiere.pdf.pageColors`) and **command palette** (cycle/set command; same key, no parallel state).
+- **No** slim/floating viewer-bar parity path for this control (those modes are removed).
 - Cycle order: **Follow → Normal → Dark → Follow**.
 - Label / tooltip reflects the **setting** value (Follow / Normal / Dark), not only the effective mode; when Follow is selected, the UI may optionally hint the effective side (e.g. “Follow (Dark)”) without writing `dark` into the setting.
-- Command palette: a dedicated cycle or set command keeps Settings and the active surface in sync (same `lumiere.pdf.pageColors` key, no parallel state). Always available under **none**.
 
 ### Engine integration (EmbedPDF 2.15.x)
 
 - Prefer the public / plugin API if EmbedPDF exposes `pageColors` (or equivalent) on the render plugin by the time of implementation.
 - If not yet public at 2.15.1, implement against the **engine render options** Lumière already owns (`engine.tsx` / render session) only when the PDFium color-scheme entry point is reachable **without** forking EmbedPDF for a muddy CSS path.
-- **Fail closed:** if the hook cannot be wired cleanly on the pinned EmbedPDF version, effective mode stays **Normal**, status-bar/viewer-bar/Settings controls still exist (or are gated), and the implementation PR **notes** the upstream gap and links #679 — **no** CSS `filter: invert()` (or similar) stopgap.
+- **Fail closed:** if the hook cannot be wired cleanly on the pinned EmbedPDF version, effective mode stays **Normal**, status-bar/Settings controls still exist (or are gated), and the implementation PR **notes** the upstream gap and links #679 — **no** CSS `filter: invert()` (or similar) stopgap.
 - Dark palette (initial): dark page background (near editor-dark paper, e.g. ~`#1e1e1e` class) with light text/path fill/stroke suitable for reading; exact tokens chosen in implementation to match host chrome without pretending to invert images.
 
 ### Limits (product-visible)
@@ -89,7 +99,7 @@ Do **not** invent a separate viewer-only toolbar as the primary chrome surface. 
 ## Data flow
 
 ```
-Settings / status-bar or viewer-bar cycle / command
+Settings / status-bar cycle / command
   → write lumiere.pdf.pageColors
   → host resolveEffective(pageColors, theme.kind)
   → postMessage { type: "pageColors", effective: "normal"|"dark" }  (name illustrative)
@@ -103,7 +113,7 @@ Theme listener (Follow only): `onDidChangeActiveColorTheme` → same resolve →
 
 - **Unit:** `resolveEffective(pageColors, kind)` matrix for all four `ColorThemeKind` values × `follow`/`normal`/`dark`; setting default `follow`; cycle order Follow→Normal→Dark; no effective change when Follow and kind stays in the same light/dark bucket.
 - **Unit / webview (as feasible without full WASM):** when effective flips, render/refresh is requested; overlay token path selects dark vs white-paper set.
-- **Host GUI:** with default **chrome** toolbar mode, confirm **Page colors** appears on the **status bar** near View (see `toolbar-chrome-dark.png` layout); cycle works. Text-heavy PDF under **Dark** and under **Follow** with a dark theme — page paper dark, text light, images (if any) unchanged; same files under **Normal** / Follow+light theme — white paper as today; **scanned PDF** under Dark — page stays largely bright (expected); theme switch with Follow updates open viewer without manual reload. Smoke slim/floating parity and **none** (Settings/command only).
+- **Host GUI:** confirm **Page colors** on the **status bar** near View (see `toolbar-chrome-dark.png`); cycle works; no slim/floating bars remain after consolidation. Text-heavy PDF under **Dark** and under **Follow** with a dark theme — page paper dark, text light, images (if any) unchanged; same files under **Normal** / Follow+light theme — white paper as today; **scanned PDF** under Dark — page stays largely bright (expected); theme switch with Follow updates open viewer without manual reload. Smoke Settings + command palette; optional `statusBarButtons` hide path.
 - **Fail-closed note:** if implementation lands without the engine hook, tests assert Normal rendering and the PR body states the limitation explicitly.
 
 ## Out of scope / follow-ups
@@ -113,11 +123,13 @@ Theme listener (Follow only): `onDidChangeActiveColorTheme` → same resolve →
 - Per-PDF remembered page color.
 - Annotations / rotate / pan / fullscreen feature work (separate specs/plans).
 - Upstream contribution back to EmbedPDF if Lumière prototypes the engine wiring first.
+- Reintroducing slim or floating toolbars.
 
 ## Success criteria
 
 - Fresh install: `lumiere.pdf.pageColors` defaults to `follow`; dark editor themes get dark paper + recolored text/vectors on born-digital PDFs; light themes stay normal.
-- Status-bar (chrome) / slim / floating cycle and Settings always agree on the stored enum; under **none**, Settings + command palette remain the only surfaces; Follow tracks theme kind without writing Normal/Dark into settings.
+- **Page colors** cycle lives on the status bar; Settings and command palette agree on the stored enum; Follow tracks theme kind without writing Normal/Dark into settings.
+- After consolidation: no slim top bar, no floating bar; PDF view controls (including former chrome title actions that belong with navigation) live on the status bar; users can still hide optional status buttons via `statusBarButtons`.
 - Images and scans are not falsely “darkened” by CSS; unavailable engine hook fails closed to Normal with an explicit PR note.
 - Selection / region / jump overlays remain readable on both white and dark paper.
-- No annotation, rotate, pan, or fullscreen work ships in the page-colors implementation PR.
+- No annotation, rotate, pan, or fullscreen feature work ships in the page-colors / status-bar consolidation implementation.
