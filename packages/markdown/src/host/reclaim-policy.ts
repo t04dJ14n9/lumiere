@@ -36,18 +36,20 @@ export interface TabSwap {
 /**
  * Whether an associated note arriving in the text or Cursor Markdown editor
  * should go back to Lumière: a switch into Cursor's own Markdown editor; a
- * new text tab (chat link, review card); and an in-place workbench→text open
- * from tools such as Claude Code `showTextDocument`, which bypasses
- * `workbench.editorAssociations`. Explicit native choice (Open as Text,
- * Toggle Text Editor, Reopen With… when it sets bypass / readerText, Cursor
- * Edit/Chat `handoffLease`) stays via `bypassed()` — not via skipping
- * workbench→text alone. Diffs, Git and untitled files are excluded by the tab
- * classifier and note predicate.
+ * new text tab (chat link, review card); and — when `reclaimInPlace` is on —
+ * an in-place workbench→text / other→text open from tools such as Claude Code
+ * `showTextDocument`, which bypasses `workbench.editorAssociations`. Explicit
+ * native choice (Open as Text, Toggle Text Editor, Reopen With… when it sets
+ * bypass / readerText, Cursor Edit/Chat `handoffLease`) stays via `bypassed()`.
+ * Diffs, Git and untitled files are excluded by the tab classifier and note
+ * predicate.
  */
 export function shouldReclaim(
   swap: TabSwap,
   context: {
     enabled: boolean;
+    /** Opt-in: reclaim in-place workbench→text / other→text (default off). */
+    reclaimInPlace?: boolean;
     isNote(uri: string): boolean;
     associated(uri: string): boolean;
     bypassed(uri: string): boolean;
@@ -55,7 +57,7 @@ export function shouldReclaim(
 ): boolean {
   return (
     context.enabled &&
-    landsInNativeEditor(swap) &&
+    landsInNativeEditor(swap, context.reclaimInPlace === true) &&
     context.isNote(swap.uri) &&
     context.associated(swap.uri) &&
     !context.bypassed(swap.uri)
@@ -63,16 +65,19 @@ export function shouldReclaim(
 }
 
 /**
- * A text tab names its note. Reclaim a new text tab (`before === "none"`) and
- * an in-place workbench→text replacement (Claude / tools using
- * `showTextDocument`). Leave other→text alone (reader already in a different
- * editor). An input-less tab is matched by its label, which Cursor's plan
+ * A text tab names its note. By default reclaim only a new text tab
+ * (`before === "none"`). With `reclaimInPlace`, also reclaim when the note was
+ * not already text (`before !== "text"`): workbench→text (Claude) and
+ * other→text. An input-less tab is matched by its label, which Cursor's plan
  * editor and its other input-less editors share, so only one that replaced
  * the note's own tab is known to be Cursor's Markdown editor.
  */
-function landsInNativeEditor({ before, after }: TabSwap): boolean {
+export function landsInNativeEditor(
+  { before, after }: TabSwap,
+  reclaimInPlace = false,
+): boolean {
   if (after === "text") {
-    return before === "none" || before === "workbench";
+    return reclaimInPlace ? before !== "text" : before === "none";
   }
   return after === "other" && (before === "workbench" || before === "text");
 }

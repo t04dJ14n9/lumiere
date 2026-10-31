@@ -57,18 +57,40 @@ test("auto reclaims only in Cursor; on and off are explicit", () => {
   assert.equal(reclaimEnabled({ mode: "off", appName: "Cursor" }, true), false);
 });
 
-test("in-place workbench→text is reclaimed unless bypassed; other→text stays", () => {
-  // Claude Code open_file / showTextDocument replaces a Lumière tab in place.
-  assert.equal(shouldReclaim(swap("workbench", "text"), context), true);
+test("in-place reclaim is opt-in (default off); none→text always; bypass still false", () => {
+  // Default: workbench→text is not reclaimed (pre-#468 / fcf559b3 text rule).
+  assert.equal(shouldReclaim(swap("workbench", "text"), context), false);
+  assert.equal(shouldReclaim(swap("other", "text"), context), false);
+  // none→text still reclaims either way.
+  assert.equal(shouldReclaim(swap("none", "text"), context), true);
+  assert.equal(
+    shouldReclaim(swap("none", "text"), { ...context, reclaimInPlace: true }),
+    true,
+  );
+  // Opt-in: approach A — before !== "text" for after===text.
   assert.equal(
     shouldReclaim(swap("workbench", "text"), {
       ...context,
+      reclaimInPlace: true,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldReclaim(swap("other", "text"), { ...context, reclaimInPlace: true }),
+    true,
+  );
+  assert.equal(
+    shouldReclaim(swap("text", "text"), { ...context, reclaimInPlace: true }),
+    false,
+  );
+  assert.equal(
+    shouldReclaim(swap("workbench", "text"), {
+      ...context,
+      reclaimInPlace: true,
       bypassed: () => true,
     }),
     false,
   );
-  // other→text (reader already elsewhere) is not reclaim.
-  assert.equal(shouldReclaim(swap("other", "text"), context), false);
 });
 
 test("a note Cursor remembers as text is reclaimed when it opens", () => {

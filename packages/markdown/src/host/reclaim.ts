@@ -117,12 +117,9 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
 }
 
 /**
- * `lumiere.markdown.editor.reclaimTextEditor`: a note that Cursor shows in its
- * own Markdown editor, that a tool opens in a new text tab (a chat link, a
- * review card), or that a tool replaces in place from Lumière to text
- * (Claude `showTextDocument`), moves back to our CustomTextEditorProvider
- * once the native document is ready. Explicit Open as Text / Toggle /
- * handoff stays via bypass and readerText.
+ * Reclaim native text / Cursor Markdown tabs into Lumière when enabled.
+ * Opt-in `reclaimInPlaceTextEditor` also reclaims in-place workbench→text /
+ * other→text (Claude); off by default. Open as Text / Toggle / handoff stay.
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
@@ -196,17 +193,15 @@ function createReclaimJudge(options: {
       options.swaps.hold(tab, swap);
       return;
     }
-    if (
-      !shouldReclaim(swap, reclaimContext(swap.uri, options.workspaceDefault()))
-    ) {
-      // Do not permanently keep unbidden workbench→text skips (e.g. not
-      // associated / reclaim off). Opt-outs and other→text reader paths still
-      // keep. Claude reclaim never enters this branch when associated.
-      if (
+    const context = reclaimContext(swap.uri, options.workspaceDefault());
+    if (!shouldReclaim(swap, context)) {
+      // Off: keep text skips. On: no keep for unbidden workbench→text.
+      const keep =
         swap.after === "text" &&
         isReclaimableNote(swap.uri) &&
-        (hasNativeOptOut(swap.uri) || swap.before !== "workbench")
-      ) {
+        (hasNativeOptOut(swap.uri) ||
+          !(context.reclaimInPlace && swap.before === "workbench"));
+      if (keep) {
         readerText.keep(swap.uri);
       }
       return;
@@ -302,16 +297,19 @@ function hasSelectionTarget(s?: { at: number; to?: number }): boolean {
 
 function reclaimContext(uri: string, workspaceDefault: boolean) {
   const target = vscode.Uri.parse(uri);
+  const editor = vscode.workspace.getConfiguration("lumiere.markdown", target);
   return {
     enabled: reclaimEnabled(
       {
-        mode: vscode.workspace
-          .getConfiguration("lumiere.markdown", target)
-          .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
+        mode: editor.get<"auto" | "on" | "off">(
+          "editor.reclaimTextEditor",
+          "auto",
+        ),
         appName: vscode.env.appName,
       },
       workspaceDefault,
     ),
+    reclaimInPlace: editor.get("editor.reclaimInPlaceTextEditor", false),
     isNote: isReclaimableNote,
     associated: (value: string) =>
       associatedWith(

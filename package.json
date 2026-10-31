@@ -3110,6 +3110,12 @@
             "default": "auto",
             "scope": "resource"
           },
+          "lumiere.markdown.editor.reclaimInPlaceTextEditor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Reclaim when a tool replaces a Lumière tab in place with the text editor (Claude chat open_file). Off by default.",
+            "scope": "resource"
+          },
           "lumiere.markdown.editor.warmTextDocument": {
             "enum": [
               "auto",
