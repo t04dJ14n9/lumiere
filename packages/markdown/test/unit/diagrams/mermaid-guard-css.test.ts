@@ -44,10 +44,7 @@ test("diagrams.css styles Mermaid internal-link nodes with pointer cursor", () =
 });
 
 test("diagrams.css Mermaid host has Obsidian LP padding 0 (no reserved badge band)", () => {
-  assert.match(
-    rule('pre[data-fence="mermaid"]:has(> svg)'),
-    /padding:\s*0;/,
-  );
+  assert.match(rule('pre[data-fence="mermaid"]:has(> svg)'), /padding:\s*0;/);
   assert.match(
     rule('pre[data-fence="mermaid"]:has(> svg)'),
     /text-align:\s*start/,

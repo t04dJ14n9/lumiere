@@ -113,8 +113,5 @@ test("mermaid guarded chrome matches Obsidian radius and UI font sizes", () => {
     /\.mermaid-wrapper\.is-guarded\s*\{[^}]*border-radius:\s*8px;/,
   );
   assert.match(css, /\.mermaid-guard-title\s*\{[^}]*font-size:\s*13px;/);
-  assert.match(
-    css,
-    /\.mermaid-guard-description\s*\{[^}]*font-size:\s*12px;/,
-  );
+  assert.match(css, /\.mermaid-guard-description\s*\{[^}]*font-size:\s*12px;/);
 });
