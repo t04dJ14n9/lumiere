@@ -107,7 +107,9 @@ Explicit native choice stays: **Open as Text**, **Toggle Text Editor**,
 and **Reopen Editor With… › Text Editor** when they set the bypass /
 reader-text keep, plus Cursor Edit/Chat handoff, until its last text tab
 closes, including across a window reload, and a find or a jump inside it
-does not move it. Diffs, Git views and untitled files are left alone.
+does not move it. With the in-place option on, a first Reopen With Text
+without bypass may reclaim (Open as Text / Toggle remain the supported
+stay-native paths). Diffs, Git views and untitled files are left alone.
 Set reclaim to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless

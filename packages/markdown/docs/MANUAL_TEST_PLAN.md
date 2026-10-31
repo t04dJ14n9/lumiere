@@ -1226,7 +1226,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.toggleInlineGitChanges` — Toggle Inline Git Changes | unbound | On a disposable fixture, run Toggle Inline Git Changes; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleVim` — Toggle Vim Mode | unbound | On a disposable fixture, run Toggle Vim Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.toggleSpellcheck` — Toggle Spellcheck | unbound | On a disposable fixture, run Toggle Spellcheck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `lumiere.markdown.insertSketch` — Insert Sketch | unbound | On a disposable fixture, run Insert Sketch; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertSketch` — Insert Sketch | unbound | On the iPad, in a disposable vault, run Insert Sketch from the right-click menu (More… in the edit menu) and from the edit menu; draw, press Done, and confirm a `*.sketch.svg` in the attachment folder and its embed below the caret's line. Tap the sketch, change it, press Done: the note shows the new drawing. Cancel leaves the vault and the note unchanged. Not shown in VS Code or the desktop app. |
 | `lumiere.markdown.insertTable` — Insert Table | unbound | On a disposable fixture, run Insert Table; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.tableInsertRowAbove` — Table: Insert Row Above | unbound | On a disposable fixture, run Table: Insert Row Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `lumiere.markdown.tableInsertRowBelow` — Table: Insert Row Below | unbound | On a disposable fixture, run Table: Insert Row Below; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1267,7 +1267,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Setting | Default | Procedure |
 | --- | --- | --- |
 | `lumiere.markdown.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.attachments.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.attachments.enabled` | `true` | boolean; drop/paste an image into a note, confirm a timestamp file under `files.attachmentFolder` and its embed; turn off and confirm drop/paste leave the vault unchanged; then reset. |
 | `lumiere.markdown.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1303,7 +1303,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.quickSwitcher.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.scratch.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.search.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `lumiere.markdown.plugins.sketch.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.sketch.enabled` | `true` | boolean; turn off on the iPad and confirm Insert Sketch leaves the right-click menu and a tap on a sketch selects it as an image; then reset. |
 | `lumiere.markdown.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.plugins.stickyScroll.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1368,7 +1368,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 
-Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
+Attachment folder (`files.attachmentFolder`) is where dropped, pasted, and HTML-paste images (and sketches) are saved under timestamp names. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
 
 

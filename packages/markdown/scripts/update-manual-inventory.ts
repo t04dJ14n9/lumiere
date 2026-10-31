@@ -17,7 +17,9 @@ async function main() {
       ? "Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette."
       : command.command.endsWith("handleVimCtrlN")
         ? "Enable Vim in Live Preview and press Ctrl+N; must not open Untitled and must move like j (<C-n>). Disable Vim: Ctrl+N opens Untitled. Hidden from the palette."
-        : `On a disposable fixture, run ${command.title}; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes.`;
+        : command.command.endsWith("insertSketch")
+          ? "On the iPad, in a disposable vault, run Insert Sketch from the right-click menu (More… in the edit menu) and from the edit menu; draw, press Done, and confirm a `*.sketch.svg` in the attachment folder and its embed below the caret's line. Tap the sketch, change it, press Done: the note shows the new drawing. Cancel leaves the vault and the note unchanged. Not shown in VS Code or the desktop app."
+          : `On a disposable fixture, run ${command.title}; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes.`;
     return `| \`${command.command}\` — ${escape(command.title)} | ${escape(keys)} | ${escape(action)} |`;
   });
   const submenus = generated.submenus.map((submenu) => {
@@ -31,6 +33,15 @@ async function main() {
     const action = `Right-click the note's text (on the iPad, More… in the edit menu) and open ${submenu.label}: it lists its items beside its row, by tap, click or Right, and each runs as from the palette. VS Code and Cursor show the titles; the app shows the short ones.`;
     return `| \`${submenu.id}\` — ${escape(submenu.label)} | ${escape(items)} | ${escape(action)} |`;
   });
+  const settingProcedure = (key: string, values: string) => {
+    if (key === "lumiere.markdown.plugins.attachments.enabled") {
+      return "boolean; drop/paste an image into a note, confirm a timestamp file under `files.attachmentFolder` and its embed; turn off and confirm drop/paste leave the vault unchanged; then reset.";
+    }
+    if (key === "lumiere.markdown.plugins.sketch.enabled") {
+      return "boolean; turn off on the iPad and confirm Insert Sketch leaves the right-click menu and a tap on a sketch selects it as an image; then reset.";
+    }
+    return `${values}; change at workspace-folder scope, verify the owning plugin scenario, then reset the override.`;
+  };
   const settings = Object.entries(generated.configuration.properties).map(
     ([key, value]) => {
       const entry = value as {
@@ -41,7 +52,7 @@ async function main() {
       const values = entry.enum
         ? entry.enum.map(String).join(" / ")
         : (entry.type ?? "value");
-      return `| \`${key}\` | \`${escape(JSON.stringify(entry.default))}\` | ${escape(values)}; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |`;
+      return `| \`${key}\` | \`${escape(JSON.stringify(entry.default))}\` | ${escape(settingProcedure(key, values))} |`;
     },
   );
   const section = [
@@ -62,7 +73,7 @@ async function main() {
     "| --- | --- | --- |",
     ...settings,
     "",
-    "Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.",
+    "Attachment folder (`files.attachmentFolder`) is where dropped, pasted, and HTML-paste images (and sketches) are saved under timestamp names. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.",
     "<!-- command-setting-inventory:end -->",
   ].join("\n");
   const path = "docs/MANUAL_TEST_PLAN.md";

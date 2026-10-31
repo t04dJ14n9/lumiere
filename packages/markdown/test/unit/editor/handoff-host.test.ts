@@ -505,12 +505,49 @@ function switchToText({ bypass = false } = {}): Tab {
 }
 
 test("default: in-place workbench→text without bypass is not reclaimed", async (t) => {
-  const stop = host.reclaim.registerReclaim();
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
   t.after(() => stop.dispose());
   switchToText();
   await tick();
   assert.deepEqual(warmed, []);
   assert.deepEqual(commands, []);
+  // Stickiness restore: default-off workbench→text still keeps readerText.
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), [note]);
+});
+
+test("default: workbench→text without bypass stays text after a window reload", async (t) => {
+  const state = memento();
+  const first = host.reclaim.registerReclaim(undefined, state as never);
+  switchToText();
+  await tick();
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), [note]);
+  first.dispose();
+
+  const second = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => second.dispose());
+  second.adoptOpenTabs();
+  await tick();
+  assert.deepEqual(commands, []);
+});
+
+test("default: workbench→text without bypass ends with its last text tab", async (t) => {
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  const text = switchToText();
+  await tick();
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), [note]);
+  group.tabs = group.tabs.filter((tab) => tab !== text);
+  tabsChanged.fire({ opened: [], changed: [], closed: [text] });
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);
+
+  // A chat link then opens the note as text in a new tab: back to Lumière.
+  const link = cursorTab();
+  link.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [link], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
 });
 
 test("opt-in reclaimInPlace: workbench→text without bypass is reclaimed (Claude)", async (t) => {
@@ -523,6 +560,34 @@ test("opt-in reclaimInPlace: workbench→text without bypass is reclaimed (Claud
   assert.equal(commands[0]?.[0], "vscode.openWith");
   assert.equal(commands[0]?.[2], viewType);
   // workshopTab starts dirty; dirty native tabs stay after openWith.
+  assert.ok(group.tabs.includes(text));
+});
+
+test("opt-in reclaimInPlace: unbidden workbench skip does not write readerText", async (t) => {
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  settings.set("lumiere.markdown.editor.reclaimTextEditor", "off");
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  switchToText();
+  await tick();
+  assert.deepEqual(warmed, []);
+  assert.deepEqual(commands, []);
+  assert.equal(state.values.has("lumiere.reclaim.readerText"), false);
+});
+
+test("opt-in reclaimInPlace: other→text without bypass is reclaimed", async (t) => {
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  // Cursor Markdown tab already shown (input-less); register after so the
+  // workbench→other open is not judged.
+  const other = cursorTab();
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const text = switchInPlace(other, new TabInputText(Uri.parse(note)));
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
   assert.ok(group.tabs.includes(text));
 });
 
