@@ -77,7 +77,7 @@ test("diagram inspector Mermaid SVG uses the same dark invert", () => {
   );
 });
 
-test("markdown webview defines --font-mermaid from the editor font", () => {
+test("markdown webview defines --font-mermaid from the note text font", () => {
   const base = readFileSync(
     join(
       dirname(fileURLToPath(import.meta.url)),
@@ -85,8 +85,5 @@ test("markdown webview defines --font-mermaid from the editor font", () => {
     ),
     "utf8",
   );
-  assert.match(
-    base,
-    /--font-mermaid:\s*var\(--vscode-editor-font-family,\s*inherit\)/,
-  );
+  assert.match(base, /--font-mermaid:\s*var\(--text-font\)/);
 });
