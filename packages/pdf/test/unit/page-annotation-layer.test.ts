@@ -28,8 +28,5 @@ test("AnnotationLayer hit-tests only in Annotate mode", () => {
     source.indexOf("/>", source.indexOf("<AnnotationLayer")) + 2,
   );
   assert.match(block, /position:\s*"absolute"/);
-  assert.match(
-    block,
-    /pointerEvents:\s*annotate\s*\?\s*"auto"\s*:\s*"none"/,
-  );
+  assert.match(block, /pointerEvents:\s*annotate\s*\?\s*"auto"\s*:\s*"none"/);
 });

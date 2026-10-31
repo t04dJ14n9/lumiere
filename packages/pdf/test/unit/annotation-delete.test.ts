@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { VIEW_COMMAND_IDS } from "../../src/shared/command-ids";
 import { parseViewerAction } from "../../src/shared/view-state";
-import {
-  shouldDeleteAnnotationOnKey,
-} from "../../src/shared/annotation-delete-keys";
+import { shouldDeleteAnnotationOnKey } from "../../src/shared/annotation-delete-keys";
 import { pdfContributes } from "./support/manifest";
 
 test("deleteAnnotation command id is stable", () => {
@@ -91,10 +89,7 @@ test("webview context contributes Delete for annotate selection", () => {
     (item) => item.command === "lumiere.pdf.deleteAnnotation",
   );
   assert.ok(entry, "webview/context Delete");
-  assert.match(
-    entry?.when ?? "",
-    /webviewId == 'lumiere\.pdf\.viewer'/,
-  );
+  assert.match(entry?.when ?? "", /webviewId == 'lumiere\.pdf\.viewer'/);
   assert.match(entry?.when ?? "", /lumiere\.pdf\.tool == 'annotate'/);
   assert.match(entry?.when ?? "", /lumiere\.pdf\.hasSelection/);
 });
