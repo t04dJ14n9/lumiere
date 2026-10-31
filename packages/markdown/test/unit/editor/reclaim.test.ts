@@ -57,9 +57,17 @@ test("auto reclaims only in Cursor; on and off are explicit", () => {
   assert.equal(reclaimEnabled({ mode: "off", appName: "Cursor" }, true), false);
 });
 
-test("a switch in place to the text editor is the reader's choice and stays", () => {
-  // Reopen Editor With… › Text Editor from Lumière, Cursor's Markdown button.
-  assert.equal(shouldReclaim(swap("workbench", "text"), context), false);
+test("in-place workbench→text is reclaimed unless bypassed; other→text stays", () => {
+  // Claude Code open_file / showTextDocument replaces a Lumière tab in place.
+  assert.equal(shouldReclaim(swap("workbench", "text"), context), true);
+  assert.equal(
+    shouldReclaim(swap("workbench", "text"), {
+      ...context,
+      bypassed: () => true,
+    }),
+    false,
+  );
+  // other→text (reader already elsewhere) is not reclaim.
   assert.equal(shouldReclaim(swap("other", "text"), context), false);
 });
 

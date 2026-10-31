@@ -96,15 +96,16 @@ takes precedence over Cursor's editor for notes opened afterwards; reopen
 tabs that were already open.
 
 Tools also open notes in a new plain text tab: a Markdown link in a chat,
-or a review card's open arrow. `lumiere.markdown.editor.reclaimTextEditor`
+or a review card's open arrow — and some tools (Claude Code `open_file`)
+replace a Lumière tab in place with the text editor. `lumiere.markdown.editor.reclaimTextEditor`
 (`auto`, on only in Cursor) reopens such a note in Lumière and closes the
 text tab, for notes the workspace association routes here; it does the
-same for a note switched into Cursor's own Markdown editor. A note you put
-in the text editor stays there: **Reopen Editor With… › Text Editor**,
-Cursor's **Markdown** button, **Open as Text** and **Toggle Text Editor**
-keep it until its last text tab closes, including across a window reload,
-and a find or a jump inside it does not move it. Diffs, Git views and
-untitled files are left alone.
+same for a note switched into Cursor's own Markdown editor. Explicit native
+choice stays: **Open as Text**, **Toggle Text Editor**, and **Reopen
+Editor With… › Text Editor** when they set the bypass / reader-text keep,
+plus Cursor Edit/Chat handoff, until its last text tab closes, including
+across a window reload, and a find or a jump inside it does not move it.
+Diffs, Git views and untitled files are left alone.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless

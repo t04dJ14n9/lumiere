@@ -492,16 +492,34 @@ function memento() {
   };
 }
 
-/** Reopen Editor With… › Text Editor (or Cursor's Markdown button). */
-function switchToText(): Tab {
+/**
+ * In-place workbench→text (Claude showTextDocument, or Reopen With… without
+ * a prior bypass). Pass `{ bypass: true }` to simulate Open as Text / Toggle.
+ */
+function switchToText({ bypass = false } = {}): Tab {
+  if (bypass) {
+    host.reclaim.textBypass.allow(note);
+  }
   documents.push({ uri: Uri.parse(note), isDirty: false });
   return switchInPlace(workshopTab(), new TabInputText(Uri.parse(note)));
 }
 
-test("a note switched to the text editor in place stays there", async (t) => {
+test("an in-place workbench→text open without bypass is reclaimed (Claude)", async (t) => {
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  switchToText();
+  const text = switchToText();
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+  // workshopTab starts dirty; dirty native tabs stay after openWith.
+  assert.ok(group.tabs.includes(text));
+});
+
+test("an in-place workbench→text open with bypass stays (Open as Text)", async (t) => {
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  switchToText({ bypass: true });
   await tick();
   assert.deepEqual(warmed, []);
   assert.deepEqual(commands, []);
@@ -510,9 +528,12 @@ test("a note switched to the text editor in place stays there", async (t) => {
 test("a command selection in a text tab the reader keeps does not move it", async (t) => {
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  const text = switchToText();
+  const text = switchToText({ bypass: true });
   await tick();
   // Find, go to line or an agent's jump, long after any bypass ran out.
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
   const editor = nativeHunkEditor(text, 947);
   selectionChanged.fire({ textEditor: editor, kind: 3 });
   await tick();
@@ -523,8 +544,11 @@ test("a command selection in a text tab the reader keeps does not move it", asyn
 test("a note kept as text stays text after a window reload", async (t) => {
   const state = memento();
   const first = host.reclaim.registerReclaim(undefined, state as never);
-  switchToText();
+  switchToText({ bypass: true });
   await tick();
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
   first.dispose();
 
   const second = host.reclaim.registerReclaim(undefined, state as never);
@@ -538,8 +562,13 @@ test("keeping a note as text ends with its last text tab", async (t) => {
   const state = memento();
   const stop = host.reclaim.registerReclaim(undefined, state as never);
   t.after(() => stop.dispose());
-  const text = switchToText();
+  const text = switchToText({ bypass: true });
   await tick();
+  // Open as Text only needs the short bypass to establish readerText.keep;
+  // expire it so a later tool open is not still treated as opt-out.
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
   group.tabs = group.tabs.filter((tab) => tab !== text);
   tabsChanged.fire({ opened: [], changed: [], closed: [text] });
   assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);

@@ -160,12 +160,14 @@ like an Obsidian vault, where notes always open in the editor.
 
 `editor.reclaimTextEditor` (`auto`/`on`/`off`, auto meaning on in Cursor
 only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
-here that a tool opens in a new text tab (a chat link, a review card), or that
-switches into Cursor's own Markdown editor, is warmed and reopened in this
+here that a tool opens in a new text tab (a chat link, a review card), that a
+tool replaces in place from Lumière to text (Claude `showTextDocument`), or
+that switches into Cursor's own Markdown editor, is warmed and reopened in this
 editor. Clean text tabs are closed; dirty text tabs keep their native document
-and undo. A note the reader put in the text editor (a switch in place, Open as
-Text, asking twice) is kept there until its last text tab closes; the kept
-notes are saved in workspace state, so a reload keeps them too.
+and undo. Explicit native choice (Open as Text, Toggle Text Editor, Reopen
+With… when it sets bypass / readerText, Cursor Edit/Chat handoff) is kept
+there until its last text tab closes; the kept notes are saved in workspace
+state, so a reload keeps them too.
 **Toggle Text Editor** (Ctrl/Cmd+E) switches the active note between Lumière
 and the host's default text editor via `vscode.openWith` (`default` ↔
 `lumiere.markdown.editor`). Opening as text sets the reclaim bypass, and the

@@ -118,9 +118,11 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
 
 /**
  * `lumiere.markdown.editor.reclaimTextEditor`: a note that Cursor shows in its
- * own Markdown editor, or that a tool opens in a new text tab (a chat link, a
- * review card), moves back to our CustomTextEditorProvider once the native
- * document is ready. A note the reader put in the text editor stays there.
+ * own Markdown editor, that a tool opens in a new text tab (a chat link, a
+ * review card), or that a tool replaces in place from Lumière to text
+ * (Claude `showTextDocument`), moves back to our CustomTextEditorProvider
+ * once the native document is ready. Explicit Open as Text / Toggle /
+ * handoff stays via bypass and readerText.
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
@@ -197,7 +199,14 @@ function createReclaimJudge(options: {
     if (
       !shouldReclaim(swap, reclaimContext(swap.uri, options.workspaceDefault()))
     ) {
-      if (swap.after === "text" && isReclaimableNote(swap.uri)) {
+      // Do not permanently keep unbidden workbench→text skips (e.g. not
+      // associated / reclaim off). Opt-outs and other→text reader paths still
+      // keep. Claude reclaim never enters this branch when associated.
+      if (
+        swap.after === "text" &&
+        isReclaimableNote(swap.uri) &&
+        (hasNativeOptOut(swap.uri) || swap.before !== "workbench")
+      ) {
         readerText.keep(swap.uri);
       }
       return;

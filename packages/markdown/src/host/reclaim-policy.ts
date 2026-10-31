@@ -35,13 +35,14 @@ export interface TabSwap {
 
 /**
  * Whether an associated note arriving in the text or Cursor Markdown editor
- * should go back to Lumière: a switch into Cursor's own Markdown editor, and
- * a new text tab, as a chat link or a review card opens. A switch in place to
- * the text editor (Reopen Editor With…, Cursor's Markdown button) is the
- * reader asking for the text, so it stays. Diffs, Git and untitled files are
- * excluded by the tab classifier and note predicate. Notes this extension
- * opened as text stay, as does a note reclaimed a moment ago, so asking for
- * the text editor a second time keeps it.
+ * should go back to Lumière: a switch into Cursor's own Markdown editor; a
+ * new text tab (chat link, review card); and an in-place workbench→text open
+ * from tools such as Claude Code `showTextDocument`, which bypasses
+ * `workbench.editorAssociations`. Explicit native choice (Open as Text,
+ * Toggle Text Editor, Reopen With… when it sets bypass / readerText, Cursor
+ * Edit/Chat `handoffLease`) stays via `bypassed()` — not via skipping
+ * workbench→text alone. Diffs, Git and untitled files are excluded by the tab
+ * classifier and note predicate.
  */
 export function shouldReclaim(
   swap: TabSwap,
@@ -62,15 +63,16 @@ export function shouldReclaim(
 }
 
 /**
- * A text tab names its note; only a new one is reclaimed, never one that
- * replaced the note's tab in place. An input-less tab is matched by its
- * label, which Cursor's plan editor and its other input-less editors share,
- * so only one that replaced the note's own tab is known to be Cursor's
- * Markdown editor.
+ * A text tab names its note. Reclaim a new text tab (`before === "none"`) and
+ * an in-place workbench→text replacement (Claude / tools using
+ * `showTextDocument`). Leave other→text alone (reader already in a different
+ * editor). An input-less tab is matched by its label, which Cursor's plan
+ * editor and its other input-less editors share, so only one that replaced
+ * the note's own tab is known to be Cursor's Markdown editor.
  */
 function landsInNativeEditor({ before, after }: TabSwap): boolean {
   if (after === "text") {
-    return before === "none";
+    return before === "none" || before === "workbench";
   }
   return after === "other" && (before === "workbench" || before === "text");
 }
