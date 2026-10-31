@@ -6,7 +6,7 @@ environment statements are historical, not a live status report. This document
 does not authorize new pushes, merges, installations or access to owner data;
 follow the owner's current request.
 
-Owner: 金扬 (GitHub `t04dJ14n9`, Asia/Shanghai). Written by Grok Bot for another agent (OpenAI Codex/ChatGPT) to take over.
+Owner: user (GitHub `t04dJ14n9`, Asia/Shanghai). Written by Grok Bot for another agent (OpenAI Codex/ChatGPT) to take over.
 All work so far ran on a shared Linux "box"; paths below are box paths. No credentials are in this file; ask the owner for access.
 
 ## 0. Rules from the owner (follow these)

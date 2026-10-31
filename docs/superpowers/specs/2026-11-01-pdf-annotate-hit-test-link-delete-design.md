@@ -1,7 +1,7 @@
 # Design: PDF Annotate hit-test, Copy Link, Delete
 
 **Date:** 2026-11-01  
-**Approved:** 金扬 via Lumière Projects (~00:47 Asia/Shanghai)  
+**Approved:** user via Lumière Projects (~00:47 Asia/Shanghai)  
 **Repo:** `t04dJ14n9/lumiere`  
 **Package:** `packages/pdf`  
 **Risk:** Medium (product/UI)  

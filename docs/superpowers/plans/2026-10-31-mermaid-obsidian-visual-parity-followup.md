@@ -13,7 +13,7 @@
 - No new Cursor Cloud Agents; local implement only.
 - Do not invent node/edge paint or themeVariables colors.
 - Do not change Mermaid package version, useMaxWidth map, lightbox id keep, contain/overflow-y, dark invert, or pointer-events.
-- PR screenshots + Host GUI on real Cursor/VS Code before merge ask; 金扬 merges only.
+- PR screenshots + Host GUI on real Cursor/VS Code before merge ask; user merges only.
 - Risk: Medium. Spec: `docs/superpowers/specs/2026-10-31-mermaid-obsidian-visual-parity-followup-design.md`.
 
 ---
@@ -221,7 +221,7 @@ Fixtures: small flowchart, wide LR, class diagram, guarded failure — light and
 
 - [ ] **Step 4: Reviewer bot + merge ask**
 
-Per `lumiere-pr-review`: self-verify → spawn short-lived reviewer (comments only, ≤3 rounds) → CI green → ask 金扬 to squash-merge. Do not merge yourself.
+Per `lumiere-pr-review`: self-verify → spawn short-lived reviewer (comments only, ≤3 rounds) → CI green → ask user to squash-merge. Do not merge yourself.
 
 ---
 

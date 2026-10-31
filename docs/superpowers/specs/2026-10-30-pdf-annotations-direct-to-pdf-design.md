@@ -1,7 +1,7 @@
 # Design: PDF annotations — direct-to-PDF (EmbedPDF Annotation + History)
 
 **Date:** 2026-10-30  
-**UI amendment:** 2026-10-31 (Asia/Shanghai, 金扬) — status bar + command palette only  
+**UI amendment:** 2026-10-31 (Asia/Shanghai, user) — status bar + command palette only  
 **Repo:** `t04dJ14n9/lumiere`  
 **Package:** `packages/pdf` (`@workshop/pdf`)  
 **Status:** Owner-approved design; UI amendment locked; ready for implementation plan
@@ -56,7 +56,7 @@ User tool action → Annotation plugin mutates page annots
 
 ## UI
 
-Owner amendment (金扬, 2026-10-31, Asia/Shanghai), matching page-colors status-bar-only (#454, design #453):
+Owner amendment (user, 2026-10-31, Asia/Shanghai), matching page-colors status-bar-only (#454, design #453):
 
 - **Annotate** is a tool mode beside **Select Text** / **Select Region** (`tool-mode.ts`). Enter and leave it from the VS Code **status bar** and the **command palette**. **Escape** or switching to Select Text also leaves Annotate mode.
 - While Annotate is active, the status bar shows the active toolkit tool (a quick pick of highlight, underline, strikeout, squiggly, note/freeText, ink, shapes, stamp), a **color** quick pick where EmbedPDF supports color or stroke, and History **Undo** / **Redo**. The command palette runs the same commands.

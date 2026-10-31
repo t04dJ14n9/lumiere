@@ -6,7 +6,7 @@
 
 **Architecture:** Register `@embedpdf/plugin-annotation` and `@embedpdf/plugin-history` beside the existing EmbedPDF stack; mount `AnnotationLayer` per page; add an **Annotate** mode next to Select Text / Select Region that drives `setActiveTool` for the full toolkit. On each **committed** annotation change (including History undo/redo), the webview runs `engine.saveAsCopy`, posts bytes to the host, and the host writes a same-directory temp file then atomically replaces the open PDF while suppressing the self-write watcher reload. Agents/MCP stay read-only. Annotation controls are the VS Code **status bar** and the **command palette** only.
 
-**UI amendment (2026-10-31, Asia/Shanghai, 金扬):** Tasks 10 and 11 target the status bar and the command palette. They do not add Annotate to a slim bar, a floating bar, or an in-viewer annotation bar. Other locked Cut B decisions are unchanged.
+**UI amendment (2026-10-31, Asia/Shanghai, user):** Tasks 10 and 11 target the status bar and the command palette. They do not add Annotate to a slim bar, a floating bar, or an in-viewer annotation bar. Other locked Cut B decisions are unchanged.
 
 **Tech Stack:** TypeScript, React 19, EmbedPDF 2.15.1 (`@embedpdf/plugin-annotation`, `@embedpdf/plugin-history`), VS Code custom readonly editor + Node `fs` atomic rename, `node:test` / Playwright browser harness under `packages/pdf`.
 
