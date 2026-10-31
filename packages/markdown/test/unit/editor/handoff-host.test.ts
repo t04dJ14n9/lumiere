@@ -492,16 +492,162 @@ function memento() {
   };
 }
 
-/** Reopen Editor With… › Text Editor (or Cursor's Markdown button). */
-function switchToText(): Tab {
+/**
+ * In-place workbench→text (Claude showTextDocument, or Reopen With… without
+ * a prior bypass). Pass `{ bypass: true }` to simulate Open as Text / Toggle.
+ */
+function switchToText({ bypass = false } = {}): Tab {
+  if (bypass) {
+    host.reclaim.textBypass.allow(note);
+  }
   documents.push({ uri: Uri.parse(note), isDirty: false });
   return switchInPlace(workshopTab(), new TabInputText(Uri.parse(note)));
 }
 
-test("a note switched to the text editor in place stays there", async (t) => {
-  const stop = host.reclaim.registerReclaim();
+test("default: in-place workbench→text without bypass is not reclaimed", async (t) => {
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
   t.after(() => stop.dispose());
   switchToText();
+  await tick();
+  assert.deepEqual(warmed, []);
+  assert.deepEqual(commands, []);
+  // Stickiness restore: default-off workbench→text still keeps readerText.
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), [note]);
+});
+
+test("default: workbench→text without bypass stays text after a window reload", async (t) => {
+  const state = memento();
+  const first = host.reclaim.registerReclaim(undefined, state as never);
+  switchToText();
+  await tick();
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), [note]);
+  first.dispose();
+
+  const second = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => second.dispose());
+  second.adoptOpenTabs();
+  await tick();
+  assert.deepEqual(commands, []);
+});
+
+test("default: workbench→text without bypass ends with its last text tab", async (t) => {
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  const text = switchToText();
+  await tick();
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), [note]);
+  group.tabs = group.tabs.filter((tab) => tab !== text);
+  tabsChanged.fire({ opened: [], changed: [], closed: [text] });
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);
+
+  // A chat link then opens the note as text in a new tab: back to Lumière.
+  const link = cursorTab();
+  link.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [link], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+});
+
+test("opt-in reclaimInPlace: workbench→text without bypass is reclaimed (Claude)", async (t) => {
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const text = switchToText();
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+  // workshopTab starts dirty; dirty native tabs stay after openWith.
+  assert.ok(group.tabs.includes(text));
+});
+
+test("opt-in reclaimInPlace: tab rebuild during Search wait still reclaims workbench→text", async (t) => {
+  // Host GUI PR #468: workspaceEditor enables the Search selection wait. Cursor
+  // rebuilds Tab objects after Reopen With / showTextDocument; the wait must
+  // not drop the transfer when the scheduled tab identity is stale.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  switchToText();
+  rebuildTabModel();
+  t.mock.timers.tick(250);
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+});
+
+test("opt-in reclaimInPlace: selection ready after tab rebuild reclaims without force timer", async (t) => {
+  // waiting/pending must be keyed by uri+column: after rebuild, selection-driven
+  // ready(liveTab) must hit the in-flight wait — not only the 250ms force path.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  switchToText();
+  rebuildTabModel();
+  const live = group.activeTab!;
+  const editor = nativeHunkEditor(live, 947);
+  selectionChanged.fire({ textEditor: editor });
+  await tick();
+  assert.equal(
+    commands.length,
+    1,
+    "selection ready must open after Tab rebuild without waiting for force",
+  );
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+});
+
+test("opt-in reclaimInPlace: unbidden workbench skip does not write readerText", async (t) => {
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  settings.set("lumiere.markdown.editor.reclaimTextEditor", "off");
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  switchToText();
+  await tick();
+  assert.deepEqual(warmed, []);
+  assert.deepEqual(commands, []);
+  assert.equal(state.values.has("lumiere.reclaim.readerText"), false);
+});
+
+test("opt-in reclaimInPlace: other→text without bypass is reclaimed", async (t) => {
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  // Cursor Markdown tab already shown (input-less); register after so the
+  // workbench→other open is not judged.
+  const other = cursorTab();
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const text = switchInPlace(other, new TabInputText(Uri.parse(note)));
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+  assert.ok(group.tabs.includes(text));
+});
+
+test("opt-in reclaimInPlace: workbench→text with bypass stays (Open as Text)", async (t) => {
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  switchToText({ bypass: true });
+  await tick();
+  assert.deepEqual(warmed, []);
+  assert.deepEqual(commands, []);
+});
+
+test("an in-place workbench→text open with bypass stays (Open as Text)", async (t) => {
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  switchToText({ bypass: true });
   await tick();
   assert.deepEqual(warmed, []);
   assert.deepEqual(commands, []);
@@ -510,9 +656,12 @@ test("a note switched to the text editor in place stays there", async (t) => {
 test("a command selection in a text tab the reader keeps does not move it", async (t) => {
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  const text = switchToText();
+  const text = switchToText({ bypass: true });
   await tick();
   // Find, go to line or an agent's jump, long after any bypass ran out.
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
   const editor = nativeHunkEditor(text, 947);
   selectionChanged.fire({ textEditor: editor, kind: 3 });
   await tick();
@@ -523,8 +672,11 @@ test("a command selection in a text tab the reader keeps does not move it", asyn
 test("a note kept as text stays text after a window reload", async (t) => {
   const state = memento();
   const first = host.reclaim.registerReclaim(undefined, state as never);
-  switchToText();
+  switchToText({ bypass: true });
   await tick();
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
   first.dispose();
 
   const second = host.reclaim.registerReclaim(undefined, state as never);
@@ -538,8 +690,13 @@ test("keeping a note as text ends with its last text tab", async (t) => {
   const state = memento();
   const stop = host.reclaim.registerReclaim(undefined, state as never);
   t.after(() => stop.dispose());
-  const text = switchToText();
+  const text = switchToText({ bypass: true });
   await tick();
+  // Open as Text only needs the short bypass to establish readerText.keep;
+  // expire it so a later tool open is not still treated as opt-out.
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
   group.tabs = group.tabs.filter((tab) => tab !== text);
   tabsChanged.fire({ opened: [], changed: [], closed: [text] });
   assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);
@@ -1775,6 +1932,52 @@ test("a caret at the start does not reclaim before Search applies its range", as
   assert.deepEqual(destination.ranges, [{ at, to: at + 4 }]);
 });
 
+test("heal restores Search reclaim when associations are default without workspaceEditor", async (t) => {
+  // Host GUI range-link probe: settings.json had "*.md": "default" but never
+  // set lumiere.markdown.workspaceEditor, and readerText stuck the note.
+  const state = memento();
+  state.values.set("lumiere.reclaim.readerText", [note]);
+  settings.set("workbench.editorAssociations", {
+    "*.md": "default",
+    "*.markdown": "default",
+  });
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(
+    destination.navigation,
+    state as never,
+  );
+  t.after(() => stop.dispose());
+  assert.equal(state.values.get(MARKDOWN_WORKSPACE_EDITOR_KEY), true);
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);
+
+  tab.input = new TabInputText(Uri.parse(note));
+  const editor = nativeHunkEditor(tab, 947);
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+
+  assert.deepEqual(destination.ranges, [
+    {
+      at: editor.document.getText().indexOf("Line 948\n"),
+      to: editor.document.getText().indexOf("Line 950\n") + 4,
+    },
+  ]);
+});
+
+test("unassociated none→text does not permanently stick via readerText", async (t) => {
+  settings.set("workbench.editorAssociations", {});
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  tab.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.deepEqual(commands, []);
+  assert.equal(state.values.has("lumiere.reclaim.readerText"), false);
+});
+
 test("a new Search tab settles its selection before custom-editor handoff", async (t) => {
   const state = memento();
   await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
@@ -1881,6 +2084,33 @@ test("a second hunk during reveal readiness supersedes the in-flight offset", as
     "superseded first offset must not apply",
   );
   assert.equal(commands.length, 2);
+});
+
+test("a second hunk after tab rebuild supersedes the pending reclaim", async (t) => {
+  // pending keyed by Tab would miss after rebuild: refresh/supersede no-ops and
+  // a second openWith starts beside the first. uri+column keys keep both paths.
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  nativeHunkEditor(tab);
+  t.after(() => stop.dispose());
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1, "first transfer awaits reveal registration");
+  rebuildTabModel();
+  const live = group.activeTab!;
+  const next = nativeHunkEditor(live, 947);
+  selectionChanged.fire({ textEditor: next, kind: 3 });
+  destination.ready();
+  await tick();
+  assert.deepEqual(destination.calls, [
+    next.document.getText().indexOf("Line 948\n"),
+  ]);
+  assert.equal(
+    commands.length,
+    2,
+    "rebuild must not leave a stale pending that blocks supersede",
+  );
 });
 
 for (const optOut of ["Open as Text", "Cursor Edit lease"] as const) {

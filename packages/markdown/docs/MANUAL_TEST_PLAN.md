@@ -1321,6 +1321,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `lumiere.markdown.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.reclaimTextEditor` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.reclaimInPlaceTextEditor` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.warmTextDocument` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `lumiere.markdown.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

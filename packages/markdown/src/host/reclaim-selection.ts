@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { SourceCoordinates } from "../shared/document/coordinates";
+import { reclaimKey } from "./reclaim-tabs";
 
 export interface NativeSelection {
   at: number;
@@ -41,11 +42,12 @@ export function createReclaimScheduler(options: {
 }) {
   const timers = new Set<ReturnType<typeof setTimeout>>();
   const waiting = new Map<
-    vscode.Tab,
+    string,
     { uri: string; fallback: ReturnType<typeof setTimeout> }
   >();
   const ready = (tab: vscode.Tab, uri: string, force = false): void => {
-    const pending = waiting.get(tab);
+    const key = reclaimKey(uri, tab.group.viewColumn);
+    const pending = waiting.get(key);
     if (
       !pending ||
       pending.uri !== uri ||
@@ -53,7 +55,7 @@ export function createReclaimScheduler(options: {
     ) {
       return;
     }
-    waiting.delete(tab);
+    waiting.delete(key);
     clearTimeout(pending.fallback);
     timers.delete(pending.fallback);
     options.open(tab, uri);
@@ -69,8 +71,10 @@ export function createReclaimScheduler(options: {
     }
     // VS Code publishes the text tab before Search applies its range. Wait for
     // the matching active editor; the fallback keeps nonstandard hosts moving.
+    // Key by uri+column so a Tab rebuild during the wait still hits ready().
+    const key = reclaimKey(uri, tab.group.viewColumn);
     const fallback = scheduleTimer(timers, () => ready(tab, uri, true), 250);
-    waiting.set(tab, { uri, fallback });
+    waiting.set(key, { uri, fallback });
     scheduleTimer(timers, () => ready(tab, uri), 0);
   };
   return {

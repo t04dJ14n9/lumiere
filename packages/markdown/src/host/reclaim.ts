@@ -10,7 +10,7 @@ import {
   shouldWarmBeforeReclaim,
   TabSwaps,
 } from "./reclaim-policy";
-import type { TabKind, TabModel, TabSwap } from "./reclaim-policy";
+import type { TabKind, TabSwap } from "./reclaim-policy";
 import {
   MARKDOWN_EDITOR,
   MARKDOWN_WORKSPACE_EDITOR_KEY,
@@ -25,6 +25,16 @@ import {
   nativeSelectionRange as readNativeSelectionRange,
   registerSelectionReclaim,
 } from "./reclaim-selection";
+import { healWorkspaceEditorAssociation } from "./workspace-editor-heal";
+import {
+  kindOf,
+  labelUri,
+  reclaimKey,
+  resolveLiveNativeTab,
+  showsNatively,
+  tabModel,
+  uriOf,
+} from "./reclaim-tabs";
 
 const { viewType } = MARKDOWN_EDITOR;
 
@@ -59,41 +69,6 @@ interface ReclaimRequest {
   keepNative?: boolean;
 }
 
-function kindOf(tab: vscode.Tab | undefined): TabKind {
-  const input = tab?.input;
-  if (!tab) {
-    return "none";
-  }
-  if (input instanceof vscode.TabInputCustom) {
-    return input.viewType === viewType ? "workbench" : "none";
-  }
-  if (input instanceof vscode.TabInputText) {
-    return "text";
-  }
-  // Cursor's own Markdown editor has no public tab input type.
-  return input === undefined ? "other" : "none";
-}
-
-function uriOf(tab: vscode.Tab): string | undefined {
-  const input = tab.input as { uri?: vscode.Uri } | undefined;
-  return input?.uri?.toString();
-}
-
-/** The tab shows this note in the text or Cursor Markdown editor. */
-function showsNatively(tab: vscode.Tab, uri: string): boolean {
-  const kind = kindOf(tab);
-  return (
-    (kind === "text" || kind === "other") &&
-    (uriOf(tab) ?? labelUri(tab)) === uri
-  );
-}
-
-const tabModel: TabModel<vscode.Tab> = {
-  facts: (tab) => ({ uri: uriOf(tab) ?? labelUri(tab), kind: kindOf(tab) }),
-  groupOf: (tab) => tab.group,
-  shownTab: () => vscode.window.tabGroups.activeTabGroup.activeTab,
-};
-
 /** Returns the note whose Cursor Edit session this tab change ended. */
 function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
   const uri = uriOf(tab) ?? labelUri(tab);
@@ -117,10 +92,9 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
 }
 
 /**
- * `lumiere.markdown.editor.reclaimTextEditor`: a note that Cursor shows in its
- * own Markdown editor, or that a tool opens in a new text tab (a chat link, a
- * review card), moves back to our CustomTextEditorProvider once the native
- * document is ready. A note the reader put in the text editor stays there.
+ * Reclaim native text / Cursor Markdown tabs into Lumière when enabled.
+ * Opt-in `reclaimInPlaceTextEditor` also reclaims in-place workbench→text /
+ * other→text (Claude); off by default. Open as Text / Toggle / handoff stay.
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
@@ -130,8 +104,10 @@ export function registerReclaim(
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
   readerText.restore(memory);
+  const workspaceEditorHealed = healWorkspaceEditorAssociation(memory);
   const workspaceDefault = () =>
-    memory?.get(MARKDOWN_WORKSPACE_EDITOR_KEY, false) ?? false;
+    workspaceEditorHealed ||
+    (memory?.get(MARKDOWN_WORKSPACE_EDITOR_KEY, false) ?? false);
   const scheduler = createReclaimScheduler({
     open: transfer.open,
     readSelection: nativeSelectionRange,
@@ -194,10 +170,23 @@ function createReclaimJudge(options: {
       options.swaps.hold(tab, swap);
       return;
     }
-    if (
-      !shouldReclaim(swap, reclaimContext(swap.uri, options.workspaceDefault()))
-    ) {
-      if (swap.after === "text" && isReclaimableNote(swap.uri)) {
+    const context = reclaimContext(swap.uri, options.workspaceDefault());
+    if (!shouldReclaim(swap, context)) {
+      // Off: keep text skips. On: no keep for unbidden workbench→text, and no
+      // keep for none→text that failed only as unassociated (missing
+      // workspaceEditor with associations already `"default"`).
+      const unbiddenInPlace =
+        context.reclaimInPlace && swap.before === "workbench";
+      const unassociatedNewText =
+        context.enabled &&
+        swap.before === "none" &&
+        !context.associated(swap.uri);
+      const keep =
+        swap.after === "text" &&
+        isReclaimableNote(swap.uri) &&
+        (hasNativeOptOut(swap.uri) ||
+          (!unbiddenInPlace && !unassociatedNewText));
+      if (keep) {
         readerText.keep(swap.uri);
       }
       return;
@@ -224,9 +213,10 @@ function createReclaimTransfer(
   navigation: NativeNavigation | undefined,
   recentTransfers: Bypass,
 ) {
-  const pending = new Map<vscode.Tab, ReclaimRequest>();
+  // Key by uri+column: Tab identity drifts when VS Code rebuilds the model.
+  const pending = new Map<string, ReclaimRequest>();
   const capture = (tab: vscode.Tab, uri: string) => {
-    const request = pending.get(tab);
+    const request = pending.get(reclaimKey(uri, tab.group.viewColumn));
     if (request?.uri === uri && !request.intent?.token.cancelled) {
       refreshRequestSelection(tab, uri, request);
     }
@@ -234,39 +224,18 @@ function createReclaimTransfer(
   return {
     capture,
     open(tab: vscode.Tab, uri: string) {
-      if (vscode.window.tabGroups.activeTabGroup.activeTab !== tab) {
+      const shown = resolveLiveNativeTab(tab, uri);
+      if (!shown) {
         return;
       }
-      const request = pending.get(tab);
-      if (request?.uri === uri && !request.intent?.token.cancelled) {
-        // Before delivery: refresh the selection only. After revealOpened has
-        // started, a later hunk must cancel and supersede that delivery.
-        if (!request.delivering) {
-          capture(tab, uri);
-          return;
-        }
-        request.intent?.token.cancel();
-      }
-      recentTransfers.allow(uri);
-      const selection = nativeSelectionRange(tab, uri);
-      const next: ReclaimRequest = {
+      startPendingReclaim({
+        pending,
+        recentTransfers,
+        navigation,
+        capture,
+        shown,
         uri,
-        column: tab.group.viewColumn,
-        kind: kindOf(tab),
-        intent: navigation?.begin(),
-        at: selection?.at,
-        to: selection?.to,
-      };
-      pending.set(tab, next);
-      void reopen(uri, next, navigation)
-        .catch((error) => {
-          console.error("Lumière editor transfer failed", error);
-        })
-        .finally(() => {
-          if (pending.get(tab) === next) {
-            pending.delete(tab);
-          }
-        });
+      });
     },
     dispose() {
       for (const request of pending.values()) {
@@ -274,6 +243,48 @@ function createReclaimTransfer(
       }
     },
   };
+}
+
+function startPendingReclaim(options: {
+  pending: Map<string, ReclaimRequest>;
+  recentTransfers: Bypass;
+  navigation: NativeNavigation | undefined;
+  capture: (tab: vscode.Tab, uri: string) => void;
+  shown: vscode.Tab;
+  uri: string;
+}): void {
+  const { pending, recentTransfers, navigation, capture, shown, uri } = options;
+  const key = reclaimKey(uri, shown.group.viewColumn);
+  const request = pending.get(key);
+  if (request?.uri === uri && !request.intent?.token.cancelled) {
+    // Before delivery: refresh the selection only. After revealOpened has
+    // started, a later hunk must cancel and supersede that delivery.
+    if (!request.delivering) {
+      capture(shown, uri);
+      return;
+    }
+    request.intent?.token.cancel();
+  }
+  recentTransfers.allow(uri);
+  const selection = nativeSelectionRange(shown, uri);
+  const next: ReclaimRequest = {
+    uri,
+    column: shown.group.viewColumn,
+    kind: kindOf(shown),
+    intent: navigation?.begin(),
+    at: selection?.at,
+    to: selection?.to,
+  };
+  pending.set(key, next);
+  void reopen(uri, next, navigation)
+    .catch((error) => {
+      console.error("Lumière editor transfer failed", error);
+    })
+    .finally(() => {
+      if (pending.get(key) === next) {
+        pending.delete(key);
+      }
+    });
 }
 
 function nativeSelectionRange(
@@ -293,16 +304,19 @@ function hasSelectionTarget(s?: { at: number; to?: number }): boolean {
 
 function reclaimContext(uri: string, workspaceDefault: boolean) {
   const target = vscode.Uri.parse(uri);
+  const editor = vscode.workspace.getConfiguration("lumiere.markdown", target);
   return {
     enabled: reclaimEnabled(
       {
-        mode: vscode.workspace
-          .getConfiguration("lumiere.markdown", target)
-          .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
+        mode: editor.get<"auto" | "on" | "off">(
+          "editor.reclaimTextEditor",
+          "auto",
+        ),
         appName: vscode.env.appName,
       },
       workspaceDefault,
     ),
+    reclaimInPlace: editor.get("editor.reclaimInPlaceTextEditor", false),
     isNote: isReclaimableNote,
     associated: (value: string) =>
       associatedWith(
@@ -449,18 +463,4 @@ function currentTab(request: ReclaimRequest): vscode.Tab | undefined {
       kindOf(candidate) === request.kind &&
       showsNatively(candidate, request.uri),
   );
-}
-
-/** Cursor's editor exposes no input; its tabs are matched by their label. */
-function labelUri(tab: vscode.Tab): string | undefined {
-  if (tab.input !== undefined) {
-    return undefined;
-  }
-  const documents = vscode.workspace.textDocuments.filter(
-    (candidate) =>
-      candidate.uri.scheme === "file" &&
-      candidate.uri.path.split("/").at(-1) === tab.label,
-  );
-  // Equal basenames in different folders cannot identify a tab safely.
-  return documents.length === 1 ? documents[0]?.uri.toString() : undefined;
 }

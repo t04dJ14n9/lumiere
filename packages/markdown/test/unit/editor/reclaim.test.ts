@@ -57,10 +57,40 @@ test("auto reclaims only in Cursor; on and off are explicit", () => {
   assert.equal(reclaimEnabled({ mode: "off", appName: "Cursor" }, true), false);
 });
 
-test("a switch in place to the text editor is the reader's choice and stays", () => {
-  // Reopen Editor With… › Text Editor from Lumière, Cursor's Markdown button.
+test("in-place reclaim is opt-in (default off); none→text always; bypass still false", () => {
+  // Default: workbench→text is not reclaimed (pre-#468 / fcf559b3 text rule).
   assert.equal(shouldReclaim(swap("workbench", "text"), context), false);
   assert.equal(shouldReclaim(swap("other", "text"), context), false);
+  // none→text still reclaims either way.
+  assert.equal(shouldReclaim(swap("none", "text"), context), true);
+  assert.equal(
+    shouldReclaim(swap("none", "text"), { ...context, reclaimInPlace: true }),
+    true,
+  );
+  // Opt-in: approach A — before !== "text" for after===text.
+  assert.equal(
+    shouldReclaim(swap("workbench", "text"), {
+      ...context,
+      reclaimInPlace: true,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldReclaim(swap("other", "text"), { ...context, reclaimInPlace: true }),
+    true,
+  );
+  assert.equal(
+    shouldReclaim(swap("text", "text"), { ...context, reclaimInPlace: true }),
+    false,
+  );
+  assert.equal(
+    shouldReclaim(swap("workbench", "text"), {
+      ...context,
+      reclaimInPlace: true,
+      bypassed: () => true,
+    }),
+    false,
+  );
 });
 
 test("a note Cursor remembers as text is reclaimed when it opens", () => {
@@ -531,4 +561,21 @@ test("tabs open before reclaim starts are judged: the shown one now, the rest wh
   group.activeTab = workshop;
   const kept = swaps.next({ opened: [], changed: [workshop] }, new Set());
   assert.equal(shouldReclaim(kept[0]!.swap, context), false);
+});
+
+test("skip keep: unassociated none→text does not permanently stick", () => {
+  const note = "file:///vault/Core.md";
+  assert.equal(
+    shouldReclaim(
+      { uri: note, before: "none", after: "text" },
+      {
+        enabled: true,
+        reclaimInPlace: true,
+        isNote: () => true,
+        associated: () => false,
+        bypassed: () => false,
+      },
+    ),
+    false,
+  );
 });

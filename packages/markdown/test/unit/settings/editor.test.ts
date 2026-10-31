@@ -34,6 +34,8 @@ test("editor settings have application defaults and reconfigure without changing
     readableLineLength: false,
     // Auto: reclaims Cursor's text-editor switch only when running in Cursor.
     reclaimTextEditor: "auto",
+    // Off: in-place workbench→text (Claude) stays native unless opted in.
+    reclaimInPlaceTextEditor: false,
     // Auto: materialize TextDocuments early so Cursor can open our custom editor.
     warmTextDocument: "auto",
     strictLineBreaks: false,

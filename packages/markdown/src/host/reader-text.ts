@@ -4,10 +4,13 @@ const KEY = "lumiere.reclaim.readerText";
 
 /**
  * Notes the reader keeps in the text editor: a text tab that arrived and was
- * not reclaimed (a switch in place, Open as Text, asking twice). Reclaim
- * leaves them alone, including a command selection there (find, go to line,
- * an agent's jump) and a window reload. A note stops being kept once it has
- * no text tab left.
+ * not reclaimed because of an opt-out (Open as Text, Toggle Text Editor,
+ * handoff lease, asking twice after reclaim) or a reader-choice text path
+ * (including workbench→text when reclaimInPlace is off). When reclaimInPlace
+ * is on, unbidden workbench→text tool opens that skip reclaim for other
+ * reasons are not kept. Reclaim leaves kept notes alone, including a command
+ * selection there (find, go to line, an agent's jump) and a window reload.
+ * A note stops being kept once it has no text tab left.
  */
 class ReaderText {
   private readonly uris = new Set<string>();
@@ -31,6 +34,18 @@ class ReaderText {
       this.uris.add(uri);
       this.remember();
     }
+  }
+
+  /**
+   * Drop every keep. Used when healing a missing workspaceEditor key so notes
+   * stuck while reclaim thought they were unassociated can transfer again.
+   */
+  clear(): void {
+    if (this.uris.size === 0) {
+      return;
+    }
+    this.uris.clear();
+    this.remember();
   }
 
   /** Stop keeping notes among `tabs` (default: all kept) with no text tab left. */
