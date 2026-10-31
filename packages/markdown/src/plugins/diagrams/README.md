@@ -52,6 +52,6 @@ its default (light) palette; dark UI applies Obsidian's CSS invert
 diagram inspector. Light is `vscode-light` or `vscode-high-contrast-light`.
 `--font-mermaid` is the editor font. A failed render uses Obsidian's
 `mermaid-wrapper.is-guarded` chrome (title, error, Allow, source). Allow persists vault trust (`lumiere.mermaid-vault-trust`, Obsidian `mermaid-vault-trust`) and retries with `htmlLabels: true`; SVG output is still sanitized. Untrusted renders keep `htmlLabels: false`.
-Inline Mermaid sizing follows Obsidian per-type `useMaxWidth` (false for flowchart/sequence/git/er; true for gantt/journey/class/state/pie). The inline host scrolls horizontally for wide diagrams; height grows with the diagram. Do not shrink via CSS `max-width: 100%` (Task 2).
+Inline Mermaid sizing follows Obsidian per-type `useMaxWidth` (false for flowchart/sequence/git/er; true for gantt/journey/class/state/pie). The fence is contained to the column (`contain: inline-size`) and scrolls horizontally when the native SVG is wider; height grows with the diagram. Do not shrink the SVG via CSS `max-width: 100%`, and do not let the SVG widen the note (the pane would clip it).
 
 Live-reference visual parity remains for the owner's manual comparison.
