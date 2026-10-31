@@ -115,9 +115,6 @@ test("AnnotationLayer is hit-testable only in Annotate mode", async ({
   await open(page, "?toolbar=chrome");
   const pointerEvents = async () =>
     page.evaluate(() => {
-      const layer = document.querySelector(
-        '.page [class*="annotation"], .page > div',
-      );
       // Prefer the EmbedPDF annotation layer node by absolute inset style.
       const nodes = [...document.querySelectorAll(".page *")] as HTMLElement[];
       const ann = nodes.find(

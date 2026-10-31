@@ -186,21 +186,52 @@ const ACTIONS: Handlers = {
  * Carry out what the extension's commands ask: page, zoom, find or tool.
  * Returns a stable function, so the host listener need not be re-attached.
  */
+type ViewActionOptions = {
+  setChoices: (choices: Partial<ViewChoices>) => void;
+  setAnnotationTool: (tool: AnnotationToolId | null) => void;
+  setColor: (color: string) => void;
+  undo: () => void;
+  redo: () => void;
+  deleteSelectedAnnotations: () => void;
+};
+
 export function useViewActions(
   navigation: Navigation,
   openSearch: () => void,
   setTool: (tool: ToolMode) => void,
-  options: {
-    setChoices: (choices: Partial<ViewChoices>) => void;
-    setAnnotationTool: (tool: AnnotationToolId | null) => void;
-    setColor: (color: string) => void;
-    undo: () => void;
-    redo: () => void;
-    deleteSelectedAnnotations: () => void;
-  },
+  options: ViewActionOptions,
 ): (action: ViewerAction) => void {
   const { provides: zoom, state } = useZoom(DOCUMENT_ID);
-  const current = {
+  const current = viewActionBag({
+    navigation,
+    openSearch,
+    setTool,
+    options,
+    zoom,
+    level: state.currentZoomLevel,
+  });
+  const latest = useRef(current);
+  latest.current = current;
+  // Quick zoom repeats add up before React receives the native state change.
+  const requested = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    requested.current = undefined;
+  }, [state.currentZoomLevel]);
+  return useCallback((action: ViewerAction): void => {
+    runViewAction(action, latest.current, requested);
+  }, []);
+}
+
+function viewActionBag(input: {
+  navigation: Navigation;
+  openSearch: () => void;
+  setTool: (tool: ToolMode) => void;
+  options: ViewActionOptions;
+  zoom: ReturnType<typeof useZoom>["provides"];
+  level: number;
+}) {
+  const { navigation, openSearch, setTool, options, zoom, level } = input;
+  return {
     navigation,
     openSearch,
     setTool,
@@ -211,43 +242,41 @@ export function useViewActions(
     deleteSelectedAnnotations: options.deleteSelectedAnnotations,
     setChoices: options.setChoices,
     zoom,
-    level: state.currentZoomLevel,
+    level,
   };
-  const latest = useRef(current);
-  latest.current = current;
-  // Quick zoom repeats add up before React receives the native state change.
-  const requested = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    requested.current = undefined;
-  }, [state.currentZoomLevel]);
-  return useCallback((action: ViewerAction): void => {
-    const { navigation, zoom, level } = latest.current;
-    const generation =
-      action.action === "find"
-        ? navigation.intent.advance()
-        : navigation.intent.interrupt();
-    const context: ActionContext = {
-      ...latest.current,
-      generation,
-      from: requested.current ?? zoom?.getState().currentZoomLevel ?? level,
-      zoomTo: (next) => {
-        requested.current = Math.min(
-          ZOOM_RANGE.max,
-          Math.max(ZOOM_RANGE.min, next),
-        );
-        zoom?.requestZoom(requested.current);
-      },
-      fit: (mode) => {
-        requested.current = undefined;
-        zoom?.requestZoom(mode);
-      },
-      latest: () => latest.current.navigation,
-    };
-    (ACTIONS[action.action] as (a: ViewerAction, c: ActionContext) => void)(
-      action,
-      context,
-    );
-  }, []);
+}
+
+function runViewAction(
+  action: ViewerAction,
+  current: ReturnType<typeof viewActionBag>,
+  requested: { current: number | undefined },
+): void {
+  const { navigation, zoom, level } = current;
+  const generation =
+    action.action === "find"
+      ? navigation.intent.advance()
+      : navigation.intent.interrupt();
+  const context: ActionContext = {
+    ...current,
+    generation,
+    from: requested.current ?? zoom?.getState().currentZoomLevel ?? level,
+    zoomTo: (next) => {
+      requested.current = Math.min(
+        ZOOM_RANGE.max,
+        Math.max(ZOOM_RANGE.min, next),
+      );
+      zoom?.requestZoom(requested.current);
+    },
+    fit: (mode) => {
+      requested.current = undefined;
+      zoom?.requestZoom(mode);
+    },
+    latest: () => current.navigation,
+  };
+  (ACTIONS[action.action] as (a: ViewerAction, c: ActionContext) => void)(
+    action,
+    context,
+  );
 }
 
 export function fitMode(level: unknown): FitMode | null {

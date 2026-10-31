@@ -112,6 +112,53 @@ function useViewerState(pdf: PdfDocumentObject) {
   useRestorePosition(navigation, pdf.pages.length);
   const [setting, setToolbar] = useState(currentToolbarSettings);
   const [zen, setZen] = useZen();
+  const tools = useViewerTools(pdf, {
+    navigation,
+    search,
+    choices,
+    setChoices,
+  });
+  useHostMessages({
+    show: navigation.show,
+    history,
+    runAction: tools.runAction,
+    requestLookUp,
+    reportSelection: tools.selection.reportNow,
+    setLookUp,
+    setZen,
+    setToolbar,
+    setMotionSetting,
+    setChoices,
+    setPageColors: rememberPageColors,
+    retryAnnotationSave: tools.annotationSave.retry,
+  });
+  return {
+    choices,
+    smooth,
+    navigation,
+    history,
+    selection: tools.selection,
+    search,
+    documentArea,
+    tool: tools.tool,
+    annotation: tools.annotation,
+    annotationSelection: tools.annotationSelection,
+    runAction: tools.runAction,
+    zen,
+    toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
+  };
+}
+
+type ViewerToolsDeps = {
+  navigation: ReturnType<typeof withHistory>;
+  search: ReturnType<typeof useSearch>;
+  choices: ViewChoices;
+  setChoices: React.Dispatch<React.SetStateAction<ViewChoices>>;
+};
+
+/** Tool mode, annotations, selection reporting, view actions and keys. */
+function useViewerTools(pdf: PdfDocumentObject, deps: ViewerToolsDeps) {
+  const { navigation, search, choices, setChoices } = deps;
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   const annotation = useAnnotationMode(DOCUMENT_ID);
   const annotationSave = useAnnotationSaveSession(pdf);
@@ -134,20 +181,6 @@ function useViewerState(pdf: PdfDocumentObject) {
     redo: annotation.redo,
     deleteSelectedAnnotations: annotationSelection.deleteSelected,
   });
-  useHostMessages({
-    show: navigation.show,
-    history,
-    runAction,
-    requestLookUp,
-    reportSelection: selection.reportNow,
-    setLookUp,
-    setZen,
-    setToolbar,
-    setMotionSetting,
-    setChoices,
-    setPageColors: rememberPageColors,
-    retryAnnotationSave: annotationSave.retry,
-  });
   useViewerKeys({
     selection,
     search,
@@ -157,19 +190,12 @@ function useViewerState(pdf: PdfDocumentObject) {
     deleteSelectedAnnotations: annotationSelection.deleteSelected,
   });
   return {
-    choices,
-    smooth,
-    navigation,
-    history,
-    selection,
-    search,
-    documentArea,
     tool,
     annotation,
+    annotationSave,
     annotationSelection,
+    selection,
     runAction,
-    zen,
-    toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
   };
 }
 

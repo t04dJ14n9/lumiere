@@ -1,6 +1,6 @@
 import { useAnnotationCapability } from "@embedpdf/plugin-annotation/react";
 import { useRegistry } from "@embedpdf/core/react";
-import type { PdfDocumentObject } from "@embedpdf/models";
+import type { PdfDocumentObject, PdfEngine } from "@embedpdf/models";
 import type { TrackedAnnotation } from "@embedpdf/plugin-annotation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -37,72 +37,23 @@ export function useAnnotationSelection(
       return;
     }
     const scope = annots.forDocument(documentId);
-    const refresh = (): void => {
-      setSelected(scope.getSelectedAnnotations());
-    };
+    const refresh = (): void => setSelected(scope.getSelectedAnnotations());
     refresh();
     return scope.onStateChange(() => refresh());
   }, [annots, documentId, annotate]);
 
   useEffect(() => {
-    if (!annotate) {
-      if (reported.current) {
-        reported.current = undefined;
-        reportToHost({ selection: { selection: null } });
-      }
-      detailsToken.current += 1;
+    if (!annotate || selected.length === 0) {
+      clearAnnotationReport(reported, detailsToken);
       return;
     }
-    if (selected.length === 0) {
-      if (reported.current) {
-        reported.current = undefined;
-        reportToHost({ selection: { selection: null } });
-      }
-      detailsToken.current += 1;
-      return;
-    }
-    const primary = selected[0]!;
-    const contents =
-      typeof primary.object.contents === "string"
-        ? primary.object.contents
-        : undefined;
-    const immediateQuote = annotationQuoteText(
-      contents === undefined ? {} : { contents },
-    );
-    const immediate = selectionFromAnnotation({
-      pageIndex: primary.object.pageIndex,
-      rect: primary.object.rect,
-      ...(immediateQuote ? { text: immediateQuote } : {}),
+    reportAnnotationSelection({
+      primary: selected[0]!,
+      pdf,
+      engine: registry?.getEngine(),
+      reported,
+      detailsToken,
     });
-    reported.current = immediate;
-    reportToHost({ selection: { selection: immediate } });
-
-    const token = ++detailsToken.current;
-    const engine = registry?.getEngine();
-    if (!engine) {
-      return;
-    }
-    const page = primary.object.pageIndex + 1;
-    const rect = immediate.rect;
-    void readRegionDetails(engine, pdf, page, rect).then(
-      ({ text }) => {
-        if (token !== detailsToken.current || reported.current !== immediate) {
-          return;
-        }
-        const quote = annotationQuoteText({
-          pageText: text,
-          ...(contents === undefined ? {} : { contents }),
-        });
-        const detailed = selectionFromAnnotation({
-          pageIndex: primary.object.pageIndex,
-          rect: primary.object.rect,
-          ...(quote ? { text: quote } : {}),
-        });
-        reported.current = detailed;
-        reportToHost({ selection: { selection: detailed } });
-      },
-      () => undefined,
-    );
   }, [annotate, selected, pdf, registry]);
 
   const deleteSelected = useCallback((): void => {
@@ -118,4 +69,68 @@ export function useAnnotationSelection(
     hasAnnotationSelection: annotate && selected.length > 0,
     deleteSelected,
   };
+}
+
+function clearAnnotationReport(
+  reported: { current: RegionSelection | undefined },
+  detailsToken: { current: number },
+): void {
+  detailsToken.current += 1;
+  if (!reported.current) {
+    return;
+  }
+  reported.current = undefined;
+  reportToHost({ selection: { selection: null } });
+}
+
+function reportAnnotationSelection(args: {
+  primary: TrackedAnnotation;
+  pdf: PdfDocumentObject;
+  engine: PdfEngine | undefined;
+  reported: { current: RegionSelection | undefined };
+  detailsToken: { current: number };
+}): void {
+  const { primary, pdf, engine, reported, detailsToken } = args;
+  const contents =
+    typeof primary.object.contents === "string"
+      ? primary.object.contents
+      : undefined;
+  const immediateQuote = annotationQuoteText(
+    contents === undefined ? {} : { contents },
+  );
+  const immediate = selectionFromAnnotation({
+    pageIndex: primary.object.pageIndex,
+    rect: primary.object.rect,
+    ...(immediateQuote ? { text: immediateQuote } : {}),
+  });
+  reported.current = immediate;
+  reportToHost({ selection: { selection: immediate } });
+  if (!engine) {
+    return;
+  }
+  const token = ++detailsToken.current;
+  void readRegionDetails(
+    engine,
+    pdf,
+    primary.object.pageIndex + 1,
+    immediate.rect,
+  ).then(
+    ({ text }) => {
+      if (token !== detailsToken.current || reported.current !== immediate) {
+        return;
+      }
+      const quote = annotationQuoteText({
+        pageText: text,
+        ...(contents === undefined ? {} : { contents }),
+      });
+      const detailed = selectionFromAnnotation({
+        pageIndex: primary.object.pageIndex,
+        rect: primary.object.rect,
+        ...(quote ? { text: quote } : {}),
+      });
+      reported.current = detailed;
+      reportToHost({ selection: { selection: detailed } });
+    },
+    () => undefined,
+  );
 }
