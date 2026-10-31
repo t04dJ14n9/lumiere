@@ -10,12 +10,15 @@ is still open; PDFium WASM already exports
 ## What the engines patch does
 
 - Accepts `pageColors` on `PdfRenderPageOptions` (object or `'dark'` / `'normal'`).
-- On **full-page** renders when color-scheme colors are present:
-  - Prefills the bitmap with `pageColors.background` (default white / transparent otherwise).
+- On **full-page** renders when color-scheme colors are present **and**
+  `FPDF_RenderPageBitmapWithColorScheme_Start` is available (`useColorScheme`):
+  - Prefills the bitmap with `pageColors.background` **only on that path**
+    (same gate as ColorScheme Start — never dark-fill then Matrix).
   - Calls `FPDF_RenderPageBitmapWithColorScheme_Start` + `Continue` / `Close`
     with an `FPDF_COLORSCHEME` (path/text fill and stroke).
   - Optionally sets `FPDF_CONVERT_FILL_TO_STROKE` when `convertFillToStroke` is true.
-- **Partial rect** and annotation bitmaps stay on the Matrix path (v1).
+- **Partial rect** / annotation bitmaps, or missing ColorScheme Start: soft-fail to
+  **Normal** Matrix with the default white / transparent fill (v1).
 - Covers both `pdfium-direct-engine` and `pdfium-worker-engine` bundles.
 
 Patch files:

@@ -22,8 +22,8 @@ Pinned `@embedpdf/pdfium@2.15.1` already exports `FPDF_RenderPageBitmapWithColor
 | Delivery | **`pnpm patch`** on `@embedpdf/engines@2.15.1` (and `@embedpdf/models` types if options typing lives there). Prefer patch over a full vendor tree copy. Touch `@embedpdf/plugin-render` only if `pageColors` is stripped before the engine. |
 | WASM | **Do not** rebuild or replace `pdfium.wasm`. |
 | Engine flag | Flip `PAGE_COLORS_ENGINE_AVAILABLE` to **`true`** once the patched path is proven. |
-| Full-page dark | Prefill bitmap background (~`#1e1e1e`) → `FPDF_RenderPageBitmapWithColorScheme_Start` with light text/path colors (match tokens already sketched in `page-bitmaps.tsx`) → Continue/Close. |
-| Partial rect / annot bitmaps | **Keep Matrix** in v1 (or soft-fail to Normal for those calls). Full pages are the reading path. |
+| Full-page dark | When ColorScheme Start is taken: prefill bitmap background (~`#1e1e1e`) → `FPDF_RenderPageBitmapWithColorScheme_Start` with light text/path (~`#e8e6e3`) → Continue/Close. Dark fill is gated on that same `useColorScheme` path. |
+| Partial rect / annot bitmaps | Soft-fail to **Normal**: keep Matrix, and keep the **default white/transparent fill** (do **not** apply `pageColors.background` unless the ColorScheme Start path runs). Full pages are the reading path. |
 | CSS invert | Still **out** (parent design non-goal). |
 | Scanned / image pages | Still stay bright (PDFium limit). Document in settings blurb. |
 | Upstream | Optional later: contribute patch upstream. **Not** a merge gate for this PR. |
