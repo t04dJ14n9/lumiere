@@ -25,6 +25,7 @@ export const VIEW_COMMAND_IDS = {
   annotationUndo: "lumiere.pdf.annotationUndo",
   annotationRedo: "lumiere.pdf.annotationRedo",
   annotationRetrySave: "lumiere.pdf.annotationRetrySave",
+  deleteAnnotation: "lumiere.pdf.deleteAnnotation",
   goToPage: "lumiere.pdf.goToPage",
   selectZoom: "lumiere.pdf.selectZoom",
 } as const;

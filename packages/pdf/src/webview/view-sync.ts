@@ -119,6 +119,7 @@ interface ActionContext {
   setAnnotationColor: (color: string) => void;
   annotationUndo: () => void;
   annotationRedo: () => void;
+  deleteSelectedAnnotations: () => void;
   setChoices: (choices: Partial<ViewChoices>) => void;
   /** Zoom to a level, within the viewer's range. */
   zoomTo: (level: number) => void;
@@ -177,6 +178,8 @@ const ACTIONS: Handlers = {
     setAnnotationColor(color),
   annotationUndo: (_, { annotationUndo }) => annotationUndo(),
   annotationRedo: (_, { annotationRedo }) => annotationRedo(),
+  deleteSelectedAnnotations: (_, { deleteSelectedAnnotations }) =>
+    deleteSelectedAnnotations(),
 };
 
 /**
@@ -193,6 +196,7 @@ export function useViewActions(
     setColor: (color: string) => void;
     undo: () => void;
     redo: () => void;
+    deleteSelectedAnnotations: () => void;
   },
 ): (action: ViewerAction) => void {
   const { provides: zoom, state } = useZoom(DOCUMENT_ID);
@@ -204,6 +208,7 @@ export function useViewActions(
     setAnnotationColor: options.setColor,
     annotationUndo: options.undo,
     annotationRedo: options.redo,
+    deleteSelectedAnnotations: options.deleteSelectedAnnotations,
     setChoices: options.setChoices,
     zoom,
     level: state.currentZoomLevel,

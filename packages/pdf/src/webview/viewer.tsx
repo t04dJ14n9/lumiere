@@ -32,6 +32,7 @@ import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
 import { useAnnotationSaveSession } from "./annotation-session";
 import { useAnnotationSelection } from "./annotation-selection";
+import { shouldDeleteAnnotationOnKey } from "../shared/annotation-delete-keys";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
@@ -131,6 +132,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     setColor: annotation.setColor,
     undo: annotation.undo,
     redo: annotation.redo,
+    deleteSelectedAnnotations: annotationSelection.deleteSelected,
   });
   useHostMessages({
     show: navigation.show,
@@ -146,7 +148,14 @@ function useViewerState(pdf: PdfDocumentObject) {
     setPageColors: rememberPageColors,
     retryAnnotationSave: annotationSave.retry,
   });
-  useViewerKeys({ selection, search, tool, setTool });
+  useViewerKeys({
+    selection,
+    search,
+    tool,
+    setTool,
+    hasAnnotationSelection: annotationSelection.hasAnnotationSelection,
+    deleteSelectedAnnotations: annotationSelection.deleteSelected,
+  });
   return {
     choices,
     smooth,
@@ -254,6 +263,8 @@ function useViewerKeys(state: {
   search: ReturnType<typeof useSearch>;
   tool: string;
   setTool: (tool: "text" | "region" | "annotate") => void;
+  hasAnnotationSelection: boolean;
+  deleteSelectedAnnotations: () => void;
 }): void {
   const latest = useRef(state);
   latest.current = state;
@@ -264,11 +275,28 @@ function useViewerKeys(state: {
         latest.current.search.open();
       } else if (event.key === "Escape") {
         onEscape(latest.current);
+      } else if (
+        shouldDeleteAnnotationOnKey({
+          key: event.key,
+          annotate: latest.current.tool === "annotate",
+          hasAnnotationSelection: latest.current.hasAnnotationSelection,
+          editable: isEditableTarget(event.target),
+        })
+      ) {
+        event.preventDefault();
+        latest.current.deleteSelectedAnnotations();
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    target.closest('input, textarea, [contenteditable="true"]') !== null
+  );
 }
 
 function onEscape(state: {

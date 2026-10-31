@@ -1084,6 +1084,12 @@
         "enablement": "lumiere.pdf.pdfActive"
       },
       {
+        "command": "lumiere.pdf.deleteAnnotation",
+        "title": "Delete Annotation",
+        "category": "PDF",
+        "enablement": "lumiere.pdf.pdfActive && lumiere.pdf.tool == 'annotate' && lumiere.pdf.hasSelection"
+      },
+      {
         "command": "lumiere.pdf.selectToolbarMode",
         "title": "Choose Toolbar Location…",
         "category": "PDF",
@@ -2158,6 +2164,10 @@
           "when": "false"
         },
         {
+          "command": "lumiere.pdf.deleteAnnotation",
+          "when": "false"
+        },
+        {
           "command": "lumiere.pdf.goToOutlineItem",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
         },
@@ -2351,6 +2361,11 @@
           "command": "lumiere.pdf.copyLinkForAgent",
           "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.hasSelection",
           "group": "0_agent@1"
+        },
+        {
+          "command": "lumiere.pdf.deleteAnnotation",
+          "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.tool == 'annotate' && lumiere.pdf.hasSelection",
+          "group": "0_agent@3"
         },
         {
           "command": "lumiere.pdf.goToPage",

@@ -235,14 +235,14 @@
     },
     {
       "command": "lumiere.pdf.pickAnnotationTool",
-      "title": "Annotation Tool…",
+      "title": "Annotation Tool\u2026",
       "category": "PDF",
       "icon": "$(paintcan)",
       "enablement": "lumiere.pdf.pdfActive"
     },
     {
       "command": "lumiere.pdf.pickAnnotationColor",
-      "title": "Annotation Color…",
+      "title": "Annotation Color\u2026",
       "category": "PDF",
       "icon": "$(symbol-color)",
       "enablement": "lumiere.pdf.pdfActive"
@@ -266,6 +266,12 @@
       "title": "Retry Annotation Save",
       "category": "PDF",
       "enablement": "lumiere.pdf.pdfActive"
+    },
+    {
+      "command": "lumiere.pdf.deleteAnnotation",
+      "title": "Delete Annotation",
+      "category": "PDF",
+      "enablement": "lumiere.pdf.pdfActive && lumiere.pdf.tool == 'annotate' && lumiere.pdf.hasSelection"
     },
     {
       "command": "lumiere.pdf.selectToolbarMode",
@@ -546,6 +552,10 @@
         "when": "false"
       },
       {
+        "command": "lumiere.pdf.deleteAnnotation",
+        "when": "false"
+      },
+      {
         "command": "lumiere.pdf.goToOutlineItem",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
       },
@@ -709,6 +719,11 @@
         "command": "lumiere.pdf.copyLinkForAgent",
         "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.hasSelection",
         "group": "0_agent@1"
+      },
+      {
+        "command": "lumiere.pdf.deleteAnnotation",
+        "when": "webviewId == 'lumiere.pdf.viewer' && lumiere.pdf.tool == 'annotate' && lumiere.pdf.hasSelection",
+        "group": "0_agent@3"
       },
       {
         "command": "lumiere.pdf.goToPage",
