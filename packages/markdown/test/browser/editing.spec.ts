@@ -385,7 +385,9 @@ test("Mermaid host has Obsidian pad/align; hover badges remain present", async (
     const host = document.querySelector(
       'pre[data-fence="mermaid"]:has(> svg)',
     ) as HTMLElement | null;
-    if (!host) return null;
+    if (!host) {
+      return null;
+    }
     const style = getComputedStyle(host);
     return {
       padding: style.padding,
