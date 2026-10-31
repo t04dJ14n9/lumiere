@@ -21,6 +21,8 @@ export interface PageProps {
   devicePixelRatio: number;
   highlight: Highlight | undefined;
   region: RegionSelection | undefined;
+  /** When true, AnnotationLayer receives pointer events for hit-test/select. */
+  annotate: boolean;
   /** Open a page, from `top` points below its top when given. */
   onOpenPage: (page: number, top?: number) => void;
 }
@@ -28,9 +30,9 @@ export interface PageProps {
 /**
  * One page, as layers from bottom to top: the rendered image, search hits,
  * clickable links, a highlighted location, the selected region, annotations
- * (absolute overlay; pointer-events none so link hit-targets do not steal
- * region/text drags), and EmbedPDF's text selection (which also draws the
- * region being dragged).
+ * (absolute overlay; pointer-events auto only in Annotate mode so View
+ * text/region drags stay unblocked), and EmbedPDF's text selection (which
+ * also draws the region being dragged).
  */
 export function Page({
   pdf,
@@ -40,6 +42,7 @@ export function Page({
   devicePixelRatio,
   highlight,
   region,
+  annotate,
   onOpenPage,
 }: PageProps): React.JSX.Element {
   const scale = width / Math.max(1, pdf.pages[pageIndex]?.size.width ?? width);
@@ -55,6 +58,7 @@ export function Page({
       devicePixelRatio={devicePixelRatio}
       highlight={highlight}
       region={region}
+      annotate={annotate}
       onOpenPage={onOpenPage}
     />
   );
@@ -83,6 +87,7 @@ function PageLayers({
   devicePixelRatio,
   highlight,
   region,
+  annotate,
   onOpenPage,
 }: PageProps & { scale: number; rotation: number }): React.JSX.Element {
   const page = pageIndex + 1;
@@ -119,7 +124,7 @@ function PageLayers({
         style={{
           position: "absolute",
           inset: 0,
-          pointerEvents: "none",
+          pointerEvents: annotate ? "auto" : "none",
         }}
       />
       <TextSelection {...layer} />

@@ -28,9 +28,12 @@ import { PagedPadding } from "./paged-padding";
 import { SearchBar } from "./search-bar";
 import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
+import { isEditableTarget } from "./editable-target";
 import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
 import { useAnnotationSaveSession } from "./annotation-session";
+import { useAnnotationSelection } from "./annotation-selection";
+import { shouldDeleteAnnotationOnKey } from "../shared/annotation-delete-keys";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
@@ -84,6 +87,7 @@ export function Viewer({
           choices={choices}
           navigation={navigation}
           selection={view.selection}
+          annotate={tool === "annotate"}
         />
       </div>
     </div>
@@ -100,7 +104,6 @@ function useViewerState(pdf: PdfDocumentObject) {
   const rawNavigation = useNavigation(DOCUMENT_ID, choices.scrollMode, smooth);
   const history = useJumpHistory(rawNavigation, choices, setChoices);
   const navigation = withHistory(rawNavigation, history);
-  const selection = useSelectionReporting(DOCUMENT_ID, pdf);
   const search = useSearch();
   useOutlinePublishing(DOCUMENT_ID, pdf);
   const documentArea = useRef<HTMLDivElement>(null);
@@ -110,9 +113,67 @@ function useViewerState(pdf: PdfDocumentObject) {
   useRestorePosition(navigation, pdf.pages.length);
   const [setting, setToolbar] = useState(currentToolbarSettings);
   const [zen, setZen] = useZen();
+  const tools = useViewerTools(pdf, {
+    navigation,
+    search,
+    choices,
+    setChoices,
+  });
+  useHostMessages({
+    show: navigation.show,
+    history,
+    runAction: tools.runAction,
+    requestLookUp,
+    reportSelection: tools.selection.reportNow,
+    setLookUp,
+    setZen,
+    setToolbar,
+    setMotionSetting,
+    setChoices,
+    setPageColors: rememberPageColors,
+    retryAnnotationSave: tools.annotationSave.retry,
+  });
+  return {
+    choices,
+    smooth,
+    navigation,
+    history,
+    selection: tools.selection,
+    search,
+    documentArea,
+    tool: tools.tool,
+    annotation: tools.annotation,
+    annotationSelection: tools.annotationSelection,
+    runAction: tools.runAction,
+    zen,
+    toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
+  };
+}
+
+type ViewerToolsDeps = {
+  navigation: ReturnType<typeof withHistory>;
+  search: ReturnType<typeof useSearch>;
+  choices: ViewChoices;
+  setChoices: React.Dispatch<React.SetStateAction<ViewChoices>>;
+};
+
+/** Tool mode, annotations, selection reporting, view actions and keys. */
+function useViewerTools(pdf: PdfDocumentObject, deps: ViewerToolsDeps) {
+  const { navigation, search, choices, setChoices } = deps;
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   const annotation = useAnnotationMode(DOCUMENT_ID);
   const annotationSave = useAnnotationSaveSession(pdf);
+  const annotationSelected = useRef(false);
+  const selection = useSelectionReporting(DOCUMENT_ID, pdf, () =>
+    Boolean(annotationSelected.current),
+  );
+  const annotationSelection = useAnnotationSelection(
+    DOCUMENT_ID,
+    pdf,
+    tool === "annotate",
+    selection.setAnnotationRegion,
+  );
+  annotationSelected.current = annotationSelection.hasAnnotationSelection;
   useViewReporting(navigation, tool, choices, annotation);
   const runAction = useViewActions(navigation, search.open, setTool, {
     setChoices: (next) => setChoices((current) => ({ ...current, ...next })),
@@ -120,35 +181,23 @@ function useViewerState(pdf: PdfDocumentObject) {
     setColor: annotation.setColor,
     undo: annotation.undo,
     redo: annotation.redo,
+    deleteSelectedAnnotations: annotationSelection.deleteSelected,
   });
-  useHostMessages({
-    show: navigation.show,
-    history,
-    runAction,
-    requestLookUp,
-    reportSelection: selection.reportNow,
-    setLookUp,
-    setZen,
-    setToolbar,
-    setMotionSetting,
-    setChoices,
-    setPageColors: rememberPageColors,
-    retryAnnotationSave: annotationSave.retry,
-  });
-  useViewerKeys({ selection, search, tool, setTool });
-  return {
-    choices,
-    smooth,
-    navigation,
-    history,
+  useViewerKeys({
     selection,
     search,
-    documentArea,
+    tool,
+    setTool,
+    hasAnnotationSelection: annotationSelection.hasAnnotationSelection,
+    deleteSelectedAnnotations: annotationSelection.deleteSelected,
+  });
+  return {
     tool,
     annotation,
+    annotationSave,
+    annotationSelection,
+    selection,
     runAction,
-    zen,
-    toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },
   };
 }
 
@@ -242,6 +291,8 @@ function useViewerKeys(state: {
   search: ReturnType<typeof useSearch>;
   tool: string;
   setTool: (tool: "text" | "region" | "annotate") => void;
+  hasAnnotationSelection: boolean;
+  deleteSelectedAnnotations: () => void;
 }): void {
   const latest = useRef(state);
   latest.current = state;
@@ -252,6 +303,16 @@ function useViewerKeys(state: {
         latest.current.search.open();
       } else if (event.key === "Escape") {
         onEscape(latest.current);
+      } else if (
+        shouldDeleteAnnotationOnKey({
+          key: event.key,
+          annotate: latest.current.tool === "annotate",
+          hasAnnotationSelection: latest.current.hasAnnotationSelection,
+          editable: isEditableTarget(event.target),
+        })
+      ) {
+        event.preventDefault();
+        latest.current.deleteSelectedAnnotations();
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -289,12 +350,14 @@ function DocumentPages({
   choices,
   navigation,
   selection,
+  annotate,
 }: {
   pdf: PdfDocumentObject;
   scroller: React.RefObject<HTMLDivElement | null>;
   choices: ViewChoices;
   navigation: ReturnType<typeof withHistory>;
   selection: Selection;
+  annotate: boolean;
 }): React.JSX.Element {
   const devicePixelRatio = useDevicePixelRatio();
   const paged = choices.scrollMode === "paged";
@@ -326,6 +389,7 @@ function DocumentPages({
                     devicePixelRatio={devicePixelRatio}
                     highlight={navigation.highlight}
                     region={selection.region}
+                    annotate={annotate}
                     onOpenPage={(page, top) => navigation.goToPage(page, top)}
                   />
                 </div>

@@ -70,7 +70,8 @@ export type ViewerAction =
         | "actualSize"
         | "find"
         | "annotationUndo"
-        | "annotationRedo";
+        | "annotationRedo"
+        | "deleteSelectedAnnotations";
     }
   | { action: "goToPage"; page: number }
   | { action: "setZoom"; percent: number }
@@ -94,6 +95,7 @@ const SIMPLE_ACTIONS = new Set([
   "find",
   "annotationUndo",
   "annotationRedo",
+  "deleteSelectedAnnotations",
 ]);
 
 /** Accept a view report only if it is well-formed (it comes from the untrusted viewer). */

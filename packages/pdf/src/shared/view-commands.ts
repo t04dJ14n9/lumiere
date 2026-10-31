@@ -60,6 +60,7 @@ export const VIEW_ACTION_COMMANDS: readonly ViewActionCommand[] = [
   },
   simple(VIEW_COMMAND_IDS.annotationUndo, "annotationUndo"),
   simple(VIEW_COMMAND_IDS.annotationRedo, "annotationRedo"),
+  simple(VIEW_COMMAND_IDS.deleteAnnotation, "deleteSelectedAnnotations"),
   simple(VIEW_CONTROL_COMMAND_IDS.actualSize, "actualSize"),
   ...PAGE_LAYOUTS.map((item) => ({
     id: viewControlCommandId(item.command),

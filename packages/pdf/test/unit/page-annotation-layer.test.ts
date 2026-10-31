@@ -20,12 +20,13 @@ test("Page mounts AnnotationLayer before SelectionLayer", () => {
   );
 });
 
-test("AnnotationLayer is an absolute non-hit overlay so selection drags keep working", () => {
+test("AnnotationLayer hit-tests only in Annotate mode", () => {
   const source = readFileSync(pagePath, "utf8");
+  assert.match(source, /annotate:\s*boolean/);
   const block = source.slice(
     source.indexOf("<AnnotationLayer"),
     source.indexOf("/>", source.indexOf("<AnnotationLayer")) + 2,
   );
   assert.match(block, /position:\s*"absolute"/);
-  assert.match(block, /pointerEvents:\s*"none"/);
+  assert.match(block, /pointerEvents:\s*annotate\s*\?\s*"auto"\s*:\s*"none"/);
 });

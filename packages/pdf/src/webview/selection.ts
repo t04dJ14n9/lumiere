@@ -5,9 +5,12 @@ import { useSelectionCapability } from "@embedpdf/plugin-selection/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageRect } from "../shared/geometry";
 import type { RegionSelection } from "../shared/selection";
+import { isEditableTarget } from "./editable-target";
 import { postToHost, reportToHost } from "./host";
 import { followMenuContext } from "./menu-context";
 import { readRegionDetails } from "./region-details";
+
+type Engine = Parameters<typeof readRegionDetails>[0];
 
 /** Drags smaller than this (in points) are clicks, not regions. */
 const MIN_REGION_SIZE = 2;
@@ -22,6 +25,7 @@ const MIN_REGION_SIZE = 2;
 export function useSelectionReporting(
   documentId: string,
   pdf: PdfDocumentObject,
+  extraHasSelection?: () => boolean,
 ) {
   const { provides: selection } = useSelectionCapability();
   const { registry } = useRegistry();
@@ -29,6 +33,8 @@ export function useSelectionReporting(
   const tracker = useRef<SelectionTracker | undefined>(undefined);
   tracker.current ??= new SelectionTracker(setRegion);
   const state = tracker.current;
+  const extra = useRef(extraHasSelection);
+  extra.current = extraHasSelection;
   useEffect(() => {
     if (!selection) {
       return;
@@ -43,7 +49,8 @@ export function useSelectionReporting(
         document,
         () =>
           Boolean(state.region) ||
-          Boolean(selection?.forDocument(documentId).getState().selection),
+          Boolean(selection?.forDocument(documentId).getState().selection) ||
+          Boolean(extra.current?.()),
       ),
     [state, documentId, selection],
   );
@@ -58,32 +65,67 @@ export function useSelectionReporting(
   /** Clear whatever is selected, text or region (Escape). */
   const clear = useCallback((): void => {
     if (state.region) {
+      // Escape always clears the host region (user asked to clear), including
+      // annotation-owned ones; annotate mode exit / EmbedPDF may re-report.
       state.changeRegion(undefined);
     }
     // Reported to the extension by the selection change handler.
     selection?.forDocument(documentId).clear();
   }, [state, documentId, selection]);
-  return { region, clear, copyLinkForAgent, reportNow };
+  const setAnnotationRegion = useCallback(
+    (
+      next: RegionSelection | undefined,
+      enrich?: { engine: Engine; pdf: PdfDocumentObject },
+    ): void => {
+      state.setAnnotationRegion(next, enrich);
+    },
+    [state],
+  );
+  return { region, clear, copyLinkForAgent, reportNow, setAnnotationRegion };
 }
 
-type Engine = Parameters<typeof readRegionDetails>[0];
-
 /** What is selected, as last reported to the extension. */
-class SelectionTracker {
+export class SelectionTracker {
   region: RegionSelection | undefined;
   /** The selected text, for Cmd/Ctrl+C. */
   selectedText: string | undefined;
   /** The region's details being read, if any. */
   private regionDetails: Promise<void> | undefined;
+  /**
+   * True while `region` came from annotation selection (`setAnnotationRegion`).
+   * Empty-space / marquee-cancel must not clear those; annotation clears stay
+   * owned by useAnnotationSelection / EmbedPDF selection changes.
+   */
+  private annotationOwned = false;
 
   constructor(
     private readonly setRegion: (region: RegionSelection | undefined) => void,
   ) {}
 
   changeRegion(next: RegionSelection | undefined): void {
+    if (!next) {
+      this.annotationOwned = false;
+    }
     this.region = next;
     this.setRegion(next);
     reportToHost({ selection: { selection: next ?? null } });
+  }
+
+  /**
+   * Annotation selection uses the same region channel as marquee regions so
+   * textCleared / reportSelection / ensureSelection stay consistent.
+   */
+  setAnnotationRegion(
+    next: RegionSelection | undefined,
+    enrich?: { engine: Engine; pdf: PdfDocumentObject },
+  ): void {
+    this.annotationOwned = next !== undefined;
+    this.changeRegion(next);
+    if (next && enrich?.engine) {
+      this.regionDetails = this.readDetails(enrich.engine, enrich.pdf, next);
+    } else {
+      this.regionDetails = undefined;
+    }
   }
 
   /** Follow EmbedPDF's selection events; returns how to stop. */
@@ -108,7 +150,7 @@ class SelectionTracker {
         }
         if (marqueeEnded) {
           marqueeEnded = false;
-        } else if (this.region) {
+        } else if (this.region && !this.annotationOwned) {
           this.changeRegion(undefined);
         }
       }),
@@ -117,7 +159,7 @@ class SelectionTracker {
         this.regionDrawn(event, source);
       }),
       scope.onEmptySpaceClick(() => {
-        if (this.region) {
+        if (this.region && !this.annotationOwned) {
           this.changeRegion(undefined);
         }
       }),
@@ -144,6 +186,7 @@ class SelectionTracker {
     if (!scope.getState().selection) {
       return;
     }
+    this.annotationOwned = false;
     this.region = undefined;
     this.setRegion(undefined);
     void reportText(scope).then((text) => {
@@ -173,6 +216,7 @@ class SelectionTracker {
       page: pageIndex + 1,
       rect: toPageRect(rect),
     };
+    this.annotationOwned = false;
     this.changeRegion(region);
     const engine = source.engine();
     if (engine) {
@@ -214,7 +258,7 @@ function useCopiedText(state: SelectionTracker): void {
   useEffect(() => {
     const onCopy = (event: ClipboardEvent): void => {
       const text = state.selectedText;
-      if (!text || !event.clipboardData || isEditable(event.target)) {
+      if (!text || !event.clipboardData || isEditableTarget(event.target)) {
         return;
       }
       event.clipboardData.setData("text/plain", text);
@@ -247,13 +291,6 @@ function reportText(scope: SelectionScope): Promise<string | undefined> {
       () => resolve(undefined),
     );
   });
-}
-
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    target.closest('input, textarea, [contenteditable="true"]') !== null
-  );
 }
 
 function toPageRect(rect: Rect): PageRect {
