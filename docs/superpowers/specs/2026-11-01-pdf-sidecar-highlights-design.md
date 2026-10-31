@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Approved:** user via Lumière Projects (Asia/Shanghai / America/Los_Angeles, Oct 31–Nov 1 2026)  
-**Amendments:** Copy link to this rename (was “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**); cite paragraph auto-highlight; bibliography list UI + jumps (scope A); **hard invariant — PDF never modified in sidecar mode** — user confirmed via Projects  
+**Amendments:** Copy link to this rename (was “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**); cite paragraph auto-highlight; bibliography list UI + jumps (scope A); **hard invariant — PDF never modified in sidecar mode** — user confirmed via Projects; **setting for sidecar storage location** (`lumiere.pdf.sidecar.location` / `.directory`; sibling vs workspace folder only) — user ask via Projects (pt11u)  
 **Repo:** `t04dJ14n9/lumiere`  
 **Package:** `packages/pdf` (`@workshop/pdf`), with Markdown link resolution for any `.md`  
 **Risk:** Low for this docs PR; product/UI Medium when implemented  
@@ -34,7 +34,10 @@ For research PDFs, also surface **citations**: auto-highlight paragraphs that co
 | Topic | Decision |
 |--------|----------|
 | Default mode | **Sidecar Markdown** for highlights. **Hard invariant:** the PDF file is never modified in this mode (highlights / cites / refs list = overlay + sidecar only). |
-| Sidecar path | `paper.pdf.lumiere.md` next to `paper.pdf` (same directory, basename = PDF name + `.lumiere.md`). No existing vault convention for annotation sidecars; this is the new convention. |
+| Sidecar path | **Default:** `paper.pdf.lumiere.md` next to `paper.pdf` (same directory, basename = PDF name + `.lumiere.md`). **Configurable** via `lumiere.pdf.sidecar.location` / `lumiere.pdf.sidecar.directory` (see [Sidecar storage location](#sidecar-storage-location)). No existing vault convention for annotation sidecars; sibling naming is the new convention. |
+| Sidecar location setting | VS Code/Cursor settings under the Lumière PDF namespace (matches `package.json` `contributes.configuration` style `lumiere.pdf.*`): **`lumiere.pdf.sidecar.location`** (enum) and **`lumiere.pdf.sidecar.directory`** (string path). |
+| Sidecar location policies (v1) | Exactly **two** modes: (1) **`sibling`** (default) — `paper.pdf.lumiere.md` beside the PDF; (2) **`directory`** — flat file in a user-picked **workspace folder** (path relative to the workspace root only; no absolute / outside-workspace paths), same basename `paper.pdf.lumiere.md`. Collision note when two PDFs share a basename (see section). |
+| Sidecar discovery / migration | Resolve write/load path from the setting first; if the configured path is missing on open, **also check the sibling** `*.pdf.lumiere.md` so notes created under the old default are not orphaned. |
 | Sidecar contents | (a) machine **highlight blocks** (stable `id`, page, `segmentRects`, quote + surrounding context); (b) optional human **notes/answers** as normal Markdown. |
 | Format | Lumière-private Markdown blocks in v1 (not W3C JSON-LD). |
 | On open | Load sidecar → `importAnnotations()` as **overlay only**. |
@@ -67,9 +70,78 @@ Sidecar-first was the 2026-10-10 feasibility default; direct-to-PDF superseded i
 - A setting may expose “burn into PDF” later; it is out of v1.
 - Cite auto-highlights are **not** user Annotate commits; they do not become ordinary sidecar highlight blocks unless the user explicitly promotes/saves one (optional follow-up; not required in v1).
 
+## Sidecar storage location
+
+Users can choose where sidecar Markdown files live via **exactly two modes**: beside the PDF (default) or a folder in the workspace. PDF bytes are never modified regardless of location (hard invariant).
+
+### Settings (propose for `package.json` `contributes.configuration`)
+
+Ids follow existing Lumière PDF naming (`lumiere.pdf.view.*`, `lumiere.pdf.toolbar.*`, `lumiere.pdf.agentBridge.enabled`, …):
+
+| Id | Type | Default | Purpose |
+|----|------|---------|---------|
+| `lumiere.pdf.sidecar.location` | enum: `"sibling"` \| `"directory"` | `"sibling"` | Storage policy for highlight sidecars. |
+| `lumiere.pdf.sidecar.directory` | `string` | `""` (empty) | Workspace-relative folder path used when `location` is `"directory"` (e.g. `notes/pdf-sidecars`). Must resolve under the workspace root — **no absolute paths, no `..` escape outside the workspace**. Ignored when `location` is `"sibling"`. |
+
+UI copy (illustrative): **PDF: Sidecar location** / **PDF: Sidecar directory**. Scope: workspace-overridable (same as other `lumiere.pdf.*` settings).
+
+### Exactly two modes (locked)
+
+1. **Beside the PDF** (`location: "sibling"`, default) — current behaviour.
+2. **Workspace folder** (`location: "directory"`) — user picks a folder path **inside the workspace**; sidecars are stored flat there.
+
+No other policies in v1 (no absolute paths outside the workspace, no mirror-tree, no hashed names, no multi-root search paths).
+
+### Path derivation (v1)
+
+| Policy | Resolved sidecar path for workspace PDF `papers/attn/paper.pdf` |
+|--------|------------------------------------------------------------------|
+| `sibling` (default) | `papers/attn/paper.pdf.lumiere.md` (beside the PDF). |
+| `directory` | `<workspace>/{sidecar.directory}/paper.pdf.lumiere.md` — **flat**, same basename only (no mirror of the PDF’s relative tree). |
+
+Example for `directory`: `"notes/pdf-sidecars"` → `<workspace>/notes/pdf-sidecars/paper.pdf.lumiere.md`.
+
+Validation when `location` is `"directory"`:
+
+- `directory` must be a non-empty workspace-relative path that resolves under the workspace root (reject absolute paths, `~`, and `..` segments that escape the workspace).
+- Empty, absolute, or escaping path → misconfiguration: toast once, **fall back to sibling** for that session (do not invent a hidden folder; do not write outside the workspace).
+
+### Basename collisions (workspace folder)
+
+Two different PDFs that share a basename (e.g. `a/paper.pdf` and `b/paper.pdf`) map to the **same** sidecar path under a flat custom directory. v1 behaviour:
+
+- Prefer documenting the limitation over hashing or mirroring trees.
+- On write conflict (existing sidecar’s front-matter `source` does not match this PDF’s identity — basename and, when available, a stored relative path or content hash hint): do **not** overwrite silently; toast and keep the existing file; user can rename the PDF or pick a different directory / switch to sibling.
+- Front matter should continue to record `source: paper.pdf` (and implementation may add an optional relative path field later without a new design if needed for disambiguation).
+
+Mirror-under-vault / hashed flat names are **out of v1** (possible follow-up if collisions bite).
+
+### Resolve / discovery / migration
+
+When opening a PDF:
+
+1. Compute the **primary** path from `lumiere.pdf.sidecar.location` (+ `.directory` when applicable).
+2. If that file exists → load it.
+3. Else if primary ≠ sibling and a **sibling** `*.pdf.lumiere.md` exists → **load the sibling** (read-only migration discovery so old notes are not orphaned). First user edit that persists may either keep writing the sibling or offer to move/copy into the configured directory — implementation plan picks one; product default: **keep loading sibling until the user moves it**; new highlights for a PDF that had no sidecar yet write to the configured primary path.
+4. Else → empty overlay (create primary path on first highlight commit).
+
+Writes (create/update/delete of highlight blocks) always target the **primary** path when creating a new sidecar; when an existing sidecar was discovered only via sibling fallback, prefer continuing to update that discovered file until an explicit move (avoids duplicating notes). Document the exact “sticky discovered path vs always primary” choice in the implementation plan; both must preserve the hard invariant and never leave the user with two divergent sidecars without warning.
+
+Deep links in notes (`paper.pdf#hl-…`) are unchanged: they address the PDF, not the sidecar path. Sidecar location does not affect `#hl-` resolution.
+
+### Non-goals for this setting (v1)
+
+- Absolute / outside-workspace sidecar directories.
+- Per-PDF overrides.
+- Multiple search directories / path globs.
+- Mirror-relative-tree or hashed filenames.
+- Automatic bulk migrate command (optional follow-up).
+- Changing the `*.pdf.lumiere.md` filename pattern.
+
 ## Sidecar format
 
-Path: for URI `…/paper.pdf`, sidecar is `…/paper.pdf.lumiere.md`.
+**Filename:** always `{pdfBasename}.lumiere.md` (e.g. URI `…/paper.pdf` → `paper.pdf.lumiere.md`).  
+**Directory:** from [Sidecar storage location](#sidecar-storage-location) — default sibling next to the PDF; optional workspace folder via settings (exactly two modes).
 
 Suggested structure (illustrative; field names are normative for v1):
 
@@ -115,7 +187,9 @@ Rules:
 
 ```
 Open paper.pdf
-  → resolve sibling paper.pdf.lumiere.md (missing = empty overlay)
+  → resolve sidecar path from lumiere.pdf.sidecar.* (see Sidecar storage location)
+  → if missing at configured path, fall back read of sibling paper.pdf.lumiere.md (migration)
+  → missing both = empty overlay
   → parse highlight blocks
   → importAnnotations(items) as overlay (tag custom.source = "sidecar")
   → run cite detection → paragraph auto-highlight overlays (tag custom.source = "cite-auto")
@@ -196,8 +270,8 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 
 ## Testing
 
-- **Unit:** sidecar path derivation; parse/serialize round-trip of highlight blocks; id ↔ `#hl-` fragment; strip-by-id before save (fixture PDF bytes must not gain `/Subtype /Highlight` for sidecar or cite-auto ids); re-attach match / no-match; link parser for `#hl-` vs `#page=`; cite-mark detector fixtures (`[12]`, author-year); bib section heuristics; jump target resolution hit/miss; Copy link to this label/payload (no “for Agent” / no bare “Copy Link” in user-facing copy for this command).
-- **Browser:** create highlight → sidecar file appears with block → reopen PDF → overlay visible → Delete removes block → `#hl-` navigation flashes mark; open a paper with cites → paragraph auto-highlights appear; references list populates; jump cite→bib and list→bib; PDF hash unchanged after cite detection.
+- **Unit:** sidecar path derivation for `sibling` and `directory` (workspace-relative only); reject absolute/`..` escape; empty-directory fallback to sibling; sibling migration discovery when primary missing; basename collision / mismatched `source` guard; parse/serialize round-trip of highlight blocks; id ↔ `#hl-` fragment; strip-by-id before save (fixture PDF bytes must not gain `/Subtype /Highlight` for sidecar or cite-auto ids); re-attach match / no-match; link parser for `#hl-` vs `#page=`; cite-mark detector fixtures (`[12]`, author-year); bib section heuristics; jump target resolution hit/miss; Copy link to this label/payload (no “for Agent” / no bare “Copy Link” in user-facing copy for this command).
+- **Browser:** create highlight → sidecar file appears at configured path with block → reopen PDF → overlay visible → Delete removes block → `#hl-` navigation flashes mark; with `directory` set, new sidecar lands in that folder; with only a sibling leftover after switching to `directory`, reopen still loads notes; open a paper with cites → paragraph auto-highlights appear; references list populates; jump cite→bib and list→bib; PDF hash unchanged after cite detection.
 - **Host GUI:** same create/reopen/delete; open a note with `[…](paper.pdf#hl-…)` and confirm jump+flash; references list visible and jumpable; screenshots in the impl PR (highlights + list + cite paragraph).
 - **Save-safety gate:** automated test that after import + cite-auto + forced save path, original PDF hash equals post-save hash for sidecar/cite-only sessions.
 
@@ -209,7 +283,10 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 | Sidecar merge conflicts in git | Markdown is merge-friendly; keep one block per highlight; avoid rewriting unrelated prose. |
 | Layout shift (new PDF version) | Quote + context re-attach; stale styling when unmatched. |
 | Confusion with direct-to-PDF marks already in file | On open, PDF-native annots still show from the file; sidecar overlays are additive and tagged; do not convert existing embedded highlights automatically in v1. |
-| Filename collision | `.pdf.lumiere.md` is distinctive; document in README. |
+| Filename collision (sibling) | `.pdf.lumiere.md` is distinctive; document in README. |
+| Basename collision (custom directory) | Flat v1 + mismatched-`source` guard; document limitation; no silent overwrite. |
+| Orphaned sidecars after changing setting | On open, fall back read sibling when primary missing; sticky discovered path until move. |
+| Empty / absolute / escaping `sidecar.directory` | Fall back to sibling + toast; never write outside the workspace; do not invent a folder. |
 | Cite/bib false positives or missed styles | Start with common numeric + author-year patterns; soft-fail jumps; tune with fixtures from real arXiv/ACM PDFs. |
 | Auto-highlight visual noise | Distinct style from user highlights; allow hide/toggle in impl plan if Host GUI shows clutter. |
 
@@ -219,6 +296,7 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 - New **highlight** commits go to the sidecar by default; they do not remove embedded marks.
 - No automatic “extract embedded → sidecar” in v1 (optional follow-up command).
 - Docs / CAPABILITIES: state that highlight default is sidecar; link this spec; leave direct-to-PDF design as the reference for burn-in tools still on that path.
+- Sidecar **location** setting defaults to sibling (same as today’s convention); changing to a custom directory does not auto-move existing sibling files — discovery fallback keeps them readable (see [Sidecar storage location](#sidecar-storage-location)).
 - User-facing string **Copy link to this** for this handoff (rename path: “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**; payload unchanged). Broader rename of every historical doc string is not required in the impl PR beyond product UI + this design’s wording.
 
 ## Related work (non-goals here)
@@ -232,8 +310,9 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 ## Success criteria
 
 - Highlight create/update/delete never changes PDF bytes when only sidecar highlights (and cite-auto overlays) are involved (hash proof).
-- Sidecar exists at `*.pdf.lumiere.md` with parseable blocks after the first user highlight.
+- Sidecar exists at the configured location as `*.pdf.lumiere.md` with parseable blocks after the first user highlight (default: sibling next to the PDF).
 - Reopen restores overlay from sidecar without user action.
+- `lumiere.pdf.sidecar.location` / `.directory` control where new sidecars are written; sibling fallback finds pre-setting notes.
 - `#hl-<id>` from any Markdown note opens the PDF, scrolls, and flashes.
 - Delete and **Copy link to this** work on overlay marks and update/read the sidecar.
 - Paragraphs with detected in-text cites show auto-highlights; references list is available; jumps work from cites and from list entries to same-PDF bib when resolved.
@@ -242,4 +321,4 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 
 ## Open questions
 
-None for v1 — decisions above are locked (including citation scope A). Implementation may choose highlight-only vs all text-markup subtypes in the first slice, and the exact references-list host view, without a new design pass, as long as the sidecar schema, save-safety rules, Copy link to this rename, and citation behaviours above hold.
+None for v1 — decisions above are locked (including citation scope A and sidecar location settings). Implementation may choose highlight-only vs all text-markup subtypes in the first slice, the exact references-list host view, and sticky-discovered vs always-primary write after sibling migration fallback, without a new design pass, as long as the sidecar schema, location settings, save-safety rules, Copy link to this rename, and citation behaviours above hold.
