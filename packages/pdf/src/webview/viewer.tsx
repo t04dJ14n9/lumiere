@@ -31,6 +31,7 @@ import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
 import { useAnnotationSaveSession } from "./annotation-session";
+import { useAnnotationSelection } from "./annotation-selection";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
@@ -101,7 +102,6 @@ function useViewerState(pdf: PdfDocumentObject) {
   const rawNavigation = useNavigation(DOCUMENT_ID, choices.scrollMode, smooth);
   const history = useJumpHistory(rawNavigation, choices, setChoices);
   const navigation = withHistory(rawNavigation, history);
-  const selection = useSelectionReporting(DOCUMENT_ID, pdf);
   const search = useSearch();
   useOutlinePublishing(DOCUMENT_ID, pdf);
   const documentArea = useRef<HTMLDivElement>(null);
@@ -114,6 +114,16 @@ function useViewerState(pdf: PdfDocumentObject) {
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   const annotation = useAnnotationMode(DOCUMENT_ID);
   const annotationSave = useAnnotationSaveSession(pdf);
+  const annotationSelection = useAnnotationSelection(
+    DOCUMENT_ID,
+    pdf,
+    tool === "annotate",
+  );
+  const annotationSelected = useRef(annotationSelection.hasAnnotationSelection);
+  annotationSelected.current = annotationSelection.hasAnnotationSelection;
+  const selection = useSelectionReporting(DOCUMENT_ID, pdf, () =>
+    Boolean(annotationSelected.current),
+  );
   useViewReporting(navigation, tool, choices, annotation);
   const runAction = useViewActions(navigation, search.open, setTool, {
     setChoices: (next) => setChoices((current) => ({ ...current, ...next })),
@@ -147,6 +157,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     documentArea,
     tool,
     annotation,
+    annotationSelection,
     runAction,
     zen,
     toolbar: { ...setting, mode: zenToolbarMode(setting.mode, zen) },

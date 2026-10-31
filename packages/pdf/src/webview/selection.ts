@@ -22,6 +22,7 @@ const MIN_REGION_SIZE = 2;
 export function useSelectionReporting(
   documentId: string,
   pdf: PdfDocumentObject,
+  extraHasSelection?: () => boolean,
 ) {
   const { provides: selection } = useSelectionCapability();
   const { registry } = useRegistry();
@@ -29,6 +30,8 @@ export function useSelectionReporting(
   const tracker = useRef<SelectionTracker | undefined>(undefined);
   tracker.current ??= new SelectionTracker(setRegion);
   const state = tracker.current;
+  const extra = useRef(extraHasSelection);
+  extra.current = extraHasSelection;
   useEffect(() => {
     if (!selection) {
       return;
@@ -43,7 +46,8 @@ export function useSelectionReporting(
         document,
         () =>
           Boolean(state.region) ||
-          Boolean(selection?.forDocument(documentId).getState().selection),
+          Boolean(selection?.forDocument(documentId).getState().selection) ||
+          Boolean(extra.current?.()),
       ),
     [state, documentId, selection],
   );
