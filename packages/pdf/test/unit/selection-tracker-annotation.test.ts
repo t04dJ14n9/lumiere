@@ -94,11 +94,15 @@ function loadSelectionTracker(reports: unknown[]) {
 function mockSelectionScope() {
   let onSelectionChange: ((range: unknown) => void) | undefined;
   let onEmptySpaceClick: (() => void) | undefined;
-  let onMarqueeChange:
-    | ((event: { rect: unknown }) => void)
-    | undefined;
+  let onMarqueeChange: ((event: { rect: unknown }) => void) | undefined;
   let onMarqueeEnd:
-    | ((event: { pageIndex: number; rect: { origin: { x: number; y: number }; size: { width: number; height: number } } }) => void)
+    | ((event: {
+        pageIndex: number;
+        rect: {
+          origin: { x: number; y: number };
+          size: { width: number; height: number };
+        };
+      }) => void)
     | undefined;
   return {
     scope: {
