@@ -84,6 +84,7 @@ export function Viewer({
           choices={choices}
           navigation={navigation}
           selection={view.selection}
+          annotate={tool === "annotate"}
         />
       </div>
     </div>
@@ -289,12 +290,14 @@ function DocumentPages({
   choices,
   navigation,
   selection,
+  annotate,
 }: {
   pdf: PdfDocumentObject;
   scroller: React.RefObject<HTMLDivElement | null>;
   choices: ViewChoices;
   navigation: ReturnType<typeof withHistory>;
   selection: Selection;
+  annotate: boolean;
 }): React.JSX.Element {
   const devicePixelRatio = useDevicePixelRatio();
   const paged = choices.scrollMode === "paged";
@@ -326,6 +329,7 @@ function DocumentPages({
                     devicePixelRatio={devicePixelRatio}
                     highlight={navigation.highlight}
                     region={selection.region}
+                    annotate={annotate}
                     onOpenPage={(page, top) => navigation.goToPage(page, top)}
                   />
                 </div>
