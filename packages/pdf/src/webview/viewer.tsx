@@ -28,6 +28,7 @@ import { PagedPadding } from "./paged-padding";
 import { SearchBar } from "./search-bar";
 import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
+import { isEditableTarget } from "./editable-target";
 import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
 import { useAnnotationSaveSession } from "./annotation-session";
@@ -162,16 +163,17 @@ function useViewerTools(pdf: PdfDocumentObject, deps: ViewerToolsDeps) {
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   const annotation = useAnnotationMode(DOCUMENT_ID);
   const annotationSave = useAnnotationSaveSession(pdf);
+  const annotationSelected = useRef(false);
+  const selection = useSelectionReporting(DOCUMENT_ID, pdf, () =>
+    Boolean(annotationSelected.current),
+  );
   const annotationSelection = useAnnotationSelection(
     DOCUMENT_ID,
     pdf,
     tool === "annotate",
+    selection.setAnnotationRegion,
   );
-  const annotationSelected = useRef(annotationSelection.hasAnnotationSelection);
   annotationSelected.current = annotationSelection.hasAnnotationSelection;
-  const selection = useSelectionReporting(DOCUMENT_ID, pdf, () =>
-    Boolean(annotationSelected.current),
-  );
   useViewReporting(navigation, tool, choices, annotation);
   const runAction = useViewActions(navigation, search.open, setTool, {
     setChoices: (next) => setChoices((current) => ({ ...current, ...next })),
@@ -316,13 +318,6 @@ function useViewerKeys(state: {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
-}
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    target.closest('input, textarea, [contenteditable="true"]') !== null
-  );
 }
 
 function onEscape(state: {

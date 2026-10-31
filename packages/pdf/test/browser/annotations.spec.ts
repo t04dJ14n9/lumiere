@@ -83,7 +83,7 @@ test("annotation undo clears an in-session highlight", async ({ page }) => {
   await expect.poll(() => highlightMarkCount(page)).toBe(baseline);
 });
 
-test("selected annotation deletes with Delete and reports region selection for Copy Link", async ({
+test("created annotation auto-selects as region and deletes with Delete", async ({
   page,
 }) => {
   await open(page, "?toolbar=chrome");
@@ -107,6 +107,71 @@ test("selected annotation deletes with Delete and reports region selection for C
     .toBe("region");
   await page.keyboard.press("Delete");
   await expect.poll(() => highlightMarkCount(page)).toBe(baseline);
+});
+
+test("click-to-select mark reports region and survives reportSelection", async ({
+  page,
+}) => {
+  await open(page, "?toolbar=chrome");
+  await sendAction(page, { action: "setTool", tool: "annotate" });
+  await sendAction(page, { action: "setAnnotationTool", tool: "highlight" });
+  const baseline = await highlightMarkCount(page);
+  const at = await pagePoint(page, 1);
+  const mid = at(140, TEXT_MIDLINE);
+  await page.mouse.move(...at(74, TEXT_MIDLINE));
+  await page.mouse.down();
+  await page.mouse.move(...at(205, TEXT_MIDLINE), { steps: 10 });
+  await page.mouse.up();
+  await expect.poll(() => highlightMarkCount(page)).toBeGreaterThan(baseline);
+  await expect
+    .poll(async () => {
+      const selection = await lastSelection(page);
+      return selection && typeof selection === "object"
+        ? (selection as { kind?: string }).kind
+        : undefined;
+    })
+    .toBe("region");
+
+  // Escape exits Annotate and clears EmbedPDF selection; re-enter and click the mark.
+  await page.keyboard.press("Escape");
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: "text" });
+  await expect
+    .poll(async () => {
+      const selection = await lastSelection(page);
+      return selection;
+    })
+    .toBeNull();
+  await sendAction(page, { action: "setTool", tool: "annotate" });
+  await page.mouse.click(...mid);
+  await expect
+    .poll(async () => {
+      const selection = await lastSelection(page);
+      return selection && typeof selection === "object"
+        ? (selection as { kind?: string }).kind
+        : undefined;
+    })
+    .toBe("region");
+
+  // Host Copy Link / ensureSelection path: reportSelection keeps the region.
+  const before = await lastSelection(page);
+  await page.evaluate(() =>
+    (window as unknown as { hostSend: (message: unknown) => void }).hostSend({
+      type: "reportSelection",
+    }),
+  );
+  await expect
+    .poll(async () => {
+      const selection = await lastSelection(page);
+      return selection && typeof selection === "object"
+        ? (selection as { kind?: string }).kind
+        : undefined;
+    })
+    .toBe("region");
+  const after = await lastSelection(page);
+  expect(after).toMatchObject({
+    kind: "region",
+    page: (before as { page?: number }).page,
+  });
 });
 
 test("AnnotationLayer is hit-testable only in Annotate mode", async ({

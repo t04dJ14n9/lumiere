@@ -5,9 +5,12 @@ import { useSelectionCapability } from "@embedpdf/plugin-selection/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageRect } from "../shared/geometry";
 import type { RegionSelection } from "../shared/selection";
+import { isEditableTarget } from "./editable-target";
 import { postToHost, reportToHost } from "./host";
 import { followMenuContext } from "./menu-context";
 import { readRegionDetails } from "./region-details";
+
+type Engine = Parameters<typeof readRegionDetails>[0];
 
 /** Drags smaller than this (in points) are clicks, not regions. */
 const MIN_REGION_SIZE = 2;
@@ -67,13 +70,20 @@ export function useSelectionReporting(
     // Reported to the extension by the selection change handler.
     selection?.forDocument(documentId).clear();
   }, [state, documentId, selection]);
-  return { region, clear, copyLinkForAgent, reportNow };
+  const setAnnotationRegion = useCallback(
+    (
+      next: RegionSelection | undefined,
+      enrich?: { engine: Engine; pdf: PdfDocumentObject },
+    ): void => {
+      state.setAnnotationRegion(next, enrich);
+    },
+    [state],
+  );
+  return { region, clear, copyLinkForAgent, reportNow, setAnnotationRegion };
 }
 
-type Engine = Parameters<typeof readRegionDetails>[0];
-
 /** What is selected, as last reported to the extension. */
-class SelectionTracker {
+export class SelectionTracker {
   region: RegionSelection | undefined;
   /** The selected text, for Cmd/Ctrl+C. */
   selectedText: string | undefined;
@@ -88,6 +98,22 @@ class SelectionTracker {
     this.region = next;
     this.setRegion(next);
     reportToHost({ selection: { selection: next ?? null } });
+  }
+
+  /**
+   * Annotation selection uses the same region channel as marquee regions so
+   * textCleared / reportSelection / ensureSelection stay consistent.
+   */
+  setAnnotationRegion(
+    next: RegionSelection | undefined,
+    enrich?: { engine: Engine; pdf: PdfDocumentObject },
+  ): void {
+    this.changeRegion(next);
+    if (next && enrich?.engine) {
+      this.regionDetails = this.readDetails(enrich.engine, enrich.pdf, next);
+    } else {
+      this.regionDetails = undefined;
+    }
   }
 
   /** Follow EmbedPDF's selection events; returns how to stop. */
@@ -218,7 +244,7 @@ function useCopiedText(state: SelectionTracker): void {
   useEffect(() => {
     const onCopy = (event: ClipboardEvent): void => {
       const text = state.selectedText;
-      if (!text || !event.clipboardData || isEditable(event.target)) {
+      if (!text || !event.clipboardData || isEditableTarget(event.target)) {
         return;
       }
       event.clipboardData.setData("text/plain", text);
@@ -251,13 +277,6 @@ function reportText(scope: SelectionScope): Promise<string | undefined> {
       () => resolve(undefined),
     );
   });
-}
-
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    target.closest('input, textarea, [contenteditable="true"]') !== null
-  );
 }
 
 function toPageRect(rect: Rect): PageRect {

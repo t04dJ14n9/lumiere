@@ -9,18 +9,22 @@ import {
   selectionFromAnnotation,
 } from "../shared/annotation-handoff";
 import type { RegionSelection } from "../shared/selection";
-import { reportToHost } from "./host";
-import { readRegionDetails } from "./region-details";
+
+export type SetAnnotationRegion = (
+  next: RegionSelection | undefined,
+  enrich?: { engine: PdfEngine; pdf: PdfDocumentObject },
+) => void;
 
 /**
  * While Annotate mode is on, mirror EmbedPDF's selected annotations into the
- * host selection (region shape) so Copy Link for Agent reuses AgentHandoff,
- * and expose delete for the selected mark(s).
+ * host selection via SelectionTracker (same path as marquee regions) so Copy
+ * Link for Agent / ensureSelection stay consistent, and expose delete.
  */
 export function useAnnotationSelection(
   documentId: string,
   pdf: PdfDocumentObject,
   annotate: boolean,
+  setAnnotationRegion: SetAnnotationRegion,
 ): {
   hasAnnotationSelection: boolean;
   deleteSelected: () => void;
@@ -28,11 +32,17 @@ export function useAnnotationSelection(
   const { provides: annots } = useAnnotationCapability();
   const { registry } = useRegistry();
   const [selected, setSelected] = useState<TrackedAnnotation[]>([]);
-  const reported = useRef<RegionSelection | undefined>(undefined);
-  const detailsToken = useRef(0);
+  const owned = useRef(false);
+  const setRegion = useRef(setAnnotationRegion);
+  setRegion.current = setAnnotationRegion;
 
   useEffect(() => {
-    if (!annots || !annotate) {
+    if (!annotate) {
+      annots?.forDocument(documentId).deselectAnnotation();
+      setSelected([]);
+      return;
+    }
+    if (!annots) {
       setSelected([]);
       return;
     }
@@ -44,15 +54,15 @@ export function useAnnotationSelection(
 
   useEffect(() => {
     if (!annotate || selected.length === 0) {
-      clearAnnotationReport(reported, detailsToken);
+      clearOwnedAnnotationRegion(owned, setRegion.current);
       return;
     }
-    reportAnnotationSelection({
+    applyAnnotationRegion({
       primary: selected[0]!,
       pdf,
       engine: registry?.getEngine(),
-      reported,
-      detailsToken,
+      owned,
+      setAnnotationRegion: setRegion.current,
     });
   }, [annotate, selected, pdf, registry]);
 
@@ -71,26 +81,25 @@ export function useAnnotationSelection(
   };
 }
 
-function clearAnnotationReport(
-  reported: { current: RegionSelection | undefined },
-  detailsToken: { current: number },
+function clearOwnedAnnotationRegion(
+  owned: { current: boolean },
+  setAnnotationRegion: SetAnnotationRegion,
 ): void {
-  detailsToken.current += 1;
-  if (!reported.current) {
+  if (!owned.current) {
     return;
   }
-  reported.current = undefined;
-  reportToHost({ selection: { selection: null } });
+  owned.current = false;
+  setAnnotationRegion(undefined);
 }
 
-function reportAnnotationSelection(args: {
+function applyAnnotationRegion(args: {
   primary: TrackedAnnotation;
   pdf: PdfDocumentObject;
   engine: PdfEngine | undefined;
-  reported: { current: RegionSelection | undefined };
-  detailsToken: { current: number };
+  owned: { current: boolean };
+  setAnnotationRegion: SetAnnotationRegion;
 }): void {
-  const { primary, pdf, engine, reported, detailsToken } = args;
+  const { primary, pdf, engine, owned, setAnnotationRegion } = args;
   const contents =
     typeof primary.object.contents === "string"
       ? primary.object.contents
@@ -103,34 +112,6 @@ function reportAnnotationSelection(args: {
     rect: primary.object.rect,
     ...(immediateQuote ? { text: immediateQuote } : {}),
   });
-  reported.current = immediate;
-  reportToHost({ selection: { selection: immediate } });
-  if (!engine) {
-    return;
-  }
-  const token = ++detailsToken.current;
-  void readRegionDetails(
-    engine,
-    pdf,
-    primary.object.pageIndex + 1,
-    immediate.rect,
-  ).then(
-    ({ text }) => {
-      if (token !== detailsToken.current || reported.current !== immediate) {
-        return;
-      }
-      const quote = annotationQuoteText({
-        pageText: text,
-        ...(contents === undefined ? {} : { contents }),
-      });
-      const detailed = selectionFromAnnotation({
-        pageIndex: primary.object.pageIndex,
-        rect: primary.object.rect,
-        ...(quote ? { text: quote } : {}),
-      });
-      reported.current = detailed;
-      reportToHost({ selection: { selection: detailed } });
-    },
-    () => undefined,
-  );
+  owned.current = true;
+  setAnnotationRegion(immediate, engine ? { engine, pdf } : undefined);
 }
