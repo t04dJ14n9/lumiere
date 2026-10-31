@@ -65,6 +65,8 @@ export function useSelectionReporting(
   /** Clear whatever is selected, text or region (Escape). */
   const clear = useCallback((): void => {
     if (state.region) {
+      // Escape always clears the host region (user asked to clear), including
+      // annotation-owned ones; annotate mode exit / EmbedPDF may re-report.
       state.changeRegion(undefined);
     }
     // Reported to the extension by the selection change handler.
@@ -89,12 +91,21 @@ export class SelectionTracker {
   selectedText: string | undefined;
   /** The region's details being read, if any. */
   private regionDetails: Promise<void> | undefined;
+  /**
+   * True while `region` came from annotation selection (`setAnnotationRegion`).
+   * Empty-space / marquee-cancel must not clear those; annotation clears stay
+   * owned by useAnnotationSelection / EmbedPDF selection changes.
+   */
+  private annotationOwned = false;
 
   constructor(
     private readonly setRegion: (region: RegionSelection | undefined) => void,
   ) {}
 
   changeRegion(next: RegionSelection | undefined): void {
+    if (!next) {
+      this.annotationOwned = false;
+    }
     this.region = next;
     this.setRegion(next);
     reportToHost({ selection: { selection: next ?? null } });
@@ -108,6 +119,7 @@ export class SelectionTracker {
     next: RegionSelection | undefined,
     enrich?: { engine: Engine; pdf: PdfDocumentObject },
   ): void {
+    this.annotationOwned = next !== undefined;
     this.changeRegion(next);
     if (next && enrich?.engine) {
       this.regionDetails = this.readDetails(enrich.engine, enrich.pdf, next);
@@ -138,7 +150,7 @@ export class SelectionTracker {
         }
         if (marqueeEnded) {
           marqueeEnded = false;
-        } else if (this.region) {
+        } else if (this.region && !this.annotationOwned) {
           this.changeRegion(undefined);
         }
       }),
@@ -147,7 +159,7 @@ export class SelectionTracker {
         this.regionDrawn(event, source);
       }),
       scope.onEmptySpaceClick(() => {
-        if (this.region) {
+        if (this.region && !this.annotationOwned) {
           this.changeRegion(undefined);
         }
       }),
@@ -174,6 +186,7 @@ export class SelectionTracker {
     if (!scope.getState().selection) {
       return;
     }
+    this.annotationOwned = false;
     this.region = undefined;
     this.setRegion(undefined);
     void reportText(scope).then((text) => {
@@ -203,6 +216,7 @@ export class SelectionTracker {
       page: pageIndex + 1,
       rect: toPageRect(rect),
     };
+    this.annotationOwned = false;
     this.changeRegion(region);
     const engine = source.engine();
     if (engine) {

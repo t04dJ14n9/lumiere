@@ -93,6 +93,13 @@ function loadSelectionTracker(reports: unknown[]) {
 
 function mockSelectionScope() {
   let onSelectionChange: ((range: unknown) => void) | undefined;
+  let onEmptySpaceClick: (() => void) | undefined;
+  let onMarqueeChange:
+    | ((event: { rect: unknown }) => void)
+    | undefined;
+  let onMarqueeEnd:
+    | ((event: { pageIndex: number; rect: { origin: { x: number; y: number }; size: { width: number; height: number } } }) => void)
+    | undefined;
   return {
     scope: {
       onEndSelection: () => () => undefined,
@@ -100,14 +107,47 @@ function mockSelectionScope() {
         onSelectionChange = listener;
         return () => undefined;
       },
-      onMarqueeChange: () => () => undefined,
-      onMarqueeEnd: () => () => undefined,
-      onEmptySpaceClick: () => () => undefined,
+      onMarqueeChange: (listener: (event: { rect: unknown }) => void) => {
+        onMarqueeChange = listener;
+        return () => undefined;
+      },
+      onMarqueeEnd: (
+        listener: (event: {
+          pageIndex: number;
+          rect: {
+            origin: { x: number; y: number };
+            size: { width: number; height: number };
+          };
+        }) => void,
+      ) => {
+        onMarqueeEnd = listener;
+        return () => undefined;
+      },
+      onEmptySpaceClick: (listener: () => void) => {
+        onEmptySpaceClick = listener;
+        return () => undefined;
+      },
       getState: () => ({ selection: undefined }),
       clear: () => undefined,
     },
     /** Simulate EmbedPDF clearing text selection. */
     clearText: () => onSelectionChange?.(null),
+    /** Simulate a click on empty page space. */
+    emptySpaceClick: () => onEmptySpaceClick?.(),
+    /**
+     * Simulate Select Region marquee cancel (rect cleared without a prior
+     * onMarqueeEnd).
+     */
+    marqueeCancel: () => onMarqueeChange?.({ rect: null }),
+    /** Simulate finishing a marquee drag that draws a region. */
+    marqueeEnd: (pageIndex = 0) =>
+      onMarqueeEnd?.({
+        pageIndex,
+        rect: {
+          origin: { x: 10, y: 20 },
+          size: { width: 40, height: 30 },
+        },
+      }),
   };
 }
 
@@ -167,4 +207,76 @@ test("clearing annotation region reports null through the tracker path", () => {
   const last = reports.at(-1) as { selection?: { selection?: unknown } };
   assert.equal(last?.selection?.selection, null);
   assert.equal(tracker.region, undefined);
+});
+
+test("empty-space click does not clear an annotation-owned region", () => {
+  const reports: unknown[] = [];
+  const SelectionTracker = loadSelectionTracker(reports);
+  const tracker = new SelectionTracker(() => undefined);
+  const { scope, emptySpaceClick } = mockSelectionScope();
+  tracker.follow(scope, { engine: () => undefined, pdf: {} });
+
+  tracker.setAnnotationRegion(annotationRegion);
+  const before = reports.length;
+  emptySpaceClick();
+  assert.deepEqual(tracker.region, annotationRegion);
+  assert.equal(
+    reports.length,
+    before,
+    "empty-space click must not wipe annotation region / host snapshot",
+  );
+});
+
+test("marquee-cancel does not clear an annotation-owned region", () => {
+  const reports: unknown[] = [];
+  const SelectionTracker = loadSelectionTracker(reports);
+  const tracker = new SelectionTracker(() => undefined);
+  const { scope, marqueeCancel } = mockSelectionScope();
+  tracker.follow(scope, { engine: () => undefined, pdf: {} });
+
+  tracker.setAnnotationRegion(annotationRegion);
+  const before = reports.length;
+  marqueeCancel();
+  assert.deepEqual(tracker.region, annotationRegion);
+  assert.equal(
+    reports.length,
+    before,
+    "marquee-cancel must not wipe annotation region / host snapshot",
+  );
+});
+
+test("empty-space click still clears a marquee (non-annotation) region", () => {
+  const reports: unknown[] = [];
+  const SelectionTracker = loadSelectionTracker(reports);
+  const tracker = new SelectionTracker(() => undefined);
+  const { scope, emptySpaceClick, marqueeEnd } = mockSelectionScope();
+  tracker.follow(scope, { engine: () => undefined, pdf: {} });
+
+  marqueeEnd(0);
+  assert.ok(tracker.region);
+  assert.equal(tracker.region?.kind, "region");
+  emptySpaceClick();
+  assert.equal(tracker.region, undefined);
+  const last = reports.at(-1) as { selection?: { selection?: unknown } };
+  assert.equal(last?.selection?.selection, null);
+});
+
+test("marquee-cancel still clears a marquee (non-annotation) region", () => {
+  const reports: unknown[] = [];
+  const SelectionTracker = loadSelectionTracker(reports);
+  const tracker = new SelectionTracker(() => undefined);
+  const { scope, marqueeCancel, marqueeEnd } = mockSelectionScope();
+  tracker.follow(scope, { engine: () => undefined, pdf: {} });
+
+  marqueeEnd(0);
+  assert.ok(tracker.region);
+  // After marqueeEnd, EmbedPDF also clears marquee rect; that must not
+  // immediately wipe the region we just set (marqueeEnded guard).
+  marqueeCancel();
+  assert.ok(tracker.region, "post-end marquee clear is ignored once");
+  // A later cancel without a new end (e.g. Select Region tool click) clears.
+  marqueeCancel();
+  assert.equal(tracker.region, undefined);
+  const last = reports.at(-1) as { selection?: { selection?: unknown } };
+  assert.equal(last?.selection?.selection, null);
 });
