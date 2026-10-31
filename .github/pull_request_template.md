@@ -2,6 +2,18 @@
 
 <!-- What changes for the user, and why. Link the issue or phase. -->
 
+## Risk
+
+<!-- Low | Medium | High — one line why (see REVIEW.md). -->
+
+## Testing
+
+<!-- Commands run and outcome. Link CI. Host GUI result if UI. -->
+
+## How to revert
+
+<!-- Revert commit / disable setting / feature flag. -->
+
 ## Checks
 
 - [ ] Unit tests added or updated (a bug fix gets its own commit and a unit

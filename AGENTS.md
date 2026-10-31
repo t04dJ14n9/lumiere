@@ -21,6 +21,7 @@ If the task is a user / third-party custom plugin, read
 
 ## Rules
 
+- PR review layers: see [REVIEW.md](REVIEW.md).
 - Pure code runs anywhere, with no DOM, VS Code or Node APIs:
   `packages/core/src`, `packages/agents/src`, and `src/shared` and
   `src/markdown` in each product.
