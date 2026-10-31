@@ -116,6 +116,7 @@ interface ActionContext {
   openSearch: () => void;
   setTool: (tool: ToolMode) => void;
   setAnnotationTool: (tool: AnnotationToolId | null) => void;
+  setAnnotationColor: (color: string) => void;
   annotationUndo: () => void;
   annotationRedo: () => void;
   setChoices: (choices: Partial<ViewChoices>) => void;
@@ -172,6 +173,8 @@ const ACTIONS: Handlers = {
   setTool: ({ tool }, { setTool }) => setTool(tool),
   setAnnotationTool: ({ tool }, { setAnnotationTool }) =>
     setAnnotationTool(tool),
+  setAnnotationColor: ({ color }, { setAnnotationColor }) =>
+    setAnnotationColor(color),
   annotationUndo: (_, { annotationUndo }) => annotationUndo(),
   annotationRedo: (_, { annotationRedo }) => annotationRedo(),
 };
@@ -187,6 +190,7 @@ export function useViewActions(
   options: {
     setChoices: (choices: Partial<ViewChoices>) => void;
     setAnnotationTool: (tool: AnnotationToolId | null) => void;
+    setColor: (color: string) => void;
     undo: () => void;
     redo: () => void;
   },
@@ -197,6 +201,7 @@ export function useViewActions(
     openSearch,
     setTool,
     setAnnotationTool: options.setAnnotationTool,
+    setAnnotationColor: options.setColor,
     annotationUndo: options.undo,
     annotationRedo: options.redo,
     setChoices: options.setChoices,

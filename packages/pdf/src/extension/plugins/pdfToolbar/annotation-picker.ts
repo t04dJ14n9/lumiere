@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import {
+  ANNOTATION_COLOR_PRESETS,
   ANNOTATION_TOOL_ICONS,
   ANNOTATION_TOOL_IDS,
   ANNOTATION_TOOL_LABELS,
@@ -9,6 +10,9 @@ import {
 import type { PdfPanels } from "../pdf/panels";
 
 type ToolItem = vscode.QuickPickItem & { tool: AnnotationToolId };
+type ColorItem = vscode.QuickPickItem & {
+  color: (typeof ANNOTATION_COLOR_PRESETS)[number];
+};
 
 /** Enter Annotate mode, or leave it when already annotating. */
 export function toggleAnnotate(panels: PdfPanels): void {
@@ -49,5 +53,24 @@ export async function pickAnnotationTool(panels: PdfPanels): Promise<void> {
   });
   if (choice && panels.active === panel) {
     panel.act({ action: "setAnnotationTool", tool: choice.tool });
+  }
+}
+
+/** Pick a preset annotation color for the active tool. */
+export async function pickAnnotationColor(panels: PdfPanels): Promise<void> {
+  const panel = panels.active;
+  if (!panel?.view) {
+    return;
+  }
+  const items: ColorItem[] = ANNOTATION_COLOR_PRESETS.map((color) => ({
+    label: color,
+    color,
+  }));
+  const choice = await vscode.window.showQuickPick(items, {
+    title: "PDF Annotation Color",
+    placeHolder: "Yellow, red, blue, green, purple, or ink",
+  });
+  if (choice && panels.active === panel) {
+    panel.act({ action: "setAnnotationColor", color: choice.color });
   }
 }

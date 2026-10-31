@@ -30,13 +30,11 @@ import { useIgnoreSecondaryButtons } from "./secondary-buttons";
 import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
 import { useAnnotationMode } from "./annotation-mode";
-import { AnnotationToolkit } from "./annotation-toolbar";
 import { useAnnotationSaveSession } from "./annotation-session";
 import { useToolMode } from "./tool-mode";
 import { currentToolbarSettings } from "./toolbar-settings";
 import { rememberPageColors } from "./page-colors";
 import { Toolbar } from "./toolbar";
-import type { ViewerAction } from "../shared/view-state";
 import { useViewActions, useViewReporting } from "./view-sync";
 import { useHostMessages } from "./host-messages";
 import { useWheelZoom } from "./wheel-zoom";
@@ -69,19 +67,6 @@ export function Viewer({
           choices={choices}
           run={view.runAction}
           history={history}
-          annotationTool={view.annotation.annotationTool}
-          canUndo={view.annotation.canUndo}
-          canRedo={view.annotation.canRedo}
-          onAnnotationColor={view.annotation.setColor}
-        />
-      )}
-      {tool === "annotate" && toolbar.mode !== "slim" && (
-        <AnnotationChromeBar
-          annotationTool={view.annotation.annotationTool}
-          canUndo={view.annotation.canUndo}
-          canRedo={view.annotation.canRedo}
-          run={view.runAction}
-          onColor={view.annotation.setColor}
         />
       )}
       <div className="document" ref={view.documentArea}>
@@ -101,36 +86,6 @@ export function Viewer({
           selection={view.selection}
         />
       </div>
-    </div>
-  );
-}
-
-function AnnotationChromeBar({
-  annotationTool,
-  canUndo,
-  canRedo,
-  run,
-  onColor,
-}: {
-  annotationTool: ReturnType<typeof useAnnotationMode>["annotationTool"];
-  canUndo: boolean;
-  canRedo: boolean;
-  run: (action: ViewerAction) => void;
-  onColor: (color: string) => void;
-}): React.JSX.Element {
-  return (
-    <div
-      className="annotation-chrome-bar"
-      role="toolbar"
-      aria-label="PDF annotation bar"
-    >
-      <AnnotationToolkit
-        annotationTool={annotationTool}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        run={run}
-        onColor={onColor}
-      />
     </div>
   );
 }
@@ -162,6 +117,7 @@ function useViewerState(pdf: PdfDocumentObject) {
   const runAction = useViewActions(navigation, search.open, setTool, {
     setChoices: (next) => setChoices((current) => ({ ...current, ...next })),
     setAnnotationTool: annotation.setAnnotationTool,
+    setColor: annotation.setColor,
     undo: annotation.undo,
     redo: annotation.redo,
   });
