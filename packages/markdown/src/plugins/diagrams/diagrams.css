@@ -1,6 +1,6 @@
-/* Mermaid diagrams, centred; failures use Obsidian is-guarded chrome. */
+/* Mermaid diagrams; Obsidian LP host has no pad/center. Failures use is-guarded chrome. */
 pre[data-fence="mermaid"]:has(> svg) {
-  padding: 40px 0 8px;
+  padding: 0;
   /*
    * Scrollport for a native-size SVG. A flowchart's min-content width is the
    * SVG (often thousands of px). That width becomes the note's, because
@@ -16,7 +16,7 @@ pre[data-fence="mermaid"]:has(> svg) {
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  text-align: center;
+  text-align: start;
   background: none;
 }
 pre[data-fence="mermaid"] svg {
@@ -74,7 +74,7 @@ pre[data-fence="mermaid"] svg .internal-link tspan {
 .mermaid-wrapper.is-guarded {
   overflow: hidden;
   border: 1px solid var(--vscode-widget-border, var(--line, #8884));
-  border-radius: 6px;
+  border-radius: 8px;
   text-align: start;
 }
 .mermaid-guard-header {
@@ -92,12 +92,14 @@ pre[data-fence="mermaid"] svg .internal-link tspan {
 }
 .mermaid-guard-title {
   font-weight: 600;
-  font-size: 0.875em;
+  /* fixed: Obsidian --font-ui-small */
+  font-size: 13px;
   color: var(--vscode-editor-foreground, inherit);
 }
 .mermaid-guard-description {
   color: var(--vscode-descriptionForeground, var(--muted, #888));
-  font-size: 0.8125em;
+  /* fixed: Obsidian --font-ui-smaller */
+  font-size: 12px;
   white-space: pre-wrap;
 }
 .mermaid-guard-source {
