@@ -1,0 +1,36 @@
+diff --git a/dist/pdf.d.ts b/dist/pdf.d.ts
+index 84900723053fac91f03bef4930ef6a76c2255125..123868a1c552cf63beec91f03a7ef1035d442e29 100644
+--- a/dist/pdf.d.ts
++++ b/dist/pdf.d.ts
+@@ -2810,6 +2810,19 @@ export interface ConvertToBlobOptions {
+      */
+     quality?: number;
+ }
++
++export type PdfPageColorPreset = 'normal' | 'dark' | 'sepia' | 'grayscale' | 'invert';
++export type PdfPageColors = PdfPageColorPreset | {
++    /** Bitmap/page background, separate from PDF text/path colors */
++    background?: string;
++    /** Convenience color used when specific PDFium colors are omitted */
++    text?: string;
++    pathFill?: string;
++    pathStroke?: string;
++    textFill?: string;
++    textStroke?: string;
++    convertFillToStroke?: boolean;
++};
+ export interface PdfRenderPageOptions extends PdfRenderOptions {
+     /**
+      * Whether to render annotations
+@@ -2824,6 +2837,11 @@ export interface PdfRenderPageOptions extends PdfRenderOptions {
+      * Useful for rendering stamp thumbnails or overlay content.
+      */
+     transparentBackground?: boolean;
++    /**
++     * PDFium page color scheme (text/path recolor). Full-page renders only in
++     * engines that wire FPDF_RenderPageBitmapWithColorScheme_Start.
++     */
++    pageColors?: PdfPageColors;
+ }
+ export interface PdfRenderPageAnnotationOptions extends PdfRenderOptions {
+     /**

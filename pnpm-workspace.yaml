@@ -2,5 +2,10 @@ packages:
   - .
   - packages/*
   - apps/*
+
 onlyBuiltDependencies:
   - esbuild
+
+patchedDependencies:
+  "@embedpdf/engines@2.15.1": patches/@embedpdf__engines@2.15.1.patch
+  "@embedpdf/models@2.15.1": patches/@embedpdf__models@2.15.1.patch
