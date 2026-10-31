@@ -92,11 +92,13 @@ pre[data-fence="mermaid"] svg .internal-link tspan {
 }
 .mermaid-guard-title {
   font-weight: 600;
+  /* fixed: Obsidian --font-ui-small */
   font-size: 13px;
   color: var(--vscode-editor-foreground, inherit);
 }
 .mermaid-guard-description {
   color: var(--vscode-descriptionForeground, var(--muted, #888));
+  /* fixed: Obsidian --font-ui-smaller */
   font-size: 12px;
   white-space: pre-wrap;
 }
