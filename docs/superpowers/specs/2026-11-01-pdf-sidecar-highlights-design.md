@@ -2,11 +2,11 @@
 
 **Date:** 2026-11-01  
 **Approved:** user via Lumière Projects (Asia/Shanghai / America/Los_Angeles, Oct 31–Nov 1 2026)  
-**Amendments:** Copy Link rename; cite paragraph auto-highlight; bibliography list UI + jumps (scope A); **hard invariant — PDF never modified in sidecar mode** — user confirmed via Projects  
+**Amendments:** Copy link to this rename (was “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**); cite paragraph auto-highlight; bibliography list UI + jumps (scope A); **hard invariant — PDF never modified in sidecar mode** — user confirmed via Projects  
 **Repo:** `t04dJ14n9/lumiere`  
 **Package:** `packages/pdf` (`@workshop/pdf`), with Markdown link resolution for any `.md`  
 **Risk:** Low for this docs PR; product/UI Medium when implemented  
-**Ancestry:** supersedes the v1 *default* of `2026-10-30-pdf-annotations-direct-to-pdf-design.md` for **highlights**; re-adopts the 2026-10-10 feasibility preference for sidecar-first storage. #457/#464/#469 remain the create / status-bar / hit-test+Delete+Copy Link foundation (command/menu label **Copy Link**, same clipboard payload).
+**Ancestry:** supersedes the v1 *default* of `2026-10-30-pdf-annotations-direct-to-pdf-design.md` for **highlights**; re-adopts the 2026-10-10 feasibility preference for sidecar-first storage. #457/#464/#469 remain the create / status-bar / hit-test+Delete+Copy Link foundation (command/menu label **Copy link to this**, same clipboard payload; rename path: “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**).
 
 ## Goal
 
@@ -21,7 +21,7 @@ For research PDFs, also surface **citations**: auto-highlight paragraphs that co
 - W3C Web Annotation / JSON-LD interchange (export later).
 - Full product rename Lumière → Lumia (separate plan; do not rename ids or display name in this work).
 - XFDF import/export.
-- MCP / agent **write** tools for highlights (**Copy Link** stays clipboard/handoff only).
+- MCP / agent **write** tools for highlights (**Copy link to this** stays clipboard/handoff only).
 - A new note-graph or literature-manager product (linked notes only via existing `#hl-` / Markdown links already in the sidecar or vault).
 - Changing status-bar Annotate chrome layout beyond wiring highlight commit → sidecar (references list may use a view/panel pattern; see [Citations and bibliography](#citations-and-bibliography)).
 
@@ -42,7 +42,7 @@ For research PDFs, also surface **citations**: auto-highlight paragraphs that co
 | Save safety | Prove with tests that imported overlay annots are not written into the PDF; if EmbedPDF would persist them, strip by id before any `saveAsCopy` / host overwrite. Call out verification as a must-ship gate. |
 | Deep links | Any `.md` may link: `[label](path/to/paper.pdf#hl-<id>)` → open PDF, scroll to that highlight, flash it. Keep today’s `#page=N&viewrect=…`. |
 | Re-attach | Each highlight stores `segmentRects` **and** quote + surrounding context for re-attach when layout shifts (e.g. arXiv v2). |
-| Delete / Copy Link | Overlay marks keep #469 Delete and **Copy Link** behaviour (renamed from “Copy Link for Agent”; same payload so any Markdown can paste it); writes go through the sidecar (delete removes the block; Copy Link uses `#hl-<id>` when the selection is a sidecar highlight). |
+| Delete / Copy link to this | Overlay marks keep #469 Delete and **Copy link to this** behaviour (rename path: “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**; same payload so any Markdown can paste it); writes go through the sidecar (delete removes the block; Copy link to this uses `#hl-<id>` when the selection is a sidecar highlight). |
 | Answers | Notes/answers live in the sidecar or any note, linking via `#hl-…`. |
 | Cite paragraphs | Detect common in-text cite marks → **auto-highlight the paragraph** (overlay, not burned into PDF; may be ephemeral session overlays and/or sidecar-tagged `source: cite-auto` — implementation plan picks persistence; product default is visible auto-highlight without dirtying the PDF). |
 | Bibliography UI | PDF exposes a **references / bibliography list**; selecting an entry jumps to that bib location in the PDF when resolved. |
@@ -144,9 +144,9 @@ Any host save / saveAsCopy path that still runs for other tools
 
 Resolution runs for links in **any** Markdown note in the workspace, not only the sidecar. Markdown package / host link handler must recognize `.pdf#hl-…` the same way it already handles `.pdf#page=`.
 
-**Copy Link** on a selected sidecar highlight copies:
+**Copy link to this** on a selected sidecar highlight copies:
 
-`[basename · p.N](path#hl-<id>)` plus an optional `>` quote line when quote text is available — same handoff shape as #469 (label **Copy Link**, not “Copy Link for Agent”), with `#hl-` instead of `#page=&viewrect=` when the selection is a sidecar highlight. Text/region selection without a highlight still uses `#page=&viewrect=`. Any Markdown note can paste the link.
+`[basename · p.N](path#hl-<id>)` plus an optional `>` quote line when quote text is available — same handoff shape as #469 (label **Copy link to this**; rename path: “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**), with `#hl-` instead of `#page=&viewrect=` when the selection is a sidecar highlight. Text/region selection without a highlight still uses `#page=&viewrect=`. Any Markdown note can paste the link.
 
 ## Re-attach
 
@@ -156,10 +156,10 @@ On open (and optionally on sidecar reload):
 2. If placement looks wrong or a “re-attach” pass is requested: search page text for `quote` near `contextBefore`/`contextAfter`; update `segmentRects` when a unique match is found; rewrite the sidecar block’s rects (and `modified`).
 3. If no unique match: keep last rects, mark the highlight visually as stale (implementation detail), do not invent a second id.
 
-## Copy Link and Delete
+## Copy link to this and Delete
 
 - **Delete** (key or menu, Annotate mode): remove overlay annotation and delete/update the sidecar block; do not rewrite the PDF for that deletion. Does not apply to ephemeral `cite-auto` overlays unless the user has promoted them (v1: cite-auto is not deletable as a sidecar highlight).
-- **Copy Link:** as above (`#hl-<id>` for sidecar highlights). Same clipboard payload as today’s agent handoff; the UI string is **Copy Link**.
+- **Copy link to this:** as above (`#hl-<id>` for sidecar highlights). Same clipboard payload as today’s agent handoff; the UI string is **Copy link to this** (not Chrome’s “Copy link to highlight”; not “Copy Link”).
 - Parity with #469 hit-test rules: AnnotationLayer pointer events only in Annotate mode for user marks.
 
 ## Citations and bibliography
@@ -196,7 +196,7 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 
 ## Testing
 
-- **Unit:** sidecar path derivation; parse/serialize round-trip of highlight blocks; id ↔ `#hl-` fragment; strip-by-id before save (fixture PDF bytes must not gain `/Subtype /Highlight` for sidecar or cite-auto ids); re-attach match / no-match; link parser for `#hl-` vs `#page=`; cite-mark detector fixtures (`[12]`, author-year); bib section heuristics; jump target resolution hit/miss; Copy Link label/payload (no “for Agent” in user-facing copy for this command).
+- **Unit:** sidecar path derivation; parse/serialize round-trip of highlight blocks; id ↔ `#hl-` fragment; strip-by-id before save (fixture PDF bytes must not gain `/Subtype /Highlight` for sidecar or cite-auto ids); re-attach match / no-match; link parser for `#hl-` vs `#page=`; cite-mark detector fixtures (`[12]`, author-year); bib section heuristics; jump target resolution hit/miss; Copy link to this label/payload (no “for Agent” / no bare “Copy Link” in user-facing copy for this command).
 - **Browser:** create highlight → sidecar file appears with block → reopen PDF → overlay visible → Delete removes block → `#hl-` navigation flashes mark; open a paper with cites → paragraph auto-highlights appear; references list populates; jump cite→bib and list→bib; PDF hash unchanged after cite detection.
 - **Host GUI:** same create/reopen/delete; open a note with `[…](paper.pdf#hl-…)` and confirm jump+flash; references list visible and jumpable; screenshots in the impl PR (highlights + list + cite paragraph).
 - **Save-safety gate:** automated test that after import + cite-auto + forced save path, original PDF hash equals post-save hash for sidecar/cite-only sessions.
@@ -219,7 +219,7 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 - New **highlight** commits go to the sidecar by default; they do not remove embedded marks.
 - No automatic “extract embedded → sidecar” in v1 (optional follow-up command).
 - Docs / CAPABILITIES: state that highlight default is sidecar; link this spec; leave direct-to-PDF design as the reference for burn-in tools still on that path.
-- User-facing string **Copy Link** replaces “Copy Link for Agent” for this handoff (payload unchanged). Broader rename of every historical doc string is not required in the impl PR beyond product UI + this design’s wording.
+- User-facing string **Copy link to this** for this handoff (rename path: “Copy Link for Agent” → briefly “Copy Link” → **Copy link to this**; payload unchanged). Broader rename of every historical doc string is not required in the impl PR beyond product UI + this design’s wording.
 
 ## Related work (non-goals here)
 
@@ -235,11 +235,11 @@ When a cite key does not resolve, keep the paragraph highlight; jump fails softl
 - Sidecar exists at `*.pdf.lumiere.md` with parseable blocks after the first user highlight.
 - Reopen restores overlay from sidecar without user action.
 - `#hl-<id>` from any Markdown note opens the PDF, scrolls, and flashes.
-- Delete and **Copy Link** work on overlay marks and update/read the sidecar.
+- Delete and **Copy link to this** work on overlay marks and update/read the sidecar.
 - Paragraphs with detected in-text cites show auto-highlights; references list is available; jumps work from cites and from list entries to same-PDF bib when resolved.
 - Linked notes remain ordinary Markdown `#hl-` / page links only.
 - No placeholder gaps left in this document; implementation plan is the next step after this spec is squash-merged.
 
 ## Open questions
 
-None for v1 — decisions above are locked (including citation scope A). Implementation may choose highlight-only vs all text-markup subtypes in the first slice, and the exact references-list host view, without a new design pass, as long as the sidecar schema, save-safety rules, Copy Link rename, and citation behaviours above hold.
+None for v1 — decisions above are locked (including citation scope A). Implementation may choose highlight-only vs all text-markup subtypes in the first slice, and the exact references-list host view, without a new design pass, as long as the sidecar schema, save-safety rules, Copy link to this rename, and citation behaviours above hold.
