@@ -40,25 +40,35 @@ export const tabModel: TabModel<vscode.Tab> = {
 };
 
 /**
- * Prefer the scheduled tab. VS Code may rebuild Tab objects (no tab event)
- * during the Search wait; match the live native tab by URI and column.
+ * Durable in-flight reclaim identity. VS Code rebuilds Tab objects without a
+ * tab event; uri+column survives that rebuild (a group holds one tab per note).
+ */
+export function reclaimKey(uri: string, column: vscode.ViewColumn): string {
+  return `${column}\0${uri}`;
+}
+
+/**
+ * Prefer the scheduled tab when it is still live. After a Tab rebuild (no tab
+ * event), scan the column like currentTab: match by kind + native URI.
  */
 export function resolveLiveNativeTab(
   tab: vscode.Tab,
   uri: string,
 ): vscode.Tab | undefined {
-  const active = vscode.window.tabGroups.activeTabGroup.activeTab;
-  if (active === tab) {
+  const column = tab.group.viewColumn;
+  const kind = kindOf(tab);
+  const group = vscode.window.tabGroups.all.find(
+    (candidate) => candidate.viewColumn === column,
+  );
+  if (!group) {
+    return undefined;
+  }
+  if (group.tabs.includes(tab) && showsNatively(tab, uri)) {
     return tab;
   }
-  if (
-    active &&
-    showsNatively(active, uri) &&
-    active.group.viewColumn === tab.group.viewColumn
-  ) {
-    return active;
-  }
-  return undefined;
+  return group.tabs.find(
+    (candidate) => kindOf(candidate) === kind && showsNatively(candidate, uri),
+  );
 }
 
 /** Cursor's editor exposes no input; its tabs are matched by their label. */

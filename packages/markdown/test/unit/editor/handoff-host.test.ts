@@ -582,6 +582,30 @@ test("opt-in reclaimInPlace: tab rebuild during Search wait still reclaims workb
   assert.equal(commands[0]?.[2], viewType);
 });
 
+test("opt-in reclaimInPlace: selection ready after tab rebuild reclaims without force timer", async (t) => {
+  // waiting/pending must be keyed by uri+column: after rebuild, selection-driven
+  // ready(liveTab) must hit the in-flight wait — not only the 250ms force path.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  switchToText();
+  rebuildTabModel();
+  const live = group.activeTab!;
+  const editor = nativeHunkEditor(live, 947);
+  selectionChanged.fire({ textEditor: editor });
+  await tick();
+  assert.equal(
+    commands.length,
+    1,
+    "selection ready must open after Tab rebuild without waiting for force",
+  );
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+});
+
 test("opt-in reclaimInPlace: unbidden workbench skip does not write readerText", async (t) => {
   settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
   settings.set("lumiere.markdown.editor.reclaimTextEditor", "off");
@@ -2014,6 +2038,33 @@ test("a second hunk during reveal readiness supersedes the in-flight offset", as
     "superseded first offset must not apply",
   );
   assert.equal(commands.length, 2);
+});
+
+test("a second hunk after tab rebuild supersedes the pending reclaim", async (t) => {
+  // pending keyed by Tab would miss after rebuild: refresh/supersede no-ops and
+  // a second openWith starts beside the first. uri+column keys keep both paths.
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  nativeHunkEditor(tab);
+  t.after(() => stop.dispose());
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1, "first transfer awaits reveal registration");
+  rebuildTabModel();
+  const live = group.activeTab!;
+  const next = nativeHunkEditor(live, 947);
+  selectionChanged.fire({ textEditor: next, kind: 3 });
+  destination.ready();
+  await tick();
+  assert.deepEqual(destination.calls, [
+    next.document.getText().indexOf("Line 948\n"),
+  ]);
+  assert.equal(
+    commands.length,
+    2,
+    "rebuild must not leave a stale pending that blocks supersede",
+  );
 });
 
 for (const optOut of ["Open as Text", "Cursor Edit lease"] as const) {

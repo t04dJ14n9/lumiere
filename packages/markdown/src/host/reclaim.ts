@@ -28,6 +28,7 @@ import {
 import {
   kindOf,
   labelUri,
+  reclaimKey,
   resolveLiveNativeTab,
   showsNatively,
   tabModel,
@@ -201,9 +202,10 @@ function createReclaimTransfer(
   navigation: NativeNavigation | undefined,
   recentTransfers: Bypass,
 ) {
-  const pending = new Map<vscode.Tab, ReclaimRequest>();
+  // Key by uri+column: Tab identity drifts when VS Code rebuilds the model.
+  const pending = new Map<string, ReclaimRequest>();
   const capture = (tab: vscode.Tab, uri: string) => {
-    const request = pending.get(tab);
+    const request = pending.get(reclaimKey(uri, tab.group.viewColumn));
     if (request?.uri === uri && !request.intent?.token.cancelled) {
       refreshRequestSelection(tab, uri, request);
     }
@@ -220,7 +222,6 @@ function createReclaimTransfer(
         recentTransfers,
         navigation,
         capture,
-        tab,
         shown,
         uri,
       });
@@ -234,17 +235,16 @@ function createReclaimTransfer(
 }
 
 function startPendingReclaim(options: {
-  pending: Map<vscode.Tab, ReclaimRequest>;
+  pending: Map<string, ReclaimRequest>;
   recentTransfers: Bypass;
   navigation: NativeNavigation | undefined;
   capture: (tab: vscode.Tab, uri: string) => void;
-  tab: vscode.Tab;
   shown: vscode.Tab;
   uri: string;
 }): void {
-  const { pending, recentTransfers, navigation, capture, tab, shown, uri } =
-    options;
-  const request = pending.get(shown) ?? pending.get(tab);
+  const { pending, recentTransfers, navigation, capture, shown, uri } = options;
+  const key = reclaimKey(uri, shown.group.viewColumn);
+  const request = pending.get(key);
   if (request?.uri === uri && !request.intent?.token.cancelled) {
     // Before delivery: refresh the selection only. After revealOpened has
     // started, a later hunk must cancel and supersede that delivery.
@@ -264,17 +264,14 @@ function startPendingReclaim(options: {
     at: selection?.at,
     to: selection?.to,
   };
-  if (pending.get(tab) === request) {
-    pending.delete(tab);
-  }
-  pending.set(shown, next);
+  pending.set(key, next);
   void reopen(uri, next, navigation)
     .catch((error) => {
       console.error("Lumière editor transfer failed", error);
     })
     .finally(() => {
-      if (pending.get(shown) === next) {
-        pending.delete(shown);
+      if (pending.get(key) === next) {
+        pending.delete(key);
       }
     });
 }
