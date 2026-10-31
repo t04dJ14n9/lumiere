@@ -5,8 +5,8 @@ import {
   renderablePageColors,
 } from "../../src/shared/page-colors-engine";
 
-test("pinned EmbedPDF fails closed: dark intent renders as normal", () => {
-  assert.equal(PAGE_COLORS_ENGINE_AVAILABLE, false);
-  assert.equal(renderablePageColors("dark"), "normal");
+test("patched EmbedPDF exposes page color-scheme: dark intent renders dark", () => {
+  assert.equal(PAGE_COLORS_ENGINE_AVAILABLE, true);
+  assert.equal(renderablePageColors("dark"), "dark");
   assert.equal(renderablePageColors("normal"), "normal");
 });

@@ -961,7 +961,7 @@
           "White paper (classic PDF rendering).",
           "Dark paper with recolored text and vectors; embedded images stay as-is. Scanned pages stay largely bright."
         ],
-        "markdownDescription": "PDF page surface colors. **Follow** tracks `#window.activeColorTheme#` kind. Dark paper needs a PDFium color-scheme hook on EmbedPDF (see embedpdf#679); when unavailable, rendering stays Normal. No CSS invert."
+        "markdownDescription": "PDF page surface colors. **Follow** tracks `#window.activeColorTheme#` kind. Dark paper uses a patched EmbedPDF engines path (`FPDF_RenderPageBitmapWithColorScheme_Start`; see embedpdf#679). Scanned and image-only pages stay largely bright. No CSS invert."
       }
     }
   },
