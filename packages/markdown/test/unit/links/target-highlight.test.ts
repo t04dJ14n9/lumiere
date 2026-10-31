@@ -99,10 +99,24 @@ test("resolveNavigationTarget selects full lines for #L Cursor-style fragments",
     selectTo: line3.to,
   });
   assert.deepEqual(resolveNavigationTarget(state, "L19-L19"), undefined);
-  // Numeric Cursor fragments (`#20`) share the open-native-line parse.
+  // Bare digits are not forced line selection in-Lumière (may be headingId).
+  assert.equal(resolveNavigationTarget(state, "3"), undefined);
+});
+
+test("resolveNavigationTarget prefers noteFragment for bare digit heading slugs", () => {
+  const doc = "# Title\nline two\n## 3\nbody under three\n";
+  const state = EditorState.create({ doc });
+  const headingAt = doc.indexOf("## 3");
+  const headingLine = state.doc.lineAt(headingAt);
   assert.deepEqual(resolveNavigationTarget(state, "3"), {
-    from: line3.from,
-    to: line3.to,
-    selectTo: line3.to,
+    from: headingLine.from,
+    to: headingLine.to,
+  });
+  // L-prefixed still wins over a same-number heading.
+  const line2 = state.doc.line(2);
+  assert.deepEqual(resolveNavigationTarget(state, "L2"), {
+    from: line2.from,
+    to: line2.to,
+    selectTo: line2.to,
   });
 });
