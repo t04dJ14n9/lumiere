@@ -4,7 +4,7 @@ Original snapshot: 2026-10-11 00:05 SGT. Extension status and local-check guidan
 updated on 2026-10-10 UTC. Other repository and machine notes below are historical
 context, not verification of the current checkout or permission for new actions.
 
-Owner: 金扬 (GitHub `t04dJ14n9`, Asia/Shanghai). Written by Grok Bot for another agent (OpenAI Codex/ChatGPT) to take over.
+Owner: user (GitHub `t04dJ14n9`, Asia/Shanghai). Written by Grok Bot for another agent (OpenAI Codex/ChatGPT) to take over.
 All work so far ran on a shared Linux "box"; paths below are box paths. No credentials are in this file; ask the owner for access.
 
 ## 0. Rules from the owner (follow these)
