@@ -563,6 +563,25 @@ test("opt-in reclaimInPlace: workbench→text without bypass is reclaimed (Claud
   assert.ok(group.tabs.includes(text));
 });
 
+test("opt-in reclaimInPlace: tab rebuild during Search wait still reclaims workbench→text", async (t) => {
+  // Host GUI PR #468: workspaceEditor enables the Search selection wait. Cursor
+  // rebuilds Tab objects after Reopen With / showTextDocument; the wait must
+  // not drop the transfer when the scheduled tab identity is stale.
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const state = memento();
+  await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);
+  settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  switchToText();
+  rebuildTabModel();
+  t.mock.timers.tick(250);
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+  assert.equal(commands[0]?.[2], viewType);
+});
+
 test("opt-in reclaimInPlace: unbidden workbench skip does not write readerText", async (t) => {
   settings.set("lumiere.markdown.editor.reclaimInPlaceTextEditor", true);
   settings.set("lumiere.markdown.editor.reclaimTextEditor", "off");

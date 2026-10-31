@@ -238,37 +238,52 @@ function createReclaimTransfer(
   return {
     capture,
     open(tab: vscode.Tab, uri: string) {
-      if (vscode.window.tabGroups.activeTabGroup.activeTab !== tab) {
+      // VS Code/Cursor may rebuild Tab objects (no tab event) after Reopen With
+      // or showTextDocument; the Search wait can outlive that rebuild. Resolve
+      // the live native tab the same way currentTab does once openWith starts.
+      const active = vscode.window.tabGroups.activeTabGroup.activeTab;
+      const shown =
+        active === tab
+          ? tab
+          : active &&
+              showsNatively(active, uri) &&
+              active.group.viewColumn === tab.group.viewColumn
+            ? active
+            : undefined;
+      if (!shown) {
         return;
       }
-      const request = pending.get(tab);
+      const request = pending.get(shown) ?? pending.get(tab);
       if (request?.uri === uri && !request.intent?.token.cancelled) {
         // Before delivery: refresh the selection only. After revealOpened has
         // started, a later hunk must cancel and supersede that delivery.
         if (!request.delivering) {
-          capture(tab, uri);
+          capture(shown, uri);
           return;
         }
         request.intent?.token.cancel();
       }
       recentTransfers.allow(uri);
-      const selection = nativeSelectionRange(tab, uri);
+      const selection = nativeSelectionRange(shown, uri);
       const next: ReclaimRequest = {
         uri,
-        column: tab.group.viewColumn,
-        kind: kindOf(tab),
+        column: shown.group.viewColumn,
+        kind: kindOf(shown),
         intent: navigation?.begin(),
         at: selection?.at,
         to: selection?.to,
       };
-      pending.set(tab, next);
+      if (pending.get(tab) === request) {
+        pending.delete(tab);
+      }
+      pending.set(shown, next);
       void reopen(uri, next, navigation)
         .catch((error) => {
           console.error("Lumière editor transfer failed", error);
         })
         .finally(() => {
-          if (pending.get(tab) === next) {
-            pending.delete(tab);
+          if (pending.get(shown) === next) {
+            pending.delete(shown);
           }
         });
     },
