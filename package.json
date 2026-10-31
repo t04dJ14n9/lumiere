@@ -1057,6 +1057,13 @@
         "enablement": "lumiere.pdf.pdfActive"
       },
       {
+        "command": "lumiere.pdf.pickAnnotationColor",
+        "title": "Annotation Color…",
+        "category": "PDF",
+        "icon": "$(symbol-color)",
+        "enablement": "lumiere.pdf.pdfActive"
+      },
+      {
         "command": "lumiere.pdf.annotationUndo",
         "title": "Undo Annotation",
         "category": "PDF",
@@ -1494,7 +1501,7 @@
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
       },
       {
-        "command": "lumiere.pdf.selectAnnotateTool",
+        "command": "lumiere.pdf.toggleAnnotateTool",
         "key": "ctrl+alt+a",
         "mac": "ctrl+cmd+a",
         "when": "activeCustomEditorId == 'lumiere.pdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.lumiere.pdf.keyboardShortcuts"
@@ -2235,6 +2242,10 @@
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
         },
         {
+          "command": "lumiere.pdf.pickAnnotationColor",
+          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
+        },
+        {
           "command": "lumiere.pdf.annotationUndo",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'"
         },
@@ -2685,11 +2696,6 @@
           "command": "lumiere.pdf.selectRegionTool",
           "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
           "group": "3_pdfTool@2"
-        },
-        {
-          "command": "lumiere.pdf.selectAnnotateTool",
-          "when": "activeCustomEditorId == 'lumiere.pdf.viewer'",
-          "group": "3_pdfTool@3"
         },
         {
           "command": "lumiere.pdf.toggleOutline",

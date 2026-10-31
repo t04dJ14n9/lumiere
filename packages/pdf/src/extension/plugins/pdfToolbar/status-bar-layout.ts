@@ -15,6 +15,7 @@ export type StatusBarEntryId =
   | "find"
   | "annotate"
   | "annotationTool"
+  | "annotationColor"
   | "annotationUndo"
   | "annotationRedo"
   | "view"
@@ -28,8 +29,9 @@ export type StatusBarEntryId =
 
 /**
  * Left to right. Former chrome title actions (history) sit left of find.
- * Annotate tools sit after find so chrome mode can reach the toolkit.
- * Page colors is near View, left of page/zoom so page+zoom stay rightmost.
+ * The annotate cluster sits after find and before view: mode, tool, color,
+ * then History undo/redo. Page colors is near View, left of page/zoom so
+ * page and zoom stay rightmost.
  * Each label is left of its buttons so a width change does not move a
  * button the reader clicks again.
  */
@@ -39,6 +41,7 @@ export const STATUS_BAR_ORDER: readonly StatusBarEntryId[] = [
   "find",
   "annotate",
   "annotationTool",
+  "annotationColor",
   "annotationUndo",
   "annotationRedo",
   "view",

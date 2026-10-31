@@ -1,8 +1,6 @@
 import { useZoom } from "@embedpdf/plugin-zoom/react";
 import React from "react";
-import type { AnnotationToolId } from "../shared/annotation-tools";
 import type { ToolMode, ViewerAction } from "../shared/view-state";
-import { AnnotationToolkit } from "./annotation-toolbar";
 import { postToHost } from "./host";
 import type { Navigation } from "./navigation";
 import { NumberField } from "./number-field";
@@ -30,10 +28,6 @@ export interface ToolbarProps {
     onBack(): void;
     onForward(): void;
   };
-  annotationTool?: AnnotationToolId | null;
-  canUndo?: boolean;
-  canRedo?: boolean;
-  onAnnotationColor?: (color: string) => void;
 }
 
 function IconButton({
@@ -78,10 +72,6 @@ export function ToolbarControls({
   choices,
   run,
   history,
-  annotationTool = null,
-  canUndo = false,
-  canRedo = false,
-  onAnnotationColor,
   compact = false,
 }: ToolbarProps & {
   /** Shorter page suffix ("/ 12"), for the floating bar. */
@@ -98,18 +88,6 @@ export function ToolbarControls({
       <ViewControls choices={choices} run={run} />
       <span className="separator" />
       <ToolGroup tool={tool} run={run} />
-      {tool === "annotate" && onAnnotationColor ? (
-        <>
-          <span className="separator" />
-          <AnnotationToolkit
-            annotationTool={annotationTool}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            run={run}
-            onColor={onAnnotationColor}
-          />
-        </>
-      ) : null}
       <span className="spacer" />
       <span className="toolbar-group">
         <IconButton
@@ -265,13 +243,6 @@ function ToolGroup({
         keys={shortcut("⌃⌘R", "Ctrl+Alt+R")}
         pressed={tool === "region"}
         onClick={() => run({ action: "setTool", tool: "region" })}
-      />
-      <IconButton
-        icon="edit"
-        label="Annotate"
-        keys={shortcut("⌃⌘A", "Ctrl+Alt+A")}
-        pressed={tool === "annotate"}
-        onClick={() => run({ action: "setTool", tool: "annotate" })}
       />
     </span>
   );

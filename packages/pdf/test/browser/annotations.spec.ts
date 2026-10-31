@@ -17,7 +17,7 @@ async function highlightMarkCount(page: Page) {
   );
 }
 
-test("Annotate mode exposes toolkit and Escape returns to text", async ({
+test("Annotate mode has no viewer bar and Escape returns to text", async ({
   page,
 }) => {
   await open(page, "?toolbar=chrome");
@@ -25,9 +25,32 @@ test("Annotate mode exposes toolkit and Escape returns to text", async ({
   await expect.poll(() => lastView(page)).toMatchObject({ tool: "annotate" });
   await expect(
     page.getByRole("group", { name: "PDF annotation tools" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("toolbar", { name: "PDF annotation bar" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Annotate", exact: true }),
+  ).toHaveCount(0);
+  const viewport = (await page.locator(".viewport").boundingBox())!;
+  expect(viewport.y).toBe(0);
   await page.keyboard.press("Escape");
   await expect.poll(() => lastView(page)).toMatchObject({ tool: "text" });
+});
+
+test("the slim bar does not gain an Annotate control", async ({ page }) => {
+  await open(page, "?toolbar=slim");
+  await sendAction(page, { action: "setTool", tool: "annotate" });
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: "annotate" });
+  await expect(
+    page.getByRole("toolbar", { name: "PDF toolbar" }).getByRole("button", {
+      name: "Annotate",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("group", { name: "PDF annotation tools" }),
+  ).toHaveCount(0);
 });
 
 test("highlight tool can mark text", async ({ page }) => {
