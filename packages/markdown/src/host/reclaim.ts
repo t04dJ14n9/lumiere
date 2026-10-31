@@ -10,7 +10,7 @@ import {
   shouldWarmBeforeReclaim,
   TabSwaps,
 } from "./reclaim-policy";
-import type { TabKind, TabModel, TabSwap } from "./reclaim-policy";
+import type { TabKind, TabSwap } from "./reclaim-policy";
 import {
   MARKDOWN_EDITOR,
   MARKDOWN_WORKSPACE_EDITOR_KEY,
@@ -25,6 +25,14 @@ import {
   nativeSelectionRange as readNativeSelectionRange,
   registerSelectionReclaim,
 } from "./reclaim-selection";
+import {
+  kindOf,
+  labelUri,
+  resolveLiveNativeTab,
+  showsNatively,
+  tabModel,
+  uriOf,
+} from "./reclaim-tabs";
 
 const { viewType } = MARKDOWN_EDITOR;
 
@@ -58,41 +66,6 @@ interface ReclaimRequest {
    */
   keepNative?: boolean;
 }
-
-function kindOf(tab: vscode.Tab | undefined): TabKind {
-  const input = tab?.input;
-  if (!tab) {
-    return "none";
-  }
-  if (input instanceof vscode.TabInputCustom) {
-    return input.viewType === viewType ? "workbench" : "none";
-  }
-  if (input instanceof vscode.TabInputText) {
-    return "text";
-  }
-  // Cursor's own Markdown editor has no public tab input type.
-  return input === undefined ? "other" : "none";
-}
-
-function uriOf(tab: vscode.Tab): string | undefined {
-  const input = tab.input as { uri?: vscode.Uri } | undefined;
-  return input?.uri?.toString();
-}
-
-/** The tab shows this note in the text or Cursor Markdown editor. */
-function showsNatively(tab: vscode.Tab, uri: string): boolean {
-  const kind = kindOf(tab);
-  return (
-    (kind === "text" || kind === "other") &&
-    (uriOf(tab) ?? labelUri(tab)) === uri
-  );
-}
-
-const tabModel: TabModel<vscode.Tab> = {
-  facts: (tab) => ({ uri: uriOf(tab) ?? labelUri(tab), kind: kindOf(tab) }),
-  groupOf: (tab) => tab.group,
-  shownTab: () => vscode.window.tabGroups.activeTabGroup.activeTab,
-};
 
 /** Returns the note whose Cursor Edit session this tab change ended. */
 function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
@@ -238,54 +211,19 @@ function createReclaimTransfer(
   return {
     capture,
     open(tab: vscode.Tab, uri: string) {
-      // VS Code/Cursor may rebuild Tab objects (no tab event) after Reopen With
-      // or showTextDocument; the Search wait can outlive that rebuild. Resolve
-      // the live native tab the same way currentTab does once openWith starts.
-      const active = vscode.window.tabGroups.activeTabGroup.activeTab;
-      const shown =
-        active === tab
-          ? tab
-          : active &&
-              showsNatively(active, uri) &&
-              active.group.viewColumn === tab.group.viewColumn
-            ? active
-            : undefined;
+      const shown = resolveLiveNativeTab(tab, uri);
       if (!shown) {
         return;
       }
-      const request = pending.get(shown) ?? pending.get(tab);
-      if (request?.uri === uri && !request.intent?.token.cancelled) {
-        // Before delivery: refresh the selection only. After revealOpened has
-        // started, a later hunk must cancel and supersede that delivery.
-        if (!request.delivering) {
-          capture(shown, uri);
-          return;
-        }
-        request.intent?.token.cancel();
-      }
-      recentTransfers.allow(uri);
-      const selection = nativeSelectionRange(shown, uri);
-      const next: ReclaimRequest = {
+      startPendingReclaim({
+        pending,
+        recentTransfers,
+        navigation,
+        capture,
+        tab,
+        shown,
         uri,
-        column: shown.group.viewColumn,
-        kind: kindOf(shown),
-        intent: navigation?.begin(),
-        at: selection?.at,
-        to: selection?.to,
-      };
-      if (pending.get(tab) === request) {
-        pending.delete(tab);
-      }
-      pending.set(shown, next);
-      void reopen(uri, next, navigation)
-        .catch((error) => {
-          console.error("Lumière editor transfer failed", error);
-        })
-        .finally(() => {
-          if (pending.get(shown) === next) {
-            pending.delete(shown);
-          }
-        });
+      });
     },
     dispose() {
       for (const request of pending.values()) {
@@ -293,6 +231,52 @@ function createReclaimTransfer(
       }
     },
   };
+}
+
+function startPendingReclaim(options: {
+  pending: Map<vscode.Tab, ReclaimRequest>;
+  recentTransfers: Bypass;
+  navigation: NativeNavigation | undefined;
+  capture: (tab: vscode.Tab, uri: string) => void;
+  tab: vscode.Tab;
+  shown: vscode.Tab;
+  uri: string;
+}): void {
+  const { pending, recentTransfers, navigation, capture, tab, shown, uri } =
+    options;
+  const request = pending.get(shown) ?? pending.get(tab);
+  if (request?.uri === uri && !request.intent?.token.cancelled) {
+    // Before delivery: refresh the selection only. After revealOpened has
+    // started, a later hunk must cancel and supersede that delivery.
+    if (!request.delivering) {
+      capture(shown, uri);
+      return;
+    }
+    request.intent?.token.cancel();
+  }
+  recentTransfers.allow(uri);
+  const selection = nativeSelectionRange(shown, uri);
+  const next: ReclaimRequest = {
+    uri,
+    column: shown.group.viewColumn,
+    kind: kindOf(shown),
+    intent: navigation?.begin(),
+    at: selection?.at,
+    to: selection?.to,
+  };
+  if (pending.get(tab) === request) {
+    pending.delete(tab);
+  }
+  pending.set(shown, next);
+  void reopen(uri, next, navigation)
+    .catch((error) => {
+      console.error("Lumière editor transfer failed", error);
+    })
+    .finally(() => {
+      if (pending.get(shown) === next) {
+        pending.delete(shown);
+      }
+    });
 }
 
 function nativeSelectionRange(
@@ -471,18 +455,4 @@ function currentTab(request: ReclaimRequest): vscode.Tab | undefined {
       kindOf(candidate) === request.kind &&
       showsNatively(candidate, request.uri),
   );
-}
-
-/** Cursor's editor exposes no input; its tabs are matched by their label. */
-function labelUri(tab: vscode.Tab): string | undefined {
-  if (tab.input !== undefined) {
-    return undefined;
-  }
-  const documents = vscode.workspace.textDocuments.filter(
-    (candidate) =>
-      candidate.uri.scheme === "file" &&
-      candidate.uri.path.split("/").at(-1) === tab.label,
-  );
-  // Equal basenames in different folders cannot identify a tab safely.
-  return documents.length === 1 ? documents[0]?.uri.toString() : undefined;
 }
