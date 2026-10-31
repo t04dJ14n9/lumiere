@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Approved:** user via Lumière Projects (Asia/Shanghai / America/Los_Angeles, Oct 31–Nov 1 2026)  
-**Amendments:** Copy Link rename; cite paragraph auto-highlight; bibliography list UI + jumps (scope A) — user confirmed via Projects  
+**Amendments:** Copy Link rename; cite paragraph auto-highlight; bibliography list UI + jumps (scope A); **hard invariant — PDF never modified in sidecar mode** — user confirmed via Projects  
 **Repo:** `t04dJ14n9/lumiere`  
 **Package:** `packages/pdf` (`@workshop/pdf`), with Markdown link resolution for any `.md`  
 **Risk:** Low for this docs PR; product/UI Medium when implemented  
@@ -25,11 +25,15 @@ For research PDFs, also surface **citations**: auto-highlight paragraphs that co
 - A new note-graph or literature-manager product (linked notes only via existing `#hl-` / Markdown links already in the sidecar or vault).
 - Changing status-bar Annotate chrome layout beyond wiring highlight commit → sidecar (references list may use a view/panel pattern; see [Citations and bibliography](#citations-and-bibliography)).
 
+## Hard invariant (sidecar mode)
+
+**In sidecar mode the PDF file on disk is never modified.** User highlights, cite-auto paragraph overlays, bibliography / references list UI, and jumps are overlay + sidecar (and in-memory models) only. No `saveAsCopy` / host overwrite of the open PDF for these features. Hash of the PDF before and after highlight create/update/delete, cite detection, and list interaction must be identical. Strip-before-write is a safety net for accidental EmbedPDF persistence, not a license to write the PDF. Direct-to-PDF Annotate for non-highlight burn-in tools remains a separate path outside this mode’s default.
+
 ## Decisions (locked)
 
 | Topic | Decision |
 |--------|----------|
-| Default mode | **Sidecar Markdown** for highlights. The PDF bytes stay unchanged for highlight create/update/delete. |
+| Default mode | **Sidecar Markdown** for highlights. **Hard invariant:** the PDF file is never modified in this mode (highlights / cites / refs list = overlay + sidecar only). |
 | Sidecar path | `paper.pdf.lumiere.md` next to `paper.pdf` (same directory, basename = PDF name + `.lumiere.md`). No existing vault convention for annotation sidecars; this is the new convention. |
 | Sidecar contents | (a) machine **highlight blocks** (stable `id`, page, `segmentRects`, quote + surrounding context); (b) optional human **notes/answers** as normal Markdown. |
 | Format | Lumière-private Markdown blocks in v1 (not W3C JSON-LD). |
