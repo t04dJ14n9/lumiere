@@ -357,7 +357,7 @@ test("clicking a Mermaid internal-link node opens its target note without reveal
   await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
 });
 
-test("wide Mermaid diagram reserves top height so language and action badges do not overlap SVG", async ({
+test("Mermaid host has Obsidian pad/align; hover badges remain present", async ({
   page,
 }) => {
   const mermaid = [
@@ -380,27 +380,30 @@ test("wide Mermaid diagram reserves top height so language and action badges do 
   await open(page, mermaid);
   const svg = page.locator('pre[data-fence="mermaid"] svg');
   await expect(svg).toBeVisible({ timeout: 15_000 });
-  await page.locator(".hybrid-block").first().hover();
-  const geometry = await page.evaluate(() => {
-    const svgEl = document.querySelector('pre[data-fence="mermaid"] svg')!;
-    const langEl = document.querySelector(".hybrid-block .code-language")!;
-    const copyEl = document.querySelector(".hybrid-block .copy-code")!;
-    const editEl = document.querySelector(".hybrid-block .edit-block")!;
-    const svgRect = svgEl.getBoundingClientRect();
-    const langRect = langEl.getBoundingClientRect();
-    const copyRect = copyEl.getBoundingClientRect();
-    const editRect = editEl.getBoundingClientRect();
+
+  const hostStyle = await page.evaluate(() => {
+    const host = document.querySelector(
+      'pre[data-fence="mermaid"]:has(> svg)',
+    ) as HTMLElement | null;
+    if (!host) return null;
+    const style = getComputedStyle(host);
     return {
-      svgTop: svgRect.top,
-      langBottom: langRect.bottom,
-      copyBottom: copyRect.bottom,
-      editBottom: editRect.bottom,
-      maxBadgeBottom: Math.max(
-        langRect.bottom,
-        copyRect.bottom,
-        editRect.bottom,
-      ),
+      padding: style.padding,
+      paddingTop: style.paddingTop,
+      textAlign: style.textAlign,
     };
   });
-  expect(geometry.svgTop - geometry.maxBadgeBottom).toBeGreaterThanOrEqual(4);
+  expect(hostStyle).not.toBeNull();
+  expect(hostStyle!.paddingTop).toBe("0px");
+  expect(hostStyle!.padding).toMatch(/^0px/);
+  expect(["start", "left"]).toContain(hostStyle!.textAlign);
+
+  const hybrid = page.locator(".hybrid-block").first();
+  await hybrid.hover();
+  const lang = hybrid.locator(".code-language");
+  const copy = hybrid.locator(".copy-code");
+  const edit = hybrid.locator(".edit-block");
+  await expect(lang).toBeVisible();
+  await expect(copy).toBeVisible();
+  await expect(edit).toBeVisible();
 });
