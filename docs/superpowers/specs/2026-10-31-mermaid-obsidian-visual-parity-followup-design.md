@@ -145,7 +145,7 @@ No structural or color-token changes to the guard (VS Code tokens remain stand-i
 
 ## Process (standing)
 
-After the impl PR is open and stable: self-verify with evidence → spawn short-lived **reviewer bot** (comments only, max 3 rounds; skill `lumiere-pr-review`) → CI green on current head → Host GUI / screenshots → merge ask to **金扬** only. No new Cursor Cloud Agents. Local implement only.
+After the impl PR is open and stable: self-verify with evidence → spawn short-lived **reviewer bot** (comments only, max 3 rounds; skill `lumiere-pr-review`) → CI green on current head → Host GUI / screenshots → merge ask to **user** only. No new Cursor Cloud Agents. Local implement only.
 
 ## Success criteria
 

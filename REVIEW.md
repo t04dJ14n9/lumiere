@@ -15,7 +15,7 @@ Caps: prefer Important findings with file+line evidence. Cap nits. Skip generate
 Risk tiers (also in Grok Bot skill lumiere-pr-review):
 - Low: docs/copy → CI + clean review
 - Medium: product/UI → CI + review + screenshots; Host GUI if UI
-- High: trust/CI/installer/schema → CI + review + Host GUI + 金扬 reads evidence
+- High: trust/CI/installer/schema → CI + review + Host GUI + user reads evidence
 
-Every Important finding: fix or dismiss with a reason. Max 3 bot review rounds; then ask 金扬.
-Never treat a bot approval as a human. Never merge without 金扬.
+Every Important finding: fix or dismiss with a reason. Max 3 bot review rounds; then ask user.
+Never treat a bot approval as a human. Never merge without user.
