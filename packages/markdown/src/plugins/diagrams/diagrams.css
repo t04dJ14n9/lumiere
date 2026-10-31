@@ -1,7 +1,21 @@
 /* Mermaid diagrams, centred; failures use Obsidian is-guarded chrome. */
 pre[data-fence="mermaid"]:has(> svg) {
   padding: 40px 0 8px;
+  /*
+   * Scrollport for a native-size SVG. A flowchart's min-content width is the
+   * SVG (often thousands of px). That width becomes the note's, because
+   * .cm-content is a flex item (min-width: auto), the fence grows with it,
+   * and overflow-x never starts. The pane (#app overflow: hidden) then cuts
+   * the diagram off: truncated subgraphs, arrows into empty space. Inline-size
+   * containment sizes the fence from the column, not the SVG, so the extra
+   * width scrolls here. overflow-y is hidden because overflow-x: auto would
+   * compute a visible y axis to auto and trap vertical wheel in the fence;
+   * height still follows the SVG, so a tall diagram is not cropped.
+   */
+  contain: inline-size;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   text-align: center;
   background: none;
 }
