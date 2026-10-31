@@ -48,7 +48,7 @@ type Item = {
 
 /**
  * Status bar entries, in their order from left to right (see
- * `STATUS_BAR_ORDER`): history, find, Annotate (+ tool / undo while
+ * `STATUS_BAR_ORDER`): history, find, Annotate (+ tool, color, undo while
  * annotating), View, page colors, "Page 4 / 15", previous/next page, zoom
  * label and buttons. Optional buttons show only when
  * `toolbar.statusBarButtons` asks for them.
@@ -91,6 +91,14 @@ const ITEMS: Item[] = [
     text: "",
     tooltip: "Choose annotation tool",
     command: VIEW_COMMAND_IDS.pickAnnotationTool,
+    annotateOnly: true,
+  },
+  {
+    id: "annotationColor",
+    name: "PDF Annotation Color",
+    text: "$(symbol-color) Color",
+    tooltip: "Choose annotation color",
+    command: VIEW_COMMAND_IDS.pickAnnotationColor,
     annotateOnly: true,
   },
   {
@@ -201,6 +209,7 @@ type EntryState = {
 const ANNOTATE_ENTRY_IDS = new Set<StatusBarEntryId>([
   "annotate",
   "annotationTool",
+  "annotationColor",
   "annotationUndo",
   "annotationRedo",
 ]);
@@ -253,7 +262,7 @@ function refreshAnnotateEntry(
       const on = view.tool === "annotate";
       entry.text = on ? "$(edit) Annotating" : "$(edit) Annotate";
       entry.tooltip = on
-        ? "Exit Annotate mode (click) — tools on this bar and in the viewer"
+        ? "Exit Annotate mode"
         : `Annotate PDF (${key("Ctrl+Alt+A", "⌃⌘A")})`;
       return;
     }

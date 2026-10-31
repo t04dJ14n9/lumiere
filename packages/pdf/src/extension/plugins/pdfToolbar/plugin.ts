@@ -8,7 +8,11 @@ import {
 } from "../../../shared/command-ids";
 import type { PdfPanels } from "../pdf/panels";
 import manifest from "./manifest";
-import { pickAnnotationTool, toggleAnnotate } from "./annotation-picker";
+import {
+  pickAnnotationColor,
+  pickAnnotationTool,
+  toggleAnnotate,
+} from "./annotation-picker";
 import { selectToolbarMode } from "./mode-picker";
 import {
   cycleAndPublish,
@@ -119,6 +123,12 @@ function registerToolbarCommands(
       pickAnnotationTool(panels),
     ),
     "pick annotation tool",
+  );
+  ctx.own(
+    vscode.commands.registerCommand(VIEW_COMMAND_IDS.pickAnnotationColor, () =>
+      pickAnnotationColor(panels),
+    ),
+    "pick annotation color",
   );
 }
 

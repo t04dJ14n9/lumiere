@@ -22,6 +22,7 @@ type ActionArgument =
   | { page: unknown }
   | { percent: unknown }
   | { tool: unknown }
+  | { color: unknown }
   | { pageLayout: unknown }
   | { scrollMode: unknown }
   | { scrollDirection: unknown };

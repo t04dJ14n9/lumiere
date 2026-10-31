@@ -3,7 +3,11 @@
  * editor's own controls ask the viewer to do. Shared by the viewer and the
  * extension's status bar, editor title actions and keybindings.
  */
-import { isAnnotationToolId, type AnnotationToolId } from "./annotation-tools";
+import {
+  ANNOTATION_COLOR_PRESETS,
+  isAnnotationToolId,
+  type AnnotationToolId,
+} from "./annotation-tools";
 import { MAX_ZOOM, MIN_ZOOM } from "./zoom-steps";
 import { isPageOffset } from "./reading-position";
 import {
@@ -72,6 +76,7 @@ export type ViewerAction =
   | { action: "setZoom"; percent: number }
   | { action: "setTool"; tool: ToolMode }
   | { action: "setAnnotationTool"; tool: AnnotationToolId }
+  | { action: "setAnnotationColor"; color: string }
   | { action: "setPageLayout"; pageLayout: PageLayout }
   | { action: "setScrollMode"; scrollMode: ScrollMode }
   | { action: "setScrollDirection"; scrollDirection: ScrollDirection };
@@ -225,6 +230,10 @@ const ACTION_PARSERS: Readonly<
     isAnnotationToolId(tool)
       ? { action: "setAnnotationTool", tool }
       : undefined,
+  setAnnotationColor: ({ color }) =>
+    isAnnotationColor(color)
+      ? { action: "setAnnotationColor", color }
+      : undefined,
   setPageLayout: ({ pageLayout }) =>
     isPageLayout(pageLayout)
       ? { action: "setPageLayout", pageLayout }
@@ -238,6 +247,15 @@ const ACTION_PARSERS: Readonly<
       ? { action: "setScrollDirection", scrollDirection }
       : undefined,
 };
+
+function isAnnotationColor(
+  value: unknown,
+): value is (typeof ANNOTATION_COLOR_PRESETS)[number] {
+  return (
+    typeof value === "string" &&
+    (ANNOTATION_COLOR_PRESETS as readonly string[]).includes(value)
+  );
+}
 
 /**
  * A page number typed by the reader ("7", " 7 "), clamped to the document;

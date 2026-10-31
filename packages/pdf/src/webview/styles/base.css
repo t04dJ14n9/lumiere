@@ -72,11 +72,6 @@ input {
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 }
 
-/* Annotate chrome bar sits above the pages (auto + pages). */
-.viewer.tool-annotate:not(.toolbar-slim) {
-  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
-}
-
 /* Dark paper overlays: light marks on near-#1e1e1e pages (when engine hook applies). */
 #root[data-page-colors="dark"] .viewer {
   --selection-fill: color-mix(

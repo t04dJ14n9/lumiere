@@ -46,6 +46,14 @@ test("parseViewerAction accepts setTool annotate and annotation tools", () => {
     parseViewerAction({ action: "setAnnotationTool", tool: "link" }),
     undefined,
   );
+  assert.deepEqual(
+    parseViewerAction({ action: "setAnnotationColor", color: "#FFE600" }),
+    { action: "setAnnotationColor", color: "#FFE600" },
+  );
+  assert.equal(
+    parseViewerAction({ action: "setAnnotationColor", color: "red" }),
+    undefined,
+  );
 });
 
 test("ANNOTATION_TOOL_IDS covers the locked v1 toolkit", () => {
