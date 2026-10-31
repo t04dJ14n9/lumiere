@@ -562,3 +562,20 @@ test("tabs open before reclaim starts are judged: the shown one now, the rest wh
   const kept = swaps.next({ opened: [], changed: [workshop] }, new Set());
   assert.equal(shouldReclaim(kept[0]!.swap, context), false);
 });
+
+test("skip keep: unassociated none→text does not permanently stick", () => {
+  const note = "file:///vault/Core.md";
+  assert.equal(
+    shouldReclaim(
+      { uri: note, before: "none", after: "text" },
+      {
+        enabled: true,
+        reclaimInPlace: true,
+        isNote: () => true,
+        associated: () => false,
+        bypassed: () => false,
+      },
+    ),
+    false,
+  );
+});

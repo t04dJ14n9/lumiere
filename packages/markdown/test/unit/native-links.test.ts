@@ -65,8 +65,11 @@ test("external, command, UNC, malformed encoding and control paths are never int
   }
 });
 
-import { nativeLineFragment } from "../../src/shared/native-links";
-test("native line and range destinations stay with VS Code", () => {
+import {
+  nativeLineFragment,
+  parseNativeLineFragment,
+} from "../../src/shared/native-links";
+test("native line fragments parse to inclusive 1-based ranges", () => {
   for (const value of [
     "20",
     "L20",
@@ -77,7 +80,20 @@ test("native line and range destinations stay with VS Code", () => {
   ]) {
     assert.equal(nativeLineFragment(value), true, value);
   }
-  for (const value of ["heading", "L20-heading", "%ZZ"]) {
+  assert.deepEqual(parseNativeLineFragment("L19-L19"), {
+    startLine: 19,
+    endLine: 19,
+  });
+  assert.deepEqual(parseNativeLineFragment("L20-L30"), {
+    startLine: 20,
+    endLine: 30,
+  });
+  assert.deepEqual(parseNativeLineFragment("20"), {
+    startLine: 20,
+    endLine: 20,
+  });
+  for (const value of ["heading", "L20-heading", "%ZZ", "L0", "L5-L3"]) {
+    assert.equal(parseNativeLineFragment(value), undefined, value);
     assert.equal(nativeLineFragment(value), false, value);
   }
 });

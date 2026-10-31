@@ -1932,6 +1932,52 @@ test("a caret at the start does not reclaim before Search applies its range", as
   assert.deepEqual(destination.ranges, [{ at, to: at + 4 }]);
 });
 
+test("heal restores Search reclaim when associations are default without workspaceEditor", async (t) => {
+  // Host GUI range-link probe: settings.json had "*.md": "default" but never
+  // set lumiere.markdown.workspaceEditor, and readerText stuck the note.
+  const state = memento();
+  state.values.set("lumiere.reclaim.readerText", [note]);
+  settings.set("workbench.editorAssociations", {
+    "*.md": "default",
+    "*.markdown": "default",
+  });
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(
+    destination.navigation,
+    state as never,
+  );
+  t.after(() => stop.dispose());
+  assert.equal(state.values.get(MARKDOWN_WORKSPACE_EDITOR_KEY), true);
+  assert.deepEqual(state.values.get("lumiere.reclaim.readerText"), []);
+
+  tab.input = new TabInputText(Uri.parse(note));
+  const editor = nativeHunkEditor(tab, 947);
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+
+  assert.deepEqual(destination.ranges, [
+    {
+      at: editor.document.getText().indexOf("Line 948\n"),
+      to: editor.document.getText().indexOf("Line 950\n") + 4,
+    },
+  ]);
+});
+
+test("unassociated none→text does not permanently stick via readerText", async (t) => {
+  settings.set("workbench.editorAssociations", {});
+  const state = memento();
+  const stop = host.reclaim.registerReclaim(undefined, state as never);
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  tab.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.deepEqual(commands, []);
+  assert.equal(state.values.has("lumiere.reclaim.readerText"), false);
+});
+
 test("a new Search tab settles its selection before custom-editor handoff", async (t) => {
   const state = memento();
   await state.update(MARKDOWN_WORKSPACE_EDITOR_KEY, true);

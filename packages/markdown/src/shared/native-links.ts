@@ -113,13 +113,43 @@ export function localFragment(
   }
 }
 
-/** VS Code's line/column fragments must keep their built-in route. */
+/**
+ * VS Code line/column fragments (`#L19`, `#L19-L21`, `#20:2-30:4`).
+ * Lumière owns markdown `#L` clicks so the range can select in the custom
+ * editor; Search and other host opens still use the text→reclaim route.
+ */
 export function nativeLineFragment(fragment: string): boolean {
+  return parseNativeLineFragment(fragment) !== undefined;
+}
+
+export interface NativeLineRange {
+  startLine: number;
+  endLine: number;
+}
+
+/** 1-based inclusive line range, or undefined when the fragment is not `#L…`. */
+export function parseNativeLineFragment(
+  fragment: string,
+): NativeLineRange | undefined {
   try {
-    return /^L?\d+(?:[:,]\d+)?(?:-L?\d+(?:[:,]\d+)?)?$/i.test(
+    const match = /^L?(\d+)(?:[:,]\d+)?(?:-L?(\d+)(?:[:,]\d+)?)?$/i.exec(
       decodeURIComponent(fragment),
     );
+    if (!match) {
+      return undefined;
+    }
+    const startLine = Number(match[1]);
+    const endLine = Number(match[2] ?? match[1]);
+    if (
+      !Number.isSafeInteger(startLine) ||
+      !Number.isSafeInteger(endLine) ||
+      startLine < 1 ||
+      endLine < startLine
+    ) {
+      return undefined;
+    }
+    return { startLine, endLine };
   } catch {
-    return false;
+    return undefined;
   }
 }

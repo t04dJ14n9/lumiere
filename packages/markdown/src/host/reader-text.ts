@@ -36,6 +36,18 @@ class ReaderText {
     }
   }
 
+  /**
+   * Drop every keep. Used when healing a missing workspaceEditor key so notes
+   * stuck while reclaim thought they were unassociated can transfer again.
+   */
+  clear(): void {
+    if (this.uris.size === 0) {
+      return;
+    }
+    this.uris.clear();
+    this.remember();
+  }
+
   /** Stop keeping notes among `tabs` (default: all kept) with no text tab left. */
   forgetClosed(tabs?: readonly vscode.Tab[]): void {
     const candidates = tabs

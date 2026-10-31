@@ -25,6 +25,7 @@ import {
   nativeSelectionRange as readNativeSelectionRange,
   registerSelectionReclaim,
 } from "./reclaim-selection";
+import { healWorkspaceEditorAssociation } from "./workspace-editor-heal";
 import {
   kindOf,
   labelUri,
@@ -103,8 +104,10 @@ export function registerReclaim(
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
   readerText.restore(memory);
+  const workspaceEditorHealed = healWorkspaceEditorAssociation(memory);
   const workspaceDefault = () =>
-    memory?.get(MARKDOWN_WORKSPACE_EDITOR_KEY, false) ?? false;
+    workspaceEditorHealed ||
+    (memory?.get(MARKDOWN_WORKSPACE_EDITOR_KEY, false) ?? false);
   const scheduler = createReclaimScheduler({
     open: transfer.open,
     readSelection: nativeSelectionRange,
@@ -169,12 +172,20 @@ function createReclaimJudge(options: {
     }
     const context = reclaimContext(swap.uri, options.workspaceDefault());
     if (!shouldReclaim(swap, context)) {
-      // Off: keep text skips. On: no keep for unbidden workbench→text.
+      // Off: keep text skips. On: no keep for unbidden workbench→text, and no
+      // keep for none→text that failed only as unassociated (missing
+      // workspaceEditor with associations already `"default"`).
+      const unbiddenInPlace =
+        context.reclaimInPlace && swap.before === "workbench";
+      const unassociatedNewText =
+        context.enabled &&
+        swap.before === "none" &&
+        !context.associated(swap.uri);
       const keep =
         swap.after === "text" &&
         isReclaimableNote(swap.uri) &&
         (hasNativeOptOut(swap.uri) ||
-          !(context.reclaimInPlace && swap.before === "workbench"));
+          (!unbiddenInPlace && !unassociatedNewText));
       if (keep) {
         readerText.keep(swap.uri);
       }
