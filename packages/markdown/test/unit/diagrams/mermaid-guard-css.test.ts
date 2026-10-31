@@ -15,12 +15,14 @@ function rule(selector: string): string {
 
 test("diagrams.css paints Obsidian is-guarded chrome with VS Code tokens", () => {
   assert.match(rule(".mermaid-wrapper.is-guarded"), /border:/);
-  assert.match(rule(".mermaid-wrapper.is-guarded"), /border-radius:\s*6px/);
+  assert.match(rule(".mermaid-wrapper.is-guarded"), /border-radius:\s*8px/);
   assert.match(rule(".mermaid-guard-title"), /font-weight:\s*600/);
+  assert.match(rule(".mermaid-guard-title"), /font-size:\s*13px/);
   assert.match(
     rule(".mermaid-guard-description"),
     /var\(--vscode-descriptionForeground/,
   );
+  assert.match(rule(".mermaid-guard-description"), /font-size:\s*12px/);
   assert.match(rule(".mermaid-guard-source"), /border-top:/);
   assert.match(
     rule(".mermaid-guard-source pre"),
@@ -41,9 +43,10 @@ test("diagrams.css styles Mermaid internal-link nodes with pointer cursor", () =
   );
 });
 
-test("diagrams.css reserves top height above Mermaid SVG so header badges never overlap", () => {
+test("diagrams.css Mermaid host has Obsidian LP padding 0 (no reserved badge band)", () => {
+  assert.match(rule('pre[data-fence="mermaid"]:has(> svg)'), /padding:\s*0;/);
   assert.match(
     rule('pre[data-fence="mermaid"]:has(> svg)'),
-    /padding:\s*40px 0 8px/,
+    /text-align:\s*start/,
   );
 });

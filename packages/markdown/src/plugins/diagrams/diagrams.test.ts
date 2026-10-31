@@ -77,7 +77,7 @@ test("diagram inspector Mermaid SVG uses the same dark invert", () => {
   );
 });
 
-test("markdown webview defines --font-mermaid from the editor font", () => {
+test("markdown webview defines --font-mermaid from the note text font", () => {
   const base = readFileSync(
     join(
       dirname(fileURLToPath(import.meta.url)),
@@ -85,8 +85,33 @@ test("markdown webview defines --font-mermaid from the editor font", () => {
     ),
     "utf8",
   );
+  assert.match(base, /--font-mermaid:\s*var\(--text-font\)/);
+});
+
+test("mermaid host has no padding and start alignment (Obsidian LP)", () => {
   assert.match(
-    base,
-    /--font-mermaid:\s*var\(--vscode-editor-font-family,\s*inherit\)/,
+    css,
+    /pre\[data-fence="mermaid"\]:has\(> svg\)\s*\{[^}]*padding:\s*0;/,
   );
+  assert.match(
+    css,
+    /pre\[data-fence="mermaid"\]:has\(> svg\)\s*\{[^}]*text-align:\s*start;/,
+  );
+  assert.match(
+    css,
+    /pre\[data-fence="mermaid"\]:has\(> svg\)\s*\{[^}]*contain:\s*inline-size;/,
+  );
+  assert.match(
+    css,
+    /pre\[data-fence="mermaid"\]:has\(> svg\)\s*\{[^}]*overflow-y:\s*hidden;/,
+  );
+});
+
+test("mermaid guarded chrome matches Obsidian radius and UI font sizes", () => {
+  assert.match(
+    css,
+    /\.mermaid-wrapper\.is-guarded\s*\{[^}]*border-radius:\s*8px;/,
+  );
+  assert.match(css, /\.mermaid-guard-title\s*\{[^}]*font-size:\s*13px;/);
+  assert.match(css, /\.mermaid-guard-description\s*\{[^}]*font-size:\s*12px;/);
 });
