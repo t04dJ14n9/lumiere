@@ -7,6 +7,7 @@ import {
 import { Decoration, type DecorationSet, EditorView } from "@codemirror/view";
 import { foldedRanges, unfoldEffect } from "@codemirror/language";
 import { noteFragment } from "../../markdown/metadata/fragments";
+import { parseNativeLineFragment } from "../../shared/native-links";
 
 /** Transient target-flash range matching Obsidian's 2 s `.is-flashing` highlight. */
 export const FLASH_DURATION_MS = 2000;
@@ -92,6 +93,21 @@ export function resolveNavigationTarget(
       };
     }
     return { from, to: doc.lineAt(from).to };
+  }
+  // Cursor / VS Code `#L19` / `#L19-L21` (and open-native-line) are line
+  // ranges, not heading or block ids — same full-line selection shape.
+  const lines = parseNativeLineFragment(fragment);
+  if (lines) {
+    if (lines.endLine > doc.lines) {
+      return undefined;
+    }
+    const from = doc.line(lines.startLine).from;
+    const end = doc.line(lines.endLine).to;
+    return {
+      from,
+      to: end,
+      ...(end > from ? { selectTo: end } : {}),
+    };
   }
   const match = noteFragment(doc.toString(), fragment);
   if (!match) {

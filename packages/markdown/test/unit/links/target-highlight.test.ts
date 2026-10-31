@@ -82,3 +82,27 @@ test("flashingHighlights tracks and clears the .is-flashing decoration range", (
   }).state;
   assert.equal(state.doc.toString(), doc);
 });
+
+test("resolveNavigationTarget selects full lines for #L Cursor-style fragments", () => {
+  const doc = "# Title\nline two content\nline three\nline four end\n";
+  const state = EditorState.create({ doc });
+  const line2 = state.doc.line(2);
+  const line3 = state.doc.line(3);
+  assert.deepEqual(resolveNavigationTarget(state, "L2"), {
+    from: line2.from,
+    to: line2.to,
+    selectTo: line2.to,
+  });
+  assert.deepEqual(resolveNavigationTarget(state, "L2-L3"), {
+    from: line2.from,
+    to: line3.to,
+    selectTo: line3.to,
+  });
+  assert.deepEqual(resolveNavigationTarget(state, "L19-L19"), undefined);
+  // Numeric Cursor fragments (`#20`) share the open-native-line parse.
+  assert.deepEqual(resolveNavigationTarget(state, "3"), {
+    from: line3.from,
+    to: line3.to,
+    selectTo: line3.to,
+  });
+});
